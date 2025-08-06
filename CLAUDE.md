@@ -15,6 +15,6 @@
 - Search first when uncertain, write tests for core functionality
 - Update documentation when modifying code
 - Prefer pnpm for Node.js projects
-- Commit titles: lowercase, max 70 characters
+- Commit titles: lowercase, max 50 characters
 - Merge PRs with merge commits
 - No emojis, avoid hardcoding secrets
