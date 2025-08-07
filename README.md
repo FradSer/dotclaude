@@ -1,143 +1,73 @@
 # Frad's .claude
 
-A comprehensive development environment with specialized AI agents for code review, security analysis, and technical leadership.
+Claude Code configuration with specialized AI agents and command templates.
 
 ## Quick Sync
-
-Sync your local Claude configuration with this repository:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
 ```
 
-## Overview
+## Agents
 
-This project provides a structured approach to software development with AI-powered code review agents and established development principles. It combines SOLID architecture principles with specialized review agents to ensure high-quality, maintainable code.
-
-## Development Principles
-
-### Architecture Guidelines
-
-- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- **Design Patterns**: Prefer composition over inheritance, use dependency injection, apply repository pattern, implement strategy pattern
-- **Code Organization**: Keep files and functions concise, maintain meaningful comments explaining "why" not "what"
-
-### Code Quality Standards
-
-- **Naming**: Use descriptive variable/function names, avoid abbreviations and magic numbers
-- **Error Handling**: Gracefully handle all error cases with meaningful messages
-- **Performance**: Avoid premature optimization, focus on algorithm complexity, use caching appropriately
-
-### Development Practices
-
-- **Testing**: Write tests for core functionality
-- **Documentation**: Update documentation when modifying code
-- **Security**: Always consider security, avoid hardcoded sensitive information
-- **Package Management**: Prefer pnpm for Node.js projects
-- **Git Commits**: Keep commit titles under 70 characters, use lowercase
-
-## Specialized Review Agents
-
-### Code Reviewer
+### code-reviewer
 Comprehensive code analysis for correctness, best practices, and maintainability.
 
-**Use when**: You've completed a logical chunk of code and need thorough review before committing.
-
-**Focus areas**:
-- Correctness and logic analysis
-- Best practices and standards adherence
-- Readability and maintainability
-- Performance and efficiency
-- Testing and quality assurance
-- Security considerations
-
-### Code Simplifier
+### code-simplifier
 Refactoring specialist for improving readability and reducing complexity.
 
-**Use when**: You have functional code that needs refactoring to improve readability or eliminate redundancy.
-
-**Focus areas**:
-- Identify and eliminate redundancy (DRY principle)
-- Enhance readability through simplification
-- Modernize syntax and idioms
-- Improve code structure and organization
-
-### Security Reviewer
+### security-reviewer
 Cybersecurity expert for vulnerability assessment and secure coding practices.
 
-**Use when**: Reviewing code that handles sensitive data, authentication, or external inputs.
-
-**Focus areas**:
-- Common vulnerabilities (SQL injection, XSS, CSRF)
-- Authentication and authorization
-- Input validation and data handling
-- Cryptography and data protection
-- Error handling and information disclosure
-- Dependency and configuration security
-
-### Tech Lead Reviewer
+### tech-lead-reviewer
 Senior technical leadership perspective for architectural decisions and complex challenges.
 
-**Use when**: You need guidance on significant feature implementations, system-wide changes, or complex technical problems.
-
-**Focus areas**:
-- Architectural excellence and scalability
-- Technical leadership and mentorship
-- Strategic alignment with project goals
-- Holistic quality oversight
-
-### UX Reviewer
+### ux-reviewer
 User experience specialist for interface evaluation and usability assessment.
 
-**Use when**: You need to evaluate user interfaces for usability, accessibility, and overall user experience.
+## Commands
 
-**Focus areas**:
-- Comprehensive usability evaluation
-- Clarity and consistency assessment
-- Accessibility compliance (WCAG guidelines)
-- Feedback and error prevention
-- User flow efficiency analysis
+### Review Workflows
+- `commands/review/quick.md` - Two-stage review for rapid assessment
+- `commands/review/hierarchical.md` - Multi-stage review for complex changes
 
-## Project Structure
+### Fix Operations
+- `commands/fix/quick.md` - Rapid assessment and targeted fixes
+- `commands/fix/code-quality.md` - Code quality improvements
+- `commands/fix/security.md` - Security-focused fixes
+- `commands/fix/ui.md` - User interface improvements
 
-```
-.claude/
-├── agents/
-│   ├── code-reviewer.md
-│   ├── code-simplifier.md
-│   ├── security-reviewer.md
-│   ├── tech-lead-reviewer.md
-│   └── ux-reviewer.md
-└── CLAUDE.md
-```
+### Git Operations
+- `commands/git/commit.md` - Standard commit workflow
+- `commands/git/commit-and-push.md` - Commit and push workflow
+- `commands/git/push.md` - Push changes to remote
+- `commands/git/release.md` - Release management
 
-## Usage Guidelines
+### Other
+- `commands/continue.md` - Continue previous work
+- `commands/refactoring.md` - Code refactoring workflow
+- `commands/gh/create-issues.md` - GitHub issue creation
 
-1. **Agent Selection**: Choose the appropriate agent based on your current development phase
-2. **Code Review**: Use code-reviewer for comprehensive analysis before committing
-3. **Refactoring**: Use code-simplifier when code needs simplification or modernization
-4. **Security**: Use security-reviewer for any code handling sensitive data or user input
-5. **Architecture**: Use tech-lead-reviewer for significant architectural decisions
-6. **UX**: Use ux-reviewer for interface evaluation before user testing
+## CLAUDE.md
 
-## Best Practices
+Development guidelines and standards:
 
-- Follow SOLID principles in all code implementations
-- Maintain consistent naming conventions
-- Write self-documenting code with meaningful comments
-- Prioritize code quality over quantity
-- Consider security implications in all implementations
-- Test thoroughly and maintain good test coverage
-- Keep documentation updated with code changes
+### Architecture
+- Follow SOLID principles
+- Prefer composition over inheritance, dependency injection for testability
+- Use repository pattern for data access, strategy pattern for algorithmic variations
 
-## Contributing
+### Code Quality
+- Use descriptive names, avoid abbreviations and magic numbers
+- Keep functions under 20 lines, files concise
+- Handle all error scenarios with meaningful messages
+- Comment "why" not "what"
 
-When contributing to this project:
-- Follow the established development principles
-- Use appropriate review agents for code quality
-- Maintain consistency with existing patterns
-- Update documentation as needed
-
-## License
-
-This project is for personal development use by Frad. 
+### Development Standards
+- Search first when uncertain, write tests for core functionality
+- Update documentation when modifying code
+- Prefer pnpm for Node.js projects
+- Commit titles: lowercase, max 50 characters
+- Merge PRs with merge commits
+- No emojis, avoid hardcoding secrets
+- Make atomic git commits for each completed feature stage and push 
