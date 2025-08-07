@@ -7,7 +7,7 @@ A comprehensive development environment with specialized AI agents for code revi
 Sync your local Claude configuration with this repository:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
 ```
 
 ## Overview
