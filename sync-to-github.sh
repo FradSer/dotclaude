@@ -79,18 +79,23 @@ execute_operation() {
     esac
 }
 
-# Choice action handlers
-declare -A CHOICE_HANDLERS=(
-    ["diff_1"]="use_local"
-    ["diff_2"]="use_repo"
-    ["diff_3"]="skip"
-    ["local_only_1"]="copy_to_repo"
-    ["local_only_2"]="delete_local"
-    ["local_only_3"]="skip"
-    ["repo_only_1"]="copy_to_local"
-    ["repo_only_2"]="delete_from_repo"
-    ["repo_only_3"]="skip"
-)
+# Choice action handlers - bash 3.2 compatible
+get_choice_action() {
+    local scenario="$1" choice="$2"
+    
+    case "${scenario}_${choice}" in
+        diff_1) echo "use_local" ;;
+        diff_2) echo "use_repo" ;;
+        diff_3) echo "skip" ;;
+        local_only_1) echo "copy_to_repo" ;;
+        local_only_2) echo "delete_local" ;;
+        local_only_3) echo "skip" ;;
+        repo_only_1) echo "copy_to_local" ;;
+        repo_only_2) echo "delete_from_repo" ;;
+        repo_only_3) echo "skip" ;;
+        *) echo "invalid" ;;
+    esac
+}
 
 # Execute choice action
 execute_choice_action() {
@@ -135,43 +140,61 @@ execute_choice_action() {
 # Handle user choice for sync operations
 handle_choice() {
     local choice="$1" local_path="$2" repo_path="$3" item="$4" is_dir="$5" scenario="$6"
-    local action_key="${scenario}_${choice}"
-    local action="${CHOICE_HANDLERS[$action_key]}"
+    local action
+    action=$(get_choice_action "$scenario" "$choice")
     
     execute_choice_action "$action" "$local_path" "$repo_path" "$item" "$is_dir"
 }
 
-# Menu configuration data
-declare -A MENU_CONFIGS=(
-    ["diff_options"]="Use local %s (overwrite repo)|Use repo %s (overwrite local)|Skip this %s|Show detailed diff"
-    ["diff_prompt"]="Enter choice (1-4): "
-    ["local_only_options"]="Copy to repo|Delete local %s|Skip"
-    ["local_only_prompt"]="Enter choice (1-3): "
-    ["repo_only_options"]="Copy to local|Delete from repo|Skip"
-    ["repo_only_prompt"]="Enter choice (1-3): "
-)
+# Menu configuration functions - bash 3.2 compatible
+get_menu_options() {
+    local scenario="$1"
+    
+    case "$scenario" in
+        diff) echo "Use local %s (overwrite repo)|Use repo %s (overwrite local)|Skip this %s|Show detailed diff" ;;
+        local_only) echo "Copy to repo|Delete local %s|Skip" ;;
+        repo_only) echo "Copy to local|Delete from repo|Skip" ;;
+        *) echo "" ;;
+    esac
+}
 
-# Display formatted menu options
+get_menu_prompt() {
+    local scenario="$1"
+    
+    case "$scenario" in
+        diff) echo "Enter choice (1-4): " ;;
+        local_only|repo_only) echo "Enter choice (1-3): " ;;
+        *) echo "Enter choice: " ;;
+    esac
+}
+
+# Display formatted menu options - bash 3.2 compatible
 display_menu_options() {
     local options="$1" item="$2"
     local counter=1
+    local option
     
-    IFS='|' read -ra OPTION_ARRAY <<< "$options"
-    for option in "${OPTION_ARRAY[@]}"; do
+    # Use bash 3.2 compatible method to split string on pipe
+    local old_ifs="$IFS"
+    IFS='|'
+    for option in $options; do
         printf "%d) %s\n" "$counter" "$(printf "$option" "$item")"
         ((counter++))
     done
+    IFS="$old_ifs"
 }
 
 # Show action menu and get user choice
 show_menu_and_read_choice() {
     local item="$1" scenario="$2"
-    local options_key="${scenario}_options"
-    local prompt_key="${scenario}_prompt"
+    local options prompt
+    
+    options=$(get_menu_options "$scenario")
+    prompt=$(get_menu_prompt "$scenario")
     
     echo "Choose action:"
-    display_menu_options "${MENU_CONFIGS[$options_key]}" "$item"
-    read -p "${MENU_CONFIGS[$prompt_key]}"
+    display_menu_options "$options" "$item"
+    read -p "$prompt"
 }
 
 # Check if path exists based on type
@@ -267,7 +290,11 @@ validate_environment() {
     validate_directory_exists "$CLAUDE_DIR" "Claude directory"
     
     for item_spec in "${ITEMS[@]}"; do
-        read -r item type <<< "$(parse_item_spec "$item_spec")"
+        # Use bash 3.2 compatible method to parse item spec
+        local parsed
+        parsed=$(parse_item_spec "$item_spec")
+        local item="${parsed%% *}"
+        local type="${parsed##* }"
         validate_item_exists "$item" "$type" "$CLAUDE_DIR"
     done
     
