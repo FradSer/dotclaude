@@ -18,3 +18,4 @@
 - Commit titles: lowercase, max 50 characters
 - Merge PRs with merge commits
 - No emojis, avoid hardcoding secrets
+- Make atomic git commits for each completed feature stage and push
