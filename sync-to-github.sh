@@ -12,6 +12,21 @@ readonly BRANCH="main"
 readonly CLAUDE_DIR="$HOME/.claude"
 readonly ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
 
+# Detect if we're running within the dotclaude project
+detect_local_mode() {
+    if [ -f "$(pwd)/sync-to-github.sh" ] && [ -d "$(pwd)/.git" ]; then
+        local remote_url
+        remote_url=$(git remote get-url origin 2>/dev/null || echo "")
+        if [[ "$remote_url" == *"dotclaude"* ]]; then
+            echo "true"
+            return
+        fi
+    fi
+    echo "false"
+}
+
+readonly LOCAL_MODE=$(detect_local_mode)
+
 # Colors for output
 readonly RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m' BLUE='\033[0;34m' NC='\033[0m'
 
@@ -185,20 +200,30 @@ validate_environment() {
 
 # Setup git repository
 setup_repo() {
-    log_info "Setting up git repository..."
-    
-    [ -d "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"
-    git clone "$REPO_URL" "$TEMP_DIR"
-    cd "$TEMP_DIR"
-    git checkout "$BRANCH"
-    
-    log_info "Repository setup completed"
+    if [ "$LOCAL_MODE" = "true" ]; then
+        log_info "Running in local dotclaude project mode..."
+        WORKING_DIR="$(pwd)"
+        log_info "Using current directory: $WORKING_DIR"
+    else
+        log_info "Setting up git repository..."
+        
+        [ -d "$TEMP_DIR" ] && rm -rf "$TEMP_DIR"
+        git clone "$REPO_URL" "$TEMP_DIR"
+        cd "$TEMP_DIR"
+        git checkout "$BRANCH"
+        WORKING_DIR="$TEMP_DIR"
+        
+        log_info "Repository setup completed"
+    fi
 }
 
 # Sync all items with user interaction
 sync_items() {
     log_info "Comparing and syncing items..."
     local has_changes=false
+    
+    # Change to working directory for sync operations
+    cd "$WORKING_DIR"
     
     for item_spec in "${ITEMS[@]}"; do
         local item="${item_spec%:*}"
@@ -211,6 +236,45 @@ sync_items() {
     done
     
     [ "$has_changes" = true ] && log_info "Files synced with user choices" || log_info "No changes needed"
+}
+
+# Generate commit message using claude or fallback to conventional format
+generate_commit_message() {
+    local changes_summary
+    changes_summary=$(git status --porcelain | head -10)
+    
+    if command -v claude >/dev/null 2>&1; then
+        log_info "Using Claude to generate commit message..."
+        claude --no-color <<EOF | tail -1
+Generate a conventional commit message for these changes:
+$changes_summary
+
+Requirements:
+- Start with feat:, fix:, docs:, style:, refactor:, test:, or chore:
+- Be concise and descriptive
+- No timestamp needed
+- Focus on what was changed, not how
+- Return only the commit message, no explanation
+EOF
+    else
+        log_info "Claude not available, using conventional commit format..."
+        local changed_items=""
+        if git status --porcelain | grep -q "agents/"; then
+            changed_items="${changed_items}agents "
+        fi
+        if git status --porcelain | grep -q "commands/"; then
+            changed_items="${changed_items}commands "
+        fi
+        if git status --porcelain | grep -q "CLAUDE.md"; then
+            changed_items="${changed_items}config "
+        fi
+        
+        if [ -n "$changed_items" ]; then
+            echo "feat: sync dotclaude ${changed_items}updates"
+        else
+            echo "feat: sync dotclaude configuration updates"
+        fi
+    fi
 }
 
 # Commit and push changes if any exist
@@ -231,7 +295,9 @@ commit_and_push() {
     case $choice in
         1) log_info "Committing and pushing changes..."
            git add .
-           git commit -m "sync: update agents and CLAUDE.md - $(date '+%Y-%m-%d %H:%M:%S')"
+           local commit_msg
+           commit_msg=$(generate_commit_message)
+           git commit -m "$commit_msg"
            git push origin "$BRANCH"
            echo -e "${GREEN}Changes committed and pushed successfully${NC}" ;;
         2) log_warning "Skipping commit" ;;
@@ -241,7 +307,10 @@ commit_and_push() {
 
 # Cleanup temporary directory
 cleanup() {
-    [ -d "$TEMP_DIR" ] && log_info "Cleaning up..." && rm -rf "$TEMP_DIR"
+    if [ "$LOCAL_MODE" != "true" ] && [ -d "$TEMP_DIR" ]; then
+        log_info "Cleaning up..." 
+        rm -rf "$TEMP_DIR"
+    fi
 }
 
 # Main execution flow
