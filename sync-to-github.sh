@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-readonly REPO_URL="https://github.com/FradSer/dotclaude.git"
+readonly REPO_URL="git@github.com:FradSer/dotclaude.git"
 readonly TEMP_DIR="/tmp/dotclaude-sync"
 readonly BRANCH="main"
 readonly CLAUDE_DIR="$HOME/.claude"
@@ -270,11 +270,22 @@ validate_directory_exists() {
 }
 
 validate_item_exists() {
-    local item="$1" type="$2" base_dir="$3"
+    local item="$1" 
+    local type="$2" 
+    local base_dir="$3"
     local path="$base_dir/$item"
-    local test_flag=$([ "$type" = "dir" ] && echo "-d" || echo "-f")
     
-    [ ! $test_flag "$path" ] && log_error "$item not found at $path" && exit 1
+    if [ "$type" = "dir" ]; then
+        if [ ! -d "$path" ]; then
+            log_error "$item directory not found at $path"
+            exit 1
+        fi
+    else
+        if [ ! -f "$path" ]; then
+            log_error "$item file not found at $path"
+            exit 1
+        fi
+    fi
 }
 
 # Parse item specification (name:type format)
@@ -291,10 +302,8 @@ validate_environment() {
     
     for item_spec in "${ITEMS[@]}"; do
         # Use bash 3.2 compatible method to parse item spec
-        local parsed
-        parsed=$(parse_item_spec "$item_spec")
-        local item="${parsed%% *}"
-        local type="${parsed##* }"
+        local item="${item_spec%:*}"
+        local type="${item_spec#*:}"
         validate_item_exists "$item" "$type" "$CLAUDE_DIR"
     done
     
