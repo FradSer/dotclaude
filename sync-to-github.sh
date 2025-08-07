@@ -10,7 +10,7 @@ readonly REPO_URL="https://github.com/FradSer/dotclaude.git"
 readonly TEMP_DIR="/tmp/dotclaude-sync"
 readonly BRANCH="main"
 readonly CLAUDE_DIR="$HOME/.claude"
-readonly ITEMS=("agents:dir" "CLAUDE.md:file")
+readonly ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
 
 # Colors for output
 readonly RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m' BLUE='\033[0;34m' NC='\033[0m'
