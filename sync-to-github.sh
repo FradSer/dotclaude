@@ -16,7 +16,7 @@ readonly EXCLUDE_PATTERNS=(".DS_Store")
 
 # Runtime options (overridable by CLI flags)
 NON_INTERACTIVE=false
-PREFER_MODE=""          # valid: local | repo
+PREFER_MODE="repo"       # valid: local | repo; default: repo
 AUTO_COMMIT=false        # if true in non-interactive mode, auto-commit
 AUTO_PUSH=false          # if true in non-interactive mode and AUTO_COMMIT=true, also push
 SKIP_COMMIT=false        # force skip commit even if changes exist
@@ -62,7 +62,7 @@ Usage: sync-to-github.sh [options]
 
 Options:
   -y, --yes, --non-interactive   Run without prompts; requires --prefer to decide conflicts
-      --prefer <local|repo>      Choose source of truth when differences are found
+      --prefer <local|repo>      Choose source of truth when differences are found (default: repo)
       --commit                   In non-interactive mode: commit changes automatically
       --push                     In non-interactive mode: push after commit (implies --commit)
       --no-commit                In non-interactive mode: skip commit even if changes exist
@@ -655,7 +655,7 @@ commit_and_push() {
             commit_msg=$(generate_commit_message)
             commit_changes "$commit_msg" || return 1
             if [ "$AUTO_PUSH" = true ]; then
-                push_changes "$BRANCH" || return 1
+                push_changes "$TARGET_BRANCH" || return 1
                 echo -e "${GREEN}Changes committed and pushed successfully${NC}"
             else
                 echo -e "${GREEN}Changes committed successfully (no push)${NC}"
@@ -675,7 +675,7 @@ commit_and_push() {
             local commit_msg
             commit_msg=$(generate_commit_message)
             commit_changes "$commit_msg" || return 1
-            push_changes "$BRANCH" || return 1
+            push_changes "$TARGET_BRANCH" || return 1
             echo -e "${GREEN}Changes committed and pushed successfully${NC}"
             ;;
         2) log_warning "Skipping commit" ;;
