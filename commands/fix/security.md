@@ -4,8 +4,9 @@ Use @security-reviewer to identify vulnerabilities, then implement security fixe
 
 1. **@security-reviewer** - Comprehensive security analysis
 2. **Implement security fixes** - Address identified vulnerabilities  
-3. **Validate security measures** - Test authentication, input validation, data protection
-4. **Run security tests** - Execute security-focused test suite
-5. **Commit and push** - Document security improvements
+3. **@code-simplifier** - Implement fixes and refactoring
+4. **Validate security measures** - Test authentication, input validation, data protection
+5. **Run security tests** - Execute security-focused test suite
+6. **Commit and push** - Document security improvements
 
 For authentication systems, payment processing, user data handling, API endpoints, and third-party integrations.
