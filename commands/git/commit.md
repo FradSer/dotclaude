@@ -1,1 +1,1 @@
-git commit
+Git conventional and atomic commits
