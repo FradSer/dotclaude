@@ -542,7 +542,7 @@ setup_repo() {
             fi
         fi
         cd "$TEMP_DIR" || { log_error "Failed to change to temp directory"; exit 1; }
-        checkout_branch "$BRANCH"
+        checkout_branch "$TARGET_BRANCH"
         WORKING_DIR="$TEMP_DIR"
         
         log_info "Repository setup completed"
