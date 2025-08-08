@@ -7,11 +7,22 @@ set -e
 
 # Configuration
 readonly REPO_URL="git@github.com:FradSer/dotclaude.git"
+readonly REPO_URL_HTTPS="https://github.com/FradSer/dotclaude.git"
 readonly TEMP_DIR="/tmp/dotclaude-sync"
 readonly BRANCH="main"
 readonly CLAUDE_DIR="$HOME/.claude"
 readonly ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
 readonly EXCLUDE_PATTERNS=(".DS_Store")
+
+# Runtime options (overridable by CLI flags)
+NON_INTERACTIVE=false
+PREFER_MODE=""          # valid: local | repo
+AUTO_COMMIT=false        # if true in non-interactive mode, auto-commit
+AUTO_PUSH=false          # if true in non-interactive mode and AUTO_COMMIT=true, also push
+SKIP_COMMIT=false        # force skip commit even if changes exist
+TARGET_BRANCH="$BRANCH" # can be overridden by --branch
+FORCE_HTTPS=false        # force HTTPS clone instead of SSH
+declare -a EXTRA_EXCLUDES
 
 # Detect if we're running within the dotclaude project
 detect_local_mode() {
@@ -44,12 +55,87 @@ get_diff_tool() {
     log_error "No diff tools found!" && exit 1
 }
 
+# Print usage
+print_help() {
+    cat <<EOF
+Usage: sync-to-github.sh [options]
+
+Options:
+  -y, --yes, --non-interactive   Run without prompts; requires --prefer to decide conflicts
+      --prefer <local|repo>      Choose source of truth when differences are found
+      --commit                   In non-interactive mode: commit changes automatically
+      --push                     In non-interactive mode: push after commit (implies --commit)
+      --no-commit                In non-interactive mode: skip commit even if changes exist
+      --branch <name>            Override target branch (default: $BRANCH)
+      --exclude <pattern>        Add extra exclude pattern (can be repeated)
+      --https                    Clone via HTTPS instead of SSH
+  -h, --help                     Show this help
+
+Examples:
+  ./sync-to-github.sh --yes --prefer repo --commit --push
+  bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
+EOF
+}
+
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -y|--yes|--non-interactive)
+                NON_INTERACTIVE=true
+                ;;
+            --prefer)
+                PREFER_MODE="$2"; shift
+                ;;
+            --prefer=*)
+                PREFER_MODE="${1#*=}"
+                ;;
+            --commit)
+                AUTO_COMMIT=true
+                ;;
+            --push)
+                AUTO_COMMIT=true
+                AUTO_PUSH=true
+                ;;
+            --no-commit)
+                SKIP_COMMIT=true
+                AUTO_COMMIT=false
+                ;;
+            --branch)
+                TARGET_BRANCH="$2"; shift
+                ;;
+            --branch=*)
+                TARGET_BRANCH="${1#*=}"
+                ;;
+            --exclude)
+                EXTRA_EXCLUDES+=("$2"); shift
+                ;;
+            --exclude=*)
+                EXTRA_EXCLUDES+=("${1#*=}")
+                ;;
+            --https)
+                FORCE_HTTPS=true
+                ;;
+            -h|--help)
+                print_help; exit 0
+                ;;
+            *)
+                log_warning "Unknown argument: $1"
+                ;;
+        esac
+        shift
+    done
+}
+
 # Build exclude args for `diff` (directory mode)
 build_diff_exclude_args() {
     local args=""
     local pattern
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
         args+=" -x $pattern"
+    done
+    local extra
+    for extra in "${EXTRA_EXCLUDES[@]}"; do
+        args+=" -x $extra"
     done
     echo "$args"
 }
@@ -61,6 +147,10 @@ build_rsync_exclude_args() {
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
         args+=" --exclude=$pattern"
     done
+    local extra
+    for extra in "${EXTRA_EXCLUDES[@]}"; do
+        args+=" --exclude=$extra"
+    done
     echo "$args"
 }
 
@@ -70,6 +160,10 @@ remove_ignored_files() {
     local pattern
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
         find "$base_dir" -name "$pattern" -type f -delete 2>/dev/null || true
+    done
+    local extra
+    for extra in "${EXTRA_EXCLUDES[@]}"; do
+        find "$base_dir" -name "$extra" -type f -delete 2>/dev/null || true
     done
 }
 
@@ -285,16 +379,24 @@ handle_both_exist() {
     log_warning "$item: Items are different"
     printf "Local: %s\nRepo: %s\n\n" "$local_path" "$repo_path"
     
-    show_menu_and_read_choice "$item" "diff"
-    local choice="$REPLY"
-    
-    if [ "$choice" = "4" ]; then
-        show_diff "$local_path" "$repo_path" "$is_dir"
+    if [ "$NON_INTERACTIVE" = true ]; then
+        local choice
+        case "$PREFER_MODE" in
+            local) choice=1 ;;
+            repo)  choice=2 ;;
+            *)     choice=3 ;;
+        esac
+        handle_choice "$choice" "$local_path" "$repo_path" "$item" "$is_dir" "diff"
+    else
         show_menu_and_read_choice "$item" "diff"
-        choice="$REPLY"
+        local choice="$REPLY"
+        if [ "$choice" = "4" ]; then
+            show_diff "$local_path" "$repo_path" "$is_dir"
+            show_menu_and_read_choice "$item" "diff"
+            choice="$REPLY"
+        fi
+        [[ "$choice" =~ ^[1-3]$ ]] && handle_choice "$choice" "$local_path" "$repo_path" "$item" "$is_dir" "diff"
     fi
-    
-    [[ "$choice" =~ ^[1-3]$ ]] && handle_choice "$choice" "$local_path" "$repo_path" "$item" "$is_dir" "diff"
 }
 
 # Handle scenario where only one location has the item
@@ -302,10 +404,33 @@ handle_single_location() {
     local local_path="$1" repo_path="$2" item="$3" is_dir="$4" scenario="$5"
     
     log_warning "$item: Only exists $([[ "$scenario" == "local_only" ]] && echo "locally" || echo "in repo")"
-    show_menu_and_read_choice "$item" "$scenario"
-    local choice="$REPLY"
-    
-    handle_choice "$choice" "$local_path" "$repo_path" "$item" "$is_dir" "$scenario"
+    if [ "$NON_INTERACTIVE" = true ]; then
+        local choice
+        case "$PREFER_MODE" in
+            local)
+                case "$scenario" in
+                    local_only) choice=1 ;;  # copy_to_repo
+                    repo_only)  choice=2 ;;  # delete_from_repo
+                    *)          choice=3 ;;
+                esac
+                ;;
+            repo)
+                case "$scenario" in
+                    local_only) choice=2 ;;  # delete_local
+                    repo_only)  choice=1 ;;  # copy_to_local
+                    *)          choice=3 ;;
+                esac
+                ;;
+            *)
+                choice=3
+                ;;
+        esac
+        handle_choice "$choice" "$local_path" "$repo_path" "$item" "$is_dir" "$scenario"
+    else
+        show_menu_and_read_choice "$item" "$scenario"
+        local choice="$REPLY"
+        handle_choice "$choice" "$local_path" "$repo_path" "$item" "$is_dir" "$scenario"
+    fi
 }
 
 # Compare items and handle sync decisions
@@ -376,7 +501,7 @@ validate_environment() {
 clone_repo() {
     local repo_url="$1" target_dir="$2"
     [ -d "$target_dir" ] && rm -rf "$target_dir"
-    git clone "$repo_url" "$target_dir" || { log_error "Failed to clone repository"; exit 1; }
+    git clone "$repo_url" "$target_dir" || return 1
 }
 
 checkout_branch() {
@@ -401,7 +526,21 @@ setup_repo() {
     else
         log_info "Setting up git repository..."
         
-        clone_repo "$REPO_URL" "$TEMP_DIR"
+        local chosen_url
+        if [ "$FORCE_HTTPS" = true ]; then
+            chosen_url="$REPO_URL_HTTPS"
+        else
+            chosen_url="$REPO_URL"
+        fi
+
+        if ! clone_repo "$chosen_url" "$TEMP_DIR"; then
+            if [ "$FORCE_HTTPS" != true ]; then
+                log_warning "SSH clone failed, falling back to HTTPS..."
+                clone_repo "$REPO_URL_HTTPS" "$TEMP_DIR" || { log_error "Failed to clone repository"; exit 1; }
+            else
+                log_error "Failed to clone repository"; exit 1
+            fi
+        fi
         cd "$TEMP_DIR" || { log_error "Failed to change to temp directory"; exit 1; }
         checkout_branch "$BRANCH"
         WORKING_DIR="$TEMP_DIR"
@@ -504,21 +643,40 @@ commit_and_push() {
     log_info "Changes to be committed:"
     show_git_status
     
-    echo -e "\nChoose action:\n1) Commit and push changes\n2) Skip commit"
-    read -p "Enter choice (1-2): " choice
-    
-    case $choice in
-        1) 
-            log_info "Committing and pushing changes..."
+    if [ "$NON_INTERACTIVE" = true ]; then
+        if [ "$SKIP_COMMIT" = true ]; then
+            log_warning "Skipping commit (non-interactive mode)"
+            return
+        fi
+        if [ "$AUTO_COMMIT" = true ]; then
+            log_info "Committing changes (non-interactive mode)..."
             stage_all_changes || return 1
-            
             local commit_msg
             commit_msg=$(generate_commit_message)
-            
+            commit_changes "$commit_msg" || return 1
+            if [ "$AUTO_PUSH" = true ]; then
+                push_changes "$BRANCH" || return 1
+                echo -e "${GREEN}Changes committed and pushed successfully${NC}"
+            else
+                echo -e "${GREEN}Changes committed successfully (no push)${NC}"
+            fi
+        else
+            log_warning "Changes detected but --commit not set; skipping commit"
+        fi
+        return
+    fi
+    
+    echo -e "\nChoose action:\n1) Commit and push changes\n2) Skip commit"
+    read -p "Enter choice (1-2): " choice
+    case $choice in
+        1)
+            log_info "Committing and pushing changes..."
+            stage_all_changes || return 1
+            local commit_msg
+            commit_msg=$(generate_commit_message)
             commit_changes "$commit_msg" || return 1
             push_changes "$BRANCH" || return 1
-            
-            echo -e "${GREEN}Changes committed and pushed successfully${NC}" 
+            echo -e "${GREEN}Changes committed and pushed successfully${NC}"
             ;;
         2) log_warning "Skipping commit" ;;
         *) log_error "Invalid choice, skipping commit" ;;
@@ -536,6 +694,7 @@ cleanup() {
 # Main execution flow
 main() {
     log_info "Starting sync process for Claude directory: $CLAUDE_DIR"
+    parse_args "$@"
     
     validate_environment
     log_info "Using diff tool: $(get_diff_tool)"
