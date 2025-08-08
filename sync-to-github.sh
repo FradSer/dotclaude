@@ -11,6 +11,7 @@ readonly TEMP_DIR="/tmp/dotclaude-sync"
 readonly BRANCH="main"
 readonly CLAUDE_DIR="$HOME/.claude"
 readonly ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
+readonly EXCLUDE_PATTERNS=(".DS_Store")
 
 # Detect if we're running within the dotclaude project
 detect_local_mode() {
@@ -43,6 +44,35 @@ get_diff_tool() {
     log_error "No diff tools found!" && exit 1
 }
 
+# Build exclude args for `diff` (directory mode)
+build_diff_exclude_args() {
+    local args=""
+    local pattern
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        args+=" -x $pattern"
+    done
+    echo "$args"
+}
+
+# Build exclude args for `rsync` (directory copy)
+build_rsync_exclude_args() {
+    local args=""
+    local pattern
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        args+=" --exclude=$pattern"
+    done
+    echo "$args"
+}
+
+# Remove ignored files under a directory
+remove_ignored_files() {
+    local base_dir="$1"
+    local pattern
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        find "$base_dir" -name "$pattern" -type f -delete 2>/dev/null || true
+    done
+}
+
 # Show diff using best available tool
 show_diff() {
     local file1="$1" file2="$2" is_dir="$3"
@@ -50,18 +80,44 @@ show_diff() {
     local args=$([ "$is_dir" = true ] && echo "-ru" || echo "-u")
     
     echo -e "\n=== DIFF START ==="
-    case $tool in
-        colordiff) diff $args "$file1" "$file2" | colordiff || true ;;
-        git) git diff --no-index --color=always "$file1" "$file2" || true ;;
-        diff) diff $args "$file1" "$file2" || true ;;
-    esac
+    if [ "$is_dir" = true ]; then
+        # For directories, prefer system diff so we can pass excludes
+        local exclude_args
+        exclude_args=$(build_diff_exclude_args)
+        if command -v colordiff >/dev/null 2>&1; then
+            # shellcheck disable=SC2086
+            diff $args $exclude_args "$file1" "$file2" | colordiff || true
+        else
+            # shellcheck disable=SC2086
+            diff $args $exclude_args "$file1" "$file2" || true
+        fi
+    else
+        case $tool in
+            colordiff) diff $args "$file1" "$file2" | colordiff || true ;;
+            git) git diff --no-index --color=always "$file1" "$file2" || true ;;
+            diff) diff $args "$file1" "$file2" || true ;;
+        esac
+    fi
     echo -e "=== DIFF END ===\n"
 }
 
 # File operation helpers
 copy_path() {
     local src="$1" dest="$2" is_dir="$3"
-    [ "$is_dir" = true ] && cp -r "$src" "$dest" || cp "$src" "$dest"
+    if [ "$is_dir" = true ]; then
+        if command -v rsync >/dev/null 2>&1; then
+            local exclude_args
+            exclude_args=$(build_rsync_exclude_args)
+            mkdir -p "$dest"
+            # shellcheck disable=SC2086
+            rsync -a $exclude_args "$src"/ "$dest"/
+        else
+            cp -r "$src" "$dest"
+            remove_ignored_files "$dest" || true
+        fi
+    else
+        cp "$src" "$dest"
+    fi
 }
 
 remove_path() {
@@ -207,8 +263,14 @@ path_exists() {
 # Check if two paths have identical content
 paths_identical() {
     local path1="$1" path2="$2" is_dir="$3"
-    local compare_cmd=$([ "$is_dir" = true ] && echo "diff -r" || echo "cmp -s")
-    $compare_cmd "$path1" "$path2" &>/dev/null
+    if [ "$is_dir" = true ]; then
+        local exclude_args
+        exclude_args=$(build_diff_exclude_args)
+        # shellcheck disable=SC2086
+        diff -r $exclude_args "$path1" "$path2" &>/dev/null
+    else
+        cmp -s "$path1" "$path2" &>/dev/null
+    fi
 }
 
 # Handle scenario where both local and repo items exist
