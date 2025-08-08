@@ -1,1 +1,1 @@
-git commit and push
+Git conventional and atomic commits, then push
