@@ -42,14 +42,14 @@ if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" ]]; then
             if [[ -d "$worktree_path" ]]; then
                 cd "$worktree_path" 2>/dev/null
                 if [[ $? -eq 0 ]]; then
-                    ISSUE_NUM=$(basename "$worktree_path" | sed 's/worktree-//')
+                    ISSUE_NUM=$(basename "$worktree_path" | sed 's/.*-worktree-//')
                     echo "- Issue #$ISSUE_NUM: $worktree_path"
                 fi
             fi
         done
         echo ""
         echo "To continue working on an existing issue:"
-        echo "  cd ../worktree-<ISSUE_NUMBER>"
+        echo "  cd ../<PROJECT>-worktree-<ISSUE_NUMBER>"
         echo "  claude"
         echo "  /gh/resolve-issues"
         exit 0
@@ -78,11 +78,12 @@ BASE_BRANCH=$(git ls-remote --heads origin develop >/dev/null 2>&1 && echo "deve
 # Create feature branch in new worktree
 # Use AI to generate a concise, descriptive branch name
 BRANCH_NAME=$(gh issue view $ISSUE_NUMBER --json title,body | jq -r '.title + " " + (.body // "")' | head -c 200 | claude-code --prompt "Generate a concise git branch name (2-4 words, kebab-case) for this issue. Return only the branch name without prefix:" || echo "issue-$ISSUE_NUMBER")
-git worktree add "../worktree-$ISSUE_NUMBER" -b "feature/$ISSUE_NUMBER-$BRANCH_NAME" "origin/$BASE_BRANCH"
+WORKTREE_NAME="$ORIGINAL_DIR-worktree-$ISSUE_NUMBER"
+git worktree add "../$WORKTREE_NAME" -b "feature/$ISSUE_NUMBER-$BRANCH_NAME" "origin/$BASE_BRANCH"
 
 # Restart Claude Code session in the new worktree
 echo "Worktree created. Restart Claude Code session with:"
-echo "  cd ../worktree-$ISSUE_NUMBER"
+echo "  cd ../$WORKTREE_NAME"
 echo "  claude"
 echo ""
 echo "Then continue with: /gh/resolve-issues"
@@ -120,7 +121,7 @@ gh pr create --title "<PR title>" --body "Fixes #$ISSUE_NUMBER"
 After PR merge, remove worktree:
 ```bash
 cd "../$ORIGINAL_DIR"
-git worktree remove "../worktree-$ISSUE_NUMBER"
+git worktree remove "../$ORIGINAL_DIR-worktree-$ISSUE_NUMBER"
 ```
 
 ## Key Principles
