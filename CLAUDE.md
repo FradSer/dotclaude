@@ -1,21 +1,28 @@
-# Global Development Guidelines
+# Development Guidelines
 
-## Architecture
-- Follow SOLID principles
-- Prefer composition over inheritance, dependency injection for testability
-- Use repository pattern for data access, strategy pattern for algorithmic variations
+## Architecture Principles
+- Follow SOLID principles and prefer composition over inheritance
+- Use dependency injection for testability
+- Apply repository pattern for data access and strategy pattern for algorithms
 
-## Code Quality
-- Use descriptive names, avoid abbreviations and magic numbers
-- Keep functions under 20 lines, files concise
+## Code Quality Standards
+- Use descriptive names and avoid abbreviations or magic numbers
+- Keep functions under 20 lines and maintain concise files
 - Handle all error scenarios with meaningful messages
 - Comment "why" not "what"
 
-## Development Standards
-- Search first when uncertain, write tests for core functionality
+## Development Workflow
+- Search codebase first when uncertain
+- Write tests for core functionality using TDD approach
 - Update documentation when modifying code
-- Prefer pnpm for Node.js projects
-- Commit titles: lowercase, max 50 characters
+- Make atomic commits for each completed feature stage and push
+
+## Technical Preferences
+- Use pnpm for Node.js projects
+- Write lowercase commit titles (max 50 characters)
 - Merge PRs with merge commits
-- No emojis, avoid hardcoding secrets
-- Make atomic git commits for each completed feature stage and push
+- Avoid emojis and hardcoded secrets
+
+## Quality Gates
+- Run lint and build checks before closing issues
+- Ensure all tests pass before merging

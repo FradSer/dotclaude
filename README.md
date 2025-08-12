@@ -1,6 +1,8 @@
-## Frad's `.claude`
+# Frad's `.claude` Multi-Agent System ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-WIP-yellow)
 
-A configuration repository for Claude Code that provides a multi-agent setup and command templates to accelerate code review, refactoring, security audits, tech-lead guidance, and UX evaluations.
+[![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Configuration-blue.svg)](https://docs.anthropic.com/en/docs/claude-code) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+A sophisticated multi-agent configuration system for Claude Code that provides specialized agents and command templates to accelerate code review, refactoring, security audits, tech-lead guidance, and UX evaluations.
 
 ## Quick Sync
 
@@ -36,6 +38,7 @@ dotclaude/
       - ui.md
     - gh/
       - create-issues.md
+      - resolve-issues.md
     - git/
       - commit-and-push.md
       - commit.md
@@ -50,36 +53,71 @@ dotclaude/
   - sync-to-github.sh
 ```
 
-## Agents
+## Specialized Agents
 
-- `agents/code-reviewer.md`: Comprehensive review for correctness, error handling, maintainability, and best practices.
-- `agents/code-simplifier.md`: Refactoring to improve readability and reduce complexity without changing external behavior.
-- `agents/security-reviewer.md`: Security audit focused on authN/authZ, input validation, dependencies, and configuration.
-- `agents/tech-lead-reviewer.md`: Tech-lead perspective on architecture, technical direction, and risk assessment.
-- `agents/ux-reviewer.md`: UX/usability review based on usability and accessibility standards.
+Each agent provides domain-specific expertise for comprehensive code analysis:
 
-## Commands
+| Agent | Purpose | Focus Areas |
+|-------|---------|-------------|
+| **code-reviewer** | Comprehensive code review | Correctness, error handling, maintainability, best practices |
+| **code-simplifier** | Refactoring & optimization | Readability, complexity reduction, DRY principles |
+| **security-reviewer** | Security audit & hardening | AuthN/AuthZ, input validation, dependency scanning |
+| **tech-lead-reviewer** | Architectural guidance | System design, technical direction, risk assessment |
+| **ux-reviewer** | User experience evaluation | Usability heuristics, accessibility standards, UI consistency |
 
-- Review workflows
-  - `commands/review/quick.md`: Two-stage quick review.
-  - `commands/review/hierarchical.md`: Layered parallel reviews with consolidated recommendations.
-- Fix operations
-  - `commands/fix/code-quality.md`: Improvements to naming, complexity, tests, and performance.
-  - `commands/fix/security.md`: Security issue identification and remediation validation.
-  - `commands/fix/ui.md`: UI/UX improvements for usability and consistency.
-- Git operations
-  - `commands/git/commit.md`, `commands/git/commit-and-push.md`, `commands/git/push.md`: Basic Git flows.
-  - `commands/git/release.md`: Git-flow based release checklist.
-- Other
-  - `commands/continue.md`: Continue previous work.
-  - `commands/refactor.md`: Systematic refactoring checklist.
-  - `commands/gh/create-issues.md`: Notes for creating issues with the `gh` CLI.
+## Command Templates
 
-## Using in Claude Code
+Structured workflows for common development tasks:
 
-1. Invoke agents directly in the conversation (e.g., `@tech-lead-reviewer`, `@code-reviewer`).
-2. Open the relevant `commands/*.md` files as checklists to drive each stage.
-3. Run the Quick Sync script to align your local `~/.claude` with the repo when needed.
+### 🔍 Review Workflows
+- **`review/quick.md`** - Two-stage rapid review process
+- **`review/hierarchical.md`** - Multi-layered parallel reviews with consolidated output
+
+### 🛠️ Fix Operations
+- **`fix/code-quality.md`** - Code quality improvements (naming, complexity, performance)
+- **`fix/security.md`** - Security vulnerability identification and remediation
+- **`fix/ui.md`** - UI/UX consistency and usability enhancements
+
+### 📦 Git Operations
+- **`git/commit.md`** - Structured commit workflow
+- **`git/commit-and-push.md`** - Combined commit and push operations
+- **`git/push.md`** - Push with validation checks
+- **`git/release.md`** - Git-flow release management
+
+### 🔧 GitHub Integration
+- **`gh/create-issues.md`** - Issue creation with templates
+- **`gh/resolve-issues.md`** - Issue resolution workflows
+
+### 🔄 Development Utilities
+- **`continue.md`** - Resume interrupted work sessions
+- **`refactor.md`** - Systematic code refactoring checklist
+
+## Usage Patterns
+
+### Agent Invocation
+```
+@code-reviewer     # Comprehensive code analysis
+@security-reviewer # Security-focused audit  
+@tech-lead-reviewer # Architectural guidance
+@ux-reviewer       # User experience evaluation
+@code-simplifier   # Refactoring assistance
+```
+
+### Command-Driven Workflows
+1. **Open command templates** - Use `commands/*.md` files as interactive checklists
+2. **Follow structured processes** - Each template guides you through specific workflows
+3. **Maintain consistency** - Standardized approaches across team members
+
+### Multi-Agent Collaboration
+```bash
+# Example: Comprehensive review pipeline
+@code-reviewer → @security-reviewer → @tech-lead-reviewer
+```
+
+### Sync Management
+- Run Quick Sync periodically to maintain alignment with the repository
+- Interactive diff resolution for local vs. remote changes
+- Automatic commit message generation with Conventional style
 
 ## Development & Commit Conventions (Key Excerpts)
 
