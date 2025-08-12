@@ -30,7 +30,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 2. **问题创建** - 使用 `/gh/create-issues` 创建 GitHub 问题以跟踪改进
    - *在创建之前检查和完善 Claude 建议的问题*
 
-3. **质量实现** - 使用 `/gh/resolve-issues` 配合 git flow、worktrees 和多智能体辅助
+3. **质量实现** - 使用 `/gh/resolve-issues` 配合智能分支检测、AI 生成名称和 worktree 管理
+   - *自动检测现有 worktrees 并提供继续选项*
+   - *使用 AI 生成简洁、描述性的分支名称*
    - *审查 Claude 的代码建议并根据你的上下文调整*
 
 每个步骤都需要工程师验证，以确保 Claude 的输出与项目目标和约束保持一致。参见[协作理念](#协作理念)了解合作原则。
@@ -131,7 +133,7 @@ dotclaude/
 
 ### GitHub 集成
 - **`/gh/create-issues`** - 使用模板创建问题
-- **`/gh/resolve-issues`** - 问题解决工作流
+- **`/gh/resolve-issues`** - 智能问题解决，包含分支检测、AI 生成名称和 worktree 继续功能
 
 ### 开发工具
 - **`/continue`** - 恢复中断的工作会话

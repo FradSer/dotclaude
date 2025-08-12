@@ -16,6 +16,47 @@ Resolve issues using isolated worktrees, TDD approach, and protected PR workflow
 4. **PR creation** - Run quality checks, push branch, open PR with auto-closing keywords
 5. **Cleanup** - Remove worktree after merge
 
+## Branch Detection & Workflow
+
+Check current branch and existing worktrees:
+```bash
+# Check current branch and worktree status
+CURRENT_BRANCH=$(git branch --show-current)
+echo "Current branch: $CURRENT_BRANCH"
+
+if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" ]]; then
+    echo ""
+    echo "You are on the $CURRENT_BRANCH branch."
+    echo "Existing worktrees:"
+    git worktree list
+    echo ""
+    echo "Do you want to:"
+    echo "1. Continue working on an existing worktree issue"
+    echo "2. Create a new worktree for a new issue"
+    echo ""
+    read -p "Enter choice (1/2): " choice
+    
+    if [[ "$choice" == "1" ]]; then
+        echo "Available worktrees with unfinished issues:"
+        git worktree list | grep -v "$(pwd)" | while read worktree_path branch_info; do
+            if [[ -d "$worktree_path" ]]; then
+                cd "$worktree_path" 2>/dev/null
+                if [[ $? -eq 0 ]]; then
+                    ISSUE_NUM=$(basename "$worktree_path" | sed 's/worktree-//')
+                    echo "- Issue #$ISSUE_NUM: $worktree_path"
+                fi
+            fi
+        done
+        echo ""
+        echo "To continue working on an existing issue:"
+        echo "  cd ../worktree-<ISSUE_NUMBER>"
+        echo "  claude"
+        echo "  /gh/resolve-issues"
+        exit 0
+    fi
+fi
+```
+
 ## Issue Selection
 
 View all open issues prioritized (high → medium → low):
@@ -35,9 +76,17 @@ ORIGINAL_DIR=$(basename "$PWD")
 BASE_BRANCH=$(git ls-remote --heads origin develop >/dev/null 2>&1 && echo "develop" || echo "main")
 
 # Create feature branch in new worktree
-ISSUE_SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
-git worktree add "../worktree-$ISSUE_NUMBER" -b "feature/$ISSUE_NUMBER-$ISSUE_SLUG" "origin/$BASE_BRANCH"
-cd "../worktree-$ISSUE_NUMBER"
+# Use AI to generate a concise, descriptive branch name
+BRANCH_NAME=$(gh issue view $ISSUE_NUMBER --json title,body | jq -r '.title + " " + (.body // "")' | head -c 200 | claude-code --prompt "Generate a concise git branch name (2-4 words, kebab-case) for this issue. Return only the branch name without prefix:" || echo "issue-$ISSUE_NUMBER")
+git worktree add "../worktree-$ISSUE_NUMBER" -b "feature/$ISSUE_NUMBER-$BRANCH_NAME" "origin/$BASE_BRANCH"
+
+# Restart Claude Code session in the new worktree
+echo "Worktree created. Restart Claude Code session with:"
+echo "  cd ../worktree-$ISSUE_NUMBER"
+echo "  claude"
+echo ""
+echo "Then continue with: /gh/resolve-issues"
+exit 0
 ```
 
 ## TDD Implementation
@@ -84,9 +133,10 @@ git worktree remove "../worktree-$ISSUE_NUMBER"
 
 ## Branch Naming
 
-- `feature/123-error-boundary` - New functionality
+AI generates concise, descriptive names:
+- `feature/123-webxr-fallback` - New functionality
 - `fix/456-auth-redirect` - Bug fixes  
-- `refactor/789-api-structure` - Code improvements
+- `refactor/789-api-cleanup` - Code improvements
 
 ## Auto-Closing Keywords
 

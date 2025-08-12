@@ -30,7 +30,9 @@ Three-stage collaborative process for comprehensive code quality:
 2. **Issue Creation** - Use `/gh/create-issues` to create GitHub issues for tracking improvements  
    - *Check and refine the issues Claude suggests before creating*
 
-3. **Quality Implementation** - Use `/gh/resolve-issues` with git flow, worktrees, and multi-agent assistance
+3. **Quality Implementation** - Use `/gh/resolve-issues` with intelligent branch detection, AI-generated names, and worktree management
+   - *Automatically detects existing worktrees and offers continuation options*
+   - *Uses AI to generate concise, descriptive branch names*
    - *Review Claude's code suggestions and adapt them to your context*
 
 Each step requires engineer validation to ensure Claude's output aligns with project goals and constraints. See [Collaboration Philosophy](#collaboration-philosophy) for partnership principles.
@@ -130,7 +132,7 @@ Structured workflows for common development tasks:
 
 ### GitHub Integration
 - **`/gh/create-issues`** - Issue creation with templates
-- **`/gh/resolve-issues`** - Issue resolution workflows
+- **`/gh/resolve-issues`** - Smart issue resolution with branch detection, AI-generated names, and worktree continuation
 
 ### Development Utilities
 - **`/continue`** - Resume interrupted work sessions
