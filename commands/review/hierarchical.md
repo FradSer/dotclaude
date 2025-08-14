@@ -12,4 +12,6 @@ Multi-stage comprehensive review using multiple subagents: strategic assessment,
 
 **Stage 3**: Use @code-simplifier to think hard and consolidate all findings into prioritized improvement roadmap, resolving conflicts and integrating recommendations.
 
+**Stage 4**: Ask user if they want to proceed with implementing any fixes based on the review findings.
+
 For major features, architectural refactoring, critical business logic, cross-team projects, and technology upgrades.
