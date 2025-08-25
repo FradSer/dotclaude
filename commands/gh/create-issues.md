@@ -10,11 +10,12 @@ Create issues following TDD principles and Conventional Commits with proper labe
 
 ## Decision Logic
 
-**Check current branch first**:
+**Branch-based decision tree** (oneOf pattern for mutually exclusive paths):
+
 - **On main/develop**: Create issue directly
 - **On PR branch**: Ask "Must this be fixed before merge?"
-  - **Yes**: Comment in PR, don't create issue
-  - **No**: Create new issue for later
+  - **Yes**: Comment in PR with detailed context and reasoning, don't create issue
+  - **No**: Create new issue for later with clear justification for scope separation
 
 ## Issue Types
 1. **Epic issues**: multi-PR initiatives (no auto-close keywords)  
@@ -41,11 +42,6 @@ gh pr comment <pr_number> --body "Part of epic #<epic_number>"
 
 ## PR-Scoped Issues (Single PR)
 
-**Decision rule**: If current branch has PR, ask "Must this be fixed before merge?"
-- **Yes**: Fix in current PR, don't create issue
-- **No**: Create new issue for later
-- **No PR**: Create issue normally
-
 **Structure**: Problem, Steps to Reproduce, Expected vs Actual, Environment, Acceptance Criteria
 **Labels**: `bug` or `enhancement`, `priority:*`
 **Title**: ≤70 chars, imperative, no emojis
@@ -64,6 +60,13 @@ For non-blocking feedback that's out-of-scope or larger than current PR.
 
 ## Labels & Prioritization
 
+**Label Setup**:
+```bash
+# Ensure priority labels exist before creating issues
+gh label create "priority:high" --description "High priority - this sprint" --color "d73a4a" || true
+gh label create "priority:medium" --description "Medium priority - next sprint" --color "fbca04" || true  
+gh label create "priority:low" --description "Low priority - backlog" --color "0075ca" || true
+```
 **Required Labels**:
 - **Priority**: `priority:high` (this sprint), `priority:medium` (next sprint), `priority:low` (backlog)
 - **Type**: `bug`, `enhancement`, `documentation`, `question`
