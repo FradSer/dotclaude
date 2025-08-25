@@ -28,7 +28,7 @@
 - **General**: Avoid emojis and hardcoded secrets in code
 
 ## Quality Standards
-- All tests must pass before merging
+- All linting, building, and testing must pass before merging
 - Code must pass linting and formatting checks
 - Error handling must be comprehensive and user-friendly
 - Security best practices must be followed
