@@ -23,6 +23,9 @@
 - Search codebase first when uncertain about existing patterns
 - Write tests for core functionality using TDD approach
 - Update documentation when modifying code
+- **Eliminate redundancy** - extract common logic, apply DRY principle
+- **Reduce complexity** - use guard clauses, early returns, break down large functions
+- **Modernize syntax** - leverage built-in features and idiomatic expressions
 
 ## Development Workflow
 - **Task-driven development** - use Task/TodoWrite tools for planning and tracking
