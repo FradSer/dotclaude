@@ -29,8 +29,10 @@
 
 ## Development Workflow
 - **Task-driven development** - use Task/TodoWrite tools for planning and tracking
-- Make atomic commits for each completed feature stage
-- Write lowercase commit titles (max 50 characters) following Conventional Commits
+- Make atomic commits for logical units of work
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
 - Merge PRs with merge commits
 - All tests must pass before merging pull requests
 - Run lint and build checks before closing issues
