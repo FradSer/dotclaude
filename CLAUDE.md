@@ -26,6 +26,7 @@
 - **Eliminate redundancy** - extract common logic, apply DRY principle
 - **Reduce complexity** - use guard clauses, early returns, break down large functions
 - **Modernize syntax** - leverage built-in features and idiomatic expressions
+- **Strong typing** - avoid `any` type and similar loose types, use specific types
 
 ## Development Workflow
 - **Task-driven development** - use Task/TodoWrite tools for planning and tracking
