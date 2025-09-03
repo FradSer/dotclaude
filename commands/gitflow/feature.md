@@ -1,117 +1,79 @@
-# Git Flow Features
+# Feature Management
 
-Commands for managing feature branches following GitHub best practices.
+Gitflow feature operations based on current branch state.
 
-## AI Instructions for Feature Development
+## Workflow
 
-### Starting a new feature
-1. **Ensure repository is up-to-date**:
-   ```bash
-   git status
-   git fetch origin
-   git checkout develop
-   git pull origin develop
-   git status
-   ```
-
-2. **Start feature with descriptive name**:
-   ```bash
-   git flow feature start FEATURE_NAME
-   ```
-   Use kebab-case naming: `user-authentication`, `payment-integration`
-
-3. **Immediately push to remote for backup**:
-   ```bash
-   git flow feature publish FEATURE_NAME
-   ```
-
-### Working on a feature
-1. **Make incremental commits with clear messages**:
-   ```bash
-   git add .
-   git commit -m "feat: add user login validation"
-   git push origin feature/FEATURE_NAME
-   ```
-   
-   **Commit Requirements:**
-   - Commit message title must be entirely lowercase
-   - Title must be less than 50 characters
-   - Follow conventional commits format (feat:, fix:, chore:, etc.)
-   - Use atomic commits for logical units of work
-
-2. **Regularly sync with develop** (for long-running features):
-   ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout feature/FEATURE_NAME
-   git merge develop
-   ```
-
-### Finishing a feature
-1. **Ensure feature is complete and tested**:
-   ```bash
-   git status
-   # Run tests here
-   npm test  # or appropriate test command
-   ```
-
-2. **Ensure latest changes before finishing**:
-   ```bash
-   git fetch origin
-   git checkout develop
-   git pull origin develop
-   git checkout feature/FEATURE_NAME
-   git merge develop
-   ```
-
-3. **Finish the feature**:
-   ```bash
-   git flow feature finish FEATURE_NAME
-   ```
-
-4. **Push updated develop branch**:
-   ```bash
-   git push origin develop
-   ```
-
-## Alternative: GitHub Pull Request Workflow
-For better code review and CI/CD integration:
-
-1. **Create PR instead of direct finish**:
-   ```bash
-   # Don't use git flow feature finish
-   # Instead, create PR on GitHub from feature/FEATURE_NAME to develop
-   ```
-
-2. **Use GitHub CLI** (if available):
-   ```bash
-   gh pr create --title "feat: FEATURE_NAME" --body "Description of changes" --base develop
-   ```
-
-## Collaboration Commands
-
-### Track existing feature
-```bash
-git flow feature track FEATURE_NAME
+```mermaid
+flowchart TD
+    A[User runs feature command] --> B[Check current branch]
+    B --> C{On feature branch?}
+    C -->|Yes| D[Finish current feature]
+    C -->|No| E{Existing feature branches?}
+    E -->|No| F[Create new feature branch]
+    E -->|Yes| G{Multiple branches exist?}
+    G -->|Yes| H[List branches & prompt selection]
+    G -->|No| I[Switch to existing branch]
+    D --> J[Merge to develop & push]
+    F --> K[Ready for development]
+    I --> K
+    H --> K
+    J --> L[Create PR if enabled]
 ```
 
-### Pull latest changes
+## Branch-based Logic
+
+### If on feature branch
+- Finish the current feature
+- Merge to develop branch
+- Push all changes
+- Optionally create pull request
+
+### If not on feature branch
+**Check for existing feature branches:**
+- **None found**: Create new feature branch with descriptive name
+- **Single branch**: Switch to existing branch for continued work
+- **Multiple branches**: List all feature branches and prompt for selection
+
+## Operations
+
+### Finish Feature
 ```bash
-git flow feature pull origin FEATURE_NAME
+git flow feature finish [feature-name]
+git push origin develop
+gh pr create --title "feat: [feature-name]" --base develop
+```
+
+### Create New Feature
+```bash
+# Auto-generate descriptive name or prompt user
+git flow feature start [feature-name]
+git flow feature publish [feature-name]
+```
+
+### Continue Existing Feature
+```bash
+git checkout feature/[feature-name]
+git pull origin feature/[feature-name]
+```
+
+## Feature Name Generation
+- Automatically detect current work context from recent commits
+- Use kebab-case naming: `user-authentication`, `payment-integration`
+- Fallback to prompt user for descriptive name
+
+## Usage
+```bash
+# User modifies code, then runs:
+feature
+
+# Command analyzes branch state and executes appropriate action
+# No additional parameters needed - fully autonomous
 ```
 
 ## Best Practices
-- **Commit Requirements:**
-  - Commit message title must be entirely lowercase
-  - Title must be less than 50 characters
-  - Follow conventional commits format (feat:, fix:, chore:, etc.)
-  - Use atomic commits for logical units of work
 - Keep features small and focused (< 500 lines of code)
+- Use conventional commits (feat:, fix:, chore:)
+- Commit message titles must be lowercase and < 50 characters
 - Write tests before finishing features
-- Use descriptive branch names that explain the feature
-- Delete remote feature branches after merging to keep repository clean
-
-## Error Handling
-- If merge conflicts occur during sync, resolve them before proceeding
-- If feature finish fails, check for uncommitted changes
-- Use `git flow feature delete FEATURE_NAME` to remove unwanted features
+- Regular commits with atomic, logical units of work
