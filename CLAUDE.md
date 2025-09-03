@@ -5,8 +5,7 @@
 ### Task Tool Usage
 - **Task tool** - Launch specialized subagents for complex work (code review, security analysis)
 - **TodoWrite tool** - Create and manage task lists for tracking progress
-- Use Task tool for delegation, TodoWrite for organization and status tracking
-- Create todo lists proactively for any work with 3+ steps
+- **Plan first, act second** - assess complexity and create todo lists for 3+ steps before acting
 - Mark tasks completed IMMEDIATELY, keep ONE task in_progress for focus
 - Use parallel execution within individual tasks for efficiency
 
