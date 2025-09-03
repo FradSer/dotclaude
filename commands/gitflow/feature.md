@@ -32,6 +32,12 @@ Commands for managing feature branches following GitHub best practices.
    git commit -m "feat: add user login validation"
    git push origin feature/FEATURE_NAME
    ```
+   
+   **Commit Requirements:**
+   - Commit message title must be entirely lowercase
+   - Title must be less than 50 characters
+   - Follow conventional commits format (feat:, fix:, chore:, etc.)
+   - Use atomic commits for logical units of work
 
 2. **Regularly sync with develop** (for long-running features):
    ```bash
@@ -95,7 +101,11 @@ git flow feature pull origin FEATURE_NAME
 ```
 
 ## Best Practices
-- Use semantic commit prefixes: `feat:`, `fix:`, `docs:`, `refactor:`
+- **Commit Requirements:**
+  - Commit message title must be entirely lowercase
+  - Title must be less than 50 characters
+  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Use atomic commits for logical units of work
 - Keep features small and focused (< 500 lines of code)
 - Write tests before finishing features
 - Use descriptive branch names that explain the feature

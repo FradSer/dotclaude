@@ -58,6 +58,12 @@ Commands for managing critical production fixes following GitHub best practices.
    git commit -m "fix: resolve critical [specific issue description]"
    git push origin hotfix/VERSION
    ```
+   
+   **Commit Requirements:**
+   - Commit message title must be entirely lowercase
+   - Title must be less than 50 characters
+   - Follow conventional commits format (feat:, fix:, chore:, etc.)
+   - Use atomic commits for logical units of work
 
 4. **Test thoroughly but quickly**:
    ```bash
@@ -77,25 +83,46 @@ Commands for managing critical production fixes following GitHub best practices.
    # Verify no unintended changes
    ```
 
-2. **Finish the hotfix**:
+2. **Update version and changelog**:
+   ```bash
+   # Update package version (choose appropriate package manager)
+   # For Node.js projects:
+   npm version patch --no-git-tag-version
+   # For Python projects with pyproject.toml:
+   # Update version field in pyproject.toml manually
+   # For other package managers, update version accordingly
+   
+   # Update CHANGELOG.md
+   # Add entry under "## [1.2.1] - YYYY-MM-DD" section:
+   # - Fixed: [Brief description of the critical fix]
+   # - Security: [If security-related fix]
+   ```
+
+3. **Commit version updates**:
+   ```bash
+   git add package.json CHANGELOG.md  # adjust files as needed
+   git commit -m "chore: bump version to 1.2.1 for hotfix"
+   ```
+
+4. **Finish the hotfix**:
    ```bash
    git flow hotfix finish 1.2.1
    ```
    Use descriptive tag message explaining the critical fix.
 
-3. **Immediately push all changes**:
+5. **Immediately push all changes**:
    ```bash
    git push origin main
    git push origin develop
    git push origin --tags
    ```
 
-4. **Create emergency GitHub release**:
+6. **Create emergency GitHub release**:
    ```bash
    gh release create v1.2.1 --title "Hotfix 1.2.1 - Critical Security Fix" --notes "Fixes critical security vulnerability in authentication system"
    ```
 
-5. **Deploy to production immediately**:
+7. **Deploy to production immediately**:
    ```bash
    # Trigger deployment pipeline or manual deployment
    # Document deployment in incident tracking

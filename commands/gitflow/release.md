@@ -121,6 +121,12 @@ fi
 git add .
 git commit -m "chore: bump version to $NEW_VERSION and update changelog"
 git push origin release/$NEW_VERSION
+
+# Commit Requirements:
+# - Commit message title must be entirely lowercase
+# - Title must be less than 50 characters
+# - Follow conventional commits format (feat:, fix:, chore:, etc.)
+# - Use atomic commits for logical units of work
 ```
 
 ### Workflow B: Finish Release (when on release/x.x.x)
@@ -197,6 +203,12 @@ fi
 ```bash
 git add .
 git commit -m "chore: finalize release $VERSION" || true
+
+# Commit Requirements:
+# - Commit message title must be entirely lowercase  
+# - Title must be less than 50 characters
+# - Follow conventional commits format (feat:, fix:, chore:, etc.)
+# - Use atomic commits for logical units of work
 git flow release finish $VERSION
 # Tag message: "Release $VERSION"
 
