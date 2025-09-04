@@ -6,69 +6,63 @@ Gitflow release operations based on current branch state and semantic versioning
 
 ```mermaid
 flowchart TD
-    A[User runs release command] --> B[Check current branch]
+    A[User runs release command] --> B[Analyze current branch]
     B --> C{On release branch?}
     C -->|Yes| D[Finish current release]
     C -->|No| E{Existing release branches?}
     E -->|No| F[Create new release branch]
-    E -->|Yes| G{Branch age > 48h?}
-    G -->|Yes| H[Finish stale branch]
-    G -->|No| I[Switch to existing branch]
-    H --> F
+    E -->|Yes| I[Switch to existing branch]
     D --> J[Update version & changelog]
-    F --> M[Auto-complete preparations]
+    F --> M[Auto-complete all preparations]
     I --> M
     M --> N[Commit atomic changes]
     N --> O[Finish release]
     J --> L[Push & create GitHub release]
     O --> L
+    L --> P[✅ Fully automated workflow]
 ```
 
 ## Branch-based Logic
 
 ### If on release branch
-- Finish the current release
-- Update version and changelog
-- Merge to main/develop
-- Create GitHub release
-- Push all changes and tags
+**Automatically executes:**
+- Analyzes current release state
+- Updates version and changelog
+- Runs quality checks (lint/build)
+- Merges to main/develop
+- Creates GitHub release
+- Pushes all changes and tags
 
 ### If not on release branch
-**Check for existing release branches:**
-- **None found**: Create new release branch → auto-complete preparations → finish release
-- **Branch exists < 48h**: Switch to existing branch → auto-complete preparations → finish release
-- **Branch exists > 48h**: Finish stale branch → create new branch → auto-complete preparations → finish release
+**Analyzes and decides automatically:**
+- **No release branches**: Creates new release → completes all preparations → finishes release
+- **Branch exists**: Switches to existing → completes preparations → finishes release
 
 ## Operations
 
-### Finish Release
+### Automated Operations
+
+**All operations are fully automated:**
+
 ```bash
-git flow release finish [version]
+# Automated Decision Tree - No manual intervention
+# 1. Analyze current state
+# 2. Detect semantic version from commits
+# 3. Create/switch to appropriate branch
+# 4. Run all quality checks
+# 5. Update all documentation and versions
+# 6. Make atomic conventional commits  
+# 7. Finish release and create GitHub release
+# 8. Push everything to remote
+
+# Example execution sequence:
+git flow release start [detected-version]
+git flow release publish [detected-version]
+# Runs: lint, build, version updates, changelog
+# Commits: chore: update version, docs: update changelog
+git flow release finish [detected-version]
 git push origin main develop --tags
-gh release create v[version] --title "Release [version]" --latest
-```
-
-### Create New Release
-```bash
-# Auto-detect semantic version bump from commits
-git flow release start [new-version]
-git flow release publish [new-version]
-
-# Automatically complete release preparations:
-# 1. Run lint and build checks (if applicable)
-# 2. Update/create CHANGELOG.md from commit history
-# 3. Update version in package management files
-# 4. Commit changes with conventional commit format
-
-# Then automatically finish release
-git flow release finish [new-version]
-gh release create v[new-version] --title "Release [new-version]" --latest
-```
-
-### Continue Existing
-```bash
-git checkout release/[version]
-# Same automated preparation process applies
+gh release create v[detected-version] --title "Release [version]" --latest
 ```
 
 ## Automated Release Preparation
@@ -103,21 +97,30 @@ git checkout release/[version]
 
 ## Usage
 ```bash
-# User modifies code, then runs:
+# User simply runs:
 release
 
-# Command executes full automated workflow:
-# 1. Analyze branch state and determine action
-# 2. Create/switch to release branch
-# 3. Run quality checks (lint, build)
-# 4. Update version files and changelog
-# 5. Make atomic conventional commits
-# 6. Finish release and create GitHub release
-# 7. No manual intervention required
+# Executes complete autonomous workflow:
+# 1. Analyze branch state and git history
+# 2. Determine semantic version bump from commits
+# 3. Decide optimal release strategy (new/continue/finish)
+# 4. Create/switch to appropriate release branch
+# 5. Run comprehensive quality checks
+# 6. Update all version files and generate changelog
+# 7. Make atomic conventional commits
+# 8. Finish release and create GitHub release
+# 9. Push all changes to remote repositories
+# 10. ✅ Complete - zero manual steps required
+
+# Makes all decisions based on:
+# - Current branch state
+# - Commit history analysis  
+# - Branch age calculations
+# - Semantic versioning rules
+# - Repository conventions
 ```
 
 ## Best Practices
-- Keep release branches short-lived (< 48h)
 - Use conventional commits for automatic version detection  
 - Test thoroughly on release branch before finishing
 - Coordinate release timing with team
