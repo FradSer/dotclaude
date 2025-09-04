@@ -14,8 +14,12 @@ readonly REPO_URL="git@github.com:FradSer/dotclaude.git"
 readonly REPO_URL_HTTPS="https://github.com/FradSer/dotclaude.git"
 readonly TEMP_DIR="/tmp/dotclaude-sync"
 readonly BRANCH="main"
-readonly CLAUDE_DIR="$HOME/.claude"
-readonly ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
+# CLAUDE_DIR will be set dynamically based on execution context
+CLAUDE_DIR=""
+# Items for sync operations
+readonly SYNC_ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
+# Items for project-local .claude directory (only agents, no commands or CLAUDE.md)
+readonly CLAUDE_DIR_ITEMS=("agents:dir")
 readonly EXCLUDE_PATTERNS=(".DS_Store")
 
 # Colors for output
@@ -220,10 +224,10 @@ copy_local_agent() {
     # Check if destination already exists and prompt if different
     if [ -f "$dest_file" ]; then
         if cmp -s "$source_file" "$dest_file"; then
-            log_info "Agent '$agent_name' is already up to date in ~/.claude/agents/"
+            log_info "Agent '$agent_name' is already up to date in $claude_agents_dir"
             return 0
         else
-            log_warning "Agent '$agent_name' already exists in ~/.claude/agents/ but differs from local version"
+            log_warning "Agent '$agent_name' already exists in $claude_agents_dir but differs from local version"
             if [ "$NON_INTERACTIVE" != true ]; then
                 echo "Choose action:"
                 echo "1) Overwrite existing agent"
@@ -239,7 +243,7 @@ copy_local_agent() {
     
     # Copy the agent
     cp "$source_file" "$dest_file" || { log_error "Failed to copy agent"; return 1; }
-    log_info "Successfully copied '$agent_name' to ~/.claude/agents/"
+    log_info "Successfully copied '$agent_name' to $claude_agents_dir"
     return 0
 }
 
@@ -265,6 +269,16 @@ Options:
       --select-agent             Interactively select and copy an agent from local-agents/
       --list-local-agents        List available agents in local-agents/ directory
   -h, --help                     Show this help
+
+Automatic Local Agents Management:
+  If running directory is NOT $HOME/.claude AND contains CLAUDE.md file, the script
+  will automatically detect local-agents/ directory and offer to copy agents to
+  current directory's .claude/agents/.
+  - In interactive mode: presents a menu to select specific agents or copy all
+  - In non-interactive mode: copies all agents automatically
+  
+  For $HOME/.claude content: Directly compares agents folder and CLAUDE.md file
+  with repository content and uses interactive input to decide overwrite actions.
 
 Examples:
   ./sync-to-github.sh --yes --prefer repo --commit --push
@@ -317,6 +331,57 @@ detect_local_mode() {
     echo "false"
 }
 
+# Detect if script is run directly from outside project directory
+detect_external_script_mode() {
+    # Get the directory where this script is located
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    
+    # Check if script directory contains dotclaude project markers
+    if [ -f "$script_dir/sync-to-github.sh" ] && [ -d "$script_dir/.git" ]; then
+        local remote_url
+        remote_url=$(cd "$script_dir" && git remote get-url origin 2>/dev/null || echo "")
+        if [[ "$remote_url" == *"dotclaude"* ]]; then
+            # Script is in dotclaude project, but are we running from outside?
+            if [ "$(pwd)" != "$script_dir" ]; then
+                echo "true"
+                return
+            fi
+        fi
+    fi
+    echo "false"
+}
+
+# Get script directory for external mode
+get_script_project_dir() {
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    echo "$script_dir"
+}
+
+# Set Claude directory based on context
+set_claude_dir() {
+    local original_pwd="${1:-$(pwd)}"
+    
+    # Special case: if running from $HOME/.claude, always use that directory
+    if [ "$original_pwd" = "$HOME/.claude" ]; then
+        CLAUDE_DIR="$HOME/.claude"
+        log_info "Using user's home Claude directory: $CLAUDE_DIR"
+        return
+    fi
+    
+    # Check if current directory has CLAUDE.md (indicating Claude Code project)
+    if [ -f "$original_pwd/CLAUDE.md" ]; then
+        # Use current directory's .claude
+        CLAUDE_DIR="$original_pwd/.claude"
+        log_info "Using project-local Claude directory: $CLAUDE_DIR"
+    else
+        # Fall back to user's home directory
+        CLAUDE_DIR="$HOME/.claude"
+        log_info "Using user's home Claude directory: $CLAUDE_DIR"
+    fi
+}
+
 # Validate and create missing items - unified validation logic
 validate_and_create_item() {
     local item="$1" type="$2" base_path="$3"
@@ -339,18 +404,39 @@ validate_and_create_item() {
 validate_environment() {
     log_info "Validating Claude environment..."
     
-    # Ensure Claude directory exists
+    # Ensure current Claude directory exists (for local agent management)
     if [ ! -d "$CLAUDE_DIR" ]; then
-        log_error "Claude directory not found at $CLAUDE_DIR"
-        exit 1
+        log_info "Creating Claude directory at $CLAUDE_DIR"
+        mkdir -p "$CLAUDE_DIR"
     fi
     log_info "Found Claude directory at $CLAUDE_DIR"
     
-    # Validate and create required items
-    for item_spec in "${ITEMS[@]}"; do
-        local item="${item_spec%:*}" type="${item_spec#*:}"
-        validate_and_create_item "$item" "$type" "$CLAUDE_DIR"
-    done
+    # IMPORTANT: Different directory structures for different contexts:
+    # - Project-local .claude/: only agents/ (commands stay in $HOME/.claude)
+    # - CLAUDE.md: stays in project root directory, never inside .claude/
+    if [[ "$CLAUDE_DIR" != "$HOME/.claude" ]]; then
+        # Project-local .claude directory - only agents (no commands or CLAUDE.md)
+        for item_spec in "${CLAUDE_DIR_ITEMS[@]}"; do
+            local item="${item_spec%:*}" type="${item_spec#*:}"
+            validate_and_create_item "$item" "$type" "$CLAUDE_DIR"
+        done
+    else
+        # $HOME/.claude directory - include all sync items
+        for item_spec in "${SYNC_ITEMS[@]}"; do
+            local item="${item_spec%:*}" type="${item_spec#*:}"
+            validate_and_create_item "$item" "$type" "$CLAUDE_DIR"
+        done
+    fi
+    
+    # REQUIREMENT: Always ensure $HOME/.claude exists and has all sync items for comparison
+    if [ "$CLAUDE_DIR" != "$HOME/.claude" ] && [ ! -d "$HOME/.claude" ]; then
+        log_info "Creating $HOME/.claude directory for comparison"
+        mkdir -p "$HOME/.claude"
+        for item_spec in "${SYNC_ITEMS[@]}"; do
+            local item="${item_spec%:*}" type="${item_spec#*:}"
+            validate_and_create_item "$item" "$type" "$HOME/.claude"
+        done
+    fi
     
     log_info "All required files found or created"
 }
@@ -691,13 +777,20 @@ generate_fallback_message() {
 
 # Setup git repository
 setup_repo() {
-    local LOCAL_MODE
+    local LOCAL_MODE EXTERNAL_MODE
     LOCAL_MODE=$(detect_local_mode)
+    EXTERNAL_MODE=$(detect_external_script_mode)
     
     if [ "$LOCAL_MODE" = "true" ]; then
         log_info "Running in local dotclaude project mode..."
         WORKING_DIR="$(pwd)"
         log_info "Using current directory: $WORKING_DIR"
+    elif [ "$EXTERNAL_MODE" = "true" ]; then
+        log_info "Running external script from dotclaude project directory..."
+        WORKING_DIR="$(get_script_project_dir)"
+        log_info "Using script's project directory: $WORKING_DIR"
+        # Change to script's project directory for operations
+        cd "$WORKING_DIR" || { log_error "Failed to change to script directory"; exit 1; }
     else
         log_info "Setting up git repository..."
         
@@ -733,54 +826,180 @@ commit_and_push() {
         return
     fi
     
-    log_info "Changes to be committed:"
+    log_info "Changes detected in repository"
     show_git_status
     
-    if [ "$NON_INTERACTIVE" = true ]; then
-        if [ "$SKIP_COMMIT" = true ]; then
-            log_warning "Skipping commit (non-interactive mode)"
-            return
-        fi
-        if [ "$AUTO_COMMIT" = true ]; then
-            log_info "Committing changes (non-interactive mode)..."
-            local commit_msg
-            commit_msg=$(generate_commit_message)
-            stage_commit_push "$commit_msg" "$TARGET_BRANCH" "$AUTO_PUSH" || return 1
-        else
-            log_warning "Changes detected but --commit not set; skipping commit"
-        fi
-        return
-    fi
-    
-    echo -e "\nChoose action:\n1) Commit and push changes\n2) Skip commit"
-    read -p "Enter choice (1-2): " choice
-    case $choice in
-        1)
-            log_info "Committing and pushing changes..."
-            local commit_msg
-            commit_msg=$(generate_commit_message)
-            stage_commit_push "$commit_msg" "$TARGET_BRANCH" true || return 1
-            ;;
-        2) log_warning "Skipping commit" ;;
-        *) log_error "Invalid choice, skipping commit" ;;
-    esac
+    # REQUIREMENT: Never prompt for git commit under any circumstances
+    log_info "Skipping git commit as per requirements"
+    return 0
 }
 
 # Cleanup temporary directory
 cleanup() {
-    local LOCAL_MODE
+    local LOCAL_MODE EXTERNAL_MODE
     LOCAL_MODE=$(detect_local_mode)
-    if [ "$LOCAL_MODE" != "true" ] && [ -d "$TEMP_DIR" ]; then
+    EXTERNAL_MODE=$(detect_external_script_mode)
+    
+    # Only cleanup temp directory if we actually cloned a repo
+    if [ "$LOCAL_MODE" != "true" ] && [ "$EXTERNAL_MODE" != "true" ] && [ -d "$TEMP_DIR" ]; then
         log_info "Cleaning up..." 
         rm -rf "$TEMP_DIR"
     fi
 }
 
 #===============================================================================
+# AUTO LOCAL AGENTS MANAGEMENT
+#===============================================================================
+
+# Auto-detect and handle local agents if directory exists
+handle_local_agents_auto() {
+    local original_pwd="${1:-$(pwd)}"
+    
+    # REQUIREMENT: Only copy local agents if running directory is NOT $HOME/.claude AND contains CLAUDE.md
+    if [ "$original_pwd" = "$HOME/.claude" ]; then
+        return 0  # Skip if running from $HOME/.claude
+    fi
+    
+    if [ ! -f "$original_pwd/CLAUDE.md" ]; then
+        return 0  # Skip if no CLAUDE.md in current directory
+    fi
+    
+    # Determine where to look for local-agents based on mode
+    local local_agents_dir
+    local LOCAL_MODE EXTERNAL_MODE
+    LOCAL_MODE=$(detect_local_mode)
+    EXTERNAL_MODE=$(detect_external_script_mode)
+    
+    if [ "$LOCAL_MODE" = "true" ]; then
+        # Local mode: check current directory's local-agents
+        local_agents_dir="$(pwd)/local-agents"
+    elif [ "$EXTERNAL_MODE" = "true" ]; then
+        # External mode: check script's project directory for local-agents
+        local_agents_dir="$WORKING_DIR/local-agents"
+    else
+        # Remote mode: check cloned repo's local-agents (after setup_repo)
+        local_agents_dir="$WORKING_DIR/local-agents"
+    fi
+    
+    # Skip if local-agents directory doesn't exist
+    if [ ! -d "$local_agents_dir" ]; then
+        return 0
+    fi
+    
+    # Check if there are any .md files in local-agents
+    local agent_files=()
+    for agent in "$local_agents_dir"/*.md; do
+        [ -f "$agent" ] && agent_files+=("$(basename "$agent")")
+    done
+    
+    # Skip if no agents found
+    if [ ${#agent_files[@]} -eq 0 ]; then
+        log_info "local-agents directory found but no agents available"
+        return 0
+    fi
+    
+    log_info "Found local-agents directory with ${#agent_files[@]} agent(s)"
+    
+    # In non-interactive mode, copy all agents
+    if [ "$NON_INTERACTIVE" = true ]; then
+        log_info "Non-interactive mode: copying all local agents to ~/.claude/agents/"
+        for agent in "${agent_files[@]}"; do
+            if copy_local_agent_from_dir "$agent" "$local_agents_dir"; then
+                log_info "✓ Copied $agent"
+            else
+                log_warning "✗ Failed to copy $agent"
+            fi
+        done
+        return 0
+    fi
+    
+    # Interactive mode: let user choose
+    echo "Found the following agents in local-agents/:"
+    for i in "${!agent_files[@]}"; do
+        printf "%d) %s\n" $((i+1)) "${agent_files[$i]}"
+    done
+    echo "$((${#agent_files[@]}+1))) Copy all agents"
+    echo "$((${#agent_files[@]}+2))) Skip local agents management"
+    
+    while true; do
+        read -p "Select option (1-$((${#agent_files[@]}+2))): " choice
+        
+        if [[ "$choice" =~ ^[0-9]+$ ]]; then
+            if [ "$choice" -ge 1 ] && [ "$choice" -le ${#agent_files[@]} ]; then
+                # Copy specific agent
+                local selected_agent="${agent_files[$((choice-1))]}"
+                copy_local_agent_from_dir "$selected_agent" "$local_agents_dir"
+                break
+            elif [ "$choice" -eq $((${#agent_files[@]}+1)) ]; then
+                # Copy all agents
+                log_info "Copying all local agents..."
+                for agent in "${agent_files[@]}"; do
+                    if copy_local_agent_from_dir "$agent" "$local_agents_dir"; then
+                        log_info "✓ Copied $agent"
+                    else
+                        log_warning "✗ Failed to copy $agent"
+                    fi
+                done
+                break
+            elif [ "$choice" -eq $((${#agent_files[@]}+2)) ]; then
+                # Skip
+                log_info "Skipping local agents management"
+                break
+            fi
+        fi
+        echo "Invalid choice. Please try again."
+    done
+}
+
+# Copy agent from specific directory (helper function)
+copy_local_agent_from_dir() {
+    local agent_name="$1"
+    local source_dir="$2"
+    local claude_agents_dir="$CLAUDE_DIR/agents"
+    
+    local source_file="$source_dir/$agent_name"
+    local dest_file="$claude_agents_dir/$agent_name"
+    
+    # Validate source exists
+    if [ ! -f "$source_file" ]; then
+        log_error "Agent '$agent_name' not found at $source_file"
+        return 1
+    fi
+    
+    # Ensure destination directory exists
+    mkdir -p "$claude_agents_dir"
+    
+    # Check if destination already exists and prompt if different
+    if [ -f "$dest_file" ]; then
+        if cmp -s "$source_file" "$dest_file"; then
+            log_info "Agent '$agent_name' is already up to date in $claude_agents_dir"
+            return 0
+        else
+            log_warning "Agent '$agent_name' already exists in $claude_agents_dir but differs from source version"
+            if [ "$NON_INTERACTIVE" != true ]; then
+                echo "Choose action:"
+                echo "1) Overwrite existing agent"
+                echo "2) Skip copy"
+                read -p "Enter choice (1-2): " choice
+                case $choice in
+                    1) ;;
+                    *) log_info "Skipping copy"; return 0 ;;
+                esac
+            fi
+        fi
+    fi
+    
+    # Copy the agent
+    cp "$source_file" "$dest_file" || { log_error "Failed to copy agent"; return 1; }
+    log_info "Successfully copied '$agent_name' to $claude_agents_dir"
+    return 0
+}
+
+#===============================================================================
 # MAIN SYNC AND EXECUTION
 #===============================================================================
 
-# Sync all items with user interaction
+# Compare and sync items between $HOME/.claude and repository
 sync_items() {
     log_info "Comparing and syncing items..."
     local has_changes=false
@@ -788,12 +1007,16 @@ sync_items() {
     # Change to working directory for sync operations
     cd "$WORKING_DIR"
     
-    for item_spec in "${ITEMS[@]}"; do
+    for item_spec in "${SYNC_ITEMS[@]}"; do
         local item="${item_spec%:*}"
         local type="${item_spec#*:}"
         local is_dir=$([ "$type" = "dir" ] && echo true || echo false)
         
-        if ! compare_items "$CLAUDE_DIR/$item" "$item" "$item" "$is_dir"; then
+        # REQUIREMENT: Always compare $HOME/.claude content with repository
+        local home_claude_path="$HOME/.claude/$item"
+        local repo_item_path="$item"
+        
+        if ! compare_home_claude_content "$home_claude_path" "$repo_item_path" "$item" "$is_dir"; then
             has_changes=true
         fi
     done
@@ -801,11 +1024,89 @@ sync_items() {
     [ "$has_changes" = true ] && log_info "Files synced with user choices" || log_info "No changes needed"
 }
 
+# Special handling for $HOME/.claude content comparison
+compare_home_claude_content() {
+    local claude_path="$1" repo_path="$2" item="$3" is_dir="$4"
+    local claude_exists repo_exists
+    
+    claude_exists=$(path_exists "$claude_path" "$is_dir" && echo true || echo false)
+    repo_exists=$(path_exists "$repo_path" "$is_dir" && echo true || echo false)
+    
+    # Skip if neither exists
+    if [ "$claude_exists" = false ] && [ "$repo_exists" = false ]; then
+        log_warning "$item: Does not exist in either location"
+        return 0
+    fi
+    
+    # Handle cases where only one location has the item
+    if [ "$claude_exists" = true ] && [ "$repo_exists" = false ]; then
+        log_info "$item: Only exists in $HOME/.claude, copying to repository"
+        copy_path "$claude_path" "$repo_path" "$is_dir"
+        return 1
+    fi
+    
+    if [ "$claude_exists" = false ] && [ "$repo_exists" = true ]; then
+        log_info "$item: Only exists in repository, copying to $HOME/.claude"
+        copy_path "$repo_path" "$claude_path" "$is_dir"
+        return 1
+    fi
+    
+    # Both exist - check if they're identical
+    if paths_identical "$claude_path" "$repo_path" "$is_dir"; then
+        log_info "$item: Content is identical between $HOME/.claude and repository"
+        return 0
+    fi
+    
+    # Content differs - prompt for interactive decision
+    log_warning "$item: Content differs between $HOME/.claude and repository"
+    printf "  $HOME/.claude: %s\n" "$claude_path"
+    printf "  Repository: %s\n\n" "$repo_path"
+    
+    echo "Choose action:"
+    echo "1) Use $HOME/.claude version (overwrite repository)"
+    echo "2) Use repository version (overwrite $HOME/.claude)"
+    echo "3) Skip this item"
+    echo "4) Show detailed diff"
+    
+    while true; do
+        read -p "Enter choice (1-4): " choice
+        
+        case "$choice" in
+            1)
+                log_info "Using $HOME/.claude version for $item"
+                [ "$is_dir" = true ] && rm -rf "$repo_path"
+                copy_path "$claude_path" "$repo_path" "$is_dir"
+                return 1
+                ;;
+            2)
+                log_info "Using repository version for $item"
+                [ "$is_dir" = true ] && rm -rf "$claude_path"
+                copy_path "$repo_path" "$claude_path" "$is_dir"
+                return 1
+                ;;
+            3)
+                log_info "Skipping $item"
+                return 0
+                ;;
+            4)
+                show_diff "$claude_path" "$repo_path" "$is_dir"
+                echo "Choose action:"
+                echo "1) Use $HOME/.claude version (overwrite repository)"
+                echo "2) Use repository version (overwrite $HOME/.claude)"
+                echo "3) Skip this item"
+                ;;
+            *)
+                echo "Invalid choice. Please enter 1, 2, 3, or 4."
+                ;;
+        esac
+    done
+}
+
 # Main execution flow
 main() {
     parse_args "$@"
     
-    # Handle copy-agent functionality separately
+    # Handle copy-agent functionality separately (explicit agent management)
     if [ -n "$COPY_LOCAL_AGENT" ]; then
         if [ "$COPY_LOCAL_AGENT" = "__INTERACTIVE__" ]; then
             log_info "Interactive agent selection mode"
@@ -817,10 +1118,21 @@ main() {
         return $?
     fi
     
+    # Save original working directory before setup_repo changes it
+    local ORIGINAL_PWD="$(pwd)"
+    
+    # Set Claude directory based on context (current directory vs home)
+    set_claude_dir "$ORIGINAL_PWD"
+    
     log_info "Starting sync process for Claude directory: $CLAUDE_DIR"
     validate_environment
     log_info "Using diff tool: $(get_diff_tool)"
     setup_repo
+    
+    # Auto-detect and handle local agents if available (after repo setup)
+    # Pass original directory to maintain correct CLAUDE.md detection
+    handle_local_agents_auto "$ORIGINAL_PWD"
+    
     sync_items
     commit_and_push
     cleanup
