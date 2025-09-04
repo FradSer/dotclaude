@@ -1,28 +1,54 @@
-# Development Guidelines
+# Claude Development Guidelines
 
-## Architecture Principles
+## Task Management & Workflow Priority
+
+### Task Tool Usage
+- **Task tool** - Launch specialized subagents for complex work (code review, security analysis)
+- **TodoWrite tool** - Create and manage task lists for tracking progress
+- **Plan first, act second** - assess complexity and create todo lists for 3+ steps before acting
+- Mark tasks completed IMMEDIATELY, keep ONE task in_progress for focus
+- Use parallel execution within individual tasks for efficiency
+
+## Architecture & Design
 - Follow SOLID principles and prefer composition over inheritance
 - Use dependency injection for testability
 - Apply repository pattern for data access and strategy pattern for algorithms
-
-## Code Quality Standards
 - Use descriptive names and avoid abbreviations or magic numbers
 - Keep functions under 20 lines and maintain concise files
-- Handle all error scenarios with meaningful messages
-- Comment "why" not "what"
 
-## Development Workflow
-- Search codebase first when uncertain
+## Code Quality
+- Handle all error scenarios with meaningful messages
+- Comment "why" not "what" - focus on business logic and complex decisions
+- Search codebase first when uncertain about existing patterns
 - Write tests for core functionality using TDD approach
 - Update documentation when modifying code
-- Make atomic commits for each completed feature stage and push
+- **Eliminate redundancy** - extract common logic, apply DRY principle
+- **Reduce complexity** - use guard clauses, early returns, break down large functions
+- **Modernize syntax** - leverage built-in features and idiomatic expressions
+- **Strong typing** - avoid `any` type and similar loose types, use specific types
 
-## Technical Preferences
-- Use pnpm for Node.js projects
-- Write lowercase commit titles (max 50 characters)
+## Development Workflow
+- **Task-driven development** - use Task/TodoWrite tools for planning and tracking
+- Make atomic commits for logical units of work
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
 - Merge PRs with merge commits
-- Avoid emojis and hardcoded secrets
-
-## Quality Gates
+- All tests must pass before merging pull requests
 - Run lint and build checks before closing issues
-- Ensure all tests pass before merging
+- Push commits after completing logical units of work
+
+## Technology Stack Preferences
+- **Node.js**: Use `pnpm` for package management
+- **Python**: Use `uv` for dependency management and virtual environments
+- **General**: Avoid emojis and hardcoded secrets in code
+
+## Parallel Execution Best Practices
+- **Batch independent tasks** in single tool calls for optimal performance
+- Use for: file operations, validation checks, git commands, data collection
+- **Sequential only when required** - when later tasks depend on earlier results
+- Examples: `git status + diff + log`, multiple file reads, concurrent linting
+
+## Quality Standards
+- All linting, building, and testing must pass before merging
+- Security best practices must be followed

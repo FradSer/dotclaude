@@ -4,7 +4,11 @@ Resolve issues using isolated worktrees, TDD approach, and protected PR workflow
 
 ## Prerequisites
 - `gh` CLI authenticated
-- Conventional commits (≤50 chars subject, ≤72 chars body) 
+- **Commit Requirements:**
+  - Commit message title must be entirely lowercase
+  - Title must be less than 50 characters
+  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Use atomic commits for logical units of work
 - Protected branches require PR + review + CI
 - No direct pushes to main/develop
 
@@ -128,7 +132,11 @@ git worktree remove "../$ORIGINAL_DIR-worktree-$ISSUE_NUMBER"
 
 - **TDD first** - Write failing test before implementation
 - **Agent-assisted** - Use specialized agents for planning, review, and refactoring  
-- **Atomic commits** - One logical change per commit with conventional messages
+- **Atomic commits** - One logical change per commit following standardized requirements:
+  - Commit message title must be entirely lowercase
+  - Title must be less than 50 characters
+  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Use atomic commits for logical units of work
 - **Protected workflows** - All changes via PR with review and CI checks
 - **Isolated development** - Use worktrees to avoid context switching
 

@@ -18,7 +18,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 ### 2. 基础智能体使用
 在任何 Claude Code 对话中：
 - `@agent-code-reviewer` - 审查代码问题
-- `@agent-security-reviewer` - 检查安全漏洞  
+- `@agent-security-reviewer` - 检查安全漏洞
 - `@agent-ux-reviewer` - 评估用户界面设计
 
 ### 3. `claude` 中的最佳实践工作流
@@ -56,6 +56,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 <summary>同步脚本的功能（点击展开）</summary>
 
 - 同步 `~/.claude/{agents,commands,CLAUDE.md}` 与此仓库的相同路径（双向比较）
+- **自动本地智能体管理**：检测 `local-agents/` 目录并将智能体复制到项目的 `.claude/agents/`
 - 自动检测是在此仓库内运行还是克隆到 `/tmp/dotclaude-sync`
 - 为每个项目显示差异，让你交互式选择：使用本地、使用仓库或跳过（支持彩色差异）
 - 最后，你可以选择提交和推送（生成 Conventional/Commitizen 风格的消息或回退到内置模板）
@@ -70,12 +71,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 
 ```text
 dotclaude/
-  - agents/
+  - agents/                    # 全局智能体（适用于所有项目）
     - code-reviewer.md
     - code-simplifier.md
     - security-reviewer.md
     - tech-lead-reviewer.md
     - ux-reviewer.md
+  - local-agents/              # 本地智能体（项目特定）
+    - swiftui-clean-architecture-reviewer.md
   - commands/
     - continue.md
     - fix/
@@ -100,9 +103,10 @@ dotclaude/
   - sync-to-github.sh
 ```
 
-## 专业智能体
+## 智能体系统
 
-每个智能体为全面的代码分析提供领域特定的专业知识：
+### 全局智能体 (Global Agents)
+适用于所有项目的通用专业智能体，存储在 `agents/` 目录：
 
 | 智能体 | 目的 | 专注领域 |
 |-------|------|----------|
@@ -111,6 +115,13 @@ dotclaude/
 | **agent-security-reviewer** | 安全审计和加固 | 身份验证/授权、输入验证、依赖扫描 |
 | **agent-tech-lead-reviewer** | 架构指导 | 系统设计、技术方向、风险评估 |
 | **agent-ux-reviewer** | 用户体验评估 | 可用性启发式、无障碍标准、UI 一致性 |
+
+### 本地智能体 (Local Agents)
+项目特定的专业智能体，存储在 `local-agents/` 目录，通过同步脚本复制到项目的 `.claude/agents/`：
+
+| 智能体 | 目的 | 专注领域 | 适用项目 |
+|-------|------|----------|----------|
+| **swiftui-clean-architecture-reviewer** | SwiftUI Clean Architecture 审查 | 层分离、MVVM 模式、SwiftData 集成、@Observable 模式 | SwiftUI 项目 |
 
 ## 命令模板
 
@@ -142,12 +153,19 @@ dotclaude/
 ## 使用模式
 
 ### 智能体调用
+
+**全局智能体**（在任何项目中都可用）：
 ```
 @agent-code-reviewer     # 全面代码分析
-@agent-security-reviewer # 安全专注审计  
+@agent-security-reviewer # 安全专注审计
 @agent-tech-lead-reviewer # 架构指导
 @agent-ux-reviewer       # 用户体验评估
 @agent-code-simplifier   # 重构辅助
+```
+
+**本地智能体**（需要先通过同步脚本复制到项目）：
+```
+@swiftui-clean-architecture-reviewer # SwiftUI Clean Architecture 审查
 ```
 
 ### 命令驱动工作流

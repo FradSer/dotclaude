@@ -18,7 +18,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 ### 2. Basic Agent Usage
 In any Claude Code conversation:
 - `@agent-code-reviewer` - Review your code for issues
-- `@agent-security-reviewer` - Check for security vulnerabilities  
+- `@agent-security-reviewer` - Check for security vulnerabilities
 - `@agent-ux-reviewer` - Evaluate user interface designs
 
 ### 3. Best Practice Workflow in `claude`
@@ -56,6 +56,7 @@ Open these templates as checklists in Claude Code:
 <summary>What the sync script does (click to expand)</summary>
 
 - Syncs `~/.claude/{agents,commands,CLAUDE.md}` with the same paths in this repo (two-way comparison)
+- **Automatic Local Agents Management**: Detects `local-agents/` directory and copies agents to project's `.claude/agents/`
 - Automatically detects whether it runs inside this repo or clones into `/tmp/dotclaude-sync`
 - Shows a diff for each item and lets you interactively choose: use local, use repo, or skip (supports color diff)
 - At the end, you can choose to commit and push (generates a Conventional/Commitizen-style message or falls back to a built-in template)
@@ -70,12 +71,14 @@ Open these templates as checklists in Claude Code:
 
 ```text
 dotclaude/
-  - agents/
+  - agents/                    # Global agents (available in all projects)
     - code-reviewer.md
     - code-simplifier.md
     - security-reviewer.md
     - tech-lead-reviewer.md
     - ux-reviewer.md
+  - local-agents/              # Local agents (project-specific)
+    - swiftui-clean-architecture-reviewer.md
   - commands/
     - continue.md
     - fix/
@@ -99,9 +102,10 @@ dotclaude/
   - sync-to-github.sh
 ```
 
-## Specialized Agents
+## Agent System
 
-Each agent provides domain-specific expertise for comprehensive code analysis:
+### Global Agents
+Universal specialized agents available in all projects, stored in `agents/` directory:
 
 | Agent | Purpose | Focus Areas |
 |-------|---------|-------------|
@@ -110,6 +114,13 @@ Each agent provides domain-specific expertise for comprehensive code analysis:
 | **agent-security-reviewer** | Security audit & hardening | AuthN/AuthZ, input validation, dependency scanning |
 | **agent-tech-lead-reviewer** | Architectural guidance | System design, technical direction, risk assessment |
 | **agent-ux-reviewer** | User experience evaluation | Usability heuristics, accessibility standards, UI consistency |
+
+### Local Agents
+Project-specific specialized agents stored in `local-agents/` directory, copied to project's `.claude/agents/` via sync script:
+
+| Agent | Purpose | Focus Areas | Target Projects |
+|-------|---------|-------------|----------------|
+| **swiftui-clean-architecture-reviewer** | SwiftUI Clean Architecture review | Layer separation, MVVM patterns, SwiftData integration, @Observable patterns | SwiftUI projects |
 
 ## Command Templates
 
@@ -144,6 +155,22 @@ Structured workflows for common development tasks:
 1. **Open command templates** - Use `commands/*.md` files as interactive checklists
 2. **Follow structured processes** - Each template guides you through specific workflows
 3. **Maintain consistency** - Standardized approaches across team members
+
+### Agent Invocation
+
+**Global Agents** (available in any project):
+```
+@agent-code-reviewer     # Comprehensive code analysis
+@agent-security-reviewer # Security-focused audit
+@agent-tech-lead-reviewer # Architectural guidance
+@agent-ux-reviewer       # User experience evaluation
+@agent-code-simplifier   # Refactoring assistance
+```
+
+**Local Agents** (must be copied to project via sync script first):
+```
+@swiftui-clean-architecture-reviewer # SwiftUI Clean Architecture review
+```
 
 ### Multi-Agent Collaboration
 ```bash

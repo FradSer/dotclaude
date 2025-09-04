@@ -1,12 +1,26 @@
 # Quick Code Review
 
-Simple two-stage review for rapid assessment and focused feedback.
+Streamlined review process for rapid assessment and targeted feedback on smaller changes.
 
-**Stage 1**: Use @tech-lead-reviewer to assess whether the change needs deeper review, has architectural concerns, or security implications.
+## Process Overview
 
-**Stage 2**: Based on findings, choose one or multiple agents for parallel review:
-* @code-reviewer: for correctness, error handling, naming clarity
-* @security-reviewer: if security concerns identified
-* @ux-reviewer: for UI/UX usability issues
+**1. Initial Assessment**
+- Use @tech-lead-reviewer to evaluate change scope and identify review needs
+- Determine if architectural concerns or security implications exist
+- Assess whether deeper hierarchical review is warranted
 
-For small bug fixes, simple features, formatting, documentation, tests, and configuration changes. Escalate to hierarchical review for core business logic, architectural impact, security operations, API changes, or performance-critical paths.
+**2. Targeted Review**
+Based on assessment, apply focused review using appropriate agent(s):
+- **@code-reviewer**: Verify correctness, error handling, and code clarity
+- **@security-reviewer**: Address identified security concerns
+- **@ux-reviewer**: Evaluate UI/UX usability and consistency
+
+**3. Implementation Support**
+- Present findings with actionable recommendations
+- Offer to implement critical fixes immediately
+- Provide guidance for any remaining improvements
+
+## When to Use
+Optimal for small bug fixes, simple features, documentation updates, configuration changes, and testing modifications.
+
+**Escalation Criteria**: Switch to hierarchical review for core business logic, architectural changes, security operations, API modifications, or performance-critical implementations.
