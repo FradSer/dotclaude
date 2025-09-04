@@ -29,6 +29,7 @@ AUTO_PUSH=false          # if true in non-interactive mode and AUTO_COMMIT=true,
 SKIP_COMMIT=false        # force skip commit even if changes exist
 TARGET_BRANCH="$BRANCH" # can be overridden by --branch
 FORCE_HTTPS=false        # force HTTPS clone instead of SSH
+COPY_LOCAL_AGENT=""      # specific local agent to copy to .claude/agents
 declare -a EXTRA_EXCLUDES
 
 #===============================================================================
@@ -54,44 +55,192 @@ parse_item_spec() {
     echo "${item_spec%:*}" "${item_spec#*:}"
 }
 
-# Check if path exists based on type
+# Check if path exists based on type - unified path checking
 path_exists() {
     local path="$1" is_dir="$2"
-    local test_flag=$([ "$is_dir" = true ] && echo "-d" || echo "-f")
-    [ $test_flag "$path" ]
+    if [ "$is_dir" = true ]; then
+        [ -d "$path" ]
+    else
+        [ -f "$path" ]
+    fi
+}
+
+# Validate item exists at path - simplified version
+validate_item_at_path() {
+    local item="$1" type="$2" base_path="$3"
+    local full_path="$base_path/$item"
+    local is_dir=$([ "$type" = "dir" ] && echo true || echo false)
+    
+    if path_exists "$full_path" "$is_dir"; then
+        return 0
+    else
+        log_error "$item $type not found at $full_path"
+        return 1
+    fi
 }
 
 #===============================================================================
 # EXCLUDE PATTERN HANDLING (CONSOLIDATED)
 #===============================================================================
 
-# Build exclude arguments for diff command
-build_diff_excludes() {
-    local args=""
-    local pattern
-    for pattern in "${EXCLUDE_PATTERNS[@]}" "${EXTRA_EXCLUDES[@]}"; do
-        [ -n "$pattern" ] && args+=" -x $pattern"
-    done
-    echo "$args"
+# Get all exclude patterns as array
+get_all_excludes() {
+    local -a all_excludes=("${EXCLUDE_PATTERNS[@]}" "${EXTRA_EXCLUDES[@]}")
+    printf '%s\n' "${all_excludes[@]}" | grep -v '^$' || true
 }
 
-# Build exclude arguments for rsync command
-build_rsync_excludes() {
-    local args=""
-    local pattern
-    for pattern in "${EXCLUDE_PATTERNS[@]}" "${EXTRA_EXCLUDES[@]}"; do
-        [ -n "$pattern" ] && args+=" --exclude=$pattern"
-    done
+# Build exclude arguments for different tools
+build_excludes() {
+    local tool="$1"
+    local args="" pattern
+    
+    while IFS= read -r pattern; do
+        [ -n "$pattern" ] || continue
+        case "$tool" in
+            diff)  args+=" -x $pattern" ;;
+            rsync) args+=" --exclude=$pattern" ;;
+        esac
+    done < <(get_all_excludes)
+    
     echo "$args"
 }
 
 # Remove ignored files under a directory
 remove_ignored_files() {
     local base_dir="$1"
-    local pattern
-    for pattern in "${EXCLUDE_PATTERNS[@]}" "${EXTRA_EXCLUDES[@]}"; do
+    
+    while IFS= read -r pattern; do
         [ -n "$pattern" ] && find "$base_dir" -name "$pattern" -type f -delete 2>/dev/null || true
+    done < <(get_all_excludes)
+}
+
+#===============================================================================
+# LOCAL AGENTS MANAGEMENT
+#===============================================================================
+
+# List available agents in local-agents directory
+list_local_agents() {
+    local local_agents_dir="$(pwd)/local-agents"
+    
+    if [ ! -d "$local_agents_dir" ]; then
+        log_error "local-agents directory not found at $local_agents_dir"
+        return 1
+    fi
+    
+    log_info "Available agents in local-agents/:"
+    if [ -z "$(ls -A "$local_agents_dir" 2>/dev/null)" ]; then
+        echo "  (no agents found)"
+        return 0
+    fi
+    
+    for agent in "$local_agents_dir"/*.md; do
+        [ -f "$agent" ] && echo "  $(basename "$agent")"
     done
+}
+
+# Interactive agent selection menu
+select_local_agent() {
+    local local_agents_dir="$(pwd)/local-agents"
+    
+    if [ ! -d "$local_agents_dir" ]; then
+        log_error "local-agents directory not found at $local_agents_dir"
+        return 1
+    fi
+    
+    # Collect available agents into an array
+    local agents=()
+    for agent in "$local_agents_dir"/*.md; do
+        [ -f "$agent" ] && agents+=("$(basename "$agent")")
+    done
+    
+    # Check if any agents found
+    if [ ${#agents[@]} -eq 0 ]; then
+        log_error "No agents found in local-agents/"
+        return 1
+    fi
+    
+    # Display agent selection menu
+    echo "Available agents in local-agents/:"
+    for i in "${!agents[@]}"; do
+        printf "%d) %s\n" $((i+1)) "${agents[$i]}"
+    done
+    echo "$((${#agents[@]}+1))) Cancel"
+    
+    # Get user choice
+    while true; do
+        read -p "Select agent to copy (1-$((${#agents[@]}+1))): " choice
+        
+        # Validate choice
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $((${#agents[@]}+1)) ]; then
+            if [ "$choice" -eq $((${#agents[@]}+1)) ]; then
+                log_info "Agent copy cancelled"
+                return 0
+            else
+                # Return selected agent name
+                echo "${agents[$((choice-1))]}"
+                return 0
+            fi
+        else
+            echo "Invalid choice. Please enter a number between 1 and $((${#agents[@]}+1))."
+        fi
+    done
+}
+
+# Copy specific agent from local-agents to .claude/agents
+copy_local_agent() {
+    local agent_name="$1"
+    local local_agents_dir="$(pwd)/local-agents"
+    local claude_agents_dir="$CLAUDE_DIR/agents"
+    
+    # If no agent name provided, show interactive selection
+    if [ -z "$agent_name" ]; then
+        log_info "No agent specified. Please select from available agents:"
+        agent_name=$(select_local_agent)
+        
+        # Check if selection was cancelled or failed
+        if [ $? -ne 0 ] || [ -z "$agent_name" ]; then
+            return 1
+        fi
+    fi
+    
+    local source_file="$local_agents_dir/$agent_name"
+    local dest_file="$claude_agents_dir/$agent_name"
+    
+    # Validate source exists
+    if [ ! -f "$source_file" ]; then
+        log_error "Agent '$agent_name' not found in local-agents/"
+        log_info "Available agents:"
+        list_local_agents
+        return 1
+    fi
+    
+    # Ensure destination directory exists
+    mkdir -p "$claude_agents_dir"
+    
+    # Check if destination already exists and prompt if different
+    if [ -f "$dest_file" ]; then
+        if cmp -s "$source_file" "$dest_file"; then
+            log_info "Agent '$agent_name' is already up to date in ~/.claude/agents/"
+            return 0
+        else
+            log_warning "Agent '$agent_name' already exists in ~/.claude/agents/ but differs from local version"
+            if [ "$NON_INTERACTIVE" != true ]; then
+                echo "Choose action:"
+                echo "1) Overwrite existing agent"
+                echo "2) Skip copy"
+                read -p "Enter choice (1-2): " choice
+                case $choice in
+                    1) ;;
+                    *) log_info "Skipping copy"; return 0 ;;
+                esac
+            fi
+        fi
+    fi
+    
+    # Copy the agent
+    cp "$source_file" "$dest_file" || { log_error "Failed to copy agent"; return 1; }
+    log_info "Successfully copied '$agent_name' to ~/.claude/agents/"
+    return 0
 }
 
 #===============================================================================
@@ -112,10 +261,16 @@ Options:
       --branch <name>            Override target branch (default: $BRANCH)
       --exclude <pattern>        Add extra exclude pattern (can be repeated)
       --https                    Clone via HTTPS instead of SSH
+      --copy-agent <filename>    Copy specific agent from local-agents/ to ~/.claude/agents/
+      --select-agent             Interactively select and copy an agent from local-agents/
+      --list-local-agents        List available agents in local-agents/ directory
   -h, --help                     Show this help
 
 Examples:
   ./sync-to-github.sh --yes --prefer repo --commit --push
+  ./sync-to-github.sh --copy-agent swiftui-clean-architecture-reviewer.md
+  ./sync-to-github.sh --select-agent
+  ./sync-to-github.sh --list-local-agents
   bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
 EOF
 }
@@ -134,6 +289,10 @@ parse_args() {
             --exclude) EXTRA_EXCLUDES+=("$2"); shift ;;
             --exclude=*) EXTRA_EXCLUDES+=("${1#*=}") ;;
             --https) FORCE_HTTPS=true ;;
+            --copy-agent) COPY_LOCAL_AGENT="$2"; shift ;;
+            --copy-agent=*) COPY_LOCAL_AGENT="${1#*=}" ;;
+            --select-agent) COPY_LOCAL_AGENT="__INTERACTIVE__" ;;
+            --list-local-agents) list_local_agents; exit 0 ;;
             -h|--help) print_help; exit 0 ;;
             *) log_warning "Unknown argument: $1" ;;
         esac
@@ -158,59 +317,40 @@ detect_local_mode() {
     echo "false"
 }
 
-validate_directory_exists() {
-    local dir="$1" description="$2"
-    [ ! -d "$dir" ] && log_error "$description not found at $dir" && exit 1
-    log_info "Found $description at $dir"
-}
-
-validate_item_exists() {
-    local item="$1" type="$2" base_dir="$3"
-    local path="$base_dir/$item"
-    local test_flag=$([ "$type" = "dir" ] && echo "-d" || echo "-f")
+# Validate and create missing items - unified validation logic
+validate_and_create_item() {
+    local item="$1" type="$2" base_path="$3"
+    local full_path="$base_path/$item"
+    local is_dir=$([ "$type" = "dir" ] && echo true || echo false)
     
-    if [ ! $test_flag "$path" ]; then
-        log_error "$item $type not found at $path"
-        return 1
+    if path_exists "$full_path" "$is_dir"; then
+        return 0
     fi
-    return 0
+    
+    log_info "Creating missing $type: $full_path"
+    if [ "$type" = "dir" ]; then
+        mkdir -p "$full_path"
+    else
+        touch "$full_path"
+    fi
 }
 
 # Validate Claude directory and required files
 validate_environment() {
     log_info "Validating Claude environment..."
-    validate_directory_exists "$CLAUDE_DIR" "Claude directory"
     
-    local missing_items=()
+    # Ensure Claude directory exists
+    if [ ! -d "$CLAUDE_DIR" ]; then
+        log_error "Claude directory not found at $CLAUDE_DIR"
+        exit 1
+    fi
+    log_info "Found Claude directory at $CLAUDE_DIR"
+    
+    # Validate and create required items
     for item_spec in "${ITEMS[@]}"; do
         local item="${item_spec%:*}" type="${item_spec#*:}"
-        if ! validate_item_exists "$item" "$type" "$CLAUDE_DIR"; then
-            missing_items+=("$item")
-        fi
+        validate_and_create_item "$item" "$type" "$CLAUDE_DIR"
     done
-    
-    if [ ${#missing_items[@]} -gt 0 ]; then
-        log_error "Missing required items. Creating them..."
-        for item in "${missing_items[@]}"; do
-            local item_spec type path
-            for spec in "${ITEMS[@]}"; do
-                if [[ "$spec" == "$item:"* ]]; then
-                    item_spec="$spec"
-                    break
-                fi
-            done
-            type="${item_spec#*:}"
-            path="$CLAUDE_DIR/$item"
-            
-            if [ "$type" = "dir" ]; then
-                mkdir -p "$path"
-                log_info "Created directory: $path"
-            else
-                touch "$path"
-                log_info "Created file: $path"
-            fi
-        done
-    fi
     
     log_info "All required files found or created"
 }
@@ -228,7 +368,7 @@ show_diff() {
     echo -e "\n=== DIFF START ==="
     if [ "$is_dir" = true ]; then
         local exclude_args
-        exclude_args=$(build_diff_excludes)
+        exclude_args=$(build_excludes "diff")
         if command -v colordiff >/dev/null 2>&1; then
             # shellcheck disable=SC2086
             diff $args $exclude_args "$file1" "$file2" | colordiff || true
@@ -246,29 +386,45 @@ show_diff() {
     echo -e "=== DIFF END ===\n"
 }
 
-# Copy path with proper handling for directories and files
-copy_path() {
-    local src="$1" dest="$2" is_dir="$3"
-    if [ "$is_dir" = true ]; then
-        if command -v rsync >/dev/null 2>&1; then
-            local exclude_args
-            exclude_args=$(build_rsync_excludes)
-            mkdir -p "$dest"
-            # shellcheck disable=SC2086
-            rsync -a $exclude_args "$src"/ "$dest"/
-        else
-            cp -r "$src" "$dest"
-            remove_ignored_files "$dest" || true
-        fi
-    else
-        cp "$src" "$dest"
-    fi
+# Unified file operations - copy, remove, and sync with proper handling
+perform_file_operation() {
+    local operation="$1" src="$2" dest="$3" is_dir="$4"
+    
+    case "$operation" in
+        copy)
+            if [ "$is_dir" = true ]; then
+                if command -v rsync >/dev/null 2>&1; then
+                    local exclude_args
+                    exclude_args=$(build_excludes "rsync")
+                    mkdir -p "$dest"
+                    # shellcheck disable=SC2086
+                    rsync -a $exclude_args "$src"/ "$dest"/
+                else
+                    cp -r "$src" "$dest"
+                    remove_ignored_files "$dest" || true
+                fi
+            else
+                mkdir -p "$(dirname "$dest")"
+                cp "$src" "$dest"
+            fi
+            ;;
+        remove)
+            if [ "$is_dir" = true ]; then
+                rm -rf "$src"
+            else
+                rm -f "$src"
+            fi
+            ;;
+    esac
 }
 
-# Remove path (file or directory)
+# Convenience wrappers for backward compatibility
+copy_path() {
+    perform_file_operation "copy" "$1" "$2" "$3"
+}
+
 remove_path() {
-    local path="$1" is_dir="$2"
-    [ "$is_dir" = true ] && rm -rf "$path" || rm -f "$path"
+    perform_file_operation "remove" "$1" "" "$2"
 }
 
 # Check if two paths have identical content
@@ -276,7 +432,7 @@ paths_identical() {
     local path1="$1" path2="$2" is_dir="$3"
     if [ "$is_dir" = true ]; then
         local exclude_args
-        exclude_args=$(build_diff_excludes)
+        exclude_args=$(build_excludes "diff")
         # shellcheck disable=SC2086
         diff -r $exclude_args "$path1" "$path2" &>/dev/null
     else
@@ -288,40 +444,32 @@ paths_identical() {
 # MENU SYSTEM AND CHOICE HANDLING
 #===============================================================================
 
-# Menu configurations
-get_menu_config() {
-    local scenario="$1"
-    case "$scenario" in
-        diff)
-            echo "Use local %s (overwrite repo)|Use repo %s (overwrite local)|Skip this %s|Show detailed diff" "Enter choice (1-4): "
-            ;;
-        local_only)
-            echo "Copy to repo|Delete local %s|Skip" "Enter choice (1-3): "
-            ;;
-        repo_only)
-            echo "Copy to local|Delete from repo|Skip" "Enter choice (1-3): "
-            ;;
-    esac
-}
-
-# Display formatted menu options
+# Display menu options for different scenarios
 display_menu() {
     local scenario="$1" item="$2"
-    local menu_data prompt counter=1 option
-    
-    menu_data=$(get_menu_config "$scenario")
-    local options="${menu_data% *}"
-    prompt="${menu_data##* }"
     
     echo "Choose action:"
-    local old_ifs="$IFS"; IFS='|'
-    for option in $options; do
-        printf "%d) %s\n" "$counter" "$(printf "$option" "$item")"
-        ((counter++))
-    done
-    IFS="$old_ifs"
-    
-    read -p "$prompt"
+    case "$scenario" in
+        diff)
+            echo "1) Use local $item (overwrite repo)"
+            echo "2) Use repo $item (overwrite local)"
+            echo "3) Skip this $item"
+            echo "4) Show detailed diff"
+            read -p "Enter choice (1-4): "
+            ;;
+        local_only)
+            echo "1) Copy to repo"
+            echo "2) Delete local $item"
+            echo "3) Skip"
+            read -p "Enter choice (1-3): "
+            ;;
+        repo_only)
+            echo "1) Copy to local"
+            echo "2) Delete from repo"
+            echo "3) Skip"
+            read -p "Enter choice (1-3): "
+            ;;
+    esac
 }
 
 # Get non-interactive choice based on preference mode
@@ -335,42 +483,55 @@ get_auto_choice() {
     esac
 }
 
-# Execute file operations based on choice - returns 1 if changes made, 0 if skipped
+# Execute file operations based on choice - simplified logic
 execute_choice() {
     local choice="$1" scenario="$2" local_path="$3" repo_path="$4" item="$5" is_dir="$6"
     
-    case "${scenario}_${choice}" in
-        diff_1|local_only_1)
-            log_info "Using/copying local $item"
-            [ "$is_dir" = true ] && [ "$scenario" = "diff" ] && rm -rf "$repo_path"
-            copy_path "$local_path" "$repo_path" "$is_dir"
-            return 1
+    # Handle skip choice universally
+    if [ "$choice" = "3" ]; then
+        log_info "Skipping $item"
+        return 0
+    fi
+    
+    # Handle show diff for diff scenario
+    if [ "$scenario" = "diff" ] && [ "$choice" = "4" ]; then
+        return 0  # Diff was already shown
+    fi
+    
+    # Execute the chosen action
+    case "$scenario" in
+        diff)
+            case "$choice" in
+                1) log_info "Using local $item"
+                   [ "$is_dir" = true ] && rm -rf "$repo_path"
+                   copy_path "$local_path" "$repo_path" "$is_dir" ;;
+                2) log_info "Using repo $item"  
+                   [ "$is_dir" = true ] && rm -rf "$local_path"
+                   copy_path "$repo_path" "$local_path" "$is_dir" ;;
+                *) log_error "Invalid choice, skipping $item"; return 0 ;;
+            esac
             ;;
-        diff_2|repo_only_1)
-            log_info "Using/copying repo $item"
-            [ "$is_dir" = true ] && [ "$scenario" = "diff" ] && rm -rf "$local_path"
-            copy_path "$repo_path" "$local_path" "$is_dir"
-            return 1
+        local_only)
+            case "$choice" in
+                1) log_info "Copying to repo"
+                   copy_path "$local_path" "$repo_path" "$is_dir" ;;
+                2) log_info "Deleting local $item"
+                   remove_path "$local_path" "$is_dir" ;;
+                *) log_error "Invalid choice, skipping $item"; return 0 ;;
+            esac
             ;;
-        local_only_2)
-            log_info "Deleting local $item"
-            remove_path "$local_path" "$is_dir"
-            return 1
-            ;;
-        repo_only_2)
-            log_info "Deleting $item from repo"
-            remove_path "$repo_path" "$is_dir"
-            return 1
-            ;;
-        *_3)
-            log_info "Skipping $item"
-            return 0
-            ;;
-        *)
-            log_error "Invalid choice, skipping $item"
-            return 0
+        repo_only)
+            case "$choice" in
+                1) log_info "Copying to local"
+                   copy_path "$repo_path" "$local_path" "$is_dir" ;;
+                2) log_info "Deleting from repo"
+                   remove_path "$repo_path" "$is_dir" ;;
+                *) log_error "Invalid choice, skipping $item"; return 0 ;;
+            esac
             ;;
     esac
+    
+    return 1  # Changes were made
 }
 
 #===============================================================================
@@ -446,11 +607,11 @@ compare_items() {
 # GIT OPERATIONS
 #===============================================================================
 
-# Git utility functions
+# Git utility functions - consolidated and simplified
 clone_repo() {
     local repo_url="$1" target_dir="$2"
     [ -d "$target_dir" ] && rm -rf "$target_dir"
-    git clone "$repo_url" "$target_dir" || return 1
+    git clone "$repo_url" "$target_dir"
 }
 
 checkout_branch() {
@@ -458,6 +619,7 @@ checkout_branch() {
     git checkout "$branch" || { log_error "Failed to checkout branch $branch"; exit 1; }
 }
 
+# Check git repository state
 has_git_changes() {
     ! (git diff --quiet && git diff --cached --quiet)
 }
@@ -466,18 +628,19 @@ show_git_status() {
     git status --porcelain
 }
 
-stage_all_changes() {
+# Unified git workflow operations
+stage_commit_push() {
+    local commit_msg="$1" branch="$2" should_push="$3"
+    
     git add . || { log_error "Failed to stage changes"; return 1; }
-}
-
-commit_changes() {
-    local commit_msg="$1"
     git commit -m "$commit_msg" || { log_error "Failed to commit changes"; return 1; }
-}
-
-push_changes() {
-    local branch="$1"
-    git push origin "$branch" || { log_error "Failed to push changes"; return 1; }
+    
+    if [ "$should_push" = true ]; then
+        git push origin "$branch" || { log_error "Failed to push changes"; return 1; }
+        echo -e "${GREEN}Changes committed and pushed successfully${NC}"
+    else
+        echo -e "${GREEN}Changes committed successfully (no push)${NC}"
+    fi
 }
 
 # Check for specific file changes in git status
@@ -524,19 +687,6 @@ generate_fallback_message() {
     done
     
     printf "feat: sync dotclaude %supdates" "${changed_items:-configuration }"
-}
-
-# Detect if we're running within the dotclaude project
-detect_local_mode() {
-    if [ -f "$(pwd)/sync-to-github.sh" ] && [ -d "$(pwd)/.git" ]; then
-        local remote_url
-        remote_url=$(git remote get-url origin 2>/dev/null || echo "")
-        if [[ "$remote_url" == *"dotclaude"* ]]; then
-            echo "true"
-            return
-        fi
-    fi
-    echo "false"
 }
 
 # Setup git repository
@@ -593,16 +743,9 @@ commit_and_push() {
         fi
         if [ "$AUTO_COMMIT" = true ]; then
             log_info "Committing changes (non-interactive mode)..."
-            stage_all_changes || return 1
             local commit_msg
             commit_msg=$(generate_commit_message)
-            commit_changes "$commit_msg" || return 1
-            if [ "$AUTO_PUSH" = true ]; then
-                push_changes "$TARGET_BRANCH" || return 1
-                echo -e "${GREEN}Changes committed and pushed successfully${NC}"
-            else
-                echo -e "${GREEN}Changes committed successfully (no push)${NC}"
-            fi
+            stage_commit_push "$commit_msg" "$TARGET_BRANCH" "$AUTO_PUSH" || return 1
         else
             log_warning "Changes detected but --commit not set; skipping commit"
         fi
@@ -614,12 +757,9 @@ commit_and_push() {
     case $choice in
         1)
             log_info "Committing and pushing changes..."
-            stage_all_changes || return 1
             local commit_msg
             commit_msg=$(generate_commit_message)
-            commit_changes "$commit_msg" || return 1
-            push_changes "$TARGET_BRANCH" || return 1
-            echo -e "${GREEN}Changes committed and pushed successfully${NC}"
+            stage_commit_push "$commit_msg" "$TARGET_BRANCH" true || return 1
             ;;
         2) log_warning "Skipping commit" ;;
         *) log_error "Invalid choice, skipping commit" ;;
@@ -663,9 +803,21 @@ sync_items() {
 
 # Main execution flow
 main() {
-    log_info "Starting sync process for Claude directory: $CLAUDE_DIR"
     parse_args "$@"
     
+    # Handle copy-agent functionality separately
+    if [ -n "$COPY_LOCAL_AGENT" ]; then
+        if [ "$COPY_LOCAL_AGENT" = "__INTERACTIVE__" ]; then
+            log_info "Interactive agent selection mode"
+            copy_local_agent ""
+        else
+            log_info "Copying local agent: $COPY_LOCAL_AGENT"
+            copy_local_agent "$COPY_LOCAL_AGENT"
+        fi
+        return $?
+    fi
+    
+    log_info "Starting sync process for Claude directory: $CLAUDE_DIR"
     validate_environment
     log_info "Using diff tool: $(get_diff_tool)"
     setup_repo
