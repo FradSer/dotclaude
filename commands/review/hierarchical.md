@@ -1,17 +1,29 @@
 # Hierarchical Code Review
 
-Multi-stage comprehensive review using multiple subagents: strategic assessment, parallel specialized reviews, then consolidated recommendations.
+Comprehensive multi-stage review using specialized subagents for architectural assessment, parallel specialized analysis, and consolidated recommendations.
 
-**Stage 1**: Use @tech-lead-reviewer to think hard and assess architectural impact, technical debt, and identify risk areas (security, performance, complexity). Guide specialized review focus.
+## Process Overview
 
-**Stage 2**: Parallel reviews using applicable subagents:
+**1. Technical Leadership Assessment**
+- Use @tech-lead-reviewer to evaluate architectural impact, technical debt, and identify critical risk areas
+- Focus on system-wide implications, scalability, and maintainability
+- Determine which specialized reviews are needed
 
-* @code-reviewer: business logic, error handling, test coverage
-* @security-reviewer: authentication, data protection, input validation, dependencies
-* @ux-reviewer (if applicable): usability, accessibility, consistency
+**2. Specialized Parallel Reviews** 
+Based on tech lead assessment, conduct applicable reviews:
+- **@code-reviewer**: Analyze correctness, logic, error handling, and test coverage
+- **@security-reviewer**: Examine authentication, data protection, input validation, and dependencies
+- **@ux-reviewer**: Assess usability, accessibility, and design consistency (when applicable)
 
-**Stage 3**: Use @code-simplifier to think hard and consolidate all findings into prioritized improvement roadmap, resolving conflicts and integrating recommendations.
+**3. Consolidated Analysis**
+- Use @code-simplifier to integrate findings and provide prioritized recommendations
+- Resolve conflicts between different review perspectives
+- Create actionable improvement suggestions
 
-**Stage 4**: Ask user if they want to proceed with implementing any fixes based on the review findings.
+**4. Implementation Planning**
+- Present consolidated findings to user
+- Offer to implement high-priority fixes immediately
+- Provide guidance for addressing remaining issues
 
-For major features, architectural refactoring, critical business logic, cross-team projects, and technology upgrades.
+## When to Use
+Ideal for major features, architectural changes, critical business logic, cross-team projects, and technology upgrades requiring comprehensive oversight.
