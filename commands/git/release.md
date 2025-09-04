@@ -16,9 +16,12 @@ flowchart TD
     G -->|No| I[Switch to existing branch]
     H --> F
     D --> J[Update version & changelog]
-    F --> K[Ready for release preparation]
-    I --> K
+    F --> M[Auto-complete preparations]
+    I --> M
+    M --> N[Commit atomic changes]
+    N --> O[Finish release]
     J --> L[Push & create GitHub release]
+    O --> L
 ```
 
 ## Branch-based Logic
@@ -32,9 +35,9 @@ flowchart TD
 
 ### If not on release branch
 **Check for existing release branches:**
-- **None found**: Create new release branch with semantic version bump
-- **Branch exists < 48h**: Switch to existing branch for continued work
-- **Branch exists > 48h**: Finish stale branch, then create new one
+- **None found**: Create new release branch → auto-complete preparations → finish release
+- **Branch exists < 48h**: Switch to existing branch → auto-complete preparations → finish release
+- **Branch exists > 48h**: Finish stale branch → create new branch → auto-complete preparations → finish release
 
 ## Operations
 
@@ -50,29 +53,67 @@ gh release create v[version] --title "Release [version]" --latest
 # Auto-detect semantic version bump from commits
 git flow release start [new-version]
 git flow release publish [new-version]
+
+# Automatically complete release preparations:
+# 1. Run lint and build checks (if applicable)
+# 2. Update/create CHANGELOG.md from commit history
+# 3. Update version in package management files
+# 4. Commit changes with conventional commit format
+
+# Then automatically finish release
+git flow release finish [new-version]
+gh release create v[new-version] --title "Release [new-version]" --latest
 ```
 
 ### Continue Existing
 ```bash
 git checkout release/[version]
+# Same automated preparation process applies
 ```
 
-## Semantic Version Management
+## Automated Release Preparation
+
+### Version Management
 - Automatically detect current version from git tags
 - Analyze commits since last release:
   - **BREAKING CHANGE** or `feat!`/`fix!` → major bump
   - `feat:` commits → minor bump  
   - `fix:` commits → patch bump
 - Update package.json/pyproject.toml/Cargo.toml if present
-- Add changelog entry with current date
+
+### Quality Checks
+- Run lint checks (if lint script exists)
+- Run build checks (if build script exists)
+- Fail release if checks don't pass
+
+### Documentation Updates
+- Generate/update CHANGELOG.md from commit history since last release
+- Include commit messages, authors, and dates
+- Group by commit type (feat, fix, chore, etc.)
+
+### Atomic Commits
+- **Separate commits** for each logical change:
+  - `chore: update version to x.y.z`
+  - `docs: update changelog for x.y.z release`
+- **Commit requirements**:
+  - Title entirely lowercase
+  - Under 50 characters
+  - Follow conventional commits format
+  - Atomic units of work
 
 ## Usage
 ```bash
 # User modifies code, then runs:
 release
 
-# Command analyzes branch state and executes appropriate action
-# No additional parameters needed - fully autonomous
+# Command executes full automated workflow:
+# 1. Analyze branch state and determine action
+# 2. Create/switch to release branch
+# 3. Run quality checks (lint, build)
+# 4. Update version files and changelog
+# 5. Make atomic conventional commits
+# 6. Finish release and create GitHub release
+# 7. No manual intervention required
 ```
 
 ## Best Practices
