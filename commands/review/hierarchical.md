@@ -16,14 +16,33 @@ Based on tech lead assessment, conduct applicable reviews:
 - **@ux-reviewer**: Assess usability, accessibility, and design consistency (when applicable)
 
 **3. Consolidated Analysis**
-- Use @code-simplifier to integrate findings and provide prioritized recommendations
+- Use @code-simplifier to integrate findings and provide recommendations by:
+  - **Priority Level**: Critical → High → Medium → Low
+  - **Confidence Level**: High (90%+) → Medium (70-89%) → Low (<70%)
 - Resolve conflicts between different review perspectives
-- Create actionable improvement suggestions
+- Create actionable improvement suggestions ranked by impact
 
-**4. Implementation Planning**
-- Present consolidated findings to user
-- Offer to implement high-priority fixes immediately
-- Provide guidance for addressing remaining issues
+**4. Results Presentation**
+- Present findings organized by priority and confidence matrix
+- Provide clear rationale for each recommendation
+- Ask user: "Would you like me to implement any of these fixes?"
 
-## When to Use
-Ideal for major features, architectural changes, critical business logic, cross-team projects, and technology upgrades requiring comprehensive oversight.
+**5. Optional Implementation** (if user confirms)
+Based on issue type, apply targeted fixes:
+- **Security issues**: Address vulnerabilities, input validation, authentication flows
+- **Code quality**: Fix naming, algorithms, error handling, test coverage  
+- **UI/UX issues**: Improve usability, accessibility, design consistency
+
+**6. Final Optimization**
+- Use @code-simplifier to review and optimize implemented fixes:
+  - Eliminate any redundancy introduced during fixes
+  - Reduce complexity where possible
+  - Apply modern syntax and idiomatic patterns
+  - Ensure SOLID principles are maintained
+- Run tests and validation after optimization
+- Commit changes following @commands/git/commit-and-push.md requirements:
+  - Commit message title must be entirely lowercase
+  - Title must be less than 50 characters
+  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Use atomic commits for logical units of work
+- Push changes to remote
