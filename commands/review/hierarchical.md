@@ -16,7 +16,7 @@ Based on tech lead assessment, conduct applicable reviews:
 - **@ux-reviewer**: Assess usability, accessibility, and design consistency (when applicable)
 
 **3. Consolidated Analysis**
-- Use @code-simplifier to integrate findings and provide recommendations by:
+- Integrate findings from all reviews and provide recommendations by:
   - **Priority Level**: Critical → High → Medium → Low
   - **Confidence Level**: High (90%+) → Medium (70-89%) → Low (<70%)
 - Resolve conflicts between different review perspectives
@@ -40,7 +40,7 @@ Based on issue type, apply targeted fixes:
   - Apply modern syntax and idiomatic patterns
   - Ensure SOLID principles are maintained
 - Run tests and validation after optimization
-- Git commit atomic changes conventional
+- Git commit atomic changes conventional:
   - Commit message title must be entirely lowercase
   - Title must be less than 50 characters
   - Follow conventional commits format (feat:, fix:, chore:, etc.)

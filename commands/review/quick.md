@@ -34,7 +34,7 @@ Apply targeted fixes based on identified issues:
   - Simplify complex logic where appropriate
   - Apply modern language features and patterns
   - Maintain code clarity and readability
-- Run tests and Git commit atomic changes conventional
+- Run tests and Git commit atomic changes conventional:- Run tests and commit changes with proper formatting:
   - Commit message title must be entirely lowercase
   - Title must be less than 50 characters
   - Follow conventional commits format (feat:, fix:, chore:, etc.)
