@@ -40,9 +40,11 @@ Based on issue type, apply targeted fixes:
   - Apply modern syntax and idiomatic patterns
   - Ensure SOLID principles are maintained
 - Run tests and validation after optimization
-- Commit changes following @commands/git/commit-and-push.md requirements:
-  - Commit message title must be entirely lowercase
-  - Title must be less than 50 characters
-  - Follow conventional commits format (feat:, fix:, chore:, etc.)
-  - Use atomic commits for logical units of work
+- Git commit atomic changes conventional, then push
+
+Requirements:
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work
 - Push changes to remote

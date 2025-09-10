@@ -34,9 +34,11 @@ Apply targeted fixes based on identified issues:
   - Simplify complex logic where appropriate  
   - Apply modern language features and patterns
   - Maintain code clarity and readability
-- Run tests and commit changes following @commands/git/commit-and-push.md requirements:
-  - Commit message title must be entirely lowercase
-  - Title must be less than 50 characters
-  - Follow conventional commits format (feat:, fix:, chore:, etc.)
-  - Use atomic commits for logical units of work
+- Run tests and Git commit atomic changes conventional, then push
+
+Requirements:
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work
 - Push changes to remote
