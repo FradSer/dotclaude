@@ -17,7 +17,7 @@ Based on assessment, apply focused review using appropriate agent(s):
 
 **3. Results Analysis**
 - Present findings organized by:
-  - **Priority**: Critical → High → Medium → Low  
+  - **Priority**: Critical → High → Medium → Low
   - **Confidence**: High (90%+) → Medium (70-89%) → Low (<70%)
 - Provide actionable recommendations with clear rationale
 - Ask user: "Would you like me to implement any of these fixes?"
@@ -31,14 +31,12 @@ Apply targeted fixes based on identified issues:
 **5. Final Optimization**
 - Use @code-simplifier to optimize implemented fixes:
   - Remove any redundancy introduced during fixes
-  - Simplify complex logic where appropriate  
+  - Simplify complex logic where appropriate
   - Apply modern language features and patterns
   - Maintain code clarity and readability
-- Run tests and Git commit atomic changes conventional, then push
-
-Requirements:
-- Commit message title must be entirely lowercase
-- Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, chore:, etc.)
-- Use atomic commits for logical units of work
+- Run tests and Git commit atomic changes conventional
+  - Commit message title must be entirely lowercase
+  - Title must be less than 50 characters
+  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Use atomic commits for logical units of work
 - Push changes to remote

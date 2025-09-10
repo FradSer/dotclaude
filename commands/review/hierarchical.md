@@ -9,7 +9,7 @@ Comprehensive multi-stage review using specialized subagents for architectural a
 - Focus on system-wide implications, scalability, and maintainability
 - Determine which specialized reviews are needed
 
-**2. Specialized Parallel Reviews** 
+**2. Specialized Parallel Reviews**
 Based on tech lead assessment, conduct applicable reviews:
 - **@code-reviewer**: Analyze correctness, logic, error handling, and test coverage
 - **@security-reviewer**: Examine authentication, data protection, input validation, and dependencies
@@ -30,7 +30,7 @@ Based on tech lead assessment, conduct applicable reviews:
 **5. Optional Implementation** (if user confirms)
 Based on issue type, apply targeted fixes:
 - **Security issues**: Address vulnerabilities, input validation, authentication flows
-- **Code quality**: Fix naming, algorithms, error handling, test coverage  
+- **Code quality**: Fix naming, algorithms, error handling, test coverage
 - **UI/UX issues**: Improve usability, accessibility, design consistency
 
 **6. Final Optimization**
@@ -40,11 +40,9 @@ Based on issue type, apply targeted fixes:
   - Apply modern syntax and idiomatic patterns
   - Ensure SOLID principles are maintained
 - Run tests and validation after optimization
-- Git commit atomic changes conventional, then push
-
-Requirements:
-- Commit message title must be entirely lowercase
-- Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, chore:, etc.)
-- Use atomic commits for logical units of work
+- Git commit atomic changes conventional
+  - Commit message title must be entirely lowercase
+  - Title must be less than 50 characters
+  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Use atomic commits for logical units of work
 - Push changes to remote
