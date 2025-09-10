@@ -1,49 +1,32 @@
-# Start GitFlow Hotfix
+# Start Hotfix
 
 Start new hotfix or continue existing hotfix development.
 
-## Workflow
+## Overview
 
-```mermaid
-flowchart TD
-    A[User runs start-hotfix] --> B{Existing hotfix branches?}
-    B -->|No| C[Create new hotfix branch]
-    B -->|Yes| D[Switch to existing branch]
-    C --> E[Ready for development]
-    D --> E
-```
+Creates hotfix branch from main or switches to existing hotfix:
+- No existing branches: Create new hotfix with incremented patch version
+- Branch exists: Switch to existing branch
 
-## Operations
+## Usage
 
-### Create New Hotfix
 ```bash
-# Auto-increment patch version from latest tag
-# Creates hotfix branch from main/master
-git flow hotfix start [new-version]
-```
+# Create new hotfix
+git flow hotfix start [version]
 
-### Continue Existing Hotfix
-```bash
+# Continue existing hotfix
 git checkout hotfix/[version]
 ```
 
-## Version Management
-- Automatically detect current version from git tags
-- Increment patch version (1.2.3 → 1.2.4)
-- Update package.json/pyproject.toml if present
+## What It Does
 
-## Branch Selection Logic
-- **None found**: Create new hotfix branch from main/master with incremented patch version
-- **Branch exists**: Switch to existing branch for continued work
-
-## Git-Flow Integration
-- Hotfixes are created from main/master branch (not develop)
-- No publish command available for hotfixes in standard git-flow
-- Version parameter is required for `git flow hotfix start`
+1. Detects existing hotfix branches
+2. Creates new hotfix from main with incremented patch version (1.2.3 → 1.2.4)
+3. Updates version files (package.json, pyproject.toml)
+4. Switches to existing hotfix if found
 
 ## Best Practices
-- Keep hotfixes focused on critical bug fixes only
+- Focus on critical bug fixes only
 - Use conventional commits (fix:, chore:)
-- Commit message titles must be lowercase and < 50 characters
-- Regular commits with atomic, logical units of work
-- Test fixes thoroughly before finishing
+- Test fixes thoroughly
+- Keep changes minimal

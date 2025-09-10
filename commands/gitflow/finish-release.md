@@ -1,60 +1,68 @@
-# Finish GitFlow Release
+# Finish Release
 
 Complete and merge current release development.
 
-## Workflow
+## Overview
 
-```mermaid
-flowchart TD
-    A[User runs finish-release] --> B{On release branch?}
-    B -->|Yes| C[Finish current release]
-    B -->|No| D[Error: Not on release branch]
-    C --> E[Update version & changelog]
-    E --> F[Merge to main & develop]
-    F --> G[Push & create GitHub release]
-```
+Finishes a release branch by:
+- Merging release back into main
+- Creating version tag
+- Back-merging into develop
+- Removing release branch
 
 ## Prerequisites
-- Must be on a release branch (release/*)
-- All changes should be committed
-- Tests should pass before finishing
-- All features for release should be complete
+- On release branch (`release/*`)
+- All changes committed
+- Tests passing
 
-## Operations
+## Usage
 
-### Finish Release
 ```bash
-# Merges to main/develop, creates tag, and deletes release branch
 git flow release finish [version]
-git push origin main develop --tags
+git push origin --tags
+git push origin main develop
 gh release create v[version] --title "Release [version]" --latest
 ```
 
-## Process Steps
-1. **Validate current branch** - Ensure user is on a release branch
-2. **Run pre-finish checks** - Verify all changes are committed
-3. **Update version** - Update package.json/pyproject.toml/Cargo.toml if present
-4. **Add changelog entry** - Add entry with current date
-5. **Merge to main/develop** - Use git flow release finish (automatically creates tag)
-6. **Push changes** - Push main, develop branches and tags to origin
-7. **Create GitHub release** - Create release with version tag
+## What It Does
 
-## Git-Flow Integration
-- `git flow release finish` merges to both main and develop
-- Automatically creates a version tag
-- Release branch is deleted after successful merge
+1. Validates current branch is a release branch
+2. Updates version files and changelog
+3. Merges to main and creates tag
+4. Back-merges to develop
+5. Pushes changes and creates GitHub release
+
 
 ## Error Handling
-- **Not on release branch**: Display error and suggest using start-release
-- **Uncommitted changes**: Prompt user to commit or stash changes
-- **Merge conflicts**: Guide user through conflict resolution
-- **Failed tests**: Block release until tests pass
+- **Not on release branch**: Use start-release first
+- **Uncommitted changes**: Commit or stash changes
+- **Merge conflicts**: Resolve conflicts manually
+- **Failed tests**: Fix tests before proceeding
+- **Git flow fails**: Use manual recovery process
+
+## Manual Recovery
+
+If `git flow release finish` fails:
+
+```bash
+# Merge to main and tag
+git checkout main
+git merge --no-ff release/[version]
+git tag v[version]
+
+# Back-merge to develop
+git checkout develop
+git merge --no-ff release/[version]
+
+# Clean up
+git branch -d release/[version]
+git push origin --tags
+git push origin main develop
+gh release create v[version] --title "Release [version]" --latest
+```
 
 ## Best Practices
-- Run full test suite before finishing release
-- Ensure all changes are committed
-- Use descriptive commit messages following conventional commits for automatic changelog generation
-- Keep releases focused and well-tested
-- Coordinate release timing with team
-- Review all changes before finishing
-- Update documentation if needed
+- Run tests before finishing
+- Use conventional commit messages
+- Keep releases focused
+- Coordinate with team

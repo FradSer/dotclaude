@@ -1,54 +1,35 @@
-# Start GitFlow Release
+# Start Release
 
 Start new release or continue existing release development.
 
-## Workflow
+## Overview
 
-```mermaid
-flowchart TD
-    A[User runs start-release] --> B{Existing release branches?}
-    B -->|No| C[Create new release branch]
-    B -->|Yes| D[Switch to existing branch]
-    C --> E[Ready for release preparation]
-    D --> E
-```
+Creates release branch from develop or switches to existing release:
+- No existing branches: Create new release with semantic version
+- Branch exists: Switch to existing branch
 
-## Operations
+## Usage
 
-### Create New Release
 ```bash
-# Version parameter is required
-# Creates release branch from develop
-git flow release start [new-version]
-git flow release publish [new-version]
-```
+# Create new release
+git flow release start [version]
+git flow release publish [version]
 
-### Continue Existing Release
-```bash
+# Continue existing release
 git checkout release/[version]
 ```
 
-## Semantic Version Management
-- Automatically detect current version from git tags
-- Analyze commits since last release:
-  - **BREAKING CHANGE** or `feat!`/`fix!` → major bump
-  - `feat:` commits → minor bump  
-  - `fix:` commits → patch bump
-- Update package.json/pyproject.toml/Cargo.toml if present
+## What It Does
 
-## Branch Selection Logic
-- **None found**: Create new release branch from develop with semantic version bump
-- **Branch exists**: Switch to existing branch for continued work
-
-## Git-Flow Integration
-- Releases are created from develop branch
-- Version parameter is required for `git flow release start`
-- Use `git flow release publish` to share release branch
+1. Detects existing release branches
+2. Creates new release from develop with semantic version:
+   - `feat!`/`fix!` or BREAKING CHANGE → major bump
+   - `feat:` commits → minor bump
+   - `fix:` commits → patch bump
+3. Updates version files and publishes branch
 
 ## Best Practices
-- Use conventional commits for automatic version detection  
-- Test thoroughly on release branch before finishing
-- Coordinate release timing with team
-- Sync dependencies before finishing releases
-- Regular commits with atomic, logical units of work
-- Commit message titles must be lowercase and < 50 characters
+- Use conventional commits for version detection
+- Test thoroughly before finishing
+- Coordinate timing with team
+- Sync dependencies before finishing
