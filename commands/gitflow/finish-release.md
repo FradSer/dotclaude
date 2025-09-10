@@ -53,7 +53,7 @@ gh release create v[version] --title "Release [version]" --latest
 ## Best Practices
 - Run full test suite before finishing release
 - Ensure all changes are committed
-- Use descriptive commit messages following conventional commits
+- Use descriptive commit messages following conventional commits for automatic changelog generation
 - Keep releases focused and well-tested
 - Coordinate release timing with team
 - Review all changes before finishing
