@@ -1,68 +1,39 @@
-# Finish Release
+---
+allowed-tools: Bash
+argument-hint: [version]
+description: Complete and merge current release development
+---
 
-Complete and merge current release development.
+## Context
 
-## Overview
+- Current branch: !`git branch --show-current`
+- Git status: !`git status --porcelain`
+- Recent commits: !`git log --oneline -5`
+- Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn") || ([ -f Cargo.toml ] && echo "cargo") || ([ -f pyproject.toml ] && echo "pytest/uv") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
+- Current version: !`([ -f package.json ] && grep '"version"' package.json) || ([ -f Cargo.toml ] && grep '^version' Cargo.toml) || ([ -f pyproject.toml ] && grep '^version' pyproject.toml) || echo "no version found"`
 
-Finishes a release branch by:
-- Merging release back into main
-- Creating version tag
-- Back-merging into develop
-- Removing release branch
+## Your task
 
-## Prerequisites
-- On release branch (`release/*`)
-- All changes committed
-- Tests passing
+Complete and merge release development: $ARGUMENTS
 
-## Usage
+**Actions to take:**
+1. Validate current branch is a release branch (`release/*`)
+2. Ensure all changes are committed
+3. Run tests if available before finishing
+4. Update changelog if exists
+5. Finish release using git flow (merges to main, creates tag, back-merges to develop)
+6. Push all changes and tags to origin
+7. Create GitHub release
+8. Handle merge conflicts if they occur
 
-```bash
-git flow release finish [version]
-git push origin --tags
-git push origin main develop
-gh release create v[version] --title "Release [version]" --latest
-```
+**Manual recovery if git flow fails:**
+- Merge release to main and create tag
+- Back-merge to develop
+- Clean up release branch
+- Push changes and create GitHub release
 
-## What It Does
-
-1. Validates current branch is a release branch
-2. Updates version files and changelog
-3. Merges to main and creates tag
-4. Back-merges to develop
-5. Pushes changes and creates GitHub release
-
-
-## Error Handling
-- **Not on release branch**: Use start-release first
-- **Uncommitted changes**: Commit or stash changes
-- **Merge conflicts**: Resolve conflicts manually
-- **Failed tests**: Fix tests before proceeding
-- **Git flow fails**: Use manual recovery process
-
-## Manual Recovery
-
-If `git flow release finish` fails:
-
-```bash
-# Merge to main and tag
-git checkout main
-git merge --no-ff release/[version]
-git tag v[version]
-
-# Back-merge to develop
-git checkout develop
-git merge --no-ff release/[version]
-
-# Clean up
-git branch -d release/[version]
-git push origin --tags
-git push origin main develop
-gh release create v[version] --title "Release [version]" --latest
-```
-
-## Best Practices
-- Run tests before finishing
-- Use conventional commit messages
-- Keep releases focused
-- Coordinate with team
+**Required Commit Standards:**
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work

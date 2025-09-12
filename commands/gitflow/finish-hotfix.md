@@ -1,43 +1,34 @@
-# Finish Hotfix
+---
+allowed-tools: Bash
+argument-hint: [version]
+description: Complete and merge current hotfix development
+---
 
-Complete and merge current hotfix development.
+## Context
 
-## Overview
+- Current branch: !`git branch --show-current`
+- Git status: !`git status --porcelain`
+- Recent commits: !`git log --oneline -5`
+- Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn") || ([ -f Cargo.toml ] && echo "cargo") || ([ -f pyproject.toml ] && echo "pytest/uv") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
+- Current version: !`([ -f package.json ] && grep '"version"' package.json) || ([ -f Cargo.toml ] && grep '^version' Cargo.toml) || ([ -f pyproject.toml ] && grep '^version' pyproject.toml) || echo "no version found"`
 
-Finishes hotfix branch by:
-- Merging hotfix back into main
-- Creating version tag
-- Back-merging into develop
-- Removing hotfix branch
+## Your task
 
-## Prerequisites
-- On hotfix branch (`hotfix/*`)
-- All changes committed
-- Tests passing
+Complete and merge hotfix development: $ARGUMENTS
 
-## Usage
+**Actions to take:**
+1. Validate current branch is a hotfix branch (`hotfix/*`)
+2. Ensure all changes are committed
+3. Run tests if available before finishing
+4. Update changelog if exists
+5. Finish hotfix using git flow (merges to main and develop, creates tag)
+6. Push all changes and tags to origin
+7. Create GitHub release with hotfix details
+8. Handle merge conflicts if they occur
+9. Keep fixes critical and minimal
 
-```bash
-git flow hotfix finish [version]
-git push origin main develop --tags
-gh release create v[version] --title "Hotfix [version]" --latest
-```
-
-## What It Does
-
-1. Validates current branch is a hotfix branch
-2. Updates version files and changelog
-3. Merges to both main and develop branches
-4. Creates version tag and pushes changes
-5. Creates GitHub release
-
-## Error Handling
-- **Not on hotfix branch**: Use start-hotfix first
-- **Uncommitted changes**: Commit or stash changes
-- **Merge conflicts**: Resolve conflicts manually
-
-## Best Practices
-- Run tests before finishing
-- Use conventional commits
-- Keep fixes critical and minimal
-- Coordinate timing with team
+**Required Commit Standards:**
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work
