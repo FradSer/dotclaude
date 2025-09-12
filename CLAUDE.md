@@ -3,8 +3,6 @@
 ## Task Management & Workflow Priority
 
 ### Task Tool Usage
-- **Task tool** - Launch specialized subagents for complex work (code review, security analysis)
-- **TodoWrite tool** - Create and manage task lists for tracking progress
 - **Plan first, act second** - assess complexity and create todo lists for 3+ steps before acting
 - Mark tasks completed IMMEDIATELY, keep ONE task in_progress for focus
 - Use parallel execution within individual tasks for efficiency
@@ -17,10 +15,11 @@
 - Keep functions under 20 lines and maintain concise files
 
 ## Code Quality
+- **MANDATORY TDD** - Always follow Test-Driven Development: Red → Green → Refactor
 - Handle all error scenarios with meaningful messages
 - Comment "why" not "what" - focus on business logic and complex decisions
 - Search codebase first when uncertain about existing patterns
-- Write tests for core functionality using TDD approach
+- **Test-first development** - Write failing test before implementing feature/fix
 - Update documentation when modifying code
 - **Eliminate redundancy** - extract common logic, apply DRY principle
 - **Reduce complexity** - use guard clauses, early returns, break down large functions
