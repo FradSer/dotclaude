@@ -1,32 +1,30 @@
-# Start Hotfix
+---
+allowed-tools: Bash
+argument-hint: [version]
+description: Start new hotfix or continue existing hotfix development
+---
 
-Start new hotfix or continue existing hotfix development.
+## Context
 
-## Overview
+- Current branch: !`git branch --show-current`
+- Existing hotfix branches: !`git branch --list 'hotfix/*' | sed 's/^..//'`
+- Current version from main: !`(git show main:package.json 2>/dev/null | grep '"version"') || (git show main:Cargo.toml 2>/dev/null | grep '^version') || (git show main:pyproject.toml 2>/dev/null | grep '^version') || echo "no version found on main"`
+- Git status: !`git status --porcelain`
 
-Creates hotfix branch from main or switches to existing hotfix:
-- No existing branches: Create new hotfix with incremented patch version
-- Branch exists: Switch to existing branch
+## Your task
 
-## Usage
+Start or continue hotfix development with version: $ARGUMENTS
 
-```bash
-# Create new hotfix
-git flow hotfix start [version]
+**Actions to take:**
+1. If no hotfix branches exist: Create new hotfix branch from main
+2. If hotfix branch exists: Switch to existing hotfix branch
+3. Auto-increment patch version (1.2.3 → 1.2.4) if no version specified
+4. Update version files (package.json, Cargo.toml, pyproject.toml, etc.)
+5. Focus on critical bug fixes only
+6. Keep changes minimal and targeted
 
-# Continue existing hotfix
-git checkout hotfix/[version]
-```
-
-## What It Does
-
-1. Detects existing hotfix branches
-2. Creates new hotfix from main with incremented patch version (1.2.3 → 1.2.4)
-3. Updates version files (package.json, pyproject.toml)
-4. Switches to existing hotfix if found
-
-## Best Practices
-- Focus on critical bug fixes only
-- Use conventional commits (fix:, chore:)
-- Test fixes thoroughly
-- Keep changes minimal
+**Required Commit Standards:**
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work

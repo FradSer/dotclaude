@@ -1,37 +1,29 @@
-# Start Feature
+---
+allowed-tools: Bash
+argument-hint: [feature-name]
+description: Start new feature or continue existing feature development
+---
 
-Start new feature or continue existing feature development.
+## Context
 
-## Overview
+- Current branch: !`git branch --show-current`
+- Existing feature branches: !`git branch --list 'feature/*' | sed 's/^..//'`
+- Git status: !`git status --porcelain`
 
-Creates feature branch from develop or switches to existing feature:
-- No existing branches: Create new feature branch
-- One branch: Switch to existing branch
-- Multiple branches: Prompt for selection
+## Your task
 
-## Usage
+Start or continue feature development with name: $ARGUMENTS
 
-```bash
-# Create new feature
-git flow feature start [feature-name]
+**Actions to take:**
+1. If no feature branches exist: Create new feature branch from develop
+2. If one feature branch exists: Switch to existing feature branch
+3. If multiple feature branches exist: Show options and let user choose
+4. Use kebab-case naming (e.g., `user-authentication`)
+5. Publish new feature branch to remote for collaboration
+6. Ensure working directory is clean before switching branches
 
-# Publish feature for collaboration
-git flow feature publish [feature-name]
-
-# Continue existing feature
-git checkout feature/[feature-name]
-git flow feature pull origin [feature-name]
-```
-
-## What It Does
-
-1. Detects existing feature branches
-2. Creates new feature from develop or switches to existing
-3. Generates kebab-case names (e.g., `user-authentication`)
-4. Publishes branch to remote if new
-
-## Best Practices
-- Keep features small (< 500 lines)
-- Use conventional commits
-- Regular atomic commits
-- Write tests during development
+**Required Commit Standards:**
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work
