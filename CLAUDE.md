@@ -14,11 +14,10 @@
 - Keep functions under 20 lines and maintain concise files
 
 ## Code Quality
-- **MANDATORY TDD** - Always follow Test-Driven Development: Red → Green → Refactor
+- **MANDATORY TDD** - Strictly follow: 1) Write failing test 2) Write minimal code to pass 3) Refactor while keeping tests green
 - Handle all error scenarios with meaningful messages
 - Comment "why" not "what" - focus on business logic and complex decisions
 - Search codebase first when uncertain about existing patterns
-- **Test-first development** - Write failing test before implementing feature/fix
 - Update documentation when modifying code
 - **Eliminate redundancy** - extract common logic, apply DRY principle
 - **Reduce complexity** - use guard clauses, early returns, break down large functions
