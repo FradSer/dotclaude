@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh:*), Bash(git:*), Bash(pnpm:*), Bash(npm:*), Bash(python:*), Bash(pytest:*), Grep, Task, TodoWrite
+allowed-tools: Bash(gh:*), Bash(git:*), Grep, Task, TodoWrite
 description: Create comprehensive GitHub pull requests with quality validation
 ---
 

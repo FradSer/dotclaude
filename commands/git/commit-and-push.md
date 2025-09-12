@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git push:*)
+allowed-tools: Bash(git:*)
 description: Create atomic conventional git commit and push to remote
 model: claude-3-5-haiku-latest
 ---
