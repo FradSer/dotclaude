@@ -1,52 +1,57 @@
-# Code Refactoring
+---
+allowed-tools: Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(python:*), Bash(pytest:*), Read, Edit, MultiEdit, Glob, Grep, Task
+description: Systematic code refactoring to improve quality while preserving functionality
+model: claude-3-5-haiku-latest
+---
 
-Systematic approach to improving code quality through structural improvements while preserving functionality.
+## Context
 
-## Process Overview
+- Current git status: !`git status`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -5`
+- Code complexity indicators: Analyze files for functions >20 lines, nested conditionals, duplication
+- Project structure: !`find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.go" | head -20`
 
-**1. Initial Assessment**
-- Check current branch status and compare with main
-- Identify code complexity indicators:
-  - Functions longer than 20 lines
-  - Nested conditionals (3+ levels)
-  - Duplicated code blocks
-  - Complex boolean expressions
-  - Magic numbers or unclear variable names
+## Your task
 
-**2. Analysis and Planning**
-- Search codebase first to understand existing patterns and conventions
-- Use @code-simplifier to analyze the codebase and identify specific refactoring opportunities
-- Prioritize improvements by impact: readability, maintainability, performance
-- Plan atomic refactoring steps to avoid breaking changes
-- Use parallel execution for independent analysis tasks (file reads, pattern searches)
+Systematically improve code quality through structural refactoring while preserving functionality. Target files/areas specified in $ARGUMENTS or analyze entire codebase if no specific target given.
 
-**3. Apply Refactoring Techniques**
-- **Eliminate redundancy**: Extract common logic, apply DRY principle
-- **Reduce complexity**: Use guard clauses, early returns, break down large functions
-- **Modernize syntax**: Leverage built-in features and idiomatic expressions
-- **Improve structure**: Apply SOLID principles, enhance separation of concerns
-- **Enhance error handling**: Add meaningful error messages for all scenarios
-- **Strengthen typing**: Avoid loose types, use specific types throughout
+### Refactoring Process
 
-**4. Validation**
-- **CRITICAL**: Never modify existing tests - only run them to validate refactored code
-- Test thoroughly using existing test suite to ensure functionality is preserved
-- Validate through TDD approach - all tests must continue to pass
-- Run lint and build checks to ensure code quality standards
-- Verify no regressions introduced through parallel validation checks
+1. **Initial Assessment**
+   - Analyze current branch status and code structure
+   - Identify complexity indicators: long functions, nested conditionals, duplication
+   - Search codebase to understand existing patterns and conventions
 
-**5. Commit Changes**
-- Make atomic commits for each logical refactoring unit
-- Follow conventional commits format:
-  - Commit message title must be entirely lowercase
-  - Title must be less than 50 characters  
-  - Use format: refactor: description of improvement
-- Push changes to remote repository
+2. **Analysis and Planning**
+   - Use Task tool with code-simplifier agent for comprehensive analysis
+   - Prioritize improvements by impact: readability, maintainability, performance
+   - Plan atomic refactoring steps to avoid breaking changes
 
-## Refactoring Focus Areas
-- Extract methods from long functions
+3. **Apply Refactoring Techniques**
+   - **Eliminate redundancy**: Extract common logic, apply DRY principle
+   - **Reduce complexity**: Use guard clauses, early returns, break down large functions
+   - **Modernize syntax**: Leverage built-in features and idiomatic expressions
+   - **Improve structure**: Apply SOLID principles, enhance separation of concerns
+   - **Enhance error handling**: Add meaningful error messages for all scenarios
+   - **Strengthen typing**: Avoid loose types, use specific types throughout
+
+4. **Validation**
+   - **CRITICAL**: Never modify existing tests - only run them to validate
+   - Test thoroughly using existing test suite to ensure functionality preserved
+   - Run lint and build checks to ensure code quality standards
+   - Verify no regressions through comprehensive validation
+
+5. **Commit Changes**
+   - Make atomic commits for each logical refactoring unit
+   - Follow conventional commit format: `refactor: description`
+   - Title must be entirely lowercase and under 50 characters
+
+### Focus Areas
+
+- Extract methods from functions >20 lines
 - Replace magic numbers with named constants
-- Simplify conditional logic
+- Simplify complex conditional logic
 - Remove code duplication
 - Improve naming conventions
-- Apply modern language features
+- Apply modern language features and best practices
