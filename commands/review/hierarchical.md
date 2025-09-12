@@ -1,16 +1,31 @@
-# Hierarchical Code Review
+---
+allowed-tools: Task
+argument-hint: [files-or-directories]
+description: Comprehensive multi-stage code review using specialized subagents
+---
 
-Comprehensive multi-stage review using specialized subagents for architectural assessment, parallel specialized analysis, and consolidated recommendations.
+## Context
 
-## Process Overview
+- Current branch: !`git branch --show-current`
+- Git status: !`git status --porcelain`
+- Base branch: !`(git show-branch | grep '*' | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -1 | sed 's/.*\[\([^]]*\)\].*/\1/' | sed 's/\^.*//' 2>/dev/null) || echo "develop"`
+- Changes since base: !`BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git log --oneline $BASE..HEAD`
+- Files changed since base: !`BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git diff --name-only $BASE..HEAD`
+- Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn test") || ([ -f Cargo.toml ] && echo "cargo test") || ([ -f pyproject.toml ] && echo "pytest/uv run pytest") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
+
+## Your task
+
+Perform comprehensive hierarchical code review on: $ARGUMENTS
+
+**Multi-stage review process:**
 
 **1. Technical Leadership Assessment**
-- Use @tech-lead-reviewer to evaluate architectural impact, technical debt, and identify critical risk areas
+- Use @tech-lead-reviewer sub agent to evaluate architectural impact, technical debt, and identify critical risk areas
 - Focus on system-wide implications, scalability, and maintainability
 - Determine which specialized reviews are needed
 
 **2. Specialized Parallel Reviews**
-Based on tech lead assessment, conduct applicable reviews:
+Based on assessment, apply focused review using Task tool with appropriate sub agent(s):
 - **@code-reviewer**: Analyze correctness, logic, error handling, and test coverage
 - **@security-reviewer**: Examine authentication, data protection, input validation, and dependencies
 - **@ux-reviewer**: Assess usability, accessibility, and design consistency (when applicable)
@@ -34,7 +49,7 @@ Based on issue type, apply targeted fixes:
 - **UI/UX issues**: Improve usability, accessibility, design consistency
 
 **6. Final Optimization**
-- Use @code-simplifier to review and optimize implemented fixes:
+- Use Task tool with code-simplifier to review and optimize implemented fixes:
   - Eliminate any redundancy introduced during fixes
   - Reduce complexity where possible
   - Apply modern syntax and idiomatic patterns
