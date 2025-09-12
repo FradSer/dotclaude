@@ -24,11 +24,12 @@ Perform streamlined code review on: $ARGUMENTS
 - Determine if architectural concerns or security implications exist
 - Assess whether deeper hierarchical review is warranted
 
-**2. Targeted Review**
-Based on assessment, apply focused review using Task tool with appropriate sub agent(s):
-- **code-reviewer**: Verify correctness, error handling, and code clarity
-- **security-reviewer**: Address identified security concerns
-- **ux-reviewer**: Evaluate UI/UX usability and consistency
+**2. Selective Targeted Review**
+Based on assessment results, use Task tool to launch ONLY the needed specialized reviews:
+- **code-reviewer**: Use if code logic, algorithms, or error handling concerns identified
+- **security-reviewer**: Use if authentication, data handling, or input validation concerns identified  
+- **ux-reviewer**: Use if UI/UX, accessibility, or user interaction concerns identified
+- Skip reviews that are not relevant to the specific changes being assessed
 
 **3. Results Analysis**
 - Present findings organized by:

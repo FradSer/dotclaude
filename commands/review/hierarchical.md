@@ -24,11 +24,11 @@ Perform comprehensive hierarchical code review on: $ARGUMENTS
 - Focus on system-wide implications, scalability, and maintainability
 - Determine which specialized reviews are needed
 
-**2. Specialized Parallel Reviews**
-Based on assessment, apply focused review using Task tool with appropriate sub agent(s):
-- **@code-reviewer**: Analyze correctness, logic, error handling, and test coverage
-- **@security-reviewer**: Examine authentication, data protection, input validation, and dependencies
-- **@ux-reviewer**: Assess usability, accessibility, and design consistency (when applicable)
+**2. Comprehensive Parallel Reviews**
+Use Task tool to launch ALL applicable specialized reviews in parallel:
+- **code-reviewer**: Always analyze correctness, logic, error handling, and test coverage
+- **security-reviewer**: Always examine authentication, data protection, input validation, and dependencies
+- **ux-reviewer**: Always assess usability, accessibility, and design consistency (skip only if purely backend/CLI code)
 
 **3. Consolidated Analysis**
 - Integrate findings from all reviews and provide recommendations by:
