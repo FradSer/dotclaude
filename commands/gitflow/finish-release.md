@@ -21,10 +21,11 @@ Complete and merge release development: $ARGUMENTS
 2. Ensure all changes are committed
 3. Run tests if available before finishing
 4. Update changelog if exists
-5. Finish release using git flow (merges to main, creates tag, back-merges to develop)
-6. Push all changes and tags to origin
-7. Create GitHub release
-8. Handle merge conflicts if they occur
+5. Update README files (README.*) for multi-language support if exists
+6. Finish release using git flow (merges to main, creates tag, back-merges to develop)
+7. Push all changes and tags to origin
+8. Create GitHub release
+9. Handle merge conflicts if they occur
 
 **Manual recovery if git flow fails:**
 - Merge release to main and create tag
