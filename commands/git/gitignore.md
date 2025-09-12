@@ -1,15 +1,16 @@
-Create or update .gitignore file
+---
+allowed-tools: Bash, Read, Write, Edit, Glob, WebFetch
+argument-hint: [additional-technologies]
+description: Create or update .gitignore file
+model: claude-3-5-haiku-20241022
+---
 
-Requirements:
-- Automatically detect project type and operating system
-- Use toptal.com/developers/gitignore API for templates
-- Generate appropriate .gitignore based on detected technologies
-- Preserve existing custom rules when updating
+Create or update the .gitignore file for this project.
 
-Instructions:
-1. **Detect project environment:**
-   - Check operating system (macOS, Linux, Windows)
-   - Scan for project files to identify technologies:
+**Process:**
+1. **Auto-detect environment:**
+   - Detect operating system (macOS, Linux, Windows)
+   - Scan project files to identify technologies:
      - Node.js: package.json
      - Python: requirements.txt, pyproject.toml, setup.py
      - Java: pom.xml, build.gradle
@@ -17,22 +18,20 @@ Instructions:
      - Go: go.mod
      - Rust: Cargo.toml
      - Docker: Dockerfile, docker-compose.yml
-   - Report detected OS and technologies to user
+   - Report detected OS and technologies
 
-2. **Fetch available templates:**
-   - Use: `curl -sL https://www.toptal.com/developers/gitignore/api/list`
-   - Show user available template options
+2. **Fetch and generate .gitignore:**
+   - Get available templates: `curl -sL https://www.toptal.com/developers/gitignore/api/list`
+   - Combine detected OS and technologies (e.g., "macos,node,docker")
+   - Add any additional technologies from arguments: $ARGUMENTS
+   - Generate .gitignore: `curl -sL https://www.toptal.com/developers/gitignore/api/{params}`
+   - Preserve existing custom rules when updating
 
-3. **Handle existing .gitignore:**
-   - Extract custom rules (non-template lines)
-   - Preserve user-added content
-
-4. **Generate new .gitignore:**
-   - Combine OS and detected technologies (e.g., "macos,node,docker")
-   - Use: `curl -sL https://www.toptal.com/developers/gitignore/api/{params}`
-   - Append preserved custom rules with clear section header
-
-5. **Verify results:**
+3. **Verify and report:**
    - Show preview of generated .gitignore
-   - Display current git status to show newly ignored files
-   - Inform user about backup location and customization options
+   - Display git status to show newly ignored files
+   - Backup existing .gitignore if present
+
+**Usage examples:**
+- `/gitignore` - Auto-detect and create .gitignore
+- `/gitignore react typescript` - Add React and TypeScript to detected technologies
