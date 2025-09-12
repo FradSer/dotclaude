@@ -14,7 +14,7 @@
 - Keep functions under 20 lines and maintain concise files
 
 ## Code Quality
-- **MANDATORY TDD** - Strictly follow: 1) Write failing test 2) Write minimal code to pass 3) Refactor while keeping tests green
+- **MANDATORY TDD** - RED: Write failing test first (define behavior) → GREEN: Write minimal code to pass → REFACTOR: Clean up code while keeping tests green. Never write production code without a failing test.
 - Handle all error scenarios with meaningful messages
 - Comment "why" not "what" - focus on business logic and complex decisions
 - Search codebase first when uncertain about existing patterns
