@@ -5,7 +5,6 @@
 ### Task Tool Usage
 - **Plan first, act second** - assess complexity and create todo lists for 3+ steps before acting
 - Mark tasks completed IMMEDIATELY, keep ONE task in_progress for focus
-- Use parallel execution within individual tasks for efficiency
 
 ## Architecture & Design
 - Follow SOLID principles and prefer composition over inheritance
@@ -27,14 +26,11 @@
 - **Strong typing** - avoid `any` type and similar loose types, use specific types
 
 ## Development Workflow
-- **Task-driven development** - use Task/TodoWrite tools for planning and tracking
 - Make atomic commits for logical units of work
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
 - Follow conventional commits format (feat:, fix:, chore:, etc.)
 - Merge PRs with merge commits
-- All tests must pass before merging pull requests
-- Run lint and build checks before closing issues
 - Push commits after completing logical units of work
 
 ## Technology Stack Preferences
@@ -49,5 +45,6 @@
 - Examples: `git status + diff + log`, multiple file reads, concurrent linting
 
 ## Quality Standards
-- All linting, building, and testing must pass before merging
+- All linting, building, and testing must pass before merging pull requests
+- Run lint and build checks before closing issues
 - Security best practices must be followed
