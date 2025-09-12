@@ -1,84 +1,63 @@
-# GitHub Issue Creation
+---
+allowed-tools: Bash(gh:*), Bash(git:*)
+description: Create GitHub issues with TDD principles and proper labels
+---
 
-Create issues following TDD principles and Conventional Commits with proper labels, scope, and auto-closing keywords.
+## Context
 
-## Prerequisites
-- `gh` CLI authenticated
-- Conventional commits (≤50 chars subject, ≤72 chars body)
+- Current git status: !`git status`
+- Current branch: !`git branch --show-current`
+- Open issues: !`gh issue list --state open --limit 10`
+- GitHub authentication: !`gh auth status`
+
+## Requirements
+
+- Follow TDD principles and Conventional Commits
+- Use proper labels, scope, and auto-closing keywords
 - Protected branches require PR + review + CI
 - No direct pushes to main/develop
 
-## Decision Logic
+## Your task
 
-**Branch-based decision tree** (oneOf pattern for mutually exclusive paths):
+Based on the current repository state and $ARGUMENTS, create GitHub issues following best practices:
 
+### Decision Logic
+
+**Branch-based decision tree**:
 - **On main/develop**: Create issue directly
 - **On PR branch**: Ask "Must this be fixed before merge?"
   - **Yes**: Comment in PR with detailed context and reasoning, don't create issue
   - **No**: Create new issue for later with clear justification for scope separation
 
-## Issue Types
-1. **Epic issues**: multi-PR initiatives (no auto-close keywords)  
-2. **PR-scoped issues**: single PR resolution (use auto-close keywords)
+### Issue Types
 
-Follow TDD: issue → test → code → PR → merge
+1. **Epic issues**: Multi-PR initiatives (no auto-close keywords)
+2. **PR-scoped issues**: Single PR resolution (use auto-close keywords)
+3. **Review issues**: Non-blocking feedback from PR reviews
 
-## Epic Issues (Multi-PR)
+### Issue Creation Process
 
-For large, cross-cutting initiatives spanning multiple PRs/repos.
+1. **Analyze context** from git status and existing issues
+2. **Determine issue type** based on scope and complexity
+3. **Create proper labels** if they don't exist:
+   ```bash
+   gh label create "priority:high" --description "High priority - this sprint" --color "d73a4a" || true
+   gh label create "priority:medium" --description "Medium priority - next sprint" --color "fbca04" || true
+   gh label create "priority:low" --description "Low priority - backlog" --color "0075ca" || true
+   ```
+4. **Create issue** with proper structure and labels
+5. **Link related items** if applicable
 
-**Structure**: Problem, Scope, Acceptance Criteria, Out of Scope
-**Labels**: `enhancement`, `priority:*`, area labels
-**Title**: ≤70 chars, imperative, no emojis
+### Issue Structure Requirements
 
-**Linking**:
-```bash
-# Link sub-issue to epic
-gh issue comment <epic_number> --body "Sub-issue: #<sub_issue_number>"
+- **Title**: ≤70 chars, imperative, no emojis
+- **Labels**: Include priority and type labels
+- **Body**: Problem description, acceptance criteria, context
+- **Auto-closing**: Use keywords (`fixes`, `closes`, `resolves`) for PR-scoped issues
 
-# Link PR to epic  
-gh pr comment <pr_number> --body "Part of epic #<epic_number>"
-```
+### Key Principles
 
-## PR-Scoped Issues (Single PR)
-
-**Structure**: Problem, Steps to Reproduce, Expected vs Actual, Environment, Acceptance Criteria
-**Labels**: `bug` or `enhancement`, `priority:*`
-**Title**: ≤70 chars, imperative, no emojis
-
-**Auto-closing setup**: Use keywords (`fixes #<number>`) in PR body when resolving this issue.
-
-## Issues from PR Review
-
-For non-blocking feedback that's out-of-scope or larger than current PR.
-
-**Structure**: Context, Acceptance Criteria, Priority
-**Labels**: `enhancement`, `priority:*`, `help wanted`
-**Title**: ≤70 chars, imperative, no emojis
-
-**Cross-reference**: Link issue to original PR via comment: `gh issue comment <issue_number> --body "From PR #<pr_number> review"`
-
-## Labels & Prioritization
-
-**Label Setup**:
-```bash
-# Ensure priority labels exist before creating issues
-gh label create "priority:high" --description "High priority - this sprint" --color "d73a4a" || true
-gh label create "priority:medium" --description "Medium priority - next sprint" --color "fbca04" || true  
-gh label create "priority:low" --description "Low priority - backlog" --color "0075ca" || true
-```
-**Required Labels**:
-- **Priority**: `priority:high` (this sprint), `priority:medium` (next sprint), `priority:low` (backlog)
-- **Type**: `bug`, `enhancement`, `documentation`, `question`
-
-**Optional Labels**: `help wanted`, `good first issue`, `duplicate`, `invalid`, `wontfix`
-
-## Quick Reference
-
-**Auto-closing keywords**: `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`
-
-**Key principles**:
-- Issues before code (TDD)
+- Follow TDD: issue → test → code → PR → merge
 - Epic issues: manual linking, no auto-close keywords
 - PR-scoped issues: designed for auto-close keywords
-- Clear titles ≤70 chars, no emojis
+- Clear, actionable descriptions with proper context
