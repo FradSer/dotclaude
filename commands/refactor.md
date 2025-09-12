@@ -1,7 +1,6 @@
 ---
-allowed-tools: Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(python:*), Bash(pytest:*), Read, Edit, MultiEdit, Glob, Grep, Task
+allowed-tools: Bash(git:*), Read, Edit, MultiEdit, Glob, Grep, Task
 description: Systematic code refactoring to improve quality while preserving functionality
-model: claude-3-5-haiku-latest
 ---
 
 ## Context
@@ -11,6 +10,13 @@ model: claude-3-5-haiku-latest
 - Recent commits: !`git log --oneline -5`
 - Code complexity indicators: Analyze files for functions >20 lines, nested conditionals, duplication
 - Project structure: !`find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.go" | head -20`
+
+## Requirements
+
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Use atomic commits for logical units of work
 
 ## Your task
 
@@ -44,8 +50,6 @@ Systematically improve code quality through structural refactoring while preserv
 
 5. **Commit Changes**
    - Make atomic commits for each logical refactoring unit
-   - Follow conventional commit format: `refactor: description`
-   - Title must be entirely lowercase and under 50 characters
 
 ### Focus Areas
 
