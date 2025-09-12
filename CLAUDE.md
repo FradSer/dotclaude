@@ -11,7 +11,7 @@
 - Use dependency injection for testability
 - Apply repository pattern for data access and strategy pattern for algorithms
 - Use descriptive names and avoid abbreviations or magic numbers
-- Keep functions under 20 lines and maintain concise files
+- Keep functions under 50 lines and maintain concise files
 
 ## Code Quality
 - **MANDATORY TDD** - RED: Write failing test first (define behavior) → GREEN: Write minimal code to pass → REFACTOR: Clean up code while keeping tests green. Never write production code without a failing test.
@@ -22,7 +22,7 @@
 - **Eliminate redundancy** - extract common logic, apply DRY principle
 - **Reduce complexity** - use guard clauses, early returns, break down large functions
 - **Modernize syntax** - leverage built-in features and idiomatic expressions
-- **Strong typing** - avoid `any` type and similar loose types, use specific types
+- **Strong typing** - avoid `any` or `unknow` type and similar loose types, use specific types
 
 ## Development Workflow
 - Make atomic commits for logical units of work
@@ -33,9 +33,9 @@
 - Push commits after completing logical units of work
 
 ## Technology Stack Preferences
-- **Node.js**: Use `pnpm` for package management
-- **Python**: Use `uv` for dependency management and virtual environments
-- **General**: Avoid emojis and hardcoded secrets in code
+- **Node.js**: Use `pnpm` for package management, JSDoc for documentation
+- **Python**: Use `uv` for dependency management and virtual environments, docstrings for documentation
+- **General**: Avoid emojis and hardcoded secrets in code, use language-specific doc standards
 
 ## Parallel Execution Best Practices
 - **Batch independent tasks** in single tool calls for optimal performance
