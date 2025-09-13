@@ -81,18 +81,23 @@ dotclaude/
     - swiftui-clean-architecture-reviewer.md
   - commands/
     - continue.md
-    - fix/
-      - code-quality.md
-      - security.md
-      - ui.md
+    - create-command.md
     - gh/
       - create-issues.md
+      - create-pr.md
       - resolve-issues.md
     - git/
       - commit-and-push.md
       - commit.md
+      - gitignore.md
       - push.md
-      - release.md
+    - gitflow/
+      - finish-feature.md
+      - finish-hotfix.md
+      - finish-release.md
+      - start-feature.md
+      - start-hotfix.md
+      - start-release.md
     - refactor.md
     - review/
       - hierarchical.md
@@ -131,23 +136,28 @@ dotclaude/
 - **`/review/quick`** - 两阶段快速审查流程
 - **`/review/hierarchical`** - 多层并行审查与整合输出
 
-### 修复操作
-- **`/fix/code-quality`** - 代码质量改进（命名、复杂度、性能）
-- **`/fix/security`** - 安全漏洞识别和修复
-- **`/fix/ui`** - UI/UX 一致性和可用性增强
-
 ### Git 操作
 - **`/git/commit.md`** - 结构化提交工作流
 - **`/git/commit-and-push`** - 组合提交和推送操作
 - **`/git/push`** - 带验证检查的推送
-- **`/git/release`** - Git-flow 发布管理
+- **`/git/gitignore`** - 生成和管理 .gitignore 文件
+
+### GitFlow 操作
+- **`/gitflow/start-feature`** - 启动新功能分支
+- **`/gitflow/finish-feature`** - 完成功能开发
+- **`/gitflow/start-release`** - 开始发布准备
+- **`/gitflow/finish-release`** - 完成发布
+- **`/gitflow/start-hotfix`** - 创建热修复分支
+- **`/gitflow/finish-hotfix`** - 部署关键修复
 
 ### GitHub 集成
 - **`/gh/create-issues`** - 使用模板创建问题
+- **`/gh/create-pr`** - 使用模板创建拉取请求
 - **`/gh/resolve-issues`** - 智能问题解决，包含分支检测、AI 生成名称和 worktree 继续功能
 
 ### 开发工具
 - **`/continue`** - 恢复中断的工作会话
+- **`/create-command`** - 创建新命令模板
 - **`/refactor`** - 系统化代码重构检查清单
 
 ## 使用模式

@@ -81,24 +81,30 @@ dotclaude/
     - swiftui-clean-architecture-reviewer.md
   - commands/
     - continue.md
-    - fix/
-      - code-quality.md
-      - security.md
-      - ui.md
+    - create-command.md
     - gh/
       - create-issues.md
+      - create-pr.md
       - resolve-issues.md
     - git/
       - commit-and-push.md
       - commit.md
+      - gitignore.md
       - push.md
-      - release.md
+    - gitflow/
+      - finish-feature.md
+      - finish-hotfix.md
+      - finish-release.md
+      - start-feature.md
+      - start-hotfix.md
+      - start-release.md
     - refactor.md
     - review/
       - hierarchical.md
       - quick.md
   - CLAUDE.md
   - README.md
+  - README-zh.md
   - sync-to-github.sh
 ```
 
@@ -130,23 +136,28 @@ Structured workflows for common development tasks:
 - **`/review/quick`** - Two-stage rapid review process
 - **`/review/hierarchical`** - Multi-layered parallel reviews with consolidated output
 
-### Fix Operations
-- **`/fix/code-quality`** - Code quality improvements (naming, complexity, performance)
-- **`/fix/security`** - Security vulnerability identification and remediation
-- **`/fix/ui`** - UI/UX consistency and usability enhancements
-
 ### Git Operations
 - **`/git/commit.md`** - Structured commit workflow
 - **`/git/commit-and-push`** - Combined commit and push operations
 - **`/git/push`** - Push with validation checks
-- **`/git/release`** - Git-flow release management
+- **`/git/gitignore`** - Generate and manage .gitignore files
+
+### GitFlow Operations
+- **`/gitflow/start-feature`** - Start new feature branches
+- **`/gitflow/finish-feature`** - Complete feature development
+- **`/gitflow/start-release`** - Begin release preparation
+- **`/gitflow/finish-release`** - Finalize releases
+- **`/gitflow/start-hotfix`** - Create hotfix branches
+- **`/gitflow/finish-hotfix`** - Deploy critical fixes
 
 ### GitHub Integration
 - **`/gh/create-issues`** - Issue creation with templates
+- **`/gh/create-pr`** - Pull request creation with templates
 - **`/gh/resolve-issues`** - Smart issue resolution with branch detection, AI-generated names, and worktree continuation
 
 ### Development Utilities
 - **`/continue`** - Resume interrupted work sessions
+- **`/create-command`** - Create new command templates
 - **`/refactor`** - Systematic code refactoring checklist
 
 ## Usage Patterns
