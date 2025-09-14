@@ -37,7 +37,7 @@ Based on the current repository state and $ARGUMENTS, create GitHub issues follo
 
 ### Issue Creation Process
 
-1. **Analyze context** from git status and existing issues
+1. **Analyze context** from current repository state and existing issues
 2. **Determine issue type** based on scope and complexity
 3. **Create proper labels** if they don't exist:
    ```bash

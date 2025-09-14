@@ -26,5 +26,5 @@ Start or continue hotfix development with version: $ARGUMENTS
 **Required Commit Standards:**
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work

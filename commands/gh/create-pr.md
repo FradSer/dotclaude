@@ -49,7 +49,7 @@ Create comprehensive, secure pull requests using systematic validation and quali
 - All quality checks passed (lint, test, build)
 - Security scan completed without issues
 - Related issues identified and linked
-- Proper branch naming and commit messages
+- Proper branch naming and commit messages following standards
 
 ### Failure Resolution Process
 
@@ -107,6 +107,16 @@ Labels are automatically applied based on changes:
 - `dependencies` - Package file changes
 - `security` - Security-related modifications
 
+### Commit Message Validation
+
+Before creating PR, validate all commits follow standards:
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
+- Use atomic commits for logical units of work
+- Review all commits in branch for compliance
+- Handle non-standard commits by documenting in PR description or using `git rebase -i` if safe
+
 ### Best Practices
 
 - **Quality-first**: All checks must pass before PR creation
@@ -114,3 +124,4 @@ Labels are automatically applied based on changes:
 - **Issue linking**: Connect PRs to related issues with auto-closing keywords
 - **Small, focused changes**: Easier to review and merge
 - **Parallel execution**: Optimize tool calls for efficiency
+- **Commit standards**: Validate all commits follow conventional format

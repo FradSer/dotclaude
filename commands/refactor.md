@@ -15,7 +15,7 @@ description: Systematic code refactoring to improve quality while preserving fun
 
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
 
 ## Your task
@@ -48,8 +48,14 @@ Systematically improve code quality through structural refactoring while preserv
    - Run lint and build checks to ensure code quality standards
    - Verify no regressions through comprehensive validation
 
-5. **Commit Changes**
-   - Make atomic commits for each logical refactoring unit
+5. **Automatic Commits**
+   - **Stage and commit each logical refactoring unit automatically**
+   - Commit message title must be entirely lowercase
+   - Title must be less than 50 characters
+   - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
+   - Use atomic commits for logical units of work
+   - Ensure clean working directory before committing
+   - **Push commits automatically** after all refactoring is complete
 
 ### Focus Areas
 
