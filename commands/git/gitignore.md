@@ -25,7 +25,7 @@ Create or update the .gitignore file for this project:
    - Generate .gitignore: `curl -sL https://www.toptal.com/developers/gitignore/api/{params}`
    - Preserve existing custom rules when updating
 
-3. **Verify results** by showing git status changes
+3. **Verify results** by showing repository changes
 
 **Usage examples:**
 - `/gitignore` - Auto-detect and create .gitignore

@@ -115,7 +115,7 @@ Before creating PR, validate all commits follow standards:
 - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
 - Review all commits in branch for compliance
-- Handle non-standard commits by documenting in PR description or using `git rebase -i` if safe
+- Handle non-standard commits by documenting in PR description or interactive rebase if safe
 
 ### Best Practices
 
