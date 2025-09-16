@@ -9,8 +9,8 @@ description: Complete and merge current release development
 - Current branch: !`git branch --show-current`
 - Git status: !`git status --porcelain`
 - Recent commits: !`git log --oneline -5`
-- Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn") || ([ -f Cargo.toml ] && echo "cargo") || ([ -f pyproject.toml ] && echo "pytest/uv") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
-- Current version: !`([ -f package.json ] && grep '"version"' package.json) || ([ -f Cargo.toml ] && grep '^version' Cargo.toml) || ([ -f pyproject.toml ] && grep '^version' pyproject.toml) || echo "no version found"`
+- Test commands available: Detect available testing frameworks for this project
+- Current version: Check version information in project configuration files
 
 ## Your task
 
@@ -38,5 +38,3 @@ Complete and merge release development: $ARGUMENTS
 - Title must be less than 50 characters
 - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
-- Handle any uncommitted changes before finishing
-- Separate changelog, documentation, and version updates into distinct commits
