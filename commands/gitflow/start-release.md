@@ -7,9 +7,9 @@ description: Start new release or continue existing release development
 ## Context
 
 - Current branch: !`git branch --show-current`
-- Existing release branches: List all release branches
+- Existing release branches: !`git branch --list 'release/*' | sed 's/^..//'`
 - Latest tag: !`git tag --list --sort=-creatordate | head -1`
-- Recent commits for version detection: Get commits since latest tag that affect versioning
+- Recent commits for version detection: !`git log $(git tag --list --sort=-creatordate | head -1)..develop --oneline --grep="feat\|fix\|BREAKING"`
 - Current version: Check version information in project configuration files
 
 ## Your task
