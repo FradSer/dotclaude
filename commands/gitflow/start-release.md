@@ -8,7 +8,8 @@ description: Start new release or continue existing release development
 
 - Current branch: !`git branch --show-current`
 - Existing release branches: !`git branch --list 'release/*' | sed 's/^..//'`
-- Recent commits for version detection: !`git log $(git describe --tags --abbrev=0)..develop --oneline --grep="feat\|fix\|BREAKING"`
+- Latest tag: !`git tag --list --sort=-creatordate | head -1`
+- Recent commits for version detection: !`git log $(git tag --list --sort=-creatordate | head -1)..develop --oneline --grep="feat\|fix\|BREAKING"`
 - Current version: !`([ -f package.json ] && grep '"version"' package.json) || ([ -f Cargo.toml ] && grep '^version' Cargo.toml) || ([ -f pyproject.toml ] && grep '^version' pyproject.toml) || echo "no version found"`
 
 ## Your task
