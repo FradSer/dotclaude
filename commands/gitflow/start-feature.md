@@ -7,7 +7,7 @@ description: Start new feature or continue existing feature development
 ## Context
 
 - Current branch: !`git branch --show-current`
-- Existing feature branches: !`git branch --list 'feature/*' | sed 's/^..//'`
+- Existing feature branches: List all feature branches
 - Git status: !`git status --porcelain`
 
 ## Your task
