@@ -21,7 +21,7 @@ Complete and merge release development: $ARGUMENTS
 2. Ensure all changes are committed
 3. Run tests if available before finishing
 4. Update changelog if exists
-5. Update README files (README.*) for multi-language support if exists
+5. Update all README files (README*.*, README.*.*, etc.) if they exist
 6. Finish release workflow (merges to main, creates tag, back-merges to develop)
 7. Push all changes and tags to origin
 8. Create GitHub release
