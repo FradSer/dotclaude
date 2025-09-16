@@ -22,12 +22,12 @@ Complete and merge release development: $ARGUMENTS
 3. Run tests if available before finishing
 4. Update changelog if exists
 5. Update README files (README.*) for multi-language support if exists
-6. Finish release using git flow (merges to main, creates tag, back-merges to develop)
+6. Finish release workflow (merges to main, creates tag, back-merges to develop)
 7. Push all changes and tags to origin
 8. Create GitHub release
 9. Handle merge conflicts if they occur
 
-**Manual recovery if git flow fails:**
+**Manual recovery if workflow fails:**
 - Merge release to main and create tag
 - Back-merge to develop
 - Clean up release branch
@@ -36,5 +36,7 @@ Complete and merge release development: $ARGUMENTS
 **Required Commit Standards:**
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
+- Handle any uncommitted changes before finishing
+- Separate changelog, documentation, and version updates into distinct commits

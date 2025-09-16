@@ -15,11 +15,12 @@ description: Resolve GitHub issues using isolated worktrees and TDD
 
 - Use isolated worktrees for development
 - Follow TDD approach and protected PR workflow
-- Commit requirements:
-  - Title must be entirely lowercase
+- Issue resolution commit standards:
+  - Commit message title must be entirely lowercase
   - Title must be less than 50 characters
-  - Follow conventional commits format (feat:, fix:, chore:, etc.)
+  - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
   - Use atomic commits for logical units of work
+  - Include issue reference in commit body when relevant
 - Protected branches require PR + review + CI
 
 ## Your task

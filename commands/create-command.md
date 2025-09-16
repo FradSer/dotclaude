@@ -95,7 +95,7 @@ For example:
 1. **Determine scope**: Extract first argument (Project/Personal, defaults to Project if not specified)
 2. **Extract purpose**: Understand what the user wants from remaining `$ARGUMENTS`
 3. **Generate name**: Create descriptive name (lowercase with hyphens)
-4. **Create directory**: Use `mkdir -p .claude/commands` (Project) or `mkdir -p ~/.claude/commands` (Personal)
+4. **Create directory**: Create appropriate commands directory structure
 5. **Write command file**: Include proper frontmatter and structure
 6. **Add features**: Arguments, bash commands, file references as needed
 

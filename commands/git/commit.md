@@ -14,7 +14,7 @@ model: claude-3-5-haiku-latest
 
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, chore:, etc.)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
 
 ## Your task
@@ -23,9 +23,9 @@ Based on the above changes:
 
 1. **Analyze git diff** to identify logical units of work
 2. **Split into atomic commits** if multiple logical changes are detected:
-   - Each commit should represent one logical unit of work
-   - Group related files and changes together
-   - Separate different types of changes (feat, fix, chore, docs, etc.)
+   - Each commit should represent one complete logical change
+   - Group related files that belong to the same feature or fix
+   - Separate different change types (feat, fix, chore, docs, etc.) into distinct commits
 3. **Create commits sequentially** for each logical unit:
    - Stage only files related to current logical unit
    - Create commit with proper conventional commit message
