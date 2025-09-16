@@ -1,10 +1,10 @@
-# Frad's `.claude` ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-WIP-yellow)
+# Frad's `.claude` Configuration ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-WIP-yellow)
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Configuration-blue.svg)](https://docs.anthropic.com/en/docs/claude-code) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**English | [中文](README-zh.md)**
+**English | [中文](README.zh-CN.md)**
 
-A sophisticated multi-agent configuration system for Claude Code that provides specialized agents and command templates to accelerate code review, refactoring, security audits, tech-lead-guidance, and UX evaluations.
+A sophisticated multi-agent configuration system for Claude Code featuring specialized agents and structured command templates to accelerate development workflows including code review, refactoring, security audits, architectural guidance, and UX evaluations.
 
 ## Quick Start
 
@@ -15,38 +15,33 @@ New to the multi-agent system? Start here:
 bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
 ```
 
-### 2. Basic Agent Usage
-In any Claude Code conversation:
-- `@agent-code-reviewer` - Review your code for issues
-- `@agent-security-reviewer` - Check for security vulnerabilities
-- `@agent-ux-reviewer` - Evaluate user interface designs
+### 2. Essential Agents
+Available in any Claude Code conversation:
+- **`@agent-code-reviewer`** - Comprehensive code analysis and best practices
+- **`@agent-security-reviewer`** - Security vulnerability assessment
+- **`@agent-tech-lead-reviewer`** - Architectural guidance and technical direction
+- **`@agent-ux-reviewer`** - User interface and experience evaluation
+- **`@agent-code-simplifier`** - Code refactoring and complexity reduction
 
-### 3. Best Practice Workflow in `claude`
-Three-stage collaborative process for comprehensive code quality:
+### 3. Recommended Workflow
+**Three-stage quality assurance process:**
 
-1. **Hierarchical Review** - Use `/review/hierarchical` for thorough multi-agent analysis
-   - *Review and validate Claude's analysis before proceeding*
+1. **🔍 Analysis** - Use `/review/hierarchical` for multi-agent code analysis
+2. **📋 Planning** - Use `/gh/create-issues` to create tracked improvement tasks
+3. **⚡ Implementation** - Use `/gh/resolve-issues` with smart branch management
 
-2. **Issue Creation** - Use `/gh/create-issues` to create GitHub issues for tracking improvements  
-   - *Check and refine the issues Claude suggests before creating*
+> **💡 Best Practice**: Validate Claude's suggestions at each stage to ensure alignment with your project goals.
 
-3. **Quality Implementation** - Use `/gh/resolve-issues` with intelligent branch detection, AI-generated names, and worktree management
-   - *Automatically detects existing worktrees and offers continuation options*
-   - *Uses AI to generate concise, descriptive branch names*
-   - *Review Claude's code suggestions and adapt them to your context*
-
-Each step requires engineer validation to ensure Claude's output aligns with project goals and constraints. See [Collaboration Philosophy](#collaboration-philosophy) for partnership principles.
-
-### 4. Essential Commands
-Open these templates as checklists in Claude Code:
-- **Quick review**: `commands/review/quick.md`
-- **Fix issues**: `commands/fix/code-quality.md`
-- **Commit changes**: `commands/git/commit-and-push.md`
+### 4. Key Commands
+Open these command templates in Claude Code:
+- **`/review/quick`** - Fast two-stage code review
+- **`/git/commit-and-push`** - Structured commit workflow
+- **`/continue`** - Resume interrupted work sessions
 
 ### 5. Next Steps
-- Browse [Specialized Agents](#specialized-agents) for all available experts
+- Browse [Agent System](#agent-system) for all available specialists
 - Explore [Command Templates](#command-templates) for structured workflows
-- Set up [Multi-Agent Collaboration](#multi-agent-collaboration) pipelines
+- Review [Usage Patterns](#usage-patterns) for effective collaboration
 
 ---
 
@@ -67,170 +62,158 @@ Open these templates as checklists in Claude Code:
 
 </details>
 
-## Directory Structure
+## 📁 Directory Structure
 
 ```text
 dotclaude/
-  - agents/                    # Global agents (available in all projects)
-    - code-reviewer.md
-    - code-simplifier.md
-    - security-reviewer.md
-    - tech-lead-reviewer.md
-    - ux-reviewer.md
-  - local-agents/              # Local agents (project-specific)
-    - swiftui-clean-architecture-reviewer.md
-  - commands/
-    - continue.md
-    - create-command.md
-    - gh/
-      - create-issues.md
-      - create-pr.md
-      - resolve-issues.md
-    - git/
-      - commit-and-push.md
-      - commit.md
-      - gitignore.md
-      - push.md
-    - gitflow/
-      - finish-feature.md
-      - finish-hotfix.md
-      - finish-release.md
-      - start-feature.md
-      - start-hotfix.md
-      - start-release.md
-    - refactor.md
-    - review/
-      - hierarchical.md
-      - quick.md
-  - CLAUDE.md
-  - README.md
-  - README-zh.md
-  - sync-to-github.sh
+├── agents/                    # 🤖 Global agents (all projects)
+│   ├── code-reviewer.md
+│   ├── code-simplifier.md
+│   ├── security-reviewer.md
+│   ├── tech-lead-reviewer.md
+│   └── ux-reviewer.md
+├── local-agents/              # 🎯 Project-specific agents
+│   └── swiftui-clean-architecture-reviewer.md
+├── commands/                  # ⚡ Workflow templates
+│   ├── continue.md
+│   ├── create-command.md
+│   ├── refactor.md
+│   ├── gh/                    # GitHub workflows
+│   │   ├── create-issues.md
+│   │   ├── create-pr.md
+│   │   └── resolve-issues.md
+│   ├── git/                   # Git operations
+│   │   ├── commit-and-push.md
+│   │   ├── commit.md
+│   │   ├── gitignore.md
+│   │   └── push.md
+│   ├── gitflow/               # GitFlow workflows
+│   │   ├── finish-feature.md
+│   │   ├── finish-hotfix.md
+│   │   ├── finish-release.md
+│   │   ├── start-feature.md
+│   │   ├── start-hotfix.md
+│   │   └── start-release.md
+│   └── review/                # Code review workflows
+│       ├── hierarchical.md
+│       └── quick.md
+├── CLAUDE.md                  # Development guidelines
+├── README.md
+├── README.zh-CN.md
+└── sync-to-github.sh          # Configuration sync script
 ```
 
-## Agent System
+## 🤖 Agent System
 
 ### Global Agents
-Universal specialized agents available in all projects, stored in `agents/` directory:
+Universal specialists available in all projects:
 
-| Agent | Purpose | Focus Areas |
-|-------|---------|-------------|
-| **agent-code-reviewer** | Comprehensive code review | Correctness, error handling, maintainability, best practices |
-| **agent-code-simplifier** | Refactoring & optimization | Readability, complexity reduction, DRY principles |
-| **agent-security-reviewer** | Security audit & hardening | AuthN/AuthZ, input validation, dependency scanning |
-| **agent-tech-lead-reviewer** | Architectural guidance | System design, technical direction, risk assessment |
-| **agent-ux-reviewer** | User experience evaluation | Usability heuristics, accessibility standards, UI consistency |
+| Agent | Purpose | Specialization |
+|-------|---------|---------------|
+| **`@agent-code-reviewer`** | Code quality analysis | Correctness, maintainability, best practices |
+| **`@agent-code-simplifier`** | Refactoring assistance | Complexity reduction, DRY principles, modernization |
+| **`@agent-security-reviewer`** | Security assessment | Vulnerability detection, secure coding practices |
+| **`@agent-tech-lead-reviewer`** | Technical leadership | Architecture, design patterns, technical direction |
+| **`@agent-ux-reviewer`** | User experience audit | Usability, accessibility, interface consistency |
 
 ### Local Agents
-Project-specific specialized agents stored in `local-agents/` directory, copied to project's `.claude/agents/` via sync script:
+Project-specific specialists (copied via sync script):
 
-| Agent | Purpose | Focus Areas | Target Projects |
-|-------|---------|-------------|----------------|
-| **swiftui-clean-architecture-reviewer** | SwiftUI Clean Architecture review | Layer separation, MVVM patterns, SwiftData integration, @Observable patterns | SwiftUI projects |
+| Agent | Target | Specialization |
+|-------|--------|---------------|
+| **`@swiftui-clean-architecture-reviewer`** | SwiftUI | Clean Architecture, MVVM, SwiftData patterns |
 
-## Command Templates
+## ⚡ Command Templates
 
-Structured workflows for common development tasks:
+Structured workflow templates for common development tasks:
 
-### Review Workflows
-- **`/review/quick`** - Two-stage rapid review process
-- **`/review/hierarchical`** - Multi-layered parallel reviews with consolidated output
+### 🔍 Code Review
+- **`/review/quick`** - Fast two-stage review process
+- **`/review/hierarchical`** - Multi-agent parallel analysis with consolidated results
 
-### Git Operations
-- **`/git/commit.md`** - Structured commit workflow
-- **`/git/commit-and-push`** - Combined commit and push operations
-- **`/git/push`** - Push with validation checks
+### 🌿 Git Operations
+- **`/git/commit`** - Structured commit workflow with conventional messages
+- **`/git/commit-and-push`** - Combined commit and push with validation
+- **`/git/push`** - Push with pre-flight checks
 - **`/git/gitignore`** - Generate and manage .gitignore files
 
-### GitFlow Operations
-- **`/gitflow/start-feature`** - Start new feature branches
-- **`/gitflow/finish-feature`** - Complete feature development
-- **`/gitflow/start-release`** - Begin release preparation
-- **`/gitflow/finish-release`** - Finalize releases
-- **`/gitflow/start-hotfix`** - Create hotfix branches
-- **`/gitflow/finish-hotfix`** - Deploy critical fixes
+### 🚀 GitFlow Workflows
+- **`/gitflow/start-feature`** - Initialize feature branches
+- **`/gitflow/finish-feature`** - Complete and merge features
+- **`/gitflow/start-release`** - Prepare release branches
+- **`/gitflow/finish-release`** - Finalize and tag releases
+- **`/gitflow/start-hotfix`** - Create urgent fix branches
+- **`/gitflow/finish-hotfix`** - Deploy critical patches
 
-### GitHub Integration
-- **`/gh/create-issues`** - Issue creation with templates
-- **`/gh/create-pr`** - Pull request creation with templates
-- **`/gh/resolve-issues`** - Smart issue resolution with branch detection, AI-generated names, and worktree continuation
+### 🐙 GitHub Integration
+- **`/gh/create-issues`** - Generate issues with templates and labels
+- **`/gh/create-pr`** - Create pull requests with structured descriptions
+- **`/gh/resolve-issues`** - Smart issue resolution with auto-branching and worktree management
 
-### Development Utilities
+### 🛠️ Development Utilities
 - **`/continue`** - Resume interrupted work sessions
-- **`/create-command`** - Create new command templates
-- **`/refactor`** - Systematic code refactoring checklist
+- **`/create-command`** - Generate new command templates
+- **`/refactor`** - Systematic code improvement checklist
 
-## Usage Patterns
+## 💡 Usage Patterns
 
 ### Command-Driven Workflows
-1. **Open command templates** - Use `commands/*.md` files as interactive checklists
-2. **Follow structured processes** - Each template guides you through specific workflows
-3. **Maintain consistency** - Standardized approaches across team members
+1. **📋 Open templates** - Use command files as interactive checklists in Claude Code
+2. **🎯 Follow workflows** - Each template provides structured, step-by-step guidance
+3. **🤝 Maintain consistency** - Standardized approaches across team members and projects
 
-### Agent Invocation
+### Agent Collaboration
 
-**Global Agents** (available in any project):
-```
-@agent-code-reviewer     # Comprehensive code analysis
-@agent-security-reviewer # Security-focused audit
-@agent-tech-lead-reviewer # Architectural guidance
-@agent-ux-reviewer       # User experience evaluation
-@agent-code-simplifier   # Refactoring assistance
-```
-
-**Local Agents** (must be copied to project via sync script first):
-```
-@swiftui-clean-architecture-reviewer # SwiftUI Clean Architecture review
-```
-
-### Multi-Agent Collaboration
+**Sequential Reviews** (thorough analysis):
 ```bash
-# Example: Comprehensive review pipeline
 @agent-code-reviewer → @agent-security-reviewer → @agent-tech-lead-reviewer
 ```
 
-### Collaboration Philosophy
+**Parallel Specialization** (targeted expertise):
+```bash
+@agent-ux-reviewer        # UI/UX focused
+@agent-security-reviewer  # Security focused
+@agent-code-simplifier    # Refactoring focused
+```
 
-**Claude Code as Your Development Partner**
+**Project-Specific** (after sync):
+```bash
+@swiftui-clean-architecture-reviewer  # SwiftUI projects
+```
 
-Treat Claude Code as an excellent colleague who collaborates asynchronously. This partnership provides specialized expertise and quality assurance while requiring your validation at each step to ensure alignment with project goals.
+### 🤝 Collaboration Philosophy
 
-**GitHub as a Collaboration Platform**
+**Human-AI Partnership**
+Claude Code serves as your specialized development partner, providing expert analysis and recommendations while you maintain decision-making authority and project context.
 
-GitHub with `gh` CLI creates seamless integration between Claude Code and project management. Issues, pull requests, and commits become structured documentation, transforming development into thoughtful technical writing where both human decisions and AI insights are captured and trackable.
+**GitHub Integration**
+The `gh` CLI creates seamless workflows where issues, pull requests, and commits become structured documentation, capturing both human decisions and AI insights.
 
-### Sync Management
-- Run Quick Sync periodically to maintain alignment with the repository
-- Interactive diff resolution for local vs. remote changes
-- Automatic commit message generation with Conventional style
+**Validation-Driven Development**
+Each automation step includes human validation points, ensuring AI suggestions align with project goals and constraints.
 
 ---
 
-## Advanced Usage
+## 📚 Advanced Usage
 
-See `CLAUDE.md` for full development guidelines. Key points:
+See [`CLAUDE.md`](CLAUDE.md) for comprehensive development guidelines including:
 
-**Architecture**
-- Follow SOLID principles; prefer composition over inheritance
-- Use dependency injection for testability
-- Repository pattern for data access, Strategy pattern for algorithmic variations
+- **🏗️ Architecture** - SOLID principles, dependency injection, design patterns
+- **✨ Code Quality** - Semantic naming, error handling, documentation standards  
+- **🔄 Development Standards** - TDD, atomic commits, conventional commit messages
+- **🛠️ Tech Stack** - Node.js (`pnpm`), Python (`uv`), language-specific best practices
 
-**Code Quality**
-- Semantic naming; avoid magic numbers; keep functions small
-- Cover error scenarios with meaningful messages
-- Comment on "why" rather than "what"
+## ❓ FAQ
 
-**Development Standards**
-- Search first when unsure; write tests for core functionality
-- Update docs with code changes; prefer `pnpm` for Node.js projects
-- Commit messages: English only, Conventional style (≤50 chars)
-- Atomic commits; no emojis; PRs use merge commits
+**Q: Is the sync script interactive?**  
+A: Yes - you choose local vs. repo for each item and decide whether to commit/push at the end.
 
-## FAQ
+**Q: How do I get colored diffs?**  
+A: Install `colordiff` - the script auto-detects and uses it when available.
 
-- Is the sync script non-interactive? It is interactive: choose local vs. repo per item and decide whether to commit and push at the end.
-- No colored diffs? Optionally install `colordiff`; the script will auto-detect and use it.
+**Q: Can I customize agents for my project?**  
+A: Yes - add project-specific agents to `local-agents/` and run the sync script.
 
-## License
+## 📄 License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) for details.
