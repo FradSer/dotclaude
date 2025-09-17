@@ -7,8 +7,9 @@ model: claude-3-5-haiku-latest
 ## Context
 
 - Current git status: !`git status`
-- Current git diff (staged and unstaged changes): !`git diff HEAD`
-- Recent commits: !`git log --oneline -5`
+- Staged changes: !`git diff --cached`
+- Unstaged changes: !`git diff`
+- Recent commits: !`git log --oneline -5 2>/dev/null || echo "No commits yet"`
 
 ## Requirements
 
