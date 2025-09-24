@@ -13,11 +13,11 @@ Claude Code 的高级多智能体配置系统，提供专业智能体和结构�
 
 **方案 A：使用 DotClaude CLI 工具（推荐）**
 ```bash
-# 安装 dotclaude-cli 工具
-pip install dotclaude-cli
+# 安装 dotagent-cli 工具
+pip install dotagent-cli
 
 # 与此仓库同步
-dotclaude sync --repo FradSer/dotclaude
+dotagent sync --repo FradSer/dotclaude
 ```
 
 **方案 B：使用传统同步脚本**
@@ -61,20 +61,20 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 <summary>同步选项（点击展开）</summary>
 
 #### DotClaude CLI 工具（推荐）
-[dotclaude CLI 工具](https://github.com/FradSer/dotclaude-cli) 提供现代、稳健的同步体验：
+[dotagent CLI 工具](https://github.com/FradSer/dotagent-cli) 提供现代、稳健的同步体验：
 
 ```bash
 # 基础同步
-dotclaude sync --repo FradSer/dotclaude
+dotagent sync --repo FradSer/dotclaude
 
 # 包含项目特定智能体
-dotclaude sync --repo FradSer/dotclaude --local
+dotagent sync --repo FradSer/dotclaude --local
 
 # 应用前预览更改
-dotclaude sync --repo FradSer/dotclaude --dry-run
+dotagent sync --repo FradSer/dotclaude --dry-run
 
 # 检查同步状态
-dotclaude status --repo FradSer/dotclaude
+dotagent status --repo FradSer/dotclaude
 ```
 
 **功能特性：**
