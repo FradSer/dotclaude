@@ -1,4 +1,4 @@
-# Frad's `.claude` Configuration ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-WIP-yellow)
+# Frad's `.claude` Configuration ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Configuration-blue.svg)](https://docs.anthropic.com/en/docs/claude-code) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -11,6 +11,17 @@ A sophisticated multi-agent configuration system for Claude Code featuring speci
 New to the multi-agent system? Start here:
 
 ### 1. Sync Configuration
+
+**Option A: Using DotClaude CLI Tool (Recommended)**
+```bash
+# Install the dotclaude-cli tool
+pip install dotclaude-cli
+
+# Sync with this repository
+dotclaude sync --repo FradSer/dotclaude
+```
+
+**Option B: Using the Legacy Sync Script**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
 ```
@@ -48,7 +59,35 @@ Open these command templates in Claude Code:
 ### Sync Details
 
 <details>
-<summary>What the sync script does (click to expand)</summary>
+<summary>Synchronization Options (click to expand)</summary>
+
+#### DotClaude CLI Tool (Recommended)
+The [dotclaude CLI tool](https://github.com/FradSer/dotclaude-cli) provides a modern, robust synchronization experience:
+
+```bash
+# Basic sync
+dotclaude sync --repo FradSer/dotclaude
+
+# Include project-specific agents
+dotclaude sync --repo FradSer/dotclaude --local
+
+# Preview changes before applying
+dotclaude sync --repo FradSer/dotclaude --dry-run
+
+# Check sync status
+dotclaude status --repo FradSer/dotclaude
+```
+
+**Features:**
+- **Universal platform support** - currently supports Claude Code, with planned support for GitHub Copilot, Cursor, and more
+- **Bidirectional sync** with intelligent conflict resolution
+- **Interactive conflict handling** - choose local, remote, or skip for each item
+- **Project-specific agents** - selective sync of `local-agents/` to `.claude/agents/`
+- **Safe operations** - preview changes with `--dry-run`
+- **Modern CLI** - built with Python, comprehensive error handling
+
+#### Legacy Sync Script
+The original bash script is still available:
 
 - Syncs `~/.claude/{agents,commands,CLAUDE.md}` with the same paths in this repo (two-way comparison)
 - **Automatic Local Agents Management**: Detects `local-agents/` directory and copies agents to project's `.claude/agents/`
@@ -199,19 +238,19 @@ Each automation step includes human validation points, ensuring AI suggestions a
 See [`CLAUDE.md`](CLAUDE.md) for comprehensive development guidelines including:
 
 - **🏗️ Architecture** - SOLID principles, dependency injection, design patterns
-- **✨ Code Quality** - Semantic naming, error handling, documentation standards  
+- **✨ Code Quality** - Semantic naming, error handling, documentation standards
 - **🔄 Development Standards** - TDD, atomic commits, conventional commit messages
 - **🛠️ Tech Stack** - Node.js (`pnpm`), Python (`uv`), language-specific best practices
 
 ## ❓ FAQ
 
-**Q: Is the sync script interactive?**  
+**Q: Is the sync script interactive?**
 A: Yes - you choose local vs. repo for each item and decide whether to commit/push at the end.
 
-**Q: How do I get colored diffs?**  
+**Q: How do I get colored diffs?**
 A: Install `colordiff` - the script auto-detects and uses it when available.
 
-**Q: Can I customize agents for my project?**  
+**Q: Can I customize agents for my project?**
 A: Yes - add project-specific agents to `local-agents/` and run the sync script.
 
 ## 📄 License

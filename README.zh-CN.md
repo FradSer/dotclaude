@@ -1,5 +1,5 @@
 
-# Frad 的 `.claude` 配置 ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-WIP-yellow)
+# Frad 的 `.claude` 配置 ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Configuration-blue.svg)](https://docs.anthropic.com/en/docs/claude-code) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -10,6 +10,17 @@ Claude Code 的高级多智能体配置系统，提供专业智能体和结构�
 ## 🚀 快速开始
 
 ### 1. 安装配置
+
+**方案 A：使用 DotClaude CLI 工具（推荐）**
+```bash
+# 安装 dotclaude-cli 工具
+pip install dotclaude-cli
+
+# 与此仓库同步
+dotclaude sync --repo FradSer/dotclaude
+```
+
+**方案 B：使用传统同步脚本**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
 ```
@@ -47,7 +58,35 @@ bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-
 ### 同步详情
 
 <details>
-<summary>同步脚本的功能（点击展开）</summary>
+<summary>同步选项（点击展开）</summary>
+
+#### DotClaude CLI 工具（推荐）
+[dotclaude CLI 工具](https://github.com/FradSer/dotclaude-cli) 提供现代、稳健的同步体验：
+
+```bash
+# 基础同步
+dotclaude sync --repo FradSer/dotclaude
+
+# 包含项目特定智能体
+dotclaude sync --repo FradSer/dotclaude --local
+
+# 应用前预览更改
+dotclaude sync --repo FradSer/dotclaude --dry-run
+
+# 检查同步状态
+dotclaude status --repo FradSer/dotclaude
+```
+
+**功能特性：**
+- **通用平台支持** - 目前支持 Claude Code，计划支持 GitHub Copilot、Cursor 等
+- **双向同步** 配合智能冲突解决
+- **交互式冲突处理** - 为每个项目选择本地、远程或跳过
+- **项目特定智能体** - 选择性地将 `local-agents/` 同步到 `.claude/agents/`
+- **安全操作** - 使用 `--dry-run` 预览更改
+- **现代 CLI** - 使用 Python 构建，全面错误处理
+
+#### 传统同步脚本
+原始 bash 脚本仍然可用：
 
 - 同步 `~/.claude/{agents,commands,CLAUDE.md}` 与此仓库的相同路径（双向比较）
 - **自动本地智能体管理**：检测 `local-agents/` 目录并将智能体复制到项目的 `.claude/agents/`
