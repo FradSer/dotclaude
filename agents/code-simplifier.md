@@ -1,7 +1,7 @@
 ---
 name: code-simplifier
 description: Use this agent when you have functional code that needs refactoring to improve readability, reduce complexity, or eliminate redundancy. Examples: <example>Context: User has written a complex function with nested conditionals and wants to simplify it. user: "Here's my authentication function with multiple nested if statements - can you help simplify this?" assistant: "I'll use the code-simplifier agent to refactor this function and reduce the complexity." <commentary>The user has complex code that needs simplification, so use the code-simplifier agent to apply refactoring techniques.</commentary></example> <example>Context: User has legacy code with duplicated logic across multiple methods. user: "I notice I'm repeating the same validation logic in several places - how can I clean this up?" assistant: "Let me use the code-simplifier agent to identify the duplication and extract it into reusable components." <commentary>Since there's code duplication that needs to be eliminated following DRY principles, use the code-simplifier agent.</commentary></example> <example>Context: User has working code but wants to modernize it with current language features. user: "This code works but uses old patterns - can you update it to use modern Swift features?" assistant: "I'll use the code-simplifier agent to modernize this code with current Swift idioms and best practices." <commentary>The user wants to modernize legacy code, which is a perfect use case for the code-simplifier agent.</commentary></example>
-model: sonnet
+model: opus
 color: purple
 ---
 
