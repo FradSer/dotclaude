@@ -14,11 +14,11 @@ New to the multi-agent system? Start here:
 
 **Option A: Using DotClaude CLI Tool (Recommended)**
 ```bash
-# Install the dotclaude-cli tool
-pip install dotclaude-cli
+# Install the dotagent-cli tool
+pip install dotagent-cli
 
 # Sync with this repository
-dotclaude sync --repo FradSer/dotclaude
+dotagent sync --repo FradSer/dotclaude
 ```
 
 **Option B: Using the Legacy Sync Script**
@@ -62,20 +62,20 @@ Open these command templates in Claude Code:
 <summary>Synchronization Options (click to expand)</summary>
 
 #### DotClaude CLI Tool (Recommended)
-The [dotclaude CLI tool](https://github.com/FradSer/dotclaude-cli) provides a modern, robust synchronization experience:
+The [dotagent CLI tool](https://github.com/FradSer/dotagent-cli) provides a modern, robust synchronization experience:
 
 ```bash
 # Basic sync
-dotclaude sync --repo FradSer/dotclaude
+dotagent sync --repo FradSer/dotclaude
 
 # Include project-specific agents
-dotclaude sync --repo FradSer/dotclaude --local
+dotagent sync --repo FradSer/dotclaude --local
 
 # Preview changes before applying
-dotclaude sync --repo FradSer/dotclaude --dry-run
+dotagent sync --repo FradSer/dotclaude --dry-run
 
 # Check sync status
-dotclaude status --repo FradSer/dotclaude
+dotagent status --repo FradSer/dotclaude
 ```
 
 **Features:**
