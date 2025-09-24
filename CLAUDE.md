@@ -5,15 +5,15 @@
 - **MANDATORY Clean Architecture** - Follow 4-layer structure with dependency rule: source code dependencies only point inwards
 - **Research-driven workflow** - Always web search for latest best practices before planning and implementing
 
-## Development Workflow
+## Development Process
 
-### Task & Project Management
+### Task Management
 - **Plan then act** - Assess complexity and create todo lists for 3+ steps before acting
 - Mark tasks completed IMMEDIATELY, keep ONE task in_progress for focus
 - **Batch independent tasks** in single tool calls for optimal performance
 - **Sequential only when required** - when later tasks depend on earlier results
 
-### Git & Version Control
+### Version Control & Git Workflow
 - Make atomic commits for logical units of work
 - Commit message title must be entirely lowercase and under 50 characters
 - Follow conventional commits format (feat:, fix:, chore:, etc.)
@@ -23,30 +23,42 @@
 - Merge PRs with merge commits
 - Security best practices must be followed
 
-## Code Quality
+## Architecture & Design Principles
 
-### Architecture & Design
+### Design Standards
 - Follow SOLID principles and prefer composition over inheritance
 - Use dependency injection for testability and layer isolation
 - Apply repository pattern for data access and strategy pattern for algorithms
 - Use descriptive names and avoid abbreviations or magic numbers
 - Keep functions under 50 lines and maintain concise files
 
-### Implementation Standards
+### Clean Code Practices
+- Eliminate redundancy (DRY principle)
+- Reduce complexity using guard clauses and early returns
+- Modernize syntax and use strong typing
 - Handle all error scenarios with meaningful messages
+
+## Implementation Standards
+
+### Code Quality
 - Comment "why" not "what" - focus on business logic and complex decisions
 - Search codebase first when uncertain about existing patterns
 - Update documentation when modifying code
-- **Clean code principles** - eliminate redundancy (DRY), reduce complexity (guard clauses, early returns), modernize syntax, use strong typing
-
-## Tools & Testing
-
-### Technology Stack
-- **Node.js**: Use `pnpm` for package management, JSDoc for documentation
-- **Python**: Use `uv` for dependency management and virtual environments, docstrings for documentation
-- **General**: Avoid emojis and hardcoded secrets in code, use language-specific doc standards
+- Follow language-specific documentation standards
 
 ### Testing Strategy
 - **No temporary test scripts in root directory** - Avoid creating temporary test files in the project root
 - **Use proper test directories** - Place formal tests in appropriate directories (tests/, __tests__, spec/) for TDD
 - **Temporary validation** - Run quick test scripts directly with bash for temporary validation
+
+## Technology Stack
+
+### Node.js Projects
+- Use `pnpm` for package management
+- Use JSDoc for documentation
+- Avoid emojis and hardcoded secrets in code
+
+### Python Projects
+- Use `uv` for dependency management and virtual environments
+- Use docstrings for documentation
+- Follow PEP standards for code structure
