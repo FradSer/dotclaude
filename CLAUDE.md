@@ -5,11 +5,20 @@
 - **MANDATORY Clean Architecture** - Follow 4-layer structure with dependency rule: source code dependencies only point inwards
 - **Research-driven workflow** - Always web search for latest best practices before planning and implementing
 
+## Documentation Standards
+
+### CLAUDE.md Requirements
+All CLAUDE.md files must satisfy these four mandatory criteria:
+
+- Every sentence provides unique value, eliminate duplicate information
+- Emphasize hard-to-discover architectural patterns and design decisions
+- Explicitly state key constraints behind technical choices and trade-offs
+- Include executable commands, verification steps, and concrete implementation guidance
+
 ## Development Process
 
 ### Task Management
 - **Plan then act** - Assess complexity and create todo lists for 3+ steps before acting
-- Mark tasks completed IMMEDIATELY, keep ONE task in_progress for focus
 - **Batch independent tasks** in single tool calls for optimal performance
 - **Sequential only when required** - when later tasks depend on earlier results
 
