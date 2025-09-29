@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh:*), Bash(git:*)
+allowed-tools: Task, Bash(gh:*), Bash(git:*)
 description: Create GitHub issues with TDD principles and proper labels
 ---
 
@@ -18,6 +18,8 @@ description: Create GitHub issues with TDD principles and proper labels
 - No direct pushes to main/develop
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Based on the current repository state and $ARGUMENTS, create GitHub issues following best practices:
 

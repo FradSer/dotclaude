@@ -1,12 +1,14 @@
 ---
 description: Create a custom slash command following Claude Code specifications
 argument-hint: [Project|Personal] [description of what the command should do]
-allowed-tools: Write, Bash(mkdir:*)
+allowed-tools: Task, Write, Bash(mkdir:*)
 ---
 
 Create a new custom slash command in `.claude/commands/` directory following the official Claude Code slash commands specifications.
 
 ## Task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Analyze the user's request from `$ARGUMENTS` and create a properly structured slash command that follows all Claude Code slash command requirements.
 
