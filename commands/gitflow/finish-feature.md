@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash
+allowed-tools: Task, Bash
 argument-hint: [feature-name]
 description: Complete and merge current feature development
 ---
@@ -12,6 +12,8 @@ description: Complete and merge current feature development
 - Test commands available: Detect available testing frameworks for this project
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Complete and merge feature development: $ARGUMENTS
 

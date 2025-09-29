@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash
+allowed-tools: Task, Bash
 argument-hint: [version]
 description: Start new hotfix or continue existing hotfix development
 ---
@@ -13,6 +13,8 @@ description: Start new hotfix or continue existing hotfix development
 - Git status: !`git status --porcelain`
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Start or continue hotfix development with version: $ARGUMENTS
 
