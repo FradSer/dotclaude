@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git:*)
+allowed-tools: Task, Bash(git:*)
 description: Create atomic conventional git commit and push to remote
 model: claude-3-5-haiku-latest
 ---
@@ -18,6 +18,8 @@ model: claude-3-5-haiku-latest
 - Use atomic commits for logical units of work
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Based on the above changes:
 

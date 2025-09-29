@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash
+allowed-tools: Task, Bash
 argument-hint: [version]
 description: Complete and merge current hotfix development
 ---
@@ -13,6 +13,8 @@ description: Complete and merge current hotfix development
 - Current version: Check version information in project configuration files
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Complete and merge hotfix development: $ARGUMENTS
 

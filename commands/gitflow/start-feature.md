@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash
+allowed-tools: Task, Bash
 argument-hint: [feature-name]
 description: Start new feature or continue existing feature development
 ---
@@ -11,6 +11,8 @@ description: Start new feature or continue existing feature development
 - Git status: !`git status --porcelain`
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Start or continue feature development with name: $ARGUMENTS
 

@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
+allowed-tools: Task, Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
 argument-hint: [additional-technologies]
 description: Create or update .gitignore file
 model: claude-3-5-haiku-latest
@@ -14,6 +14,8 @@ model: claude-3-5-haiku-latest
 - Available templates: !`curl -sL https://www.toptal.com/developers/gitignore/api/list`
 
 ## Your task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 Create or update the .gitignore file for this project:
 

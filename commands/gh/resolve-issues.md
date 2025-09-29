@@ -25,6 +25,8 @@ description: Resolve GitHub issues using isolated worktrees and TDD
 
 ## Your task
 
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
+
 Resolve GitHub issues using systematic worktree workflow:
 
 ### Workflow Overview

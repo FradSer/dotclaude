@@ -13,6 +13,8 @@ description: Create comprehensive GitHub pull requests with quality validation
 
 ## Your task
 
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
+
 Create comprehensive, secure pull requests using systematic validation and quality checks:
 
 ### Workflow Steps
