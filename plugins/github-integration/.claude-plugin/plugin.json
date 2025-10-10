@@ -1,0 +1,23 @@
+{
+  "name": "github-integration",
+  "description": "GitHub integration toolkit for issue management, PR creation, and worktree-based development workflows",
+  "version": "1.0.0",
+  "author": {
+    "name": "FradSer",
+    "url": "https://github.com/FradSer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FradSer/dotclaude"
+  },
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "pull-request",
+    "issues",
+    "worktree",
+    "collaboration",
+    "productivity"
+  ],
+  "category": "productivity"
+}
