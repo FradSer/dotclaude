@@ -24,9 +24,9 @@ A comprehensive Claude Code plugin marketplace featuring 5 specialized plugins f
 # Or install specific plugins directly
 /plugin install code-review-toolkit@FradSer
 /plugin install git-workflow@FradSer
-/plugin install github-integration@FradSer
+/plugin install github@FradSer
 /plugin install swiftui-architecture@FradSer      # For SwiftUI projects
-/plugin install dev-utilities@FradSer
+/plugin install utilities@FradSer
 ```
 
 ## Available Plugins
@@ -67,7 +67,7 @@ A comprehensive Claude Code plugin marketplace featuring 5 specialized plugins f
 
 ---
 
-### 🐙 github-integration [productivity]
+### 🐙 github [productivity]
 **GitHub project management and collaboration**
 
 **Features:**
@@ -80,7 +80,7 @@ A comprehensive Claude Code plugin marketplace featuring 5 specialized plugins f
 - `/create-issues` - Generate GitHub issues
 - `/resolve-issues` - Smart issue resolution with worktrees
 
-**Install:** `/plugin install github-integration@FradSer`
+**Install:** `/plugin install github@FradSer`
 
 ---
 
@@ -99,7 +99,7 @@ A comprehensive Claude Code plugin marketplace featuring 5 specialized plugins f
 
 ---
 
-### 🛠️ dev-utilities [productivity]
+### 🛠️ utilities [productivity]
 **Development workflow utilities**
 
 **Features:**
@@ -110,7 +110,7 @@ A comprehensive Claude Code plugin marketplace featuring 5 specialized plugins f
 - `/continue` - Resume interrupted work sessions
 - `/create-command` - Generate new command templates
 
-**Install:** `/plugin install dev-utilities@FradSer`
+**Install:** `/plugin install utilities@FradSer`
 
 ---
 
@@ -143,7 +143,7 @@ dotclaude/
 │   │       └── start-feature.md, finish-feature.md, start-release.md
 │   │           finish-release.md, start-hotfix.md, finish-hotfix.md
 │   │
-│   ├── github-integration/        # GitHub workflows
+│   ├── github/                    # GitHub workflows
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   └── commands/
@@ -157,7 +157,7 @@ dotclaude/
 │   │   └── agents/
 │   │       └── swiftui-clean-architecture-reviewer.md
 │   │
-│   └── dev-utilities/             # Development tools
+│   └── utilities/                 # Development tools
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       └── commands/
@@ -177,7 +177,7 @@ Install `code-review-toolkit` for comprehensive code analysis with specialized a
 Install `git-workflow` for atomic commits and GitFlow management.
 
 ### For GitHub Projects
-Combine `git-workflow` + `github-integration` for complete GitHub workflow automation.
+Combine `git-workflow` + `github` for complete GitHub workflow automation.
 
 ### For SwiftUI Development
 Install `swiftui-architecture` in addition to `code-review-toolkit` for SwiftUI-specific guidance.
