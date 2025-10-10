@@ -1,0 +1,23 @@
+{
+  "name": "git-workflow",
+  "description": "Git and GitFlow workflow automation with atomic commits and conventional commit messages",
+  "version": "1.0.0",
+  "author": {
+    "name": "FradSer",
+    "url": "https://github.com/FradSer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FradSer/dotclaude"
+  },
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "gitflow",
+    "workflow",
+    "commit",
+    "version-control",
+    "development"
+  ],
+  "category": "development"
+}

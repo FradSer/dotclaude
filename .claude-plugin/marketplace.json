@@ -1,0 +1,40 @@
+{
+  "name": "dotclaude-marketplace",
+  "description": "FradSer's Claude Code plugin marketplace featuring specialized agents and workflow automation",
+  "owner": {
+    "name": "FradSer",
+    "url": "https://github.com/FradSer"
+  },
+  "plugins": [
+    {
+      "name": "code-review-toolkit",
+      "source": "./plugins/code-review-toolkit",
+      "description": "Comprehensive code review toolkit with specialized agents for quality, security, architecture, UX, and refactoring",
+      "category": "productivity"
+    },
+    {
+      "name": "git-workflow",
+      "source": "./plugins/git-workflow",
+      "description": "Git and GitFlow workflow automation with atomic commits and conventional commit messages",
+      "category": "development"
+    },
+    {
+      "name": "github-integration",
+      "source": "./plugins/github-integration",
+      "description": "GitHub integration toolkit for issue management, PR creation, and worktree-based development workflows",
+      "category": "productivity"
+    },
+    {
+      "name": "swiftui-architecture",
+      "source": "./plugins/swiftui-architecture",
+      "description": "SwiftUI Clean Architecture reviewer specializing in MVVM, SwiftData, and 4-layer architecture patterns",
+      "category": "development"
+    },
+    {
+      "name": "dev-utilities",
+      "source": "./plugins/dev-utilities",
+      "description": "Development utility commands for session management and command template generation",
+      "category": "productivity"
+    }
+  ]
+}
