@@ -329,7 +329,11 @@ parse_args() {
             --copy-agent) COPY_LOCAL_AGENT="$2"; shift ;;
             --copy-agent=*) COPY_LOCAL_AGENT="${1#*=}" ;;
             --select-agent) COPY_LOCAL_AGENT="__INTERACTIVE__" ;;
-            --list-local-agents) list_local_agents; exit 0 ;;
+            --list-local-agents)
+                local source_dir="$(pwd)/local-agents"
+                manage_local_agents "list" "" "$source_dir"
+                exit 0
+                ;;
             -h|--help) print_help; exit 0 ;;
             *) log_warning "Unknown argument: $1" ;;
         esac
@@ -368,23 +372,10 @@ detect_execution_context() {
     # Default: remote execution
     echo "remote"
 }
-# Legacy functions for backward compatibility
-detect_local_mode() {
-    local context=$(detect_execution_context)
-    [[ "$context" == local* ]] && echo "true" || echo "false"
-}
-detect_external_script_mode() {
-    local context=$(detect_execution_context)
-    [[ "$context" == external* ]] && echo "true" || echo "false"
-}
-get_script_project_dir() {
-    local context=$(detect_execution_context)
-    [[ "$context" == external* ]] && echo "${context#external }" || echo ""
-}
 # Set Claude directory based on context
 set_claude_dir() {
     local original_pwd="${1:-$(pwd)}"
-    
+
     if [ "$original_pwd" = "$HOME/.claude" ]; then
         CLAUDE_DIR="$HOME/.claude"
         log_info "Using user's home Claude directory: $CLAUDE_DIR"
@@ -517,56 +508,6 @@ file_operation() {
     esac
 }
 
-# Legacy file operations wrapper
-perform_file_operation() {
-    local operation="$1" src="$2" dest="$3" is_dir="$4"
-    
-    case "$operation" in
-        copy)
-            if [ "$is_dir" = true ]; then
-                if command -v rsync >/dev/null 2>&1; then
-                    local exclude_args
-                    exclude_args=$(build_excludes "rsync")
-                    mkdir -p "$dest"
-                    # shellcheck disable=SC2086
-                    rsync -a $exclude_args "$src"/ "$dest"/
-                else
-                    cp -r "$src" "$dest"
-                    remove_ignored_files "$dest" || true
-                fi
-            else
-                mkdir -p "$(dirname "$dest")"
-                cp "$src" "$dest"
-            fi
-            ;;
-        remove)
-            if [ "$is_dir" = true ]; then
-                rm -rf "$src"
-            else
-                rm -f "$src"
-            fi
-            ;;
-    esac
-}
-# Convenience wrappers for backward compatibility
-copy_path() {
-    perform_file_operation "copy" "$1" "$2" "$3"
-}
-remove_path() {
-    perform_file_operation "remove" "$1" "" "$2"
-}
-# Check if two paths have identical content
-paths_identical() {
-    local path1="$1" path2="$2" is_dir="$3"
-    if [ "$is_dir" = true ]; then
-        local exclude_args
-        exclude_args=$(build_excludes "diff")
-        # shellcheck disable=SC2086
-        diff -r $exclude_args "$path1" "$path2" &>/dev/null
-    else
-        cmp -s "$path1" "$path2" &>/dev/null
-    fi
-}
 #===============================================================================
 # UNIFIED MENU SYSTEM
 #===============================================================================
@@ -891,16 +832,6 @@ handle_local_agents_auto() {
         fi
         echo "Invalid choice. Please try again."
     done
-}
-# Legacy wrapper for backward compatibility
-copy_local_agent() {
-    local agent_name="$1"
-    local source_dir="$(pwd)/local-agents"
-    manage_local_agents "copy" "$agent_name" "$source_dir"
-}
-list_local_agents() {
-    local source_dir="$(pwd)/local-agents"
-    manage_local_agents "list" "" "$source_dir"
 }
 #===============================================================================
 # MAIN SYNC AND EXECUTION
