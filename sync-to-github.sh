@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sync script for dotclaude repository
-# Syncs agents folder and CLAUDE.md to https://github.com/FradSer/dotclaude
+# Syncs CLAUDE.md file to https://github.com/FradSer/dotclaude
 set -e
 #===============================================================================
 # CONFIGURATION AND CONSTANTS
@@ -10,12 +10,8 @@ readonly REPO_URL="git@github.com:FradSer/dotclaude.git"
 readonly REPO_URL_HTTPS="https://github.com/FradSer/dotclaude.git"
 readonly TEMP_DIR="/tmp/dotclaude-sync"
 readonly BRANCH="main"
-# CLAUDE_DIR will be set dynamically based on execution context
-CLAUDE_DIR=""
-# Items for sync operations
-readonly SYNC_ITEMS=("agents:dir" "commands:dir" "CLAUDE.md:file")
-# Items for project-local .claude directory (only agents, no commands or CLAUDE.md)
-readonly CLAUDE_DIR_ITEMS=("agents:dir")
+# Items for sync operations - only CLAUDE.md
+readonly SYNC_ITEMS=("CLAUDE.md:file")
 readonly EXCLUDE_PATTERNS=(".DS_Store")
 # Colors for output
 readonly RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m' BLUE='\033[0;34m' NC='\033[0m'
@@ -30,10 +26,8 @@ readonly STATUS_CHANGES_MADE=1
 # Runtime options (overridable by CLI flags)
 NON_INTERACTIVE=false
 PREFER_MODE="repo"       # valid: local | repo; default: repo
-# Removed git commit options as per requirements
 TARGET_BRANCH="$BRANCH" # can be overridden by --branch
 FORCE_HTTPS=false        # force HTTPS clone instead of SSH
-COPY_LOCAL_AGENT=""      # specific local agent to copy to .claude/agents
 declare -a EXTRA_EXCLUDES
 #===============================================================================
 # UTILITY FUNCTIONS
@@ -165,123 +159,6 @@ exclude_handler() {
     esac
 }
 #===============================================================================
-# UNIFIED AGENT MANAGEMENT
-#===============================================================================
-# Get available agents from directory
-get_agents_list() {
-    local agents_dir="$1"
-    local agents=()
-    
-    [ ! -d "$agents_dir" ] && return 1
-    
-    for agent in "$agents_dir"/*.md; do
-        [ -f "$agent" ] && agents+=("$(basename "$agent")")
-    done
-    
-    [ ${#agents[@]} -eq 0 ] && return 1
-    
-    printf '%s\n' "${agents[@]}"
-}
-# Interactive agent selection
-select_agent_interactive() {
-    local agents_dir="$1"
-    local agents_list
-    
-    if ! agents_list=$(get_agents_list "$agents_dir"); then
-        log_error "No agents found in $agents_dir"
-        return 1
-    fi
-    
-    local agents=($agents_list)
-    echo "Available agents in $(basename "$agents_dir")/:"
-    for i in "${!agents[@]}"; do
-        printf "%d) %s\n" $((i+1)) "${agents[$i]}"
-    done
-    echo "$((${#agents[@]}+1))) Cancel"
-    
-    while true; do
-        read -p "Select agent (1-$((${#agents[@]}+1))): " choice
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le $((${#agents[@]}+1)) ]; then
-            [ "$choice" -eq $((${#agents[@]}+1)) ] && { log_info "Cancelled"; return 1; }
-            echo "${agents[$((choice-1))]}"
-            return 0
-        fi
-        echo "Invalid choice. Please try again."
-    done
-}
-# Unified agent copy function
-copy_agent() {
-    local agent_name="$1" source_dir="$2" dest_dir="$3"
-    local source_file="$source_dir/$agent_name"
-    local dest_file="$dest_dir/$agent_name"
-    
-    # Validate source
-    if ! manage_path "$source_file" "file" "check"; then
-        log_error "Agent '$agent_name' not found at $source_file"
-        return 1
-    fi
-    
-    # Ensure destination directory exists
-    manage_path "$dest_dir" "dir" "create"
-    
-    # Check if update needed
-    if manage_path "$dest_file" "file" "check"; then
-        if file_operation "compare" "$source_file" "$dest_file" false; then
-            log_info "Agent '$agent_name' is already up to date"
-            return 0
-        elif [ "$NON_INTERACTIVE" != true ]; then
-            local choice=$(show_menu_and_get_choice "local_only" "agent")
-            [ "$choice" != "1" ] && { log_info "Skipping copy"; return 0; }
-        fi
-    fi
-    
-    # Copy agent
-    file_operation "copy" "$source_file" "$dest_file" false
-    log_info "Successfully copied '$agent_name' to $dest_dir"
-}
-# Main agent management function
-manage_local_agents() {
-    local mode="$1" agent_name="$2" source_dir="$3"
-    local dest_dir="$CLAUDE_DIR/agents"
-    
-    case "$mode" in
-        list)
-            if agents_list=$(get_agents_list "$source_dir"); then
-                log_info "Available agents in $(basename "$source_dir")/:"
-                echo "$agents_list" | sed 's/^/  /'
-            else
-                log_error "No agents found in $source_dir"
-                return 1
-            fi
-            ;;
-        copy)
-            [ -z "$agent_name" ] && agent_name=$(select_agent_interactive "$source_dir")
-            [ -z "$agent_name" ] && return 1
-            copy_agent "$agent_name" "$source_dir" "$dest_dir"
-            ;;
-        copy_all)
-            local agents_list
-            if ! agents_list=$(get_agents_list "$source_dir"); then
-                log_error "No agents found in $source_dir"
-                return 1
-            fi
-            
-            local success=0 total=0
-            while IFS= read -r agent; do
-                ((total++))
-                if copy_agent "$agent" "$source_dir" "$dest_dir"; then
-                    ((success++))
-                    log_info "✓ Copied $agent"
-                else
-                    log_warning "✗ Failed to copy $agent"
-                fi
-            done <<< "$agents_list"
-            
-            log_info "Copied $success/$total agents"
-            ;;
-    esac
-}
-#===============================================================================
 # ARGUMENT PARSING AND HELP
 #===============================================================================
 # Print usage
@@ -294,24 +171,16 @@ Options:
       --branch <name>            Override target branch (default: $BRANCH)
       --exclude <pattern>        Add extra exclude pattern (can be repeated)
       --https                    Clone via HTTPS instead of SSH
-      --copy-agent <filename>    Copy specific agent from local-agents/ to ~/.claude/agents/
-      --select-agent             Interactively select and copy an agent from local-agents/
-      --list-local-agents        List available agents in local-agents/ directory
   -h, --help                     Show this help
-Automatic Local Agents Management:
-  If running directory is NOT $HOME/.claude AND contains CLAUDE.md file, the script
-  will automatically detect local-agents/ directory and offer to copy agents to
-  current directory's .claude/agents/.
-  - In interactive mode: presents a menu to select specific agents or copy all
-  - In non-interactive mode: copies all agents automatically
-  
-  For $HOME/.claude content: Directly compares agents folder and CLAUDE.md file
-  with repository content and uses interactive input to decide overwrite actions.
+
+Description:
+  Syncs CLAUDE.md file between \$HOME/.claude and the GitHub repository.
+  In interactive mode, prompts for conflict resolution.
+  In non-interactive mode, uses --prefer to automatically resolve conflicts.
+
 Examples:
   $0 --yes --prefer repo
-  $0 --copy-agent swiftui-clean-architecture-reviewer.md
-  $0 --select-agent
-  $0 --list-local-agents
+  $0 --prefer local
   bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
 EOF
 }
@@ -326,14 +195,6 @@ parse_args() {
             --exclude) EXTRA_EXCLUDES+=("$2"); shift ;;
             --exclude=*) EXTRA_EXCLUDES+=("${1#*=}") ;;
             --https) FORCE_HTTPS=true ;;
-            --copy-agent) COPY_LOCAL_AGENT="$2"; shift ;;
-            --copy-agent=*) COPY_LOCAL_AGENT="${1#*=}" ;;
-            --select-agent) COPY_LOCAL_AGENT="__INTERACTIVE__" ;;
-            --list-local-agents)
-                local source_dir="$(pwd)/local-agents"
-                manage_local_agents "list" "" "$source_dir"
-                exit 0
-                ;;
             -h|--help) print_help; exit 0 ;;
             *) log_warning "Unknown argument: $1" ;;
         esac
@@ -372,31 +233,16 @@ detect_execution_context() {
     # Default: remote execution
     echo "remote"
 }
-# Set Claude directory based on context
-set_claude_dir() {
-    local original_pwd="${1:-$(pwd)}"
-
-    if [ "$original_pwd" = "$HOME/.claude" ]; then
-        CLAUDE_DIR="$HOME/.claude"
-        log_info "Using user's home Claude directory: $CLAUDE_DIR"
-    elif [ -f "$original_pwd/CLAUDE.md" ]; then
-        CLAUDE_DIR="$original_pwd/.claude"
-        log_info "Using project-local Claude directory: $CLAUDE_DIR"
-    else
-        CLAUDE_DIR="$HOME/.claude"
-        log_info "Using user's home Claude directory: $CLAUDE_DIR"
-    fi
-}
 # Validate and create missing items - unified validation logic
 validate_and_create_item() {
     local item="$1" type="$2" base_path="$3"
     local full_path="$base_path/$item"
     local is_dir=$([ "$type" = "dir" ] && echo true || echo false)
-    
+
     if path_exists "$full_path" "$is_dir"; then
         return 0
     fi
-    
+
     log_info "Creating missing $type: $full_path"
     if [ "$type" = "dir" ]; then
         mkdir -p "$full_path"
@@ -407,42 +253,20 @@ validate_and_create_item() {
 # Validate Claude directory and required files
 validate_environment() {
     log_info "Validating Claude environment..."
-    
-    # Ensure current Claude directory exists (for local agent management)
-    if [ ! -d "$CLAUDE_DIR" ]; then
-        log_info "Creating Claude directory at $CLAUDE_DIR"
-        mkdir -p "$CLAUDE_DIR"
-    fi
-    log_info "Found Claude directory at $CLAUDE_DIR"
-    
-    # IMPORTANT: Different directory structures for different contexts:
-    # - Project-local .claude/: only agents/ (commands stay in $HOME/.claude)
-    # - CLAUDE.md: stays in project root directory, never inside .claude/
-    if [[ "$CLAUDE_DIR" != "$HOME/.claude" ]]; then
-        # Project-local .claude directory - only agents (no commands or CLAUDE.md)
-        for item_spec in "${CLAUDE_DIR_ITEMS[@]}"; do
-            local item="${item_spec%:*}" type="${item_spec#*:}"
-            create_if_missing "$item" "$type" "$CLAUDE_DIR"
-        done
-    else
-        # $HOME/.claude directory - include all sync items
-        for item_spec in "${SYNC_ITEMS[@]}"; do
-            local item="${item_spec%:*}" type="${item_spec#*:}"
-            create_if_missing "$item" "$type" "$CLAUDE_DIR"
-        done
-    fi
-    
-    # REQUIREMENT: Always ensure $HOME/.claude exists and has all sync items for comparison
-    if [ "$CLAUDE_DIR" != "$HOME/.claude" ] && [ ! -d "$HOME/.claude" ]; then
-        log_info "Creating $HOME/.claude directory for comparison"
+
+    # Ensure $HOME/.claude directory exists
+    if [ ! -d "$HOME/.claude" ]; then
+        log_info "Creating $HOME/.claude directory"
         mkdir -p "$HOME/.claude"
-        for item_spec in "${SYNC_ITEMS[@]}"; do
-            local item="${item_spec%:*}" type="${item_spec#*:}"
-            create_if_missing "$item" "$type" "$HOME/.claude"
-        done
     fi
-    
-    log_info "All required files found or created"
+
+    # Create CLAUDE.md file if missing
+    for item_spec in "${SYNC_ITEMS[@]}"; do
+        local item="${item_spec%:*}" type="${item_spec#*:}"
+        create_if_missing "$item" "$type" "$HOME/.claude"
+    done
+
+    log_info "All required files found or created at $HOME/.claude"
 }
 #===============================================================================
 # FILE OPERATIONS AND DIFF HANDLING
@@ -728,112 +552,6 @@ cleanup() {
     fi
 }
 #===============================================================================
-# AUTO LOCAL AGENTS MANAGEMENT
-#===============================================================================
-# Check if local agents management should be performed
-should_handle_local_agents() {
-    local original_pwd="$1"
-
-    # Skip if running from $HOME/.claude
-    [ "$original_pwd" = "$HOME/.claude" ] && return 1
-
-    # Skip if no CLAUDE.md in current directory
-    [ ! -f "$original_pwd/CLAUDE.md" ] && return 1
-
-    return 0
-}
-
-# Get local agents directory based on execution context
-get_local_agents_directory() {
-    local context=$(detect_execution_context)
-
-    if [[ "$context" == local* ]]; then
-        echo "$(pwd)/local-agents"
-    else
-        echo "$WORKING_DIR/local-agents"
-    fi
-}
-
-# Display interactive agent selection menu
-display_agent_menu() {
-    local agents_list="$1" agent_count="$2"
-
-    echo "Found the following agents in local-agents/:"
-    local i=1
-    while IFS= read -r agent; do
-        printf "%d) %s\n" $i "$agent"
-        ((i++))
-    done <<< "$agents_list"
-
-    echo "$((agent_count+1))) Copy all agents"
-    echo "$((agent_count+2))) Skip local agents management"
-}
-
-# Handle user selection from agent menu
-handle_agent_menu_choice() {
-    local choice="$1" agent_count="$2" agents_list="$3" local_agents_dir="$4"
-
-    if [ "$choice" -ge 1 ] && [ "$choice" -le "$agent_count" ]; then
-        # Copy specific agent
-        local selected_agent=$(echo "$agents_list" | sed -n "${choice}p")
-        copy_agent "$selected_agent" "$local_agents_dir" "$CLAUDE_DIR/agents"
-        return 0
-    elif [ "$choice" -eq $((agent_count+1)) ]; then
-        # Copy all agents
-        manage_local_agents "copy_all" "" "$local_agents_dir"
-        return 0
-    elif [ "$choice" -eq $((agent_count+2)) ]; then
-        # Skip
-        log_info "Skipping local agents management"
-        return 0
-    fi
-
-    return 1  # Invalid choice
-}
-
-# Auto-detect and handle local agents if directory exists
-handle_local_agents_auto() {
-    local original_pwd="${1:-$(pwd)}"
-
-    # Guard clause: check if we should handle local agents
-    if ! should_handle_local_agents "$original_pwd"; then
-        return 0
-    fi
-
-    # Determine local-agents directory
-    local local_agents_dir=$(get_local_agents_directory)
-
-    # Guard clause: check if agents are available
-    local agents_list
-    if ! agents_list=$(get_agents_list "$local_agents_dir"); then
-        return 0  # No agents found, skip silently
-    fi
-
-    local agent_count=$(echo "$agents_list" | wc -l | tr -d ' ')
-    log_info "Found local-agents directory with $agent_count agent(s)"
-
-    # Guard clause: handle non-interactive mode
-    if [ "$NON_INTERACTIVE" = true ]; then
-        log_info "Non-interactive mode: copying all local agents"
-        manage_local_agents "copy_all" "" "$local_agents_dir"
-        return
-    fi
-
-    # Interactive mode: show menu and handle selection
-    display_agent_menu "$agents_list" "$agent_count"
-
-    while true; do
-        read -p "Select option (1-$((agent_count+2))): " choice
-
-        if [[ "$choice" =~ ^[0-9]+$ ]]; then
-            if handle_agent_menu_choice "$choice" "$agent_count" "$agents_list" "$local_agents_dir"; then
-                break
-            fi
-        fi
-        echo "Invalid choice. Please try again."
-    done
-}
-#===============================================================================
 # MAIN SYNC AND EXECUTION
 #===============================================================================
 # Compare and sync items between $HOME/.claude and repository
@@ -969,38 +687,15 @@ compare_home_claude_content() {
 # Main execution flow
 main() {
     parse_args "$@"
-    
-    # Handle copy-agent functionality separately (explicit agent management)
-    if [ -n "$COPY_LOCAL_AGENT" ]; then
-        local source_dir="$(pwd)/local-agents"
-        if [ "$COPY_LOCAL_AGENT" = "__INTERACTIVE__" ]; then
-            log_info "Interactive agent selection mode"
-            manage_local_agents "copy" "" "$source_dir"
-        else
-            log_info "Copying local agent: $COPY_LOCAL_AGENT"
-            manage_local_agents "copy" "$COPY_LOCAL_AGENT" "$source_dir"
-        fi
-        return $?
-    fi
-    
-    # Save original working directory before setup_repo changes it
-    local ORIGINAL_PWD="$(pwd)"
-    
-    # Set Claude directory based on context (current directory vs home)
-    set_claude_dir "$ORIGINAL_PWD"
-    
-    log_info "Starting sync process for Claude directory: $CLAUDE_DIR"
+
+    log_info "Starting CLAUDE.md sync process"
     validate_environment
     log_info "Using diff tool: $(get_diff_tool)"
     setup_repo
-    
-    # Auto-detect and handle local agents if available (after repo setup)
-    # Pass original directory to maintain correct CLAUDE.md detection
-    handle_local_agents_auto "$ORIGINAL_PWD"
-    
+
     sync_items
     cleanup
-    
+
     echo -e "${GREEN}Sync completed successfully!${NC}"
 }
 # Handle script interruption
