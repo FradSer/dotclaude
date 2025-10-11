@@ -19,6 +19,14 @@ readonly CLAUDE_DIR_ITEMS=("agents:dir")
 readonly EXCLUDE_PATTERNS=(".DS_Store")
 # Colors for output
 readonly RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m' BLUE='\033[0;34m' NC='\033[0m'
+# Menu choice constants
+readonly MENU_CHOICE_USE_LOCAL=1
+readonly MENU_CHOICE_USE_REPO=2
+readonly MENU_CHOICE_SKIP=3
+readonly MENU_CHOICE_SHOW_DIFF=4
+# Return status constants
+readonly STATUS_NO_CHANGES=0
+readonly STATUS_CHANGES_MADE=1
 # Runtime options (overridable by CLI flags)
 NON_INTERACTIVE=false
 PREFER_MODE="repo"       # valid: local | repo; default: repo
@@ -569,9 +577,9 @@ get_menu_config() {
 get_auto_choice() {
     local scenario="$1" prefer_mode="$2"
     case "${scenario}_${prefer_mode}" in
-        diff_local|local_only_local|repo_only_repo) echo "1" ;;
-        diff_repo|local_only_repo|repo_only_local) echo "2" ;;
-        *) echo "3" ;;
+        diff_local|local_only_local|repo_only_repo) echo "$MENU_CHOICE_USE_LOCAL" ;;
+        diff_repo|local_only_repo|repo_only_local) echo "$MENU_CHOICE_USE_REPO" ;;
+        *) echo "$MENU_CHOICE_SKIP" ;;
     esac
 }
 # Unified menu display and choice handling
@@ -599,63 +607,63 @@ show_menu_and_get_choice() {
 get_action() {
     local scenario="$1" choice="$2"
     case "${scenario}_${choice}" in
-        diff_1) echo "use_local" ;;
-        diff_2) echo "use_repo" ;;
-        diff_4) echo "show_diff" ;;
-        local_only_1) echo "copy_to_repo" ;;
-        local_only_2) echo "delete_local" ;;
-        repo_only_1) echo "copy_to_local" ;;
-        repo_only_2) echo "delete_repo" ;;
+        diff_${MENU_CHOICE_USE_LOCAL}) echo "use_local" ;;
+        diff_${MENU_CHOICE_USE_REPO}) echo "use_repo" ;;
+        diff_${MENU_CHOICE_SHOW_DIFF}) echo "show_diff" ;;
+        local_only_${MENU_CHOICE_USE_LOCAL}) echo "copy_to_repo" ;;
+        local_only_${MENU_CHOICE_USE_REPO}) echo "delete_local" ;;
+        repo_only_${MENU_CHOICE_USE_LOCAL}) echo "copy_to_local" ;;
+        repo_only_${MENU_CHOICE_USE_REPO}) echo "delete_repo" ;;
         *) echo "" ;;
     esac
 }
 # Execute action based on choice
 execute_action() {
     local scenario="$1" choice="$2" local_path="$3" repo_path="$4" item="$5" is_dir="$6"
-    
-    [ "$choice" = "3" ] && { log_info "Skipping $item"; return 0; }
-    
+
+    [ "$choice" = "$MENU_CHOICE_SKIP" ] && { log_info "Skipping $item"; return "$STATUS_NO_CHANGES"; }
+
     local action=$(get_action "$scenario" "$choice")
-    
+
     case "$action" in
         use_local)
             log_info "Using local $item"
             [ "$is_dir" = true ] && file_operation "remove" "$repo_path" "" "$is_dir"
             file_operation "copy" "$local_path" "$repo_path" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         use_repo)
             log_info "Using repo $item"
             [ "$is_dir" = true ] && file_operation "remove" "$local_path" "" "$is_dir"
             file_operation "copy" "$repo_path" "$local_path" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         copy_to_repo)
             log_info "Copying to repo"
             file_operation "copy" "$local_path" "$repo_path" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         delete_local)
             log_info "Deleting local $item"
             file_operation "remove" "$local_path" "" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         copy_to_local)
             log_info "Copying to local"
             file_operation "copy" "$repo_path" "$local_path" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         delete_repo)
             log_info "Deleting from repo"
             file_operation "remove" "$repo_path" "" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         show_diff)
-            return 0  # Diff handling in calling function
+            return "$STATUS_NO_CHANGES"  # Diff handling in calling function
             ;;
         *)
             log_error "Invalid choice, skipping $item"
-            return 0
+            return "$STATUS_NO_CHANGES"
             ;;
     esac
 }
@@ -687,7 +695,7 @@ sync_handler() {
     local choice=$(show_menu_and_get_choice "$scenario" "$item" "$PREFER_MODE")
     
     # Handle diff display for interactive mode
-    if [ "$scenario" = "diff" ] && [ "$choice" = "4" ] && [ "$NON_INTERACTIVE" != true ]; then
+    if [ "$scenario" = "diff" ] && [ "$choice" = "$MENU_CHOICE_SHOW_DIFF" ] && [ "$NON_INTERACTIVE" != true ]; then
         show_diff "$local_path" "$repo_path" "$is_dir"
         choice=$(show_menu_and_get_choice "$scenario" "$item" "$PREFER_MODE")
     fi
@@ -898,12 +906,12 @@ handle_one_sided_sync() {
         true_false)
             log_info "$item: Only exists in $HOME/.claude, copying to repository"
             file_operation "copy" "$claude_path" "$repo_path" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
         false_true)
             log_info "$item: Only exists in repository, copying to $HOME/.claude"
             file_operation "copy" "$repo_path" "$claude_path" "$is_dir"
-            return 1
+            return "$STATUS_CHANGES_MADE"
             ;;
     esac
 }
@@ -926,23 +934,23 @@ handle_interactive_diff_resolution() {
         read -p "Enter choice (1-4): " choice
 
         case "$choice" in
-            1)
+            "$MENU_CHOICE_USE_LOCAL")
                 log_info "Using $HOME/.claude version for $item"
                 [ "$is_dir" = true ] && file_operation "remove" "$repo_path" "" "$is_dir"
                 file_operation "copy" "$claude_path" "$repo_path" "$is_dir"
-                return 1
+                return "$STATUS_CHANGES_MADE"
                 ;;
-            2)
+            "$MENU_CHOICE_USE_REPO")
                 log_info "Using repository version for $item"
                 [ "$is_dir" = true ] && file_operation "remove" "$claude_path" "" "$is_dir"
                 file_operation "copy" "$repo_path" "$claude_path" "$is_dir"
-                return 1
+                return "$STATUS_CHANGES_MADE"
                 ;;
-            3)
+            "$MENU_CHOICE_SKIP")
                 log_info "Skipping $item"
-                return 0
+                return "$STATUS_NO_CHANGES"
                 ;;
-            4)
+            "$MENU_CHOICE_SHOW_DIFF")
                 show_diff "$claude_path" "$repo_path" "$is_dir"
                 echo "Choose action:"
                 echo "1) Use $HOME/.claude version (overwrite repository)"
