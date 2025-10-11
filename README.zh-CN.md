@@ -6,7 +6,9 @@
 
 `FradSer/dotclaude` 是一个 Claude Code 插件市场，提供五个围绕代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具的工作流套件。
 
-## 🚀 快速开始
+## 插件安装
+
+如何在 Claude Code 中安装和使用本市场的插件。
 
 ### 1. 添加插件市场
 
@@ -63,8 +65,59 @@
 ### 🛠️ ults（`plugins/dev-utilities`）· 生产力
 日常自动化实用工具。
 - **命令模板：** `/continue`、`/create-command`
-- **适用场景：** 恢复中断会话、脚手架新的命令模板  
+- **适用场景：** 恢复中断会话、脚手架新的命令模板
   `安装命令：/plugin install ults@fradser-dotclaude`
+
+---
+
+## CLAUDE.md 同步工具
+
+**独立的全局 CLAUDE.md 配置文件同步工具。**
+
+`sync-to-github.sh` 脚本用于在 `$HOME/.claude` 和本 GitHub 仓库之间同步 `CLAUDE.md` 文件。此功能独立于上述插件安装。
+
+### 使用方法
+
+**本地运行（如果已克隆本仓库）：**
+```bash
+bash sync-to-github.sh
+```
+
+**远程运行（单行命令）：**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
+```
+
+### 选项
+
+```bash
+sync-to-github.sh [选项]
+
+选项：
+  -y, --yes, --non-interactive   无提示运行；需要指定 --prefer
+      --prefer <local|repo>      发现差异时选择数据源（默认：repo）
+      --branch <name>            覆盖目标分支（默认：main）
+      --exclude <pattern>        添加额外的排除模式（可重复使用）
+      --https                    使用 HTTPS 而非 SSH 克隆
+  -h, --help                     显示此帮助
+```
+
+### 示例
+
+**非交互模式（优先使用本地更改）：**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
+```
+
+**非交互模式（优先使用仓库版本）：**
+```bash
+bash sync-to-github.sh --yes --prefer repo
+```
+
+**交互模式（提示选择）：**
+```bash
+bash sync-to-github.sh
+```
 
 ## 🗂️ 仓库结构
 
