@@ -1,257 +1,101 @@
+# FradSer 的 Claude Code 插件市场 ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
 
-# Frad 的 `.claude` 配置 ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
-
-[![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Configuration-blue.svg)](https://docs.anthropic.com/en/docs/claude-code) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Plugin%20Marketplace-blue.svg)](https://docs.anthropic.com/en/docs/claude-code/plugins) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **[English](README.md) | 中文**
 
-Claude Code 的高级多智能体配置系统，提供专业智能体和结构化命令模板，加速开发工作流程，包括代码审查、重构、安全审计、架构指导和用户体验评估。
+`FradSer/dotclaude` 是一个 Claude Code 插件市场，提供五个围绕代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具的工作流套件。
 
 ## 🚀 快速开始
 
-### 1. 安装配置
-
-**方案 A：使用 DotClaude CLI 工具（推荐）**
-```bash
-# 安装 dotagent-cli 工具
-pip install dotagent-cli
-
-# 与此仓库同步
-dotagent sync --repo FradSer/dotclaude
-```
-
-**方案 B：使用传统同步脚本**
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
-```
-
-### 2. 核心智能体
-在任何 Claude Code 对话中可用：
-- **`@agent-code-reviewer`** - 全面代码分析和最佳实践
-- **`@agent-security-reviewer`** - 安全漏洞评估
-- **`@agent-tech-lead-reviewer`** - 架构指导和技术方向
-- **`@agent-ux-reviewer`** - 用户界面和体验评估
-- **`@agent-code-simplifier`** - 代码重构和复杂度降低
-
-### 3. 推荐工作流
-**三阶段质量保证流程：**
-
-1. **🔍 分析** - 使用 `/review/hierarchical` 进行多智能体代码分析
-2. **📋 规划** - 使用 `/gh/create-issues` 创建可跟踪的改进任务
-3. **⚡ 实现** - 使用 `/gh/resolve-issues` 配合智能分支管理
-
-> **💡 最佳实践**：在每个阶段验证 Claude 的建议，确保与项目目标保持一致。
-
-### 4. 关键命令
-在 Claude Code 中打开这些命令模板：
-- **`/review/quick`** - 快速两阶段代码审查
-- **`/git/commit-and-push`** - 结构化提交工作流
-- **`/continue`** - 恢复中断的工作会话
-
-### 5. 下一步
-- 浏览[智能体系统](#智能体系统)了解所有可用专家
-- 探索[命令模板](#命令模板)了解结构化工作流
-- 查看[使用模式](#使用模式)了解有效协作
-
----
-
-### 同步详情
-
-<details>
-<summary>同步选项（点击展开）</summary>
-
-#### DotClaude CLI 工具（推荐）
-[dotagent CLI 工具](https://github.com/FradSer/dotagent-cli) 提供现代、稳健的同步体验：
+### 1. 添加插件市场
 
 ```bash
-# 基础同步
-dotagent sync --repo FradSer/dotclaude
-
-# 包含项目特定智能体
-dotagent sync --repo FradSer/dotclaude --local
-
-# 应用前预览更改
-dotagent sync --repo FradSer/dotclaude --dry-run
-
-# 检查同步状态
-dotagent status --repo FradSer/dotclaude
+/plugin marketplace add FradSer/dotclaude
 ```
 
-**功能特性：**
-- **通用平台支持** - 目前支持 Claude Code，计划支持 GitHub Copilot、Cursor 等
-- **双向同步** 配合智能冲突解决
-- **交互式冲突处理** - 为每个项目选择本地、远程或跳过
-- **项目特定智能体** - 选择性地将 `local-agents/` 同步到 `.claude/agents/`
-- **安全操作** - 使用 `--dry-run` 预览更改
-- **现代 CLI** - 使用 Python 构建，全面错误处理
+当清单名称是 `fradser-dotclaude` 时，Claude 会生成 `<插件>@fradser-dotclaude` 形式的安装标识。
 
-#### 传统同步脚本
-原始 bash 脚本仍然可用：
+### 2. 安装所需插件
 
-- 同步 `~/.claude/{agents,commands,CLAUDE.md}` 与此仓库的相同路径（双向比较）
-- **自动本地智能体管理**：检测 `local-agents/` 目录并将智能体复制到项目的 `.claude/agents/`
-- 自动检测是在此仓库内运行还是克隆到 `/tmp/dotclaude-sync`
-- 为每个项目显示差异，让你交互式选择：使用本地、使用仓库或跳过（支持彩色差异）
-- 最后，你可以选择提交和推送（生成 Conventional/Commitizen 风格的消息或回退到内置模板）
+```bash
+# 打开插件面板，在界面中浏览并安装
+/plugin
 
-**前置条件：**
-- `git`, `curl`, `bash 3.2+`（macOS 默认即可）
-- 可选：`colordiff`（彩色差异）、`claude` CLI（更好的提交消息生成）
+# 或者在已知安装标识时直接安装
+/plugin install review@fradser-dotclaude
+/plugin install git@fradser-dotclaude
+/plugin install github@fradser-dotclaude
+/plugin install swift@fradser-dotclaude
+/plugin install ults@fradser-dotclaude
+```
 
-</details>
+> 建议先安装 `review@fradser-dotclaude` 与 `git@fradser-dotclaude` 作为核心组合，再按需添加其他插件。
 
-## 📁 目录结构
+## 📦 插件目录
+
+### 🔍 review（`plugins/code-review-toolkit`）· 生产力
+多智能体代码审查系统，帮助维持高质量。
+- **包含智能体：** `@code-reviewer`、`@security-reviewer`、`@tech-lead-reviewer`、`@ux-reviewer`、`@code-simplifier`
+- **命令模板：** `/hierarchical`、`/quick`、`/refactor`
+- **适用场景：** 全栈审查、安全评估、架构把关、指导式重构  
+  `安装命令：/plugin install review@fradser-dotclaude`
+
+### 🌿 git（`plugins/git-workflow`）· 开发
+约定式 Git 与 GitFlow 自动化。
+- **命令模板：** `/commit`、`/push`、`/commit-and-push`、`/gitignore`
+- **GitFlow 命令：** `/start-feature`、`/finish-feature`、`/start-release`、`/finish-release`、`/start-hotfix`、`/finish-hotfix`
+- **适用场景：** 原子化提交、分支规约、自动生成 .gitignore  
+  `安装命令：/plugin install git@fradser-dotclaude`
+
+### 🐙 github（`plugins/github-integration`）· 生产力
+带质量闸口的 GitHub 项目操作工具包。
+- **命令模板：** `/create-issues`、`/create-pr`、`/resolve-issues`
+- **亮点：** 基于 worktree 的问题解决、自动标签管理、PR 前安全与质量检查  
+  `安装命令：/plugin install github@fradser-dotclaude`
+
+### 📱 swift（`plugins/swiftui-architecture`）· 开发
+专注 SwiftUI Clean Architecture 的审查智能体。
+- **智能体：** `@swiftui-clean-architecture-reviewer`
+- **适用场景：** 强制执行 MVVM + Clean Architecture 分层、SwiftData 集成审核、平台合规性检查  
+  `安装命令：/plugin install swift@fradser-dotclaude`
+
+### 🛠️ ults（`plugins/dev-utilities`）· 生产力
+日常自动化实用工具。
+- **命令模板：** `/continue`、`/create-command`
+- **适用场景：** 恢复中断会话、脚手架新的命令模板  
+  `安装命令：/plugin install ults@fradser-dotclaude`
+
+## 🗂️ 仓库结构
 
 ```text
 dotclaude/
-├── agents/                    # 🤖 全局智能体（所有项目）
-│   ├── code-reviewer.md
-│   ├── code-simplifier.md
-│   ├── security-reviewer.md
-│   ├── tech-lead-reviewer.md
-│   └── ux-reviewer.md
-├── local-agents/              # 🎯 项目特定智能体
-│   └── swiftui-clean-architecture-reviewer.md
-├── commands/                  # ⚡ 工作流模板
-│   ├── continue.md
-│   ├── create-command.md
-│   ├── refactor.md
-│   ├── gh/                    # GitHub 工作流
-│   │   ├── create-issues.md
-│   │   ├── create-pr.md
-│   │   └── resolve-issues.md
-│   ├── git/                   # Git 操作
-│   │   ├── commit-and-push.md
-│   │   ├── commit.md
-│   │   ├── gitignore.md
-│   │   └── push.md
-│   ├── gitflow/               # GitFlow 工作流
-│   │   ├── finish-feature.md
-│   │   ├── finish-hotfix.md
-│   │   ├── finish-release.md
-│   │   ├── start-feature.md
-│   │   ├── start-hotfix.md
-│   │   └── start-release.md
-│   └── review/                # 代码审查工作流
-│       ├── hierarchical.md
-│       └── quick.md
-├── CLAUDE.md                  # 开发指南
-├── README.md
-├── README.zh-CN.md
-└── sync-to-github.sh          # 配置同步脚本
+├── .claude-plugin/
+│   └── marketplace.json          # 插件注册清单
+├── plugins/
+│   ├── code-review-toolkit/      # review 插件内容
+│   │   ├── agents/
+│   │   └── commands/
+│   ├── git-workflow/             # git 插件内容
+│   │   └── commands/
+│   ├── github-integration/       # github 插件内容
+│   │   └── commands/
+│   ├── swiftui-architecture/     # swift 插件内容
+│   │   └── agents/
+│   └── dev-utilities/            # ults 插件内容
+│       └── commands/
+└── README.zh-CN.md
 ```
 
-## 🤖 智能体系统
-
-### 全局智能体
-适用于所有项目的通用专家：
-
-| 智能体 | 用途 | 专业领域 |
-|-------|------|----------|
-| **`@agent-code-reviewer`** | 代码质量分析 | 正确性、可维护性、最佳实践 |
-| **`@agent-code-simplifier`** | 重构辅助 | 复杂度降低、DRY 原则、现代化 |
-| **`@agent-security-reviewer`** | 安全评估 | 漏洞检测、安全编码实践 |
-| **`@agent-tech-lead-reviewer`** | 技术领导 | 架构、设计模式、技术方向 |
-| **`@agent-ux-reviewer`** | 用户体验审计 | 可用性、无障碍性、界面一致性 |
-
-### 本地智能体
-项目特定专家（通过同步脚本复制）：
-
-| 智能体 | 目标 | 专业领域 |
-|-------|------|----------|
-| **`@swiftui-clean-architecture-reviewer`** | SwiftUI | Clean Architecture、MVVM、SwiftData 模式 |
-
-## ⚡ 命令模板
-
-常见开发任务的结构化工作流模板：
-
-### 🔍 代码审查
-- **`/review/quick`** - 快速两阶段审查流程
-- **`/review/hierarchical`** - 多智能体并行分析，结果整合
-
-### 🌿 Git 操作
-- **`/git/commit`** - 结构化提交工作流，符合约定式消息
-- **`/git/commit-and-push`** - 组合提交和推送，包含验证
-- **`/git/push`** - 带预检查的推送
-- **`/git/gitignore`** - 生成和管理 .gitignore 文件
-
-### 🚀 GitFlow 工作流
-- **`/gitflow/start-feature`** - 初始化功能分支
-- **`/gitflow/finish-feature`** - 完成并合并功能
-- **`/gitflow/start-release`** - 准备发布分支
-- **`/gitflow/finish-release`** - 完成并标记发布
-- **`/gitflow/start-hotfix`** - 创建紧急修复分支
-- **`/gitflow/finish-hotfix`** - 部署关键补丁
-
-### 🐙 GitHub 集成
-- **`/gh/create-issues`** - 使用模板和标签生成问题
-- **`/gh/create-pr`** - 创建具有结构化描述的拉取请求
-- **`/gh/resolve-issues`** - 智能问题解决，包含自动分支和 worktree 管理
-
-### 🛠️ 开发工具
-- **`/continue`** - 恢复中断的工作会话
-- **`/create-command`** - 生成新命令模板
-- **`/refactor`** - 系统化代码改进检查清单
-
-## 💡 使用模式
-
-### 命令驱动工作流
-1. **📋 打开模板** - 在 Claude Code 中使用命令文件作为交互式检查清单
-2. **🎯 遵循工作流** - 每个模板提供结构化的分步指导
-3. **🤝 保持一致性** - 团队成员和项目间的标准化方法
-
-### 智能体协作
-
-**顺序审查**（彻底分析）：
-```bash
-@agent-code-reviewer → @agent-security-reviewer → @agent-tech-lead-reviewer
-```
-
-**并行专业化**（针对性专业知识）：
-```bash
-@agent-ux-reviewer        # UI/UX 专注
-@agent-security-reviewer  # 安全专注
-@agent-code-simplifier    # 重构专注
-```
-
-**项目特定**（同步后）：
-```bash
-@swiftui-clean-architecture-reviewer  # SwiftUI 项目
-```
-
-### 🤝 协作理念
-
-**人机协作伙伴关系**
-Claude Code 作为你的专业开发伙伴，提供专家分析和建议，而你保持决策权和项目上下文控制。
-
-**GitHub 集成**
-`gh` CLI 创建无缝工作流，将问题、拉取请求和提交转化为结构化文档，捕获人类决策和 AI 见解。
-
-**验证驱动开发**
-每个自动化步骤都包含人类验证点，确保 AI 建议与项目目标和约束保持一致。
-
----
-
-## 📚 高级用法
-
-查看 [`CLAUDE.md`](CLAUDE.md) 了解全面的开发指南，包括：
-
-- **🏗️ 架构** - SOLID 原则、依赖注入、设计模式
-- **✨ 代码质量** - 语义命名、错误处理、文档标准
-- **🔄 开发标准** - TDD、原子提交、约定式提交消息
-- **🛠️ 技术栈** - Node.js (`pnpm`)、Python (`uv`)、特定语言最佳实践
+详细的开发策略（如强制 TDD、Clean Architecture 守则、工具链约定）请参阅 [`CLAUDE.md`](CLAUDE.md)。
 
 ## ❓ 常见问题
 
-**问：同步脚本是交互式的吗？**  
-答：是的 - 你可以为每个项目选择本地或仓库版本，最后决定是否提交和推送。
-
-**问：如何获得彩色差异显示？**  
-答：安装 `colordiff` - 脚本会自动检测并在可用时使用它。
-
-**问：可以为我的项目自定义智能体吗？**  
-答：可以 - 在 `local-agents/` 中添加项目特定智能体，然后运行同步脚本。
+- **如何更新插件？** 使用 `/plugin update review@fradser-dotclaude`（替换为需要的插件名称）或重新安装。
+- **可以 Fork 并定制吗？** 可以。Fork 仓库后更新插件内容、调整 `.claude-plugin/marketplace.json`，再让团队指向你的版本。
+- **是否可以只安装部分插件？** 可以。每个插件相互独立，根据工作流选择需要的组合即可。
+- **代码审查一定要调用所有智能体吗？** 不必。`review` 插件同时提供多个专家，按需唤起即可。
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE](LICENSE)。
+MIT 协议，详情见 [LICENSE](LICENSE)。
