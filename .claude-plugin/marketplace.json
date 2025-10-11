@@ -1,5 +1,5 @@
 {
-  "name": "dotclaude-marketplace",
+  "name": "fradser-dotclaude",
   "description": "FradSer's Claude Code plugin marketplace featuring specialized agents and workflow automation",
   "owner": {
     "name": "FradSer",
@@ -20,7 +20,7 @@
     },
     {
       "name": "github",
-      "source": "./plugins/github",
+      "source": "./plugins/github-integration",
       "description": "GitHub integration toolkit for issue management, PR creation, and worktree-based development workflows",
       "category": "productivity"
     },
@@ -32,7 +32,7 @@
     },
     {
       "name": "ults",
-      "source": "./plugins/utilities",
+      "source": "./plugins/dev-utilities",
       "description": "Development utility commands for session management and command template generation",
       "category": "productivity"
     }
