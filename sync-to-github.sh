@@ -352,14 +352,21 @@ is_dotclaude_project() {
 detect_execution_context() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local current_dir="$(pwd)"
-    
+
+    # Guard clause: check if running locally in dotclaude project
     if is_dotclaude_project "$current_dir" && [ "$current_dir" = "$script_dir" ]; then
         echo "local $current_dir"
-    elif is_dotclaude_project "$script_dir" && [ "$current_dir" != "$script_dir" ]; then
-        echo "external $script_dir"
-    else
-        echo "remote"
+        return
     fi
+
+    # Guard clause: check if script is from external dotclaude project
+    if is_dotclaude_project "$script_dir" && [ "$current_dir" != "$script_dir" ]; then
+        echo "external $script_dir"
+        return
+    fi
+
+    # Default: remote execution
+    echo "remote"
 }
 # Legacy functions for backward compatibility
 detect_local_mode() {
