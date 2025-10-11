@@ -6,7 +6,9 @@
 
 `FradSer/dotclaude` is a Claude Code plugin marketplace that bundles five opinionated workflow packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities.
 
-## Quick Start
+## Plugin Installation
+
+How to install and use plugins from this marketplace in Claude Code.
 
 ### 1. Add the marketplace
 
@@ -66,9 +68,13 @@ Utility commands for day-to-day automation.
 - **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
 - **Install:** `/plugin install ults@fradser-dotclaude`
 
+---
+
 ## CLAUDE.md Sync Tool
 
-The `sync-to-github.sh` script synchronizes your `CLAUDE.md` file between `$HOME/.claude` and this GitHub repository.
+**Separate utility for syncing your global CLAUDE.md configuration file.**
+
+The `sync-to-github.sh` script synchronizes your `CLAUDE.md` file between `$HOME/.claude` and this GitHub repository. This is independent of the plugin installation above.
 
 ### Usage
 

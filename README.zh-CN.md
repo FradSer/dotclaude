@@ -6,7 +6,9 @@
 
 `FradSer/dotclaude` 是一个 Claude Code 插件市场，提供五个围绕代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具的工作流套件。
 
-## 🚀 快速开始
+## 插件安装
+
+如何在 Claude Code 中安装和使用本市场的插件。
 
 ### 1. 添加插件市场
 
@@ -66,9 +68,13 @@
 - **适用场景：** 恢复中断会话、脚手架新的命令模板
   `安装命令：/plugin install ults@fradser-dotclaude`
 
+---
+
 ## CLAUDE.md 同步工具
 
-`sync-to-github.sh` 脚本用于在 `$HOME/.claude` 和本 GitHub 仓库之间同步 `CLAUDE.md` 文件。
+**独立的全局 CLAUDE.md 配置文件同步工具。**
+
+`sync-to-github.sh` 脚本用于在 `$HOME/.claude` 和本 GitHub 仓库之间同步 `CLAUDE.md` 文件。此功能独立于上述插件安装。
 
 ### 使用方法
 
