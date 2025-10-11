@@ -789,67 +789,103 @@ cleanup() {
 #===============================================================================
 # AUTO LOCAL AGENTS MANAGEMENT
 #===============================================================================
-# Auto-detect and handle local agents if directory exists
-handle_local_agents_auto() {
-    local original_pwd="${1:-$(pwd)}"
-    
-    # Skip if running from $HOME/.claude or no CLAUDE.md in current directory
-    [ "$original_pwd" = "$HOME/.claude" ] && return 0
-    [ ! -f "$original_pwd/CLAUDE.md" ] && return 0
-    
-    # Determine local-agents directory based on execution context
+# Check if local agents management should be performed
+should_handle_local_agents() {
+    local original_pwd="$1"
+
+    # Skip if running from $HOME/.claude
+    [ "$original_pwd" = "$HOME/.claude" ] && return 1
+
+    # Skip if no CLAUDE.md in current directory
+    [ ! -f "$original_pwd/CLAUDE.md" ] && return 1
+
+    return 0
+}
+
+# Get local agents directory based on execution context
+get_local_agents_directory() {
     local context=$(detect_execution_context)
-    local local_agents_dir
-    
+
     if [[ "$context" == local* ]]; then
-        local_agents_dir="$(pwd)/local-agents"
+        echo "$(pwd)/local-agents"
     else
-        local_agents_dir="$WORKING_DIR/local-agents"
+        echo "$WORKING_DIR/local-agents"
     fi
-    
-    # Check if agents are available
-    local agents_list
-    if ! agents_list=$(get_agents_list "$local_agents_dir"); then
-        return 0  # No agents found, skip silently
-    fi
-    
-    local agent_count=$(echo "$agents_list" | wc -l | tr -d ' ')
-    log_info "Found local-agents directory with $agent_count agent(s)"
-    
-    # Non-interactive mode: copy all agents
-    if [ "$NON_INTERACTIVE" = true ]; then
-        log_info "Non-interactive mode: copying all local agents"
-        manage_local_agents "copy_all" "" "$local_agents_dir"
-        return
-    fi
-    
-    # Interactive mode: show menu
+}
+
+# Display interactive agent selection menu
+display_agent_menu() {
+    local agents_list="$1" agent_count="$2"
+
     echo "Found the following agents in local-agents/:"
     local i=1
     while IFS= read -r agent; do
         printf "%d) %s\n" $i "$agent"
         ((i++))
     done <<< "$agents_list"
-    
+
     echo "$((agent_count+1))) Copy all agents"
     echo "$((agent_count+2))) Skip local agents management"
-    
+}
+
+# Handle user selection from agent menu
+handle_agent_menu_choice() {
+    local choice="$1" agent_count="$2" agents_list="$3" local_agents_dir="$4"
+
+    if [ "$choice" -ge 1 ] && [ "$choice" -le "$agent_count" ]; then
+        # Copy specific agent
+        local selected_agent=$(echo "$agents_list" | sed -n "${choice}p")
+        copy_agent "$selected_agent" "$local_agents_dir" "$CLAUDE_DIR/agents"
+        return 0
+    elif [ "$choice" -eq $((agent_count+1)) ]; then
+        # Copy all agents
+        manage_local_agents "copy_all" "" "$local_agents_dir"
+        return 0
+    elif [ "$choice" -eq $((agent_count+2)) ]; then
+        # Skip
+        log_info "Skipping local agents management"
+        return 0
+    fi
+
+    return 1  # Invalid choice
+}
+
+# Auto-detect and handle local agents if directory exists
+handle_local_agents_auto() {
+    local original_pwd="${1:-$(pwd)}"
+
+    # Guard clause: check if we should handle local agents
+    if ! should_handle_local_agents "$original_pwd"; then
+        return 0
+    fi
+
+    # Determine local-agents directory
+    local local_agents_dir=$(get_local_agents_directory)
+
+    # Guard clause: check if agents are available
+    local agents_list
+    if ! agents_list=$(get_agents_list "$local_agents_dir"); then
+        return 0  # No agents found, skip silently
+    fi
+
+    local agent_count=$(echo "$agents_list" | wc -l | tr -d ' ')
+    log_info "Found local-agents directory with $agent_count agent(s)"
+
+    # Guard clause: handle non-interactive mode
+    if [ "$NON_INTERACTIVE" = true ]; then
+        log_info "Non-interactive mode: copying all local agents"
+        manage_local_agents "copy_all" "" "$local_agents_dir"
+        return
+    fi
+
+    # Interactive mode: show menu and handle selection
+    display_agent_menu "$agents_list" "$agent_count"
+
     while true; do
         read -p "Select option (1-$((agent_count+2))): " choice
-        
+
         if [[ "$choice" =~ ^[0-9]+$ ]]; then
-            if [ "$choice" -ge 1 ] && [ "$choice" -le "$agent_count" ]; then
-                # Copy specific agent
-                local selected_agent=$(echo "$agents_list" | sed -n "${choice}p")
-                copy_agent "$selected_agent" "$local_agents_dir" "$CLAUDE_DIR/agents"
-                break
-            elif [ "$choice" -eq $((agent_count+1)) ]; then
-                # Copy all agents
-                manage_local_agents "copy_all" "" "$local_agents_dir"
-                break
-            elif [ "$choice" -eq $((agent_count+2)) ]; then
-                # Skip
-                log_info "Skipping local agents management"
+            if handle_agent_menu_choice "$choice" "$agent_count" "$agents_list" "$local_agents_dir"; then
                 break
             fi
         fi
