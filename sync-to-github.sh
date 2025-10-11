@@ -878,53 +878,53 @@ sync_items() {
     
     [ "$has_changes" = true ] && log_info "Files synced with user choices" || log_info "No changes needed"
 }
-# Special handling for $HOME/.claude content comparison
-compare_home_claude_content() {
-    local claude_path="$1" repo_path="$2" item="$3" is_dir="$4"
+# Check if items exist and return existence status
+check_existence_scenario() {
+    local claude_path="$1" repo_path="$2" is_dir="$3"
+    local path_type=$([ "$is_dir" = true ] && echo "dir" || echo "file")
     local claude_exists repo_exists
-    
-    claude_exists=$(manage_path "$claude_path" "$([ "$is_dir" = true ] && echo dir || echo file)" "check" && echo true || echo false)
-    repo_exists=$(manage_path "$repo_path" "$([ "$is_dir" = true ] && echo dir || echo file)" "check" && echo true || echo false)
-    
-    # Skip if neither exists
-    if [ "$claude_exists" = false ] && [ "$repo_exists" = false ]; then
-        log_warning "$item: Does not exist in either location"
-        return 0
-    fi
-    
-    # Handle cases where only one location has the item
-    if [ "$claude_exists" = true ] && [ "$repo_exists" = false ]; then
-        log_info "$item: Only exists in $HOME/.claude, copying to repository"
-        file_operation "copy" "$claude_path" "$repo_path" "$is_dir"
-        return 1
-    fi
-    
-    if [ "$claude_exists" = false ] && [ "$repo_exists" = true ]; then
-        log_info "$item: Only exists in repository, copying to $HOME/.claude"
-        file_operation "copy" "$repo_path" "$claude_path" "$is_dir"
-        return 1
-    fi
-    
-    # Both exist - check if they're identical
-    if file_operation "compare" "$claude_path" "$repo_path" "$is_dir"; then
-        log_info "$item: Content is identical between $HOME/.claude and repository"
-        return 0
-    fi
-    
-    # Content differs - prompt for interactive decision
+
+    claude_exists=$(manage_path "$claude_path" "$path_type" "check" && echo true || echo false)
+    repo_exists=$(manage_path "$repo_path" "$path_type" "check" && echo true || echo false)
+
+    echo "${claude_exists}_${repo_exists}"
+}
+
+# Handle sync when item exists in only one location
+handle_one_sided_sync() {
+    local claude_path="$1" repo_path="$2" item="$3" is_dir="$4" scenario="$5"
+
+    case "$scenario" in
+        true_false)
+            log_info "$item: Only exists in $HOME/.claude, copying to repository"
+            file_operation "copy" "$claude_path" "$repo_path" "$is_dir"
+            return 1
+            ;;
+        false_true)
+            log_info "$item: Only exists in repository, copying to $HOME/.claude"
+            file_operation "copy" "$repo_path" "$claude_path" "$is_dir"
+            return 1
+            ;;
+    esac
+}
+
+# Handle interactive resolution of content differences
+handle_interactive_diff_resolution() {
+    local claude_path="$1" repo_path="$2" item="$3" is_dir="$4"
+
     log_warning "$item: Content differs between $HOME/.claude and repository"
     printf "  $HOME/.claude: %s\n" "$claude_path"
     printf "  Repository: %s\n\n" "$repo_path"
-    
+
     echo "Choose action:"
     echo "1) Use $HOME/.claude version (overwrite repository)"
     echo "2) Use repository version (overwrite $HOME/.claude)"
     echo "3) Skip this item"
     echo "4) Show detailed diff"
-    
+
     while true; do
         read -p "Enter choice (1-4): " choice
-        
+
         case "$choice" in
             1)
                 log_info "Using $HOME/.claude version for $item"
@@ -954,6 +954,35 @@ compare_home_claude_content() {
                 ;;
         esac
     done
+}
+
+# Special handling for $HOME/.claude content comparison
+compare_home_claude_content() {
+    local claude_path="$1" repo_path="$2" item="$3" is_dir="$4"
+    local existence_scenario
+
+    existence_scenario=$(check_existence_scenario "$claude_path" "$repo_path" "$is_dir")
+
+    # Guard clause: skip if neither exists
+    if [ "$existence_scenario" = "false_false" ]; then
+        log_warning "$item: Does not exist in either location"
+        return 0
+    fi
+
+    # Handle one-sided existence
+    if [[ "$existence_scenario" =~ ^(true_false|false_true)$ ]]; then
+        handle_one_sided_sync "$claude_path" "$repo_path" "$item" "$is_dir" "$existence_scenario"
+        return $?
+    fi
+
+    # Both exist - check if identical
+    if file_operation "compare" "$claude_path" "$repo_path" "$is_dir"; then
+        log_info "$item: Content is identical between $HOME/.claude and repository"
+        return 0
+    fi
+
+    # Content differs - handle interactively
+    handle_interactive_diff_resolution "$claude_path" "$repo_path" "$item" "$is_dir"
 }
 # Main execution flow
 main() {
