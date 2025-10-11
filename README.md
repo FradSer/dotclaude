@@ -4,215 +4,98 @@
 
 **English | [中文](README.zh-CN.md)**
 
-A comprehensive Claude Code plugin marketplace featuring 5 specialized plugins for code review, Git workflows, GitHub integration, SwiftUI architecture, and development utilities.
+`FradSer/dotclaude` is a Claude Code plugin marketplace that bundles five opinionated workflow packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities.
 
 ## Quick Start
 
-### 1. Add the Marketplace
+### 1. Add the marketplace
 
 ```bash
-# Add FradSer's marketplace
 /plugin marketplace add FradSer/dotclaude
 ```
 
-### 2. Browse and Install Plugins
+When the marketplace manifest name is `fradser-dotclaude`, Claude generates install slugs in the form `<plugin>@fradser-dotclaude`.
+
+### 2. Install the plugins you need
 
 ```bash
-# Browse available plugins
+# Browse marketplace and install from the UI picker
 /plugin
 
-# Or install specific plugins directly
-/plugin install code-review-toolkit@FradSer
-/plugin install git-workflow@FradSer
-/plugin install github@FradSer
-/plugin install swiftui-architecture@FradSer      # For SwiftUI projects
-/plugin install utilities@FradSer
+# Or install plugins directly when you know the slug
+/plugin install review@fradser-dotclaude
+/plugin install git@fradser-dotclaude
+/plugin install github@fradser-dotclaude
+/plugin install swift@fradser-dotclaude
+/plugin install ults@fradser-dotclaude
 ```
 
-## Available Plugins
+> Tip: Install `review@fradser-dotclaude` + `git@fradser-dotclaude` for the core workflow, then add the others as needed.
 
-### 🔍 code-review-toolkit [productivity]
-**Comprehensive code review toolkit with specialized agents**
+## Plugin Catalog
 
-**Features:**
-- 5 specialized review agents (code, security, tech-lead, UX, simplifier)
-- Multi-stage hierarchical review workflow
-- Automated refactoring suggestions
+### 🔍 review (`plugins/code-review-toolkit`) · productivity
+Multi-agent review system for enforcing high quality.
+- **Agents:** `@code-reviewer`, `@security-reviewer`, `@tech-lead-reviewer`, `@ux-reviewer`, `@code-simplifier`
+- **Slash commands:** `/hierarchical`, `/quick`, `/refactor`
+- **Use it for:** full-stack audits, security reviews, architectural guidance, guided refactors
+- **Install:** `/plugin install review@fradser-dotclaude`
 
-**Slash Commands:**
-- `/hierarchical` - Multi-agent parallel code review
-- `/quick` - Fast two-stage code review
-- `/refactor` - Systematic code improvement
+### 🌿 git (`plugins/git-workflow`) · development
+Conventional Git and GitFlow automation.
+- **Slash commands:** `/commit`, `/push`, `/commit-and-push`, `/gitignore`
+- **GitFlow helpers:** `/start-feature`, `/finish-feature`, `/start-release`, `/finish-release`, `/start-hotfix`, `/finish-hotfix`
+- **Use it for:** atomic commits, branch discipline, automated .gitignore generation
+- **Install:** `/plugin install git@fradser-dotclaude`
 
-**Install:** `/plugin install code-review-toolkit@FradSer`
+### 🐙 github (`plugins/github-integration`) · productivity
+GitHub project operations with quality gates.
+- **Slash commands:** `/create-issues`, `/create-pr`, `/resolve-issues`
+- **Highlights:** worktree-based issue resolution, automated label management, security and quality validation before PRs ship
+- **Install:** `/plugin install github@fradser-dotclaude`
 
----
+### 📱 swift (`plugins/swiftui-architecture`) · development
+Dedicated SwiftUI Clean Architecture reviewer.
+- **Agent:** `@swiftui-clean-architecture-reviewer`
+- **Use it for:** enforcing MVVM + Clean Architecture layering, SwiftData integration reviews, platform compliance checks
+- **Install:** `/plugin install swift@fradser-dotclaude`
 
-### 🌿 git-workflow [development]
-**Git and GitFlow workflow automation**
+### 🛠️ ults (`plugins/dev-utilities`) · productivity
+Utility commands for day-to-day automation.
+- **Slash commands:** `/continue`, `/create-command`
+- **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
+- **Install:** `/plugin install ults@fradser-dotclaude`
 
-**Features:**
-- Atomic commits with conventional messages
-- Complete GitFlow support (feature/release/hotfix)
-- Automated commit message generation
-
-**Slash Commands:**
-- `/commit`, `/push`, `/commit-and-push` - Git operations
-- `/gitignore` - Generate .gitignore files
-- `/start-feature`, `/finish-feature` - GitFlow feature workflow
-- `/start-release`, `/finish-release` - Release management
-- `/start-hotfix`, `/finish-hotfix` - Hotfix workflow
-
-**Install:** `/plugin install git-workflow@FradSer`
-
----
-
-### 🐙 github [productivity]
-**GitHub project management and collaboration**
-
-**Features:**
-- Issue management with templates
-- PR creation with structured descriptions
-- Worktree-based development workflows
-
-**Slash Commands:**
-- `/create-pr` - Create pull requests
-- `/create-issues` - Generate GitHub issues
-- `/resolve-issues` - Smart issue resolution with worktrees
-
-**Install:** `/plugin install github@FradSer`
-
----
-
-### 📱 swiftui-architecture [development]
-**SwiftUI Clean Architecture specialist**
-
-**Features:**
-- Clean Architecture compliance verification
-- MVVM + SwiftData pattern validation
-- 4-layer architecture scoring
-
-**Agents:**
-- `@agent-swiftui-clean-architecture-reviewer` - SwiftUI architecture expert
-
-**Install:** `/plugin install swiftui-architecture@FradSer`
-
----
-
-### 🛠️ utilities [productivity]
-**Development workflow utilities**
-
-**Features:**
-- Session management and resumption
-- Custom command template generation
-
-**Slash Commands:**
-- `/continue` - Resume interrupted work sessions
-- `/create-command` - Generate new command templates
-
-**Install:** `/plugin install utilities@FradSer`
-
----
-
-## 📁 Marketplace Structure
+## Repository Layout
 
 ```text
 dotclaude/
 ├── .claude-plugin/
-│   └── marketplace.json           # Marketplace manifest listing all plugins
+│   └── marketplace.json          # Manifest with plugin registrations
 ├── plugins/
-│   ├── code-review-toolkit/       # Code review and quality
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
+│   ├── code-review-toolkit/      # review plugin content
 │   │   ├── agents/
-│   │   │   ├── code-reviewer.md
-│   │   │   ├── security-reviewer.md
-│   │   │   ├── tech-lead-reviewer.md
-│   │   │   ├── ux-reviewer.md
-│   │   │   └── code-simplifier.md
 │   │   └── commands/
-│   │       ├── hierarchical.md
-│   │       ├── quick.md
-│   │       └── refactor.md
-│   │
-│   ├── git-workflow/              # Git and GitFlow
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
+│   ├── git-workflow/             # git plugin content
 │   │   └── commands/
-│   │       ├── commit.md, push.md, commit-and-push.md, gitignore.md
-│   │       └── start-feature.md, finish-feature.md, start-release.md
-│   │           finish-release.md, start-hotfix.md, finish-hotfix.md
-│   │
-│   ├── github/                    # GitHub workflows
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
+│   ├── github-integration/       # github plugin content
 │   │   └── commands/
-│   │       ├── create-pr.md
-│   │       ├── create-issues.md
-│   │       └── resolve-issues.md
-│   │
-│   ├── swiftui-architecture/      # SwiftUI specialist
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
+│   ├── swiftui-architecture/     # swift plugin content
 │   │   └── agents/
-│   │       └── swiftui-clean-architecture-reviewer.md
-│   │
-│   └── utilities/                 # Development tools
-│       ├── .claude-plugin/
-│       │   └── plugin.json
+│   └── dev-utilities/            # ults plugin content
 │       └── commands/
-│           ├── continue.md
-│           └── create-command.md
-│
-├── CLAUDE.md                      # Development guidelines
-└── README.md                      # This file
+└── README.md
 ```
 
-## 🎯 Usage Recommendations
+See [`CLAUDE.md`](CLAUDE.md) for the full development playbook that inspired these workflows, including mandatory TDD, Clean Architecture guardrails, and tooling conventions.
 
-### For Code Quality
-Install `code-review-toolkit` for comprehensive code analysis with specialized agents.
+## FAQ
 
-### For Git Workflows
-Install `git-workflow` for atomic commits and GitFlow management.
+- **How do I update plugins?** Use `/plugin update review@fradser-dotclaude` (replace name as needed) or reinstall.
+- **Can I fork and customize?** Yes. Fork the repo, adjust plugin content, update `.claude-plugin/marketplace.json`, and point your team to your fork.
+- **Can I install a subset?** Absolutely. Each plugin is independent—install only what fits your workflow.
+- **Do I need all agents for reviews?** The `review` plugin bundles agents so you can selectively call the specialist you need.
 
-### For GitHub Projects
-Combine `git-workflow` + `github` for complete GitHub workflow automation.
+## License
 
-### For SwiftUI Development
-Install `swiftui-architecture` in addition to `code-review-toolkit` for SwiftUI-specific guidance.
-
-### For Maximum Productivity
-Install all plugins to unlock the complete development workflow suite.
-
----
-
-## 📚 Advanced Usage
-
-See [`CLAUDE.md`](CLAUDE.md) for comprehensive development guidelines including:
-
-- **🏗️ Architecture** - SOLID principles, dependency injection, design patterns
-- **✨ Code Quality** - Semantic naming, error handling, documentation standards
-- **🔄 Development Standards** - TDD, atomic commits, conventional commit messages
-- **🛠️ Tech Stack** - Node.js (`pnpm`), Python (`uv`), language-specific best practices
-
-## ❓ FAQ
-
-**Q: Which plugins should I install first?**
-A: Start with `code-review-toolkit` and `git-workflow` for essential code quality and version control workflows.
-
-**Q: Can I install only specific plugins?**
-A: Yes! Each plugin is independent. Install only what you need for your workflow.
-
-**Q: How do I update plugins?**
-A: Use `/plugin update <plugin-name>@FradSer` or reinstall from the marketplace.
-
-**Q: Can I customize these plugins for my team?**
-A: Yes - fork the repository, modify plugins, and point your team to your own marketplace.
-
-**Q: What's the difference between agents and slash commands?**
-A: Agents are AI specialists you invoke with `@agent-name`. Slash commands are workflow templates you invoke with `/command-name`.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License – see [LICENSE](LICENSE) for details.
