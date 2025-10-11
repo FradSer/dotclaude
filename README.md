@@ -66,6 +66,53 @@ Utility commands for day-to-day automation.
 - **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
 - **Install:** `/plugin install ults@fradser-dotclaude`
 
+## CLAUDE.md Sync Tool
+
+The `sync-to-github.sh` script synchronizes your `CLAUDE.md` file between `$HOME/.claude` and this GitHub repository.
+
+### Usage
+
+**Run locally (if you've cloned this repo):**
+```bash
+bash sync-to-github.sh
+```
+
+**Run remotely (one-liner):**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
+```
+
+### Options
+
+```bash
+sync-to-github.sh [options]
+
+Options:
+  -y, --yes, --non-interactive   Run without prompts; requires --prefer
+      --prefer <local|repo>      Choose source of truth when differences are found (default: repo)
+      --branch <name>            Override target branch (default: main)
+      --exclude <pattern>        Add extra exclude pattern (can be repeated)
+      --https                    Clone via HTTPS instead of SSH
+  -h, --help                     Show this help
+```
+
+### Examples
+
+**Non-interactive mode (prefer local changes):**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
+```
+
+**Non-interactive mode (prefer repository version):**
+```bash
+bash sync-to-github.sh --yes --prefer repo
+```
+
+**Interactive mode (prompts for choices):**
+```bash
+bash sync-to-github.sh
+```
+
 ## Repository Layout
 
 ```text
