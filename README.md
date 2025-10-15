@@ -41,7 +41,7 @@ npx claude-plugins install @FradSer/fradser-dotclaude/review
 npx claude-plugins install @FradSer/fradser-dotclaude/<plugin>
 ```
 
-This automatically adds the marketplace and installs the plugin in a single step.
+This automatically adds the marketplace and installs the plugin in a single step. See the [Plugin Catalog](#plugin-catalog) below for a list of available plugins.
 
 > Tip: Install `review@fradser-dotclaude` + `git@fradser-dotclaude` for the core workflow, then add the others as needed.
 
