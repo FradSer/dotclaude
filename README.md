@@ -6,7 +6,7 @@
 
 `FradSer/dotclaude` is a Claude Code plugin marketplace that bundles five opinionated workflow packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities.
 
-## Plugin Installation
+## Standard Plugin Installation
 
 How to install and use plugins from this marketplace in Claude Code.
 
@@ -31,6 +31,17 @@ When the marketplace manifest name is `fradser-dotclaude`, Claude generates inst
 /plugin install swift@fradser-dotclaude
 /plugin install ults@fradser-dotclaude
 ```
+
+### One-Command Installation
+Use the [Claude Plugins CLI](https://claude-plugins.dev) to skip the marketplace setup:
+```bash
+npx claude-plugins install @FradSer/fradser-dotclaude/review
+
+# Works with any plugin
+npx claude-plugins install @FradSer/fradser-dotclaude/<plugin>
+```
+
+This automatically adds the marketplace and installs the plugin in a single step.
 
 > Tip: Install `review@fradser-dotclaude` + `git@fradser-dotclaude` for the core workflow, then add the others as needed.
 
