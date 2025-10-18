@@ -56,8 +56,8 @@ Command files support frontmatter for specifying metadata:
 
 **`model`**
 - Purpose: Specific model to use
-- Options: `claude-3-5-haiku-latest` (simple tasks), `claude-sonnet-4-0` (default), `claude-opus-4-1` (complex tasks, requires user confirmation)
-- Default: `claude-sonnet-4-0`
+- Options: `claude-haiku-4-5-20251001` (simple tasks), `claude-sonnet-4-5-20250929` (default), `claude-opus-4-1-20250805` (complex tasks, requires user confirmation)
+- Default: `claude-sonnet-4-5-20250929`
 
 ## Argument Handling
 

@@ -1,7 +1,7 @@
 ---
 allowed-tools: Task, Bash(git:*)
 description: Push current branch to remote repository
-model: claude-3-5-haiku-latest
+model: claude-haiku-4-5-20251001
 ---
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**

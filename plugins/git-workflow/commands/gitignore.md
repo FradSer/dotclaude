@@ -2,7 +2,7 @@
 allowed-tools: Task, Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
 argument-hint: [additional-technologies]
 description: Create or update .gitignore file
-model: claude-3-5-haiku-latest
+model: claude-haiku-4-5-20251001
 ---
 
 ## Context

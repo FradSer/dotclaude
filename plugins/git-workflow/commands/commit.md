@@ -1,7 +1,7 @@
 ---
 allowed-tools: Task, Bash(git:*)
 description: Create atomic conventional git commit
-model: claude-3-5-haiku-latest
+model: claude-haiku-4-5-20251001
 ---
 
 ## Context
