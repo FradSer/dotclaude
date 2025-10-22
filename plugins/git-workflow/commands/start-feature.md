@@ -1,6 +1,6 @@
 ---
 allowed-tools: Task, Bash
-argument-hint: [feature-name]
+argument-hint: [feature description]
 description: Start new feature or continue existing feature development
 ---
 
@@ -14,7 +14,7 @@ description: Start new feature or continue existing feature development
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-Start or continue feature development with name: $ARGUMENTS
+Start or continue feature development with description: $ARGUMENTS
 
 **Actions to take:**
 1. If no feature branches exist: Create new feature branch from develop

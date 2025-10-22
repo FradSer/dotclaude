@@ -1,6 +1,6 @@
 ---
 allowed-tools: Task, Bash
-argument-hint: [version]
+argument-hint: [hotfix description]
 description: Start new hotfix or continue existing hotfix development
 ---
 
@@ -16,7 +16,7 @@ description: Start new hotfix or continue existing hotfix development
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-Start or continue hotfix development with version: $ARGUMENTS
+Start or continue hotfix development with description: $ARGUMENTS
 
 **Actions to take:**
 1. If no hotfix branches exist: Create new hotfix branch from main

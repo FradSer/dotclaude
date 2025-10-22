@@ -1,6 +1,5 @@
 ---
 allowed-tools: Task, Bash
-argument-hint: [version]
 description: Start new release or continue existing release development
 ---
 
@@ -16,7 +15,7 @@ description: Start new release or continue existing release development
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-Start or continue release development with version: $ARGUMENTS
+Start or continue release development
 
 **Actions to take:**
 1. If no release branches exist: Create new release branch from develop
