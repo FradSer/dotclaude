@@ -7,8 +7,7 @@ model: claude-haiku-4-5-20251001
 ## Context
 
 - Current git status: !`git status`
-- Current git diff (staged and unstaged changes): !`git diff HEAD`
-- Recent commits: !`git log --oneline -5`
+- All changes: !`git diff HEAD`
 
 ## Requirements
 
