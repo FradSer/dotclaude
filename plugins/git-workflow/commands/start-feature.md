@@ -2,6 +2,7 @@
 allowed-tools: Task, Bash
 argument-hint: [feature description]
 description: Start new feature or continue existing feature development
+model: claude-haiku-4-5-20251001
 ---
 
 ## Context

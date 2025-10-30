@@ -2,6 +2,7 @@
 allowed-tools: Task, Bash
 argument-hint: [hotfix description]
 description: Start new hotfix or continue existing hotfix development
+model: claude-haiku-4-5-20251001
 ---
 
 ## Context

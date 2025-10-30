@@ -2,6 +2,7 @@
 allowed-tools: Task, Bash
 argument-hint: [version]
 description: Complete and merge current hotfix development
+model: claude-haiku-4-5-20251001
 ---
 
 ## Context
