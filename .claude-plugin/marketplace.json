@@ -7,34 +7,34 @@
   },
   "plugins": [
     {
+      "name": "dev-utilities",
+      "source": "./dist/claude/plugins/dev-utilities",
+      "description": "Utility commands for day-to-day automation.",
+      "category": "productivity"
+    },
+    {
+      "name": "git-workflow",
+      "source": "./dist/claude/plugins/git-workflow",
+      "description": "Conventional Git and GitFlow automation.",
+      "category": "development"
+    },
+    {
+      "name": "github-integration",
+      "source": "./dist/claude/plugins/github-integration",
+      "description": "GitHub project operations with quality gates.",
+      "category": "productivity"
+    },
+    {
       "name": "review",
-      "source": "./plugins/code-review-toolkit",
-      "description": "Comprehensive code review toolkit with specialized agents for quality, security, architecture, UX, and refactoring",
+      "source": "./dist/claude/plugins/review",
+      "description": "Multi-agent review system for enforcing high quality.",
       "category": "productivity"
     },
     {
-      "name": "git",
-      "source": "./plugins/git-workflow",
-      "description": "Git and GitFlow workflow automation with atomic commits and conventional commit messages",
+      "name": "swiftui-architecture",
+      "source": "./dist/claude/plugins/swiftui-architecture",
+      "description": "SwiftUI Clean Architecture reviewer.",
       "category": "development"
-    },
-    {
-      "name": "github",
-      "source": "./plugins/github-integration",
-      "description": "GitHub integration toolkit for issue management, PR creation, and worktree-based development workflows",
-      "category": "productivity"
-    },
-    {
-      "name": "swift",
-      "source": "./plugins/swiftui-architecture",
-      "description": "SwiftUI Clean Architecture reviewer specializing in MVVM, SwiftData, and 4-layer architecture patterns",
-      "category": "development"
-    },
-    {
-      "name": "ults",
-      "source": "./plugins/dev-utilities",
-      "description": "Development utility commands for session management and command template generation",
-      "category": "productivity"
     }
   ]
 }

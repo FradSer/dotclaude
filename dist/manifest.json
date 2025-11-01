@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2025-11-01T14:01:18.217Z",
+  "plugins": [
+    {
+      "id": "dev-utilities",
+      "source": "prompts/dev-utilities/plugin.yaml",
+      "commands": [
+        "continue",
+        "create-command"
+      ],
+      "agents": []
+    },
+    {
+      "id": "git-workflow",
+      "source": "prompts/git-workflow/plugin.yaml",
+      "commands": [
+        "commit",
+        "commit-and-push",
+        "finish-feature",
+        "finish-hotfix",
+        "finish-release",
+        "gitignore",
+        "push",
+        "start-feature",
+        "start-hotfix",
+        "start-release"
+      ],
+      "agents": []
+    },
+    {
+      "id": "github-integration",
+      "source": "prompts/github-integration/plugin.yaml",
+      "commands": [
+        "create-issues",
+        "create-pr",
+        "resolve-issues"
+      ],
+      "agents": []
+    },
+    {
+      "id": "review",
+      "source": "prompts/review/plugin.yaml",
+      "commands": [
+        "hierarchical",
+        "quick",
+        "refactor"
+      ],
+      "agents": [
+        "code-reviewer",
+        "code-simplifier",
+        "security-reviewer",
+        "tech-lead-reviewer",
+        "ux-reviewer"
+      ]
+    },
+    {
+      "id": "swiftui-architecture",
+      "source": "prompts/swiftui-architecture/plugin.yaml",
+      "commands": [],
+      "agents": [
+        "swiftui-clean-architecture-reviewer"
+      ]
+    }
+  ],
+  "platforms": [
+    {
+      "id": "claude",
+      "source": "config/platforms/claude.yaml"
+    },
+    {
+      "id": "cursor",
+      "source": "config/platforms/cursor.yaml"
+    },
+    {
+      "id": "codex",
+      "source": "config/platforms/codex.yaml"
+    },
+    {
+      "id": "gemini",
+      "source": "config/platforms/gemini.yaml"
+    }
+  ]
+}
