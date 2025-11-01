@@ -4,7 +4,7 @@
 
 **[English](README.md) | 中文**
 
-`FradSer/dotclaude` 是一个 Claude Code 插件市场，提供五个围绕代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具的工作流套件。
+`FradSer/dotclaude` 是一个跨平台工作流市场，涵盖代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具套件。所有命令/智能体都在 `prompts/` 维护，运行 `pnpm build:prompts` 会自动生成 Claude、Cursor、Codex、Gemini 的产物及 `.claude-plugin/marketplace.json`。
 
 ## 插件安装
 
@@ -123,21 +123,20 @@ bash sync-to-github.sh
 
 ```text
 dotclaude/
-├── .claude-plugin/
-│   └── marketplace.json          # 插件注册清单
-├── plugins/
-│   ├── code-review-toolkit/      # review 插件内容
-│   │   ├── agents/
-│   │   └── commands/
-│   ├── git-workflow/             # git 插件内容
-│   │   └── commands/
-│   ├── github-integration/       # github 插件内容
-│   │   └── commands/
-│   ├── swiftui-architecture/     # swift 插件内容
-│   │   └── agents/
-│   └── dev-utilities/            # ults 插件内容
-│       └── commands/
-└── README.zh-CN.md
+├── .claude-plugin/              # Claude 插件市场清单（构建时自动生成）
+├── dist/                        # 构建产物（Claude/Cursor/Codex/Gemini）
+│   ├── claude/plugins/...       # Claude 插件包
+│   ├── cursor/commands/...      # Cursor 命令文件
+│   ├── codex/prompts/...        # Copilot 参考提示
+│   └── gemini/commands/...      # Gemini 命令 TOML
+├── prompts/                     # 跨平台规范化定义
+│   ├── <plugin>/plugin.yaml
+│   ├── <plugin>/commands/*.yaml
+│   └── <plugin>/agents/*.yaml
+├── config/platforms/*.yaml      # 平台产物配置
+├── docs/                        # 各平台集成指南
+├── scripts/build/index.mjs      # 多平台生成器（pnpm build:prompts）
+└── archive/                     # 归档的传统 Claude 插件文件
 ```
 
 详细的开发策略（如强制 TDD、Clean Architecture 守则、工具链约定）请参阅 [`CLAUDE.md`](CLAUDE.md)。

@@ -4,7 +4,7 @@
 
 **English | [中文](README.zh-CN.md)**
 
-`FradSer/dotclaude` is a Claude Code plugin marketplace that bundles five opinionated workflow packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities.
+`FradSer/dotclaude` is a cross-assistant workflow marketplace that bundles five opinionated packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities. All commands/agents originate from the canonical YAML under `prompts/` and are transformed into Claude/Cursor/Codex/Gemini deliverables via `pnpm build:prompts`, which also regenerates `.claude-plugin/marketplace.json`.
 
 ## Plugin Installation
 
@@ -56,13 +56,13 @@ GitHub project operations with quality gates.
 - **Highlights:** worktree-based issue resolution, automated label management, security and quality validation before PRs ship
 - **Install:** `/plugin install github@fradser-dotclaude`
 
-### 📱 swift (`plugins/swiftui-architecture`) · development
+### 📱 swift (`prompts/swiftui-architecture`) · development
 Dedicated SwiftUI Clean Architecture reviewer.
 - **Agent:** `@swiftui-clean-architecture-reviewer`
 - **Use it for:** enforcing MVVM + Clean Architecture layering, SwiftData integration reviews, platform compliance checks
 - **Install:** `/plugin install swift@fradser-dotclaude`
 
-### 🛠️ ults (`plugins/dev-utilities`) · productivity
+### 🛠️ ults (`prompts/dev-utilities`) · productivity
 Utility commands for day-to-day automation.
 - **Slash commands:** `/continue`, `/create-command`
 - **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
@@ -123,24 +123,23 @@ bash sync-to-github.sh
 
 ```text
 dotclaude/
-├── .claude-plugin/
-│   └── marketplace.json          # Manifest with plugin registrations
-├── plugins/
-│   ├── code-review-toolkit/      # review plugin content
-│   │   ├── agents/
-│   │   └── commands/
-│   ├── git-workflow/             # git plugin content
-│   │   └── commands/
-│   ├── github-integration/       # github plugin content
-│   │   └── commands/
-│   ├── swiftui-architecture/     # swift plugin content
-│   │   └── agents/
-│   └── dev-utilities/            # ults plugin content
-│       └── commands/
-└── README.md
+├── .claude-plugin/              # Claude marketplace manifest (auto-generated)
+├── dist/                        # Generated outputs for each assistant
+│   ├── claude/plugins/...       # Claude marketplace bundles
+│   ├── cursor/commands/...      # Cursor command palette entries
+│   ├── codex/prompts/...        # Copilot reference prompts
+│   └── gemini/commands/...      # Gemini command TOML files
+├── prompts/                     # Canonical cross-assistant definitions
+│   ├── <plugin>/plugin.yaml
+│   ├── <plugin>/commands/*.yaml
+│   └── <plugin>/agents/*.yaml
+├── config/platforms/*.yaml      # Platform output requirements
+├── docs/                        # Integration guides (Claude, Cursor, Codex, Gemini)
+├── scripts/build/index.mjs      # Multi-platform generator (pnpm build:prompts)
+└── archive/                     # Archived legacy Claude plugin sources
 ```
 
-See [`CLAUDE.md`](CLAUDE.md) for the full development playbook that inspired these workflows, including mandatory TDD, Clean Architecture guardrails, and tooling conventions.
+See [`CLAUDE.md`](CLAUDE.md) for the full development playbook that inspired these workflows, including mandatory TDD, Clean Architecture guardrails, and tooling conventions. Check `docs/` for platform-specific usage guides.
 
 ## FAQ
 
