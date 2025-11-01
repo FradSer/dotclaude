@@ -1,0 +1,22 @@
+id: claude
+label: "Claude Code Marketplace"
+summary: >-
+  Front matter driven marketplace bundles. Markdown files live under
+  `plugins/<pack>/commands` and `plugins/<pack>/agents` and are published via
+  `.claude-plugin/marketplace.json`.
+outputs:
+  commands: "plugins/{plugin}/commands/{slug}.md"
+  agents: "plugins/{plugin}/agents/{slug}.md"
+  manifest: ".claude-plugin/marketplace.json"
+requirements:
+  front_matter:
+    - allowed-tools
+    - description
+    - model
+  tool_invocations: true
+  argument_hint: optional
+notes:
+  - Uses bang-prefixed shell snippets (`!\``) to hydrate context blocks.
+  - Multiple sub-agents are orchestrated via `Task` tool choreography.
+  - Model identifiers must match Anthropic release slugs (e.g. `claude-haiku-4-5-20251001`).
+

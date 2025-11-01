@@ -1,0 +1,10 @@
+version: 1
+plugin:
+  id: review
+  label: "Code Review Toolkit"
+  category: productivity
+  summary: "Multi-agent review system for enforcing high quality."
+  tags:
+    - review
+    - workflow
+    - quality

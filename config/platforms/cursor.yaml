@@ -1,0 +1,27 @@
+id: cursor
+label: "Cursor Workspace Rules"
+summary: >-
+  Cursor consumes Markdown-based workspace rules (`.md`/`.mdc`) and optional
+  command templates stored under `.cursor/commands`. Rules rely on YAML front
+  matter for scope selection and metadata.
+outputs:
+  rules: "dist/cursor/rules/{plugin}/{slug}.md"
+  commands: "dist/cursor/commands/{plugin}/{slug}.md"
+  manifest: "dist/cursor/manifest.json"
+requirements:
+  front_matter:
+    - description
+    - globs
+  supported_fields:
+    - alwaysApply
+    - tags
+    - priority
+  supports_bang_commands: false
+notes:
+  - Context data should be transformed into readable Markdown lists instead of
+    literal shell substitution (no `!\`` syntax).
+  - Prefer explicit section headings (`## Context`, `## Workflow`) for
+    consistent rendering in Cursor side panels.
+  - Commands can be surfaced as palette actions by exporting Markdown files to
+    `.cursor/commands`.
+

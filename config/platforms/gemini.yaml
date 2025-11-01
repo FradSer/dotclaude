@@ -1,0 +1,20 @@
+id: gemini
+label: "Gemini Code Assist"
+summary: >-
+  Gemini for VS Code stores reusable prompts as TOML command files under
+  `~/.gemini/commands`. Each command exposes a `description` and `prompt`
+  field, optionally namespaced by subdirectories (e.g. `git/commit.toml`).
+outputs:
+  commands: "dist/gemini/commands/{plugin}/{slug}.toml"
+  docs: "dist/gemini/docs/{plugin}/{slug}.md"
+requirements:
+  format: toml
+  literal_newlines: true
+  max_prompt_length: 8000
+notes:
+  - Multi-line prompts must be wrapped in triple quotes within TOML files.
+  - Gemini does not evaluate bang shell syntax; convert context commands into
+    narrative instructions.
+  - Namespacing commands by workflow (e.g. `git/`, `review/`) keeps the command
+    palette organized.
+

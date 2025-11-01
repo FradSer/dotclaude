@@ -1,0 +1,17 @@
+{
+  "name": "dotclaude",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "biome check --write --unsafe",
+    "build:prompts": "node scripts/build/index.mjs",
+    "validate:prompts": "node scripts/build/check-dist.mjs"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.2"
+  }
+}
