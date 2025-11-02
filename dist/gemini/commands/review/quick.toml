@@ -25,11 +25,12 @@ prompt = """
 ```
 feat(auth): add google oauth login flow
 
-- introduce Google OAuth 2.0 for user sign-in
-- add backend callback endpoint `/auth/google/callback`
-- update login UI with Google button and loading state
+- Introduce Google OAuth 2.0 for user sign-in
+- Add backend callback endpoint `/auth/google/callback`
+- Update login UI with Google button and loading state
 
-Add a new authentication option improving cross-platform sign-in.
+Add a new authentication option improving cross-platform
+sign-in.
 
 Closes #42. Linked to #38 and PR #45
 ```
@@ -37,9 +38,9 @@ Closes #42. Linked to #38 and PR #45
 ```
 fix(api): handle null payload in session refresh
 
-- validate payload before accessing `user.id`
-- return proper 400 response instead of 500
-- add regression test for null input
+- Validate payload before accessing `user.id`
+- Return proper 400 response instead of 500
+- Add regression test for null input
 
 Prevents session refresh crash when token expires.
 
@@ -49,9 +50,9 @@ Fixes #105
 ```
 feat(auth): migrate to oauth 2.0
 
-- replace basic auth with OAuth 2.0 flow
-- update authentication middleware
-- add token refresh endpoint
+- Replace basic auth with OAuth 2.0 flow
+- Update authentication middleware
+- Add token refresh endpoint
 
 BREAKING CHANGE: Authentication API now requires OAuth 2.0 tokens. Basic auth is no longer supported.
 
