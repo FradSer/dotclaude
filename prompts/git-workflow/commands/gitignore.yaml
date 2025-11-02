@@ -2,51 +2,29 @@ slug: gitignore
 title: Gitignore
 summary: Create or update .gitignore file
 argument_hint: "[additional-technologies]"
-instructions: >-
-  ## Context
+instructions:
+  context:
+    body: |-
+      - Project guidelines: @CLAUDE.md
+      - Operating system: !`uname -s`
+      - Existing .gitignore status: !`test -f .gitignore && echo ".gitignore found" || echo ".gitignore not found"`
+      - Project files: Analyze repository structure to detect technologies
+      - Available templates: !`curl -sL https://www.toptal.com/developers/gitignore/api/list`
+  requirements:
+    body: |-
+      - Combine detected platforms and `$ARGUMENTS` into the generator request (e.g. `macos,node,docker`).
+      - Preserve existing custom sections when updating `.gitignore`.
+      - Present the resulting diff for confirmation.
+  your_task:
+    body: |-
+      1. Detect operating systems and technologies from context plus `$ARGUMENTS`.
+      2. Generate or update `.gitignore` using the Toptal API while retaining custom rules.
+      3. Show the repository changes to confirm the update.
 
+      ### Usage Examples
 
-  - Project guidelines: @CLAUDE.md
-
-  - Operating system: !`uname -s`
-
-  - Existing .gitignore: !`test -f .gitignore && echo ".gitignore found" || echo
-  ".gitignore not found"`
-
-  - Project files: Analyze project structure to detect technologies
-
-  - Available templates: !`curl -sL
-  https://www.toptal.com/developers/gitignore/api/list`
-
-
-  ## Your task
-
-
-  **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
-
-
-  Create or update the .gitignore file for this project:
-
-
-  1. **Auto-detect technologies** from the context above and any additional
-  technologies from: $ARGUMENTS
-
-
-  2. **Fetch and generate .gitignore:**
-     - Combine detected OS and technologies (e.g., "macos,node,docker")
-     - Add any additional technologies from arguments: $ARGUMENTS
-     - Generate .gitignore: `curl -sL https://www.toptal.com/developers/gitignore/api/{params}`
-     - Preserve existing custom rules when updating
-
-  3. **Verify results** by showing repository changes
-
-
-  **Usage examples:**
-
-  - `/gitignore` - Auto-detect and create .gitignore
-
-  - `/gitignore react typescript` - Add React and TypeScript to detected
-  technologies
+      - `/gitignore` — Auto-detect and create `.gitignore`.
+      - `/gitignore react typescript` — Add React and TypeScript to detected technologies.
 platform_overrides:
   claude:
     model: claude-haiku-4-5-20251001
@@ -59,6 +37,7 @@ platform_overrides:
       - Write
       - Edit
       - Glob
+    require_task_tool: true
   cursor:
     rule:
       globs:
