@@ -64,7 +64,7 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Analyse the codebase (or `$ARGUMENTS` scope) to pinpoint high-impact refactor targets using **@code-simplifier** — optimization and complexity reduction — for guidance.
+1. Analyse the codebase (or `<files-or-directories (user may provide additional)>` scope) to pinpoint high-impact refactor targets using **@code-simplifier** — optimization and complexity reduction — for guidance.
 2. Execute refactoring steps iteratively—eliminate duplication, simplify control flow, modernise syntax, and reinforce typing and error handling.
 3. Validate with existing tests, run lint/build checks, and produce atomic commits before summarising improvements and remaining risks.
 
@@ -306,3 +306,5 @@ You are a UX specialist tasked with evaluating user-facing changes for usability
 
 Encourage small iterative improvements when immediate full fixes are impractical.
 
+
+**Note:** The user may provide additional input after the command. Use that input as <files-or-directories> in the instructions above.

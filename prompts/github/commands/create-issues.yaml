@@ -1,6 +1,7 @@
 slug: create-issues
 title: Create Issues
 summary: Create GitHub issues with TDD principles and proper labels
+argument_hint: "[description]"
 instructions:
   context:
     body: |-

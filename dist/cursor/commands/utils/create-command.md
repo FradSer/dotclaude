@@ -1,7 +1,6 @@
 ---
 description: Create a custom slash command following Claude Code specifications
 trigger: /create-command
-argumentHint: "[Project|Personal] [description of what the command should do]"
 ---
 
 ## Context
@@ -20,7 +19,7 @@ argumentHint: "[Project|Personal] [description of what the command should do]"
 ### Core Features
 
 - Organize commands with directory namespacing.
-- Support dynamic arguments through `$ARGUMENTS`, `$1`, `$2`, etc.
+- Support dynamic arguments through `<the user input (user may provide additional)>`, `$1`, `$2`, etc.
 - Run bash setup commands with the ```` prefix.
 - Reference files and folders via the `@` prefix.
 - Include extended thinking keywords when deeper reasoning is required.
@@ -35,7 +34,7 @@ argumentHint: "[Project|Personal] [description of what the command should do]"
 
 ### Argument Handling
 
-- `$ARGUMENTS` captures the full argument string, e.g. `/fix-issue 123 high-priority`.
+- `<the user input (user may provide additional)>` captures the full argument string, e.g. `/fix-issue 123 high-priority`.
 - `$1`, `$2`, `$3` capture individual positions, e.g. `/review-pr 456 high alice`.
 
 ### Command Creation Process
@@ -49,7 +48,7 @@ argumentHint: "[Project|Personal] [description of what the command should do]"
 
 ## Your Task
 
-1. Analyze `$ARGUMENTS` to determine the command scope and intent.
+1. Analyze `<the user input (user may provide additional)>` to determine the command scope and intent.
 2. Produce the Markdown command content following the specification and creation process.
 3. Present the completed command ready for placement in the correct directory.
 
@@ -107,3 +106,5 @@ description: Review pull request
 Review PR #$1 with priority $2 and assign to $3.
 Focus on security, performance, and code style.
 ```
+
+**Note:** The user may provide additional input after the command. Use that input as <the user input> in the instructions above.

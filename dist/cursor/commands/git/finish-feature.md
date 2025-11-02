@@ -1,7 +1,6 @@
 ---
 description: Complete and merge current feature development
 trigger: /finish-feature
-argumentHint: "[feature-name]"
 ---
 
 ## Context
@@ -13,7 +12,7 @@ argumentHint: "[feature-name]"
 
 ## Requirements
 
-- Ensure all changes for feature `$ARGUMENTS` are committed before finishing.
+- Ensure all changes for current feature are committed before finishing.
 - Run the relevant test suite and confirm all checks pass.
 - **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
 - Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
@@ -64,3 +63,5 @@ Closes #120. Linked to #115 and PR #122
 1. Confirm the branch name follows the `feature/*` convention and the working tree is clean.
 2. Execute the appropriate tests and resolve any failures before proceeding.
 3. Merge the feature branch into `develop`, delete the feature branch locally and remotely, handle merge conflicts if they arise, and push the updated `develop` branch.
+
+**Note:** The user may provide additional input after the command. Use that input as <feature-name> in the instructions above.

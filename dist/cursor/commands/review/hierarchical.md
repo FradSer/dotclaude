@@ -1,7 +1,6 @@
 ---
 description: Comprehensive multi-stage code review using specialized subagents
 trigger: /hierarchical
-argumentHint: "[files-or-directories]"
 ---
 
 ## Context
