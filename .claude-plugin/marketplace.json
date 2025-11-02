@@ -7,20 +7,14 @@
   },
   "plugins": [
     {
-      "name": "dev-utilities",
-      "source": "./dist/claude/plugins/dev-utilities",
-      "description": "Utility commands for day-to-day automation.",
-      "category": "productivity"
-    },
-    {
-      "name": "git-workflow",
-      "source": "./dist/claude/plugins/git-workflow",
+      "name": "git",
+      "source": "./dist/claude/plugins/git",
       "description": "Conventional Git and GitFlow automation.",
       "category": "development"
     },
     {
-      "name": "github-integration",
-      "source": "./dist/claude/plugins/github-integration",
+      "name": "github",
+      "source": "./dist/claude/plugins/github",
       "description": "GitHub project operations with quality gates.",
       "category": "productivity"
     },
@@ -31,10 +25,16 @@
       "category": "productivity"
     },
     {
-      "name": "swiftui-architecture",
-      "source": "./dist/claude/plugins/swiftui-architecture",
+      "name": "swiftui",
+      "source": "./dist/claude/plugins/swiftui",
       "description": "SwiftUI Clean Architecture reviewer.",
       "category": "development"
+    },
+    {
+      "name": "utils",
+      "source": "./dist/claude/plugins/utils",
+      "description": "Utility commands for day-to-day automation.",
+      "category": "productivity"
     }
   ]
 }

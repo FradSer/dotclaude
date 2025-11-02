@@ -43,30 +43,30 @@ Multi-agent review system for enforcing high quality.
 - **Use it for:** full-stack audits, security reviews, architectural guidance, guided refactors
 - **Install:** `/plugin install review@fradser-dotclaude`
 
-### 🌿 git (`plugins/git-workflow`) · development
+### 🌿 git (`plugins/git`) · development
 Conventional Git and GitFlow automation.
 - **Slash commands:** `/commit`, `/push`, `/commit-and-push`, `/gitignore`
 - **GitFlow helpers:** `/start-feature`, `/finish-feature`, `/start-release`, `/finish-release`, `/start-hotfix`, `/finish-hotfix`
 - **Use it for:** atomic commits, branch discipline, automated .gitignore generation
 - **Install:** `/plugin install git@fradser-dotclaude`
 
-### 🐙 github (`plugins/github-integration`) · productivity
+### 🐙 github (`plugins/github`) · productivity
 GitHub project operations with quality gates.
 - **Slash commands:** `/create-issues`, `/create-pr`, `/resolve-issues`
 - **Highlights:** worktree-based issue resolution, automated label management, security and quality validation before PRs ship
 - **Install:** `/plugin install github@fradser-dotclaude`
 
-### 📱 swift (`prompts/swiftui-architecture`) · development
+### 📱 swift (`plugins/swiftui`) · development
 Dedicated SwiftUI Clean Architecture reviewer.
 - **Agent:** `@swiftui-clean-architecture-reviewer`
 - **Use it for:** enforcing MVVM + Clean Architecture layering, SwiftData integration reviews, platform compliance checks
 - **Install:** `/plugin install swift@fradser-dotclaude`
 
-### 🛠️ ults (`prompts/dev-utilities`) · productivity
+### 🛠️ utils (`plugins/utils`) · productivity
 Utility commands for day-to-day automation.
 - **Slash commands:** `/continue`, `/create-command`
 - **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
-- **Install:** `/plugin install ults@fradser-dotclaude`
+- **Install:** `/plugin install utils@fradser-dotclaude`
 
 ---
 
