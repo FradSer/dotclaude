@@ -8,9 +8,12 @@
 
 ## 插件安装
 
+<details>
+<summary>Claude Code 安装说明</summary>
+
 如何在 Claude Code 中安装和使用本市场的插件。
 
-### 1. 添加插件市场
+#### 1. 添加插件市场
 
 ```bash
 /plugin marketplace add FradSer/dotclaude
@@ -18,7 +21,7 @@
 
 当清单名称是 `fradser-dotclaude` 时，Claude 会生成 `<插件>@fradser-dotclaude` 形式的安装标识。
 
-### 2. 安装所需插件
+#### 2. 安装所需插件
 
 ```bash
 # 打开插件面板，在界面中浏览并安装
@@ -34,35 +37,50 @@
 
 > 建议先安装 `review@fradser-dotclaude` 与 `git@fradser-dotclaude` 作为核心组合，再按需添加其他插件。
 
-## 📦 插件目录
+</details>
 
-### 🔍 review（`plugins/code-review-toolkit`）· 生产力
+<details>
+<summary>Cursor 安装说明</summary>
+
+```bash
+cd path/to/this/repo
+
+cp -r dist/cursor/ $HOME/.cursor
+```
+
+这会将 `dist/cursor/` 中的所有 Cursor 命令文件复制到 Cursor 配置目录，使其在 Cursor 命令面板中可用。
+
+</details>
+
+## 插件目录
+
+### review（`plugins/code-review-toolkit`）· 生产力
 多智能体代码审查系统，帮助维持高质量。
 - **包含智能体：** `@code-reviewer`、`@security-reviewer`、`@tech-lead-reviewer`、`@ux-reviewer`、`@code-simplifier`
 - **命令模板：** `/hierarchical`、`/quick`、`/refactor`
 - **适用场景：** 全栈审查、安全评估、架构把关、指导式重构  
   `安装命令：/plugin install review@fradser-dotclaude`
 
-### 🌿 git（`plugins/git`）· 开发
+### git（`plugins/git`）· 开发
 约定式 Git 与 GitFlow 自动化。
 - **命令模板：** `/commit`、`/push`、`/commit-and-push`、`/gitignore`
 - **GitFlow 命令：** `/start-feature`、`/finish-feature`、`/start-release`、`/finish-release`、`/start-hotfix`、`/finish-hotfix`
 - **适用场景：** 原子化提交、分支规约、自动生成 .gitignore  
   `安装命令：/plugin install git@fradser-dotclaude`
 
-### 🐙 github（`plugins/github`）· 生产力
+### github（`plugins/github`）· 生产力
 带质量闸口的 GitHub 项目操作工具包。
 - **命令模板：** `/create-issues`、`/create-pr`、`/resolve-issues`
 - **亮点：** 基于 worktree 的问题解决、自动标签管理、PR 前安全与质量检查  
   `安装命令：/plugin install github@fradser-dotclaude`
 
-### 📱 swift（`plugins/swiftui`）· 开发
+### swift（`plugins/swiftui`）· 开发
 专注 SwiftUI Clean Architecture 的审查智能体。
 - **智能体：** `@swiftui-clean-architecture-reviewer`
 - **适用场景：** 强制执行 MVVM + Clean Architecture 分层、SwiftData 集成审核、平台合规性检查  
   `安装命令：/plugin install swift@fradser-dotclaude`
 
-### 🛠️ utils（`plugins/utils`）· 生产力
+### utils（`plugins/utils`）· 生产力
 日常自动化实用工具。
 - **命令模板：** `/continue`、`/create-command`
 - **适用场景：** 恢复中断会话、脚手架新的命令模板
@@ -119,7 +137,7 @@ bash sync-to-github.sh --yes --prefer repo
 bash sync-to-github.sh
 ```
 
-## 🗂️ 仓库结构
+## 仓库结构
 
 ```text
 dotclaude/
@@ -141,13 +159,13 @@ dotclaude/
 
 详细的开发策略（如强制 TDD、Clean Architecture 守则、工具链约定）请参阅 [`CLAUDE.md`](CLAUDE.md)。
 
-## ❓ 常见问题
+## 常见问题
 
 - **如何更新插件？** 使用 `/plugin update review@fradser-dotclaude`（替换为需要的插件名称）或重新安装。
 - **可以 Fork 并定制吗？** 可以。Fork 仓库后更新插件内容、调整 `.claude-plugin/marketplace.json`，再让团队指向你的版本。
 - **是否可以只安装部分插件？** 可以。每个插件相互独立，根据工作流选择需要的组合即可。
 - **代码审查一定要调用所有智能体吗？** 不必。`review` 插件同时提供多个专家，按需唤起即可。
 
-## 📄 许可证
+## 许可证
 
 MIT 协议，详情见 [LICENSE](LICENSE)。

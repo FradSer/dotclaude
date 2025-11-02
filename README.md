@@ -8,9 +8,12 @@
 
 ## Plugin Installation
 
+<details>
+<summary>Claude Code installation instructions</summary>
+
 How to install and use plugins from this marketplace in Claude Code.
 
-### 1. Add the marketplace
+#### 1. Add the marketplace
 
 ```bash
 /plugin marketplace add FradSer/dotclaude
@@ -18,7 +21,7 @@ How to install and use plugins from this marketplace in Claude Code.
 
 When the marketplace manifest name is `fradser-dotclaude`, Claude generates install slugs in the form `<plugin>@fradser-dotclaude`.
 
-### 2. Install the plugins you need
+#### 2. Install the plugins you need
 
 ```bash
 # Browse marketplace and install from the UI picker
@@ -34,35 +37,50 @@ When the marketplace manifest name is `fradser-dotclaude`, Claude generates inst
 
 > Tip: Install `review@fradser-dotclaude` + `git@fradser-dotclaude` for the core workflow, then add the others as needed.
 
+</details>
+
+<details>
+<summary>Cursor installation instructions</summary>
+
+```bash
+cd path/to/this/repo
+
+cp -r dist/cursor/ $HOME/.cursor
+```
+
+This will copy all Cursor command files from `dist/cursor/` to your Cursor configuration directory, making them available in the Cursor command palette.
+
+</details>
+
 ## Plugin Catalog
 
-### 🔍 review (`plugins/code-review-toolkit`) · productivity
+### review (`plugins/code-review-toolkit`) · productivity
 Multi-agent review system for enforcing high quality.
 - **Agents:** `@code-reviewer`, `@security-reviewer`, `@tech-lead-reviewer`, `@ux-reviewer`, `@code-simplifier`
 - **Slash commands:** `/hierarchical`, `/quick`, `/refactor`
 - **Use it for:** full-stack audits, security reviews, architectural guidance, guided refactors
 - **Install:** `/plugin install review@fradser-dotclaude`
 
-### 🌿 git (`plugins/git`) · development
+### git (`plugins/git`) · development
 Conventional Git and GitFlow automation.
 - **Slash commands:** `/commit`, `/push`, `/commit-and-push`, `/gitignore`
 - **GitFlow helpers:** `/start-feature`, `/finish-feature`, `/start-release`, `/finish-release`, `/start-hotfix`, `/finish-hotfix`
 - **Use it for:** atomic commits, branch discipline, automated .gitignore generation
 - **Install:** `/plugin install git@fradser-dotclaude`
 
-### 🐙 github (`plugins/github`) · productivity
+### github (`plugins/github`) · productivity
 GitHub project operations with quality gates.
 - **Slash commands:** `/create-issues`, `/create-pr`, `/resolve-issues`
 - **Highlights:** worktree-based issue resolution, automated label management, security and quality validation before PRs ship
 - **Install:** `/plugin install github@fradser-dotclaude`
 
-### 📱 swift (`plugins/swiftui`) · development
+### swift (`plugins/swiftui`) · development
 Dedicated SwiftUI Clean Architecture reviewer.
 - **Agent:** `@swiftui-clean-architecture-reviewer`
 - **Use it for:** enforcing MVVM + Clean Architecture layering, SwiftData integration reviews, platform compliance checks
 - **Install:** `/plugin install swift@fradser-dotclaude`
 
-### 🛠️ utils (`plugins/utils`) · productivity
+### utils (`plugins/utils`) · productivity
 Utility commands for day-to-day automation.
 - **Slash commands:** `/continue`, `/create-command`
 - **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
