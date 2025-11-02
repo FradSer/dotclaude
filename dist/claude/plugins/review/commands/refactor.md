@@ -65,7 +65,7 @@ Closes #120. Linked to #115 and PR #122
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-1. Analyse the codebase (or `$ARGUMENTS` scope) to pinpoint high-impact refactor targets using @code-simplifier for guidance.
+1. Analyse the codebase (or `$ARGUMENTS` scope) to pinpoint high-impact refactor targets using **@code-simplifier** — optimization and complexity reduction — for guidance.
 2. Execute refactoring steps iteratively—eliminate duplication, simplify control flow, modernise syntax, and reinforce typing and error handling.
 3. Validate with existing tests, run lint/build checks, and produce atomic commits before summarising improvements and remaining risks.
 

@@ -71,6 +71,6 @@ Closes #120. Linked to #115 and PR #122
 
 - **Issue Selection**: Evaluate open issues and prioritize the next actionable item.
 - **Worktree Setup**: Create or reuse an isolated worktree with a descriptive branch name (e.g. `fix/456-auth-redirect`).
-- **TDD Implementation**: Plan with @tech-lead-reviewer, write failing tests, implement fixes, and refactor with @code-simplifier while keeping tests green.
+- **TDD Implementation**: Plan with **@tech-lead-reviewer** — architectural impact assessment —, write failing tests, implement fixes, and refactor with **@code-simplifier** — code simplification and optimization — while keeping tests green.
 - **Quality Validation**: Run project-specific lint, test, and build commands before PR creation.
 - **PR Creation & Cleanup**: Push the branch, raise a PR with auto-closing keywords, and remove the worktree after merge.

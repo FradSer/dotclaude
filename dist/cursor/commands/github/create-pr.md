@@ -108,7 +108,9 @@ Closes #120. Linked to #115 and PR #122
 When quality checks fail:
 
 1. Use TodoWrite to create specific task list for failures
-2. Use Task tool with specialized agents (code-reviewer, security-reviewer)
+2. Use Task tool with specialized agents:
+   - **@code-reviewer** — logic correctness, tests, error handling.
+   - **@security-reviewer** — authentication, data protection, validation.
 3. Fix issues systematically with validation after each fix
 4. Mark tasks completed immediately after resolution
 5. Re-run quality checks until all pass

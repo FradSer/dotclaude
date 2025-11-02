@@ -16,8 +16,11 @@ argument-hint: [files-or-directories]
 
 ## Requirements
 
-- Use @tech-lead-reviewer to scope architectural risk before launching specialized reviews.
-- Run parallel reviews with @code-reviewer, @security-reviewer, and @ux-reviewer when applicable.
+- Use **@tech-lead-reviewer** — architectural impact assessment — to scope architectural risk before launching specialized reviews.
+- Run parallel reviews with:
+  - **@code-reviewer** — logic correctness, tests, error handling.
+  - **@security-reviewer** — authentication, data protection, validation.
+  - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
 - Consolidate findings by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
 - Offer optional implementation support and ensure final suggestions respect SOLID principles.
 
@@ -25,7 +28,7 @@ argument-hint: [files-or-directories]
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-1. Perform a leadership assessment with @tech-lead-reviewer to map risk areas and determine which specialized agents to involve.
+1. Perform a leadership assessment with **@tech-lead-reviewer** — architectural impact assessment — to map risk areas and determine which specialized agents to involve.
 2. Launch the required specialized reviews in parallel via the Task tool, collect outcomes, and resolve conflicting feedback.
 3. Present a consolidated report with prioritized recommendations, ask whether the user wants fixes implemented, and if so, execute optimizations and testing before summarizing results.
 
@@ -38,4 +41,4 @@ argument-hint: [files-or-directories]
   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
 - **Consolidated Analysis**: Merge findings, prioritize by impact/confidence, and produce actionable improvements.
 - **Optional Implementation**: Address security, quality, or UX issues as requested, then run tests and validations.
-- **Final Optimization**: Engage @code-simplifier to refactor implemented fixes, remove redundancy, and verify compliance with SOLID principles before finalizing the summary.
+- **Final Optimization**: Engage **@code-simplifier** — code simplification and optimization — to refactor implemented fixes, remove redundancy, and verify compliance with SOLID principles before finalizing the summary.
