@@ -1,6 +1,6 @@
 version: 1
 plugin:
-  id: swiftui-architecture
+  id: swiftui
   label: "SwiftUI Architecture"
   category: development
   summary: "SwiftUI Clean Architecture reviewer."

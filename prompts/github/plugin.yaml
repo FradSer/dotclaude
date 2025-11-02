@@ -1,6 +1,6 @@
 version: 1
 plugin:
-  id: github-integration
+  id: github
   label: "GitHub Integration"
   category: productivity
   summary: "GitHub project operations with quality gates."

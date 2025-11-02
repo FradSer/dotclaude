@@ -1,6 +1,6 @@
 version: 1
 plugin:
-  id: dev-utilities
+  id: utils
   label: "Developer Utilities"
   category: productivity
   summary: "Utility commands for day-to-day automation."
