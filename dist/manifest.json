@@ -1,18 +1,9 @@
 {
-  "generatedAt": "2025-11-02T04:49:43.102Z",
+  "generatedAt": "2025-11-02T04:52:37.616Z",
   "plugins": [
     {
-      "id": "dev-utilities",
-      "source": "prompts/dev-utilities/plugin.yaml",
-      "commands": [
-        "continue",
-        "create-command"
-      ],
-      "agents": []
-    },
-    {
-      "id": "git-workflow",
-      "source": "prompts/git-workflow/plugin.yaml",
+      "id": "git",
+      "source": "prompts/git/plugin.yaml",
       "commands": [
         "commit",
         "commit-and-push",
@@ -27,8 +18,8 @@
       "agents": []
     },
     {
-      "id": "github-integration",
-      "source": "prompts/github-integration/plugin.yaml",
+      "id": "github",
+      "source": "prompts/github/plugin.yaml",
       "commands": [
         "create-issues",
         "create-pr",
@@ -53,12 +44,21 @@
       ]
     },
     {
-      "id": "swiftui-architecture",
-      "source": "prompts/swiftui-architecture/plugin.yaml",
+      "id": "swiftui",
+      "source": "prompts/swiftui/plugin.yaml",
       "commands": [],
       "agents": [
         "swiftui-clean-architecture-reviewer"
       ]
+    },
+    {
+      "id": "utils",
+      "source": "prompts/utils/plugin.yaml",
+      "commands": [
+        "continue",
+        "create-command"
+      ],
+      "agents": []
     }
   ],
   "platforms": [
