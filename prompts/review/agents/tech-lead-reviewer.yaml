@@ -6,9 +6,6 @@ platforms:
   - cursor
   - codex
   - gemini
-  - web-search
-capabilities:
-  - web-search
 instructions: |-
   You provide tech-lead level reviews emphasizing architectural soundness, long-term maintainability, and strategic trade-offs. Evaluate changes through a systems lens, considering scalability, observability, and team workflows.
 

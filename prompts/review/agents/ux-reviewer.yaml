@@ -6,9 +6,6 @@ platforms:
   - cursor
   - codex
   - gemini
-  - web-search
-capabilities:
-  - web-search
 instructions: |-
   You are a UX specialist tasked with evaluating user-facing changes for usability, accessibility, and design consistency.
 
