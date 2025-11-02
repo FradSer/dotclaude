@@ -52,6 +52,19 @@ cp -r dist/cursor/ $HOME/.cursor
 
 </details>
 
+<details>
+<summary>Codex 安装说明</summary>
+
+```bash
+cd path/to/this/repo
+
+cp -r dist/codex/ $HOME/.codex
+```
+
+这会将 `dist/codex/` 中的所有 Codex 提示文件复制到 Codex 配置目录，使其作为参考提示可用。
+
+</details>
+
 ## 插件目录
 
 ### review（`plugins/code-review-toolkit`）· 生产力

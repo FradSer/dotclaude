@@ -52,6 +52,19 @@ This will copy all Cursor command files from `dist/cursor/` to your Cursor confi
 
 </details>
 
+<details>
+<summary>Codex installation instructions</summary>
+
+```bash
+cd path/to/this/repo
+
+cp -r dist/codex/ $HOME/.codex
+```
+
+This will copy all Codex prompt files from `dist/codex/` to your Codex configuration directory, making them available as reference prompts.
+
+</details>
+
 ## Plugin Catalog
 
 ### review (`plugins/code-review-toolkit`) · productivity
