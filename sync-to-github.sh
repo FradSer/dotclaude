@@ -1,14 +1,14 @@
 #!/bin/bash
-# Sync script for dotclaude repository
-# Syncs CLAUDE.md file to https://github.com/FradSer/dotclaude
+# Sync script for dotagent repository
+# Syncs CLAUDE.md file to https://github.com/FradSer/dotagent
 set -e
 #===============================================================================
 # CONFIGURATION AND CONSTANTS
 #===============================================================================
 # Repository configuration
-readonly REPO_URL="git@github.com:FradSer/dotclaude.git"
-readonly REPO_URL_HTTPS="https://github.com/FradSer/dotclaude.git"
-readonly TEMP_DIR="/tmp/dotclaude-sync"
+readonly REPO_URL="git@github.com:FradSer/dotagent.git"
+readonly REPO_URL_HTTPS="https://github.com/FradSer/dotagent.git"
+readonly TEMP_DIR="/tmp/dotagent-sync"
 readonly BRANCH="main"
 # Items for sync operations - only CLAUDE.md
 readonly SYNC_ITEMS=("CLAUDE.md:file")
@@ -181,7 +181,7 @@ Description:
 Examples:
   $0 --yes --prefer repo
   $0 --prefer local
-  bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
+  bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotagent/main/sync-to-github.sh) --yes --prefer local
 EOF
 }
 parse_args() {
@@ -204,12 +204,12 @@ parse_args() {
 #===============================================================================
 # ENVIRONMENT DETECTION AND VALIDATION
 #===============================================================================
-# Check if directory is dotclaude project
-is_dotclaude_project() {
+# Check if directory is dotagent project
+is_dotagent_project() {
     local check_dir="$1"
     [ -f "$check_dir/sync-to-github.sh" ] && [ -d "$check_dir/.git" ] && {
         local remote_url=$(cd "$check_dir" && git remote get-url origin 2>/dev/null || echo "")
-        [[ "$remote_url" == *"dotclaude"* ]]
+        [[ "$remote_url" == *"dotagent"* ]]
     }
 }
 
@@ -218,14 +218,14 @@ detect_execution_context() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local current_dir="$(pwd)"
 
-    # Guard clause: check if running locally in dotclaude project
-    if is_dotclaude_project "$current_dir" && [ "$current_dir" = "$script_dir" ]; then
+    # Guard clause: check if running locally in dotagent project
+    if is_dotagent_project "$current_dir" && [ "$current_dir" = "$script_dir" ]; then
         echo "local $current_dir"
         return
     fi
 
-    # Guard clause: check if script is from external dotclaude project
-    if is_dotclaude_project "$script_dir" && [ "$current_dir" != "$script_dir" ]; then
+    # Guard clause: check if script is from external dotagent project
+    if is_dotagent_project "$script_dir" && [ "$current_dir" != "$script_dir" ]; then
         echo "external $script_dir"
         return
     fi
@@ -510,11 +510,11 @@ setup_repo() {
     
     case "$context_type" in
         local)
-            log_info "Running in local dotclaude project mode"
+            log_info "Running in local dotagent project mode"
             WORKING_DIR="$(pwd)"
             ;;
         external)
-            log_info "Running external script from dotclaude project directory"
+            log_info "Running external script from dotagent project directory"
             WORKING_DIR="$context_dir"
             cd "$WORKING_DIR" || { log_error "Failed to change to script directory"; exit 1; }
             ;;

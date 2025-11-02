@@ -4,7 +4,7 @@
 
 **English | [中文](README.zh-CN.md)**
 
-`FradSer/dotclaude` is a cross-assistant workflow marketplace that bundles five opinionated packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities. All commands/agents originate from the canonical YAML under `prompts/` and are transformed into Claude/Cursor/Codex/Gemini deliverables via `pnpm build:prompts`, which also regenerates `.claude-plugin/marketplace.json`.
+`FradSer/dotagent` is a cross-assistant workflow marketplace that bundles five opinionated packs covering code review, Git automation, GitHub operations, SwiftUI architecture reviews, and developer utilities. All commands/agents originate from the canonical YAML under `prompts/` and are transformed into Claude/Cursor/Codex/Gemini deliverables via `pnpm build:prompts`, which also regenerates `.claude-plugin/marketplace.json`.
 
 ## Plugin Installation
 
@@ -16,10 +16,10 @@ How to install and use plugins from this marketplace in Claude Code.
 #### 1. Add the marketplace
 
 ```bash
-/plugin marketplace add FradSer/dotclaude
+/plugin marketplace add FradSer/dotagent
 ```
 
-When the marketplace manifest name is `fradser-dotclaude`, Claude generates install slugs in the form `<plugin>@fradser-dotclaude`.
+When the marketplace manifest name is `fradser-dotagent`, Claude generates install slugs in the form `<plugin>@fradser-dotagent`.
 
 #### 2. Install the plugins you need
 
@@ -28,14 +28,14 @@ When the marketplace manifest name is `fradser-dotclaude`, Claude generates inst
 /plugin
 
 # Or install plugins directly when you know the slug
-/plugin install review@fradser-dotclaude
-/plugin install git@fradser-dotclaude
-/plugin install github@fradser-dotclaude
-/plugin install swift@fradser-dotclaude
-/plugin install utils@fradser-dotclaude
+/plugin install review@fradser-dotagent
+/plugin install git@fradser-dotagent
+/plugin install github@fradser-dotagent
+/plugin install swift@fradser-dotagent
+/plugin install utils@fradser-dotagent
 ```
 
-> Tip: Install `review@fradser-dotclaude` + `git@fradser-dotclaude` for the core workflow, then add the others as needed.
+> Tip: Install `review@fradser-dotagent` + `git@fradser-dotagent` for the core workflow, then add the others as needed.
 
 </details>
 
@@ -124,7 +124,7 @@ bash sync-to-github.sh
 
 **Run remotely (one-liner):**
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotagent/main/sync-to-github.sh)
 ```
 
 ### Options
@@ -145,7 +145,7 @@ Options:
 
 **Non-interactive mode (prefer local changes):**
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotagent/main/sync-to-github.sh) --yes --prefer local
 ```
 
 **Non-interactive mode (prefer repository version):**
@@ -161,7 +161,7 @@ bash sync-to-github.sh
 ## Repository Layout
 
 ```text
-dotclaude/
+dotagent/
 ├── .claude-plugin/              # Claude marketplace manifest (auto-generated)
 ├── dist/                        # Generated outputs for each assistant
 │   ├── claude/plugins/...       # Claude marketplace bundles
@@ -182,7 +182,7 @@ See [`CLAUDE.md`](CLAUDE.md) for the full development playbook that inspired the
 
 ## FAQ
 
-- **How do I update plugins?** Use `/plugin update review@fradser-dotclaude` (replace name as needed) or reinstall.
+- **How do I update plugins?** Use `/plugin update review@fradser-dotagent` (replace name as needed) or reinstall.
 - **Can I fork and customize?** Yes. Fork the repo, adjust plugin content, update `.claude-plugin/marketplace.json`, and point your team to your fork.
 - **Can I install a subset?** Absolutely. Each plugin is independent—install only what fits your workflow.
 - **Do I need all agents for reviews?** The `review` plugin bundles agents so you can selectively call the specialist you need.

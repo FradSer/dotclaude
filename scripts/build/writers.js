@@ -46,7 +46,7 @@ function escapeTomlString(value) {
 
 export async function writeClaudeMarketplace(promptFiles) {
   const marketplace = {
-    name: "fradser-dotclaude",
+    name: "fradser-dotagent",
     description:
       "FradSer's Claude Code plugin marketplace featuring specialized agents and workflow automation",
     owner: {
