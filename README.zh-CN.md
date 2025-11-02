@@ -1,4 +1,4 @@
-# FradSer 的 Claude Code 插件市场 ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
+# FradSer 的 dotagent ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Plugin%20Marketplace-blue.svg)](https://docs.anthropic.com/en/docs/claude-code/plugins) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
