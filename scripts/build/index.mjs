@@ -81,62 +81,103 @@ async function safeReadDir(directory) {
   }
 }
 
+function resolveRequireTaskTool(data) {
+  if (typeof data.require_task_tool === "boolean") {
+    return data.require_task_tool;
+  }
+  return data.platform_overrides?.claude?.require_task_tool;
+}
+
+function processInstructions(data, sharedFragments, requireTaskTool) {
+  const instructions = data.instructions;
+  if (!instructions) {
+    return requireTaskTool;
+  }
+
+  if (typeof instructions === "object" && !Array.isArray(instructions)) {
+    const { markdown, requireTaskTool: extracted } = composeInstructionMarkdown(
+      instructions,
+      sharedFragments,
+      requireTaskTool,
+    );
+    data.instructions = markdown;
+    return typeof extracted === "boolean" ? extracted : requireTaskTool;
+  }
+
+  if (typeof instructions === "string") {
+    data.instructions = expandSharedFragments(instructions, sharedFragments);
+  }
+
+  return requireTaskTool;
+}
+
+function processDescription(data, sharedFragments) {
+  if (typeof data.description === "string") {
+    data.description = expandSharedFragments(data.description, sharedFragments);
+  }
+}
+
+function processSections(data, sharedFragments) {
+  if (!Array.isArray(data.sections)) {
+    return;
+  }
+
+  data.sections = data.sections.map((section) => {
+    if (typeof section === "string") {
+      return expandSharedFragments(section, sharedFragments);
+    }
+    if (section && typeof section.content === "string") {
+      return {
+        ...section,
+        content: expandSharedFragments(section.content, sharedFragments),
+      };
+    }
+    return section;
+  });
+}
+
+function applyRequireTaskTool(data, requireTaskTool) {
+  if (typeof requireTaskTool === "boolean") {
+    data.require_task_tool = requireTaskTool;
+  } else {
+    delete data.require_task_tool;
+  }
+}
+
+function isValidYamlItem(data) {
+  return !!(data.slug || data.title || data.plugin);
+}
+
 async function readYamlCollection(directory, sharedFragments) {
   const dirents = await safeReadDir(directory);
   const items = [];
 
   for (const dirent of dirents) {
-    if (!dirent.isFile() || !dirent.name.endsWith(".yaml")) continue;
+    if (!dirent.isFile() || !dirent.name.endsWith(".yaml")) {
+      continue;
+    }
+
     const filePath = path.join(directory, dirent.name);
-    const raw = await fs.readFile(filePath, "utf8");
-    const data = YAML.parse(raw) ?? {};
-    let requireTaskTool = data.require_task_tool;
-    if (requireTaskTool === undefined) {
-      requireTaskTool = data.platform_overrides?.claude?.require_task_tool;
+    let data;
+    try {
+      const raw = await fs.readFile(filePath, "utf8");
+      data = YAML.parse(raw) ?? {};
+    } catch (error) {
+      console.error(`Failed to parse YAML file ${filePath}: ${error.message}`);
+      continue;
     }
-    if (
-      data.instructions &&
-      typeof data.instructions === "object" &&
-      !Array.isArray(data.instructions)
-    ) {
-      const { markdown, requireTaskTool: extracted } = composeInstructionMarkdown(
-        data.instructions,
-        sharedFragments,
-        requireTaskTool,
-      );
-      data.instructions = markdown;
-      if (typeof extracted === "boolean") {
-        requireTaskTool = extracted;
-      }
-    } else if (typeof data.instructions === "string") {
-      data.instructions = expandSharedFragments(data.instructions, sharedFragments);
-    }
-    if (typeof data.description === "string") {
-      data.description = expandSharedFragments(data.description, sharedFragments);
-    }
-    if (Array.isArray(data.sections)) {
-      data.sections = data.sections.map((section) => {
-        if (typeof section === "string") {
-          return expandSharedFragments(section, sharedFragments);
-        }
-        if (section && typeof section.content === "string") {
-          return {
-            ...section,
-            content: expandSharedFragments(section.content, sharedFragments),
-          };
-        }
-        return section;
-      });
-    }
-    if (typeof requireTaskTool === "boolean") {
-      data.require_task_tool = requireTaskTool;
-    } else {
-      delete data.require_task_tool;
-    }
-    if (!data.slug && !data.title && !data.plugin) {
+
+    let requireTaskTool = resolveRequireTaskTool(data);
+    requireTaskTool = processInstructions(data, sharedFragments, requireTaskTool);
+    processDescription(data, sharedFragments);
+    processSections(data, sharedFragments);
+    applyRequireTaskTool(data, requireTaskTool);
+
+    if (!isValidYamlItem(data)) {
       console.warn(`Skipping empty or invalid YAML file: ${filePath}`);
       continue;
     }
+
     items.push({ ...data, __file: filePath });
   }
 
@@ -207,9 +248,15 @@ async function generateForPlugin(promptFile, platforms) {
   }
 }
 
-function _ensureArray(value) {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
+function processInstructionsForNonClaude(instructions) {
+  return removeTaskToolWarning(normaliseForCursor(instructions ?? "")).trim();
+}
+
+function appendAgentsDescriptionIfNeeded(instructions, agentsDescription) {
+  if (!agentsDescription || !instructions.includes("@")) {
+    return instructions;
+  }
+  return `${instructions}\n${agentsDescription}`;
 }
 
 async function generateClaude(pluginId, data, _platform) {
@@ -286,10 +333,10 @@ function formatAgentsDescription(agents) {
     // Include the full instructions, but process it to remove platform-specific references
     if (agent.instructions) {
       let instructions = agent.instructions.trim();
-      
+
       // Normalize for non-Claude platforms (remove Task tool references, etc.)
       instructions = removeTaskToolWarning(normaliseForCursor(instructions));
-      
+
       lines.push(instructions);
       lines.push("");
     }
@@ -316,10 +363,8 @@ async function generateCursor(pluginId, data, _platform) {
       if (command.argument_hint) {
         commandFrontMatter.argumentHint = command.argument_hint;
       }
-      let commandBody = removeTaskToolWarning(normaliseForCursor(command.instructions ?? ""));
-      if (agentsDescription && commandBody.includes("@")) {
-        commandBody = `${commandBody}\n${agentsDescription}`;
-      }
+      let commandBody = processInstructionsForNonClaude(command.instructions);
+      commandBody = appendAgentsDescriptionIfNeeded(commandBody, agentsDescription);
       const commandPath = path.join(commandsDir, `${command.slug}.md`);
       await writeMarkdownWithFrontMatter(commandPath, commandFrontMatter, commandBody);
     }
@@ -345,10 +390,8 @@ async function generateCodex(pluginId, data, _platform) {
       lines.push("");
       lines.push("---");
       lines.push("");
-      let instructions = removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim();
-      if (agentsDescription && instructions.includes("@")) {
-        instructions = `${instructions}\n${agentsDescription}`;
-      }
+      let instructions = processInstructionsForNonClaude(command.instructions);
+      instructions = appendAgentsDescriptionIfNeeded(instructions, agentsDescription);
       lines.push(instructions);
       lines.push("");
       const filePath = path.join(baseDir, `${command.slug}.md`);
@@ -371,10 +414,8 @@ async function generateGemini(pluginId, data, _platform) {
       const filename = overrides.filename ?? command.slug;
       const commandDir = path.join(commandsRoot, namespace);
       await fs.mkdir(commandDir, { recursive: true });
-      let prompt = removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim();
-      if (agentsDescription && prompt.includes("@")) {
-        prompt = `${prompt}\n${agentsDescription}`;
-      }
+      let prompt = processInstructionsForNonClaude(command.instructions);
+      prompt = appendAgentsDescriptionIfNeeded(prompt, agentsDescription);
       const toml = buildGeminiToml(command.summary, prompt);
       const filePath = path.join(commandDir, `${filename}.toml`);
       await fs.writeFile(filePath, toml);
@@ -549,8 +590,29 @@ function composeInstructionMarkdown(instructions, sharedFragments, existingRequi
   return { markdown, requireTaskTool };
 }
 
+function buildFragmentMarkers(fragments) {
+  return fragments.map((fragment) => `{{ fragment:${fragment} }}`).join("\n");
+}
+
+function buildBodyFromObject(value) {
+  if (Array.isArray(value.fragments) && value.fragments.length > 0) {
+    const markers = buildFragmentMarkers(value.fragments);
+    return value.body ? `${markers}\n${value.body}` : markers;
+  }
+
+  if (Array.isArray(value.lines) && value.lines.length > 0) {
+    const lines = value.lines.join("\n");
+    return value.body ? `${value.body}\n${lines}` : lines;
+  }
+
+  return value.body ?? value.content ?? "";
+}
+
 function normalizeInstructionSection(value, defaultHeading, sharedFragments) {
-  if (value === undefined || value === null) return null;
+  if (value === undefined || value === null) {
+    return null;
+  }
+
   let heading = defaultHeading;
   let body = "";
 
@@ -558,21 +620,16 @@ function normalizeInstructionSection(value, defaultHeading, sharedFragments) {
     body = value;
   } else if (typeof value === "object") {
     heading = value.heading ?? defaultHeading;
-    if (Array.isArray(value.fragments) && value.fragments.length > 0) {
-      const markers = value.fragments.map((fragment) => `{{ fragment:${fragment} }}`).join("\n");
-      body = value.body ? `${markers}\n${value.body}` : markers;
-    } else if (Array.isArray(value.lines) && value.lines.length > 0) {
-      const lines = value.lines.join("\n");
-      body = value.body ? `${value.body}\n${lines}` : lines;
-    } else {
-      body = value.body ?? value.content ?? "";
-    }
+    body = buildBodyFromObject(value);
   } else {
     return null;
   }
 
   const expanded = expandSharedFragments(body, sharedFragments).trim();
-  if (!expanded) return null;
+  if (!expanded) {
+    return null;
+  }
+
   return { heading, body: expanded };
 }
 
