@@ -32,7 +32,7 @@ When the marketplace manifest name is `fradser-dotclaude`, Claude generates inst
 /plugin install git@fradser-dotclaude
 /plugin install github@fradser-dotclaude
 /plugin install swift@fradser-dotclaude
-/plugin install ults@fradser-dotclaude
+/plugin install utils@fradser-dotclaude
 ```
 
 > Tip: Install `review@fradser-dotclaude` + `git@fradser-dotclaude` for the core workflow, then add the others as needed.
@@ -72,32 +72,27 @@ Multi-agent review system for enforcing high quality.
 - **Agents:** `@code-reviewer`, `@security-reviewer`, `@tech-lead-reviewer`, `@ux-reviewer`, `@code-simplifier`
 - **Slash commands:** `/hierarchical`, `/quick`, `/refactor`
 - **Use it for:** full-stack audits, security reviews, architectural guidance, guided refactors
-- **Install:** `/plugin install review@fradser-dotclaude`
 
 ### git (`plugins/git`) · development
 Conventional Git and GitFlow automation.
 - **Slash commands:** `/commit`, `/push`, `/commit-and-push`, `/gitignore`
 - **GitFlow helpers:** `/start-feature`, `/finish-feature`, `/start-release`, `/finish-release`, `/start-hotfix`, `/finish-hotfix`
 - **Use it for:** atomic commits, branch discipline, automated .gitignore generation
-- **Install:** `/plugin install git@fradser-dotclaude`
 
 ### github (`plugins/github`) · productivity
 GitHub project operations with quality gates.
 - **Slash commands:** `/create-issues`, `/create-pr`, `/resolve-issues`
 - **Highlights:** worktree-based issue resolution, automated label management, security and quality validation before PRs ship
-- **Install:** `/plugin install github@fradser-dotclaude`
 
 ### swift (`plugins/swiftui`) · development
 Dedicated SwiftUI Clean Architecture reviewer.
 - **Agent:** `@swiftui-clean-architecture-reviewer`
 - **Use it for:** enforcing MVVM + Clean Architecture layering, SwiftData integration reviews, platform compliance checks
-- **Install:** `/plugin install swift@fradser-dotclaude`
 
 ### utils (`plugins/utils`) · productivity
 Utility commands for day-to-day automation.
 - **Slash commands:** `/continue`, `/create-command`
 - **Use it for:** resuming stalled sessions, scaffolding new custom slash commands
-- **Install:** `/plugin install utils@fradser-dotclaude`
 
 ---
 

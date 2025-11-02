@@ -32,7 +32,7 @@
 /plugin install git@fradser-dotclaude
 /plugin install github@fradser-dotclaude
 /plugin install swift@fradser-dotclaude
-/plugin install ults@fradser-dotclaude
+/plugin install utils@fradser-dotclaude
 ```
 
 > 建议先安装 `review@fradser-dotclaude` 与 `git@fradser-dotclaude` 作为核心组合，再按需添加其他插件。
@@ -71,33 +71,28 @@ cp -r dist/codex/ $HOME/.codex
 多智能体代码审查系统，帮助维持高质量。
 - **包含智能体：** `@code-reviewer`、`@security-reviewer`、`@tech-lead-reviewer`、`@ux-reviewer`、`@code-simplifier`
 - **命令模板：** `/hierarchical`、`/quick`、`/refactor`
-- **适用场景：** 全栈审查、安全评估、架构把关、指导式重构  
-  `安装命令：/plugin install review@fradser-dotclaude`
+- **适用场景：** 全栈审查、安全评估、架构把关、指导式重构
 
 ### git（`plugins/git`）· 开发
 约定式 Git 与 GitFlow 自动化。
 - **命令模板：** `/commit`、`/push`、`/commit-and-push`、`/gitignore`
 - **GitFlow 命令：** `/start-feature`、`/finish-feature`、`/start-release`、`/finish-release`、`/start-hotfix`、`/finish-hotfix`
-- **适用场景：** 原子化提交、分支规约、自动生成 .gitignore  
-  `安装命令：/plugin install git@fradser-dotclaude`
+- **适用场景：** 原子化提交、分支规约、自动生成 .gitignore
 
 ### github（`plugins/github`）· 生产力
 带质量闸口的 GitHub 项目操作工具包。
 - **命令模板：** `/create-issues`、`/create-pr`、`/resolve-issues`
-- **亮点：** 基于 worktree 的问题解决、自动标签管理、PR 前安全与质量检查  
-  `安装命令：/plugin install github@fradser-dotclaude`
+- **亮点：** 基于 worktree 的问题解决、自动标签管理、PR 前安全与质量检查
 
 ### swift（`plugins/swiftui`）· 开发
 专注 SwiftUI Clean Architecture 的审查智能体。
 - **智能体：** `@swiftui-clean-architecture-reviewer`
-- **适用场景：** 强制执行 MVVM + Clean Architecture 分层、SwiftData 集成审核、平台合规性检查  
-  `安装命令：/plugin install swift@fradser-dotclaude`
+- **适用场景：** 强制执行 MVVM + Clean Architecture 分层、SwiftData 集成审核、平台合规性检查
 
 ### utils（`plugins/utils`）· 生产力
 日常自动化实用工具。
 - **命令模板：** `/continue`、`/create-command`
 - **适用场景：** 恢复中断会话、脚手架新的命令模板
-  `安装命令：/plugin install utils@fradser-dotclaude`
 
 ---
 
