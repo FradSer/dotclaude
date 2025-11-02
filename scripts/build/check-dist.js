@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..");
 
 async function main() {
-  await execFileAsync("node", [path.join("scripts", "build", "index.mjs")], {
+  await execFileAsync("node", [path.join("scripts", "build", "index.js")], {
     cwd: repoRoot,
     stdio: "inherit",
   });
