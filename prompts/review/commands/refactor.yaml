@@ -55,5 +55,5 @@ platform_overrides:
       - refactor
       - quality
   gemini:
-    namespace: refactor
-    filename: systematic
+    namespace: review
+    filename: refactor

@@ -17,5 +17,5 @@ platform_overrides:
     tags:
       - utility
   gemini:
-    namespace: utility
+    namespace: utils
     filename: continue

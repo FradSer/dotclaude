@@ -126,5 +126,5 @@ platform_overrides:
       - utility
       - workflow
   gemini:
-    namespace: utility
+    namespace: utils
     filename: create-command
