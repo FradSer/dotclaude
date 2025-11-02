@@ -65,6 +65,19 @@ This will copy all Codex prompt files from `dist/codex/` to your Codex configura
 
 </details>
 
+<details>
+<summary>Gemini installation instructions</summary>
+
+```bash
+cd path/to/this/repo
+
+cp -r dist/gemini/ $HOME/.gemini
+```
+
+This will copy all Gemini command TOML files from `dist/gemini/` to your Gemini configuration directory, making them available in the Gemini command palette.
+
+</details>
+
 ## Plugin Catalog
 
 ### review (`plugins/code-review-toolkit`) · productivity

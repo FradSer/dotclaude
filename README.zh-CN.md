@@ -65,6 +65,19 @@ cp -r dist/codex/ $HOME/.codex
 
 </details>
 
+<details>
+<summary>Gemini 安装说明</summary>
+
+```bash
+cd path/to/this/repo
+
+cp -r dist/gemini/ $HOME/.gemini
+```
+
+这会将 `dist/gemini/` 中的所有 Gemini 命令 TOML 文件复制到 Gemini 配置目录，使其在 Gemini 命令面板中可用。
+
+</details>
+
 ## 插件目录
 
 ### review（`plugins/code-review-toolkit`）· 生产力
