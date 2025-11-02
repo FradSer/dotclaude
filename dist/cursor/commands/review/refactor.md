@@ -75,7 +75,6 @@ Closes #120. Linked to #115 and PR #122
 - **Execution**: Apply DRY, introduce guard clauses, extract helpers, adopt idiomatic constructs, and ensure descriptive names.
 - **Validation & Delivery**: Re-run tests, lint, and builds; ensure a clean working directory; stage and commit each logical unit; push results and report the refactor summary.
 
-
 ## Available Specialized Agents
 
 The following specialized agents are available (note: agents are only supported in Claude; use their expertise as guidance for your review):

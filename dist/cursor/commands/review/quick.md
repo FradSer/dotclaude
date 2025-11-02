@@ -79,7 +79,6 @@ Closes #120. Linked to #115 and PR #122
 - **Optional Implementation**: Execute requested fixes, optimize the code, rerun tests, and prepare commits that adhere to the standards fragment.
 - **Closure**: Push updates if changes were made and confirm review completion with the user.
 
-
 ## Available Specialized Agents
 
 The following specialized agents are available (note: agents are only supported in Claude; use their expertise as guidance for your review):

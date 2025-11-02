@@ -40,7 +40,6 @@ argumentHint: "[files-or-directories]"
 - **Optional Implementation**: Address security, quality, or UX issues as requested, then run tests and validations.
 - **Final Optimization**: Engage **@code-simplifier** — code simplification and optimization — to refactor implemented fixes, remove redundancy, and verify compliance with SOLID principles before finalizing the summary.
 
-
 ## Available Specialized Agents
 
 The following specialized agents are available (note: agents are only supported in Claude; use their expertise as guidance for your review):
