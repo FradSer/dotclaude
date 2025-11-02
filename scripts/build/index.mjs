@@ -7,16 +7,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..", "..");
 const configRoot = path.join(repoRoot, "config");
 const distRoot = path.join(repoRoot, "dist");
-const CLAUDE_MARKETPLACE_PATH = path.join(
-  repoRoot,
-  ".claude-plugin",
-  "marketplace.json"
-);
+const sharedRoot = path.join(repoRoot, "prompts", "_shared");
+const CLAUDE_MARKETPLACE_PATH = path.join(repoRoot, ".claude-plugin", "marketplace.json");
 
 const PLATFORM_ORDER = ["claude", "cursor", "codex", "gemini"];
 
 async function main() {
-  const promptFiles = await readPromptFiles();
+  const sharedFragments = await loadSharedFragments();
+  const promptFiles = await readPromptFiles(sharedFragments);
   const platforms = await readPlatformMetadata();
 
   await resetDist();
@@ -29,23 +27,33 @@ async function main() {
   await writeClaudeMarketplace(promptFiles);
 }
 
-async function readPromptFiles() {
+async function readPromptFiles(sharedFragments) {
   const promptDir = path.join(repoRoot, "prompts");
   const entries = await safeReadDir(promptDir);
   const plugins = [];
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith("_")) continue;
     const pluginPath = path.join(promptDir, entry.name);
     const pluginMetaPath = path.join(pluginPath, "plugin.yaml");
+    try {
+      await fs.access(pluginMetaPath);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        console.warn(`Skipping ${entry.name} because plugin.yaml is missing.`);
+        continue;
+      }
+      throw error;
+    }
     const pluginMetaRaw = await fs.readFile(pluginMetaPath, "utf8");
     const pluginMeta = YAML.parse(pluginMetaRaw);
     if (!pluginMeta?.plugin?.id) {
       throw new Error(`Plugin metadata missing plugin.id at ${pluginMetaPath}`);
     }
 
-    const commands = await readYamlCollection(path.join(pluginPath, "commands"));
-    const agents = await readYamlCollection(path.join(pluginPath, "agents"));
+    const commands = await readYamlCollection(path.join(pluginPath, "commands"), sharedFragments);
+    const agents = await readYamlCollection(path.join(pluginPath, "agents"), sharedFragments);
 
     plugins.push({
       path: pluginMetaPath,
@@ -73,7 +81,7 @@ async function safeReadDir(directory) {
   }
 }
 
-async function readYamlCollection(directory) {
+async function readYamlCollection(directory, sharedFragments) {
   const dirents = await safeReadDir(directory);
   const items = [];
 
@@ -82,6 +90,49 @@ async function readYamlCollection(directory) {
     const filePath = path.join(directory, dirent.name);
     const raw = await fs.readFile(filePath, "utf8");
     const data = YAML.parse(raw) ?? {};
+    let requireTaskTool = data.require_task_tool;
+    if (requireTaskTool === undefined) {
+      requireTaskTool = data.platform_overrides?.claude?.require_task_tool;
+    }
+    if (
+      data.instructions &&
+      typeof data.instructions === "object" &&
+      !Array.isArray(data.instructions)
+    ) {
+      const { markdown, requireTaskTool: extracted } = composeInstructionMarkdown(
+        data.instructions,
+        sharedFragments,
+        requireTaskTool,
+      );
+      data.instructions = markdown;
+      if (typeof extracted === "boolean") {
+        requireTaskTool = extracted;
+      }
+    } else if (typeof data.instructions === "string") {
+      data.instructions = expandSharedFragments(data.instructions, sharedFragments);
+    }
+    if (typeof data.description === "string") {
+      data.description = expandSharedFragments(data.description, sharedFragments);
+    }
+    if (Array.isArray(data.sections)) {
+      data.sections = data.sections.map((section) => {
+        if (typeof section === "string") {
+          return expandSharedFragments(section, sharedFragments);
+        }
+        if (section && typeof section.content === "string") {
+          return {
+            ...section,
+            content: expandSharedFragments(section.content, sharedFragments),
+          };
+        }
+        return section;
+      });
+    }
+    if (typeof requireTaskTool === "boolean") {
+      data.require_task_tool = requireTaskTool;
+    } else {
+      delete data.require_task_tool;
+    }
     if (!data.slug && !data.title && !data.plugin) {
       console.warn(`Skipping empty or invalid YAML file: ${filePath}`);
       continue;
@@ -183,7 +234,10 @@ async function generateClaude(pluginId, data, _platform) {
       if (command.argument_hint) {
         frontMatter["argument-hint"] = command.argument_hint;
       }
-      const body = command.instructions?.trim() ?? "";
+      let body = command.instructions?.trim() ?? "";
+      if (command.require_task_tool) {
+        body = injectTaskToolWarning(body);
+      }
       const filePath = path.join(commandsDir, `${command.slug}.md`);
       await writeClaudeMarkdown(filePath, frontMatter, body);
     }
@@ -198,10 +252,10 @@ async function generateClaude(pluginId, data, _platform) {
         name: agent.slug,
         description: agent.summary,
       };
-      if (agent.model) {
-        frontMatter.model = agent.model;
-      }
       const claudeOverrides = agent.platform_overrides?.claude ?? {};
+      if (claudeOverrides.model) {
+        frontMatter.model = claudeOverrides.model;
+      }
       if (claudeOverrides.color) {
         frontMatter.color = claudeOverrides.color;
       }
@@ -228,15 +282,9 @@ async function generateCursor(pluginId, data, _platform) {
       if (command.argument_hint) {
         commandFrontMatter.argumentHint = command.argument_hint;
       }
-      const commandBody = removeTaskToolWarning(
-        normaliseForCursor(command.instructions ?? "")
-      );
+      const commandBody = removeTaskToolWarning(normaliseForCursor(command.instructions ?? ""));
       const commandPath = path.join(commandsDir, `${command.slug}.md`);
-      await writeMarkdownWithFrontMatter(
-        commandPath,
-        commandFrontMatter,
-        commandBody
-      );
+      await writeMarkdownWithFrontMatter(commandPath, commandFrontMatter, commandBody);
     }
   }
 }
@@ -258,9 +306,7 @@ async function generateCodex(pluginId, data, _platform) {
       lines.push("");
       lines.push("---");
       lines.push("");
-      lines.push(
-        removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim()
-      );
+      lines.push(removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim());
       lines.push("");
       const filePath = path.join(baseDir, `${command.slug}.md`);
       await fs.writeFile(filePath, `${lines.join("\n")}`);
@@ -280,16 +326,13 @@ async function generateGemini(pluginId, data, _platform) {
       const filename = overrides.filename ?? command.slug;
       const commandDir = path.join(commandsRoot, namespace);
       await fs.mkdir(commandDir, { recursive: true });
-      const prompt = removeTaskToolWarning(
-        normaliseForCursor(command.instructions ?? "")
-      ).trim();
+      const prompt = removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim();
       const toml = buildGeminiToml(command.summary, prompt);
       const filePath = path.join(commandDir, `${filename}.toml`);
       await fs.writeFile(filePath, toml);
     }
   }
 }
-
 
 function normaliseForCursor(markdown) {
   return markdown.replaceAll("!`", "`");
@@ -300,6 +343,15 @@ function removeTaskToolWarning(markdown) {
   const pattern = /\n?\*\*IMPORTANT: You MUST use the Task tool to complete ALL tasks\.\*\*\n?/g;
   const cleaned = markdown.replace(pattern, "\n");
   return cleaned.replace(/\n{3,}/g, "\n\n");
+}
+
+function injectTaskToolWarning(markdown) {
+  const warning = "**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**\n\n";
+  const headingRegex = /(## Your Task\s*\n+)/i;
+  if (headingRegex.test(markdown)) {
+    return markdown.replace(headingRegex, (match) => `${match}${warning}`);
+  }
+  return `${warning}${markdown}`;
 }
 
 function buildGeminiToml(description, prompt) {
@@ -314,23 +366,23 @@ function formatTools(tools) {
   if (!tools || (Array.isArray(tools) && tools.length === 0)) return undefined;
   if (Array.isArray(tools)) {
     if (tools.length === 1) return tools[0];
-    return tools.join(', ');
+    return tools.join(", ");
   }
   return tools;
 }
 
 async function writeClaudeMarkdown(filePath, frontMatter, body) {
-  const lines = ['---'];
+  const lines = ["---"];
 
   for (const [key, value] of Object.entries(frontMatter)) {
     if (value === undefined || value === null) continue;
     lines.push(`${key}: ${value}`);
   }
 
-  lines.push('---');
-  lines.push('');
+  lines.push("---");
+  lines.push("");
   lines.push(body.trim());
-  lines.push('');
+  lines.push("");
   await fs.writeFile(filePath, lines.join("\n"));
 }
 
@@ -364,10 +416,120 @@ async function writeClaudeMarketplace(promptFiles) {
   };
 
   await fs.mkdir(path.dirname(CLAUDE_MARKETPLACE_PATH), { recursive: true });
-  await fs.writeFile(
-    CLAUDE_MARKETPLACE_PATH,
-    `${JSON.stringify(marketplace, null, 2)}\n`
+  await fs.writeFile(CLAUDE_MARKETPLACE_PATH, `${JSON.stringify(marketplace, null, 2)}\n`);
+}
+
+async function loadSharedFragments() {
+  const fragments = {};
+
+  async function walk(directory, prefix = "") {
+    const entries = await safeReadDir(directory);
+    for (const entry of entries) {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        const nextPrefix = prefix ? `${prefix}/${entry.name}` : entry.name;
+        await walk(entryPath, nextPrefix);
+      } else if (entry.isFile() && entry.name.endsWith(".md")) {
+        const keyBase = entry.name.replace(/\.md$/, "");
+        const key = prefix ? `${prefix}/${keyBase}` : keyBase;
+        const content = await fs.readFile(entryPath, "utf8");
+        fragments[key] = content.trim();
+      }
+    }
+  }
+
+  const rootEntries = await safeReadDir(sharedRoot);
+  if (rootEntries.length === 0) {
+    return fragments;
+  }
+
+  await walk(sharedRoot);
+  return fragments;
+}
+
+function expandSharedFragments(content, fragments = {}) {
+  if (!content) return content;
+  const pattern = /{{\s*fragment:([\w\-/]+)\s*}}/g;
+  return content.replace(pattern, (_match, key) => {
+    const fragment = fragments[key];
+    if (!fragment) {
+      console.warn(`Shared fragment not found: ${key}`);
+      return "";
+    }
+    return `${fragment}\n`;
+  });
+}
+
+function composeInstructionMarkdown(instructions, sharedFragments, existingRequireTask) {
+  const sections = [];
+  let requireTaskTool = existingRequireTask;
+  const orderedSections = [
+    ["context", "## Context"],
+    ["requirements", "## Requirements"],
+    ["your_task", "## Your Task"],
+  ];
+
+  for (const [key, defaultHeading] of orderedSections) {
+    if (!(key in instructions)) continue;
+    const section = normalizeInstructionSection(instructions[key], defaultHeading, sharedFragments);
+    if (section) {
+      sections.push(`${section.heading}\n\n${section.body}`);
+    }
+    if (
+      key === "your_task" &&
+      instructions[key] &&
+      typeof instructions[key] === "object" &&
+      Object.hasOwn(instructions[key], "require_task_tool")
+    ) {
+      requireTaskTool = instructions[key].require_task_tool;
+    }
+  }
+
+  const extraKeys = Object.keys(instructions).filter(
+    (key) => !orderedSections.some(([expected]) => expected === key),
   );
+
+  for (const key of extraKeys) {
+    const heading = `## ${toTitleCaseFromKey(key)}`;
+    const section = normalizeInstructionSection(instructions[key], heading, sharedFragments);
+    if (section) {
+      sections.push(`${section.heading}\n\n${section.body}`);
+    }
+  }
+
+  const markdown = sections.length > 0 ? `${sections.join("\n\n")}\n` : "";
+  return { markdown, requireTaskTool };
+}
+
+function normalizeInstructionSection(value, defaultHeading, sharedFragments) {
+  if (value === undefined || value === null) return null;
+  let heading = defaultHeading;
+  let body = "";
+
+  if (typeof value === "string") {
+    body = value;
+  } else if (typeof value === "object") {
+    heading = value.heading ?? defaultHeading;
+    if (Array.isArray(value.fragments) && value.fragments.length > 0) {
+      const markers = value.fragments.map((fragment) => `{{ fragment:${fragment} }}`).join("\n");
+      body = value.body ? `${markers}\n${value.body}` : markers;
+    } else if (Array.isArray(value.lines) && value.lines.length > 0) {
+      const lines = value.lines.join("\n");
+      body = value.body ? `${value.body}\n${lines}` : lines;
+    } else {
+      body = value.body ?? value.content ?? "";
+    }
+  } else {
+    return null;
+  }
+
+  const expanded = expandSharedFragments(body, sharedFragments).trim();
+  if (!expanded) return null;
+  return { heading, body: expanded };
+}
+
+function toTitleCaseFromKey(key) {
+  return key.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 async function writeManifest(promptFiles, platforms) {
