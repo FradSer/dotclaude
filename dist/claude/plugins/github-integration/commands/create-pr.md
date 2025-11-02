@@ -21,7 +21,7 @@ description: Create comprehensive GitHub pull requests with quality validation
 - Body: blank line after title, ≤72 chars per line, normal capitalization and punctuation. Describe what changed and why, not how.
 - Footer (optional): Reference issues/PRs (Closes #123, Fixes #456, Linked to PR #789). Use BREAKING CHANGE: prefix for breaking changes.
 
-## Examples
+### Examples
 
 ```
 feat(auth): add google oauth login flow
@@ -170,7 +170,7 @@ Fixes #123, Closes #456
 - Body: blank line after title, ≤72 chars per line, normal capitalization and punctuation. Describe what changed and why, not how.
 - Footer (optional): Reference issues/PRs (Closes #123, Fixes #456, Linked to PR #789). Use BREAKING CHANGE: prefix for breaking changes.
 
-## Examples
+### Examples
 
 ```
 feat(auth): add google oauth login flow
