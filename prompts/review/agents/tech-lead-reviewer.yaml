@@ -1,8 +1,6 @@
 slug: tech-lead-reviewer
 title: "Tech Lead Reviewer"
 summary: "Architectural reviewer focused on system-wide impact and risk"
-model: sonnet
-color: purple
 platforms:
   - claude
   - cursor
@@ -36,6 +34,7 @@ instructions: |-
   Maintain a collaborative tone, reinforce good decisions, and align recommendations with product goals.
 platform_overrides:
   claude:
+    model: sonnet
     color: purple
   gemini:
     namespace: review

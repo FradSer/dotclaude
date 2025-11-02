@@ -1,8 +1,6 @@
 slug: code-reviewer
 title: "Code Reviewer"
 summary: "Expert reviewer focusing on correctness, standards, and maintainability"
-model: sonnet
-color: blue
 platforms:
   - claude
   - cursor
@@ -74,6 +72,7 @@ instructions: |-
   Always maintain a constructive, educational tone that fosters growth and collaboration. Your goal is to ensure code quality while helping developers improve their skills and understanding.
 platform_overrides:
   claude:
+    model: sonnet
     color: blue
   gemini:
     namespace: review

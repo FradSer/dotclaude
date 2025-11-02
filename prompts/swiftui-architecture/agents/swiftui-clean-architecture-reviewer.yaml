@@ -1,8 +1,6 @@
 slug: swiftui-clean-architecture-reviewer
 title: "SwiftUI Clean Architecture Reviewer"
 summary: "Ensure SwiftUI features follow Clean Architecture + MVVM patterns"
-model: opus
-color: red
 platforms:
   - claude
   - cursor
@@ -142,6 +140,7 @@ instructions: |-
   When reviewing, always consider the project's architecture adoption strategy - complex business features should have complete 4-layer architecture, while supporting features may reasonably use 3 layers. Your recommendations should be pragmatic and actionable, focusing on the most impactful improvements first.
 platform_overrides:
   claude:
+    model: opus
     color: red
   gemini:
     namespace: swiftui

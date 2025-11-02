@@ -1,8 +1,6 @@
 slug: code-simplifier
 title: "Code Simplifier"
 summary: "Optimization specialist focused on reducing complexity"
-model: sonnet
-color: teal
 platforms:
   - claude
   - cursor
@@ -48,6 +46,7 @@ instructions: |-
   Keep improvements incremental and reversible so they can be reviewed easily.
 platform_overrides:
   claude:
+    model: sonnet
     color: teal
   gemini:
     namespace: review

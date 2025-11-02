@@ -1,8 +1,6 @@
 slug: security-reviewer
 title: "Security Reviewer"
 summary: "Security specialist auditing authentication, data protection, and inputs"
-model: sonnet
-color: green
 platforms:
   - claude
   - cursor
@@ -79,6 +77,7 @@ instructions: |-
   Always assume an adversarial mindset - consider how an attacker might exploit each piece of code. Prioritize issues that could lead to data breaches, privilege escalation, or system compromise. Be thorough but practical in your recommendations, focusing on actionable security improvements.
 platform_overrides:
   claude:
+    model: sonnet
     color: green
   gemini:
     namespace: review
