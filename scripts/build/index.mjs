@@ -252,6 +252,83 @@ function processInstructionsForNonClaude(instructions) {
   return removeTaskToolWarning(normaliseForCursor(instructions ?? "")).trim();
 }
 
+function formatArgumentHint(argumentHint) {
+  // Convert argument_hint like "[hotfix description]" to a readable description
+  if (!argumentHint) {
+    return "description";
+  }
+  // Remove brackets and use the content as a description
+  const cleaned = argumentHint.replace(/[\[\]]/g, "").trim();
+  
+  // Handle special cases for better readability
+  if (cleaned === "feature-name") {
+    return "feature-name";
+  }
+  if (cleaned.includes("|")) {
+    // For choices like "[Project|Personal] [description of what...]" or just "[Project|Personal]"
+    if (cleaned.includes("description of what")) {
+      return "the user input";
+    }
+    return "option";
+  }
+  if (cleaned.includes("description")) {
+    return "description";
+  }
+  if (cleaned.includes("-")) {
+    // Keep hyphenated words as-is but make readable
+    return cleaned.replace(/-/g, "-");
+  }
+  
+  return cleaned || "description";
+}
+
+function replaceArgumentsInContext(text, argumentHint) {
+  // Handle special contextual replacements before generic $ARGUMENTS replacement
+  if (!text) return text;
+  
+  let result = text;
+  
+  // Replace "feature `$ARGUMENTS`" -> "current feature" when argumentHint is "[feature-name]"
+  if (argumentHint?.includes("feature-name")) {
+    result = result.replace(/feature\s+`\$ARGUMENTS`/g, "current feature");
+  }
+  
+  return result;
+}
+
+function replaceArgumentsPlaceholders(text, argumentHint) {
+  // Replace $ARGUMENTS with a more descriptive phrase based on argument_hint
+  if (!text) return text;
+  
+  // First handle special contextual replacements
+  let result = replaceArgumentsInContext(text, argumentHint);
+  
+  const description = formatArgumentHint(argumentHint);
+  const placeholder = `<${description} (user may provide additional)>`;
+  
+  // Replace all occurrences of $ARGUMENTS with the placeholder
+  // Handle paths like `hotfix/$ARGUMENTS` -> `hotfix/<description (user may provide additional)>`
+  result = result.replace(/`([^/`]+)\/\$ARGUMENTS`/g, (_match, prefix) => `\`${prefix}/${placeholder}\``);
+  // Handle backtick-wrapped $ARGUMENTS -> wrapped placeholder
+  result = result.replace(/`\$ARGUMENTS`/g, `\`${placeholder}\``);
+  // Handle bare $ARGUMENTS -> placeholder
+  result = result.replace(/\$ARGUMENTS/g, placeholder);
+  
+  return result;
+}
+
+function appendUserInputHint(text, hasArguments, argumentHint) {
+  // For non-Claude platforms, append a hint about using user-provided input
+  if (!hasArguments) {
+    return text;
+  }
+  if (argumentHint) {
+    const description = formatArgumentHint(argumentHint);
+    return `${text}\n\n**Note:** The user may provide additional input after the command. Use that input as <${description}> in the instructions above.`;
+  }
+  return `${text}\n\n**Note:** The user may provide additional input after the command. Use that input to interpret any placeholders in the instructions above.`;
+}
+
 function appendAgentsDescriptionIfNeeded(instructions, agentsDescription) {
   if (!agentsDescription || !instructions.includes("@")) {
     return instructions;
@@ -360,11 +437,11 @@ async function generateCursor(pluginId, data, _platform) {
         description: command.summary,
         trigger: cursorOverrides.command.palette,
       };
-      if (command.argument_hint) {
-        commandFrontMatter.argumentHint = command.argument_hint;
-      }
+      const hasArguments = command.instructions?.includes("$ARGUMENTS") || false;
       let commandBody = processInstructionsForNonClaude(command.instructions);
+      commandBody = replaceArgumentsPlaceholders(commandBody, command.argument_hint);
       commandBody = appendAgentsDescriptionIfNeeded(commandBody, agentsDescription);
+      commandBody = appendUserInputHint(commandBody, hasArguments, command.argument_hint);
       const commandPath = path.join(commandsDir, `${command.slug}.md`);
       await writeMarkdownWithFrontMatter(commandPath, commandFrontMatter, commandBody);
     }
@@ -390,8 +467,11 @@ async function generateCodex(pluginId, data, _platform) {
       lines.push("");
       lines.push("---");
       lines.push("");
+      const hasArguments = command.instructions?.includes("$ARGUMENTS") || false;
       let instructions = processInstructionsForNonClaude(command.instructions);
+      instructions = replaceArgumentsPlaceholders(instructions, command.argument_hint);
       instructions = appendAgentsDescriptionIfNeeded(instructions, agentsDescription);
+      instructions = appendUserInputHint(instructions, hasArguments, command.argument_hint);
       lines.push(instructions);
       lines.push("");
       const filePath = path.join(baseDir, `${command.slug}.md`);
@@ -414,8 +494,11 @@ async function generateGemini(pluginId, data, _platform) {
       const filename = overrides.filename ?? command.slug;
       const commandDir = path.join(commandsRoot, namespace);
       await fs.mkdir(commandDir, { recursive: true });
+      const hasArguments = command.instructions?.includes("$ARGUMENTS") || false;
       let prompt = processInstructionsForNonClaude(command.instructions);
+      prompt = replaceArgumentsPlaceholders(prompt, command.argument_hint);
       prompt = appendAgentsDescriptionIfNeeded(prompt, agentsDescription);
+      prompt = appendUserInputHint(prompt, hasArguments, command.argument_hint);
       const toml = buildGeminiToml(command.summary, prompt);
       const filePath = path.join(commandDir, `${filename}.toml`);
       await fs.writeFile(filePath, toml);
