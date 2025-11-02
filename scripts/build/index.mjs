@@ -266,10 +266,44 @@ async function generateClaude(pluginId, data, _platform) {
   }
 }
 
+function formatAgentsDescription(agents) {
+  if (!Array.isArray(agents) || agents.length === 0) {
+    return "";
+  }
+
+  const lines = [];
+  lines.push("\n## Available Specialized Agents\n");
+  lines.push(
+    "The following specialized agents are available (note: agents are only supported in Claude; use their expertise as guidance for your review):\n",
+  );
+
+  for (const agent of agents) {
+    lines.push(`### @${agent.slug}`);
+    if (agent.summary) {
+      lines.push(`\n${agent.summary}\n`);
+    }
+
+    // Include the full instructions, but process it to remove platform-specific references
+    if (agent.instructions) {
+      let instructions = agent.instructions.trim();
+      
+      // Normalize for non-Claude platforms (remove Task tool references, etc.)
+      instructions = removeTaskToolWarning(normaliseForCursor(instructions));
+      
+      lines.push(instructions);
+      lines.push("");
+    }
+  }
+
+  return lines.join("\n");
+}
+
 async function generateCursor(pluginId, data, _platform) {
   const baseDir = path.join(distRoot, "cursor");
   const commandsDir = path.join(baseDir, "commands", pluginId);
   await fs.mkdir(commandsDir, { recursive: true });
+
+  const agentsDescription = formatAgentsDescription(data.agents);
 
   if (Array.isArray(data.commands)) {
     for (const command of data.commands) {
@@ -282,7 +316,10 @@ async function generateCursor(pluginId, data, _platform) {
       if (command.argument_hint) {
         commandFrontMatter.argumentHint = command.argument_hint;
       }
-      const commandBody = removeTaskToolWarning(normaliseForCursor(command.instructions ?? ""));
+      let commandBody = removeTaskToolWarning(normaliseForCursor(command.instructions ?? ""));
+      if (agentsDescription && commandBody.includes("@")) {
+        commandBody = `${commandBody}\n${agentsDescription}`;
+      }
       const commandPath = path.join(commandsDir, `${command.slug}.md`);
       await writeMarkdownWithFrontMatter(commandPath, commandFrontMatter, commandBody);
     }
@@ -292,6 +329,8 @@ async function generateCursor(pluginId, data, _platform) {
 async function generateCodex(pluginId, data, _platform) {
   const baseDir = path.join(distRoot, "codex", "prompts", pluginId);
   await fs.mkdir(baseDir, { recursive: true });
+
+  const agentsDescription = formatAgentsDescription(data.agents);
 
   if (Array.isArray(data.commands)) {
     for (const command of data.commands) {
@@ -306,7 +345,11 @@ async function generateCodex(pluginId, data, _platform) {
       lines.push("");
       lines.push("---");
       lines.push("");
-      lines.push(removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim());
+      let instructions = removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim();
+      if (agentsDescription && instructions.includes("@")) {
+        instructions = `${instructions}\n${agentsDescription}`;
+      }
+      lines.push(instructions);
       lines.push("");
       const filePath = path.join(baseDir, `${command.slug}.md`);
       await fs.writeFile(filePath, `${lines.join("\n")}`);
@@ -319,6 +362,8 @@ async function generateGemini(pluginId, data, _platform) {
   const commandsRoot = path.join(baseDir, "commands");
   await fs.mkdir(commandsRoot, { recursive: true });
 
+  const agentsDescription = formatAgentsDescription(data.agents);
+
   if (Array.isArray(data.commands)) {
     for (const command of data.commands) {
       const overrides = command.platform_overrides?.gemini ?? {};
@@ -326,7 +371,10 @@ async function generateGemini(pluginId, data, _platform) {
       const filename = overrides.filename ?? command.slug;
       const commandDir = path.join(commandsRoot, namespace);
       await fs.mkdir(commandDir, { recursive: true });
-      const prompt = removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim();
+      let prompt = removeTaskToolWarning(normaliseForCursor(command.instructions ?? "")).trim();
+      if (agentsDescription && prompt.includes("@")) {
+        prompt = `${prompt}\n${agentsDescription}`;
+      }
       const toml = buildGeminiToml(command.summary, prompt);
       const filePath = path.join(commandDir, `${filename}.toml`);
       await fs.writeFile(filePath, toml);
