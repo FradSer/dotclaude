@@ -29,8 +29,6 @@ instructions:
       - **Planning**: Prioritise improvements by readability, maintainability, and performance impact; map steps into Task tool actions.
       - **Execution**: Apply DRY, introduce guard clauses, extract helpers, adopt idiomatic constructs, and ensure descriptive names.
       - **Validation & Delivery**: Re-run tests, lint, and builds; ensure a clean working directory; stage and commit each logical unit; push results and report the refactor summary.
-follow_up:
-  offer_fix_implementation: true
 platform_overrides:
   claude:
     allowed_tools:

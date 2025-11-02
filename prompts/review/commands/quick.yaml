@@ -33,8 +33,6 @@ instructions:
       - **Results Analysis**: Organize findings using the priority/confidence matrix and provide actionable steps.
       - **Optional Implementation**: Execute requested fixes, optimize the code, rerun tests, and prepare commits that adhere to the standards fragment.
       - **Closure**: Push updates if changes were made and confirm review completion with the user.
-follow_up:
-  offer_fix_implementation: true
 platform_overrides:
   claude:
     allowed_tools:

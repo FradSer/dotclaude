@@ -20,6 +20,7 @@ instructions:
         - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
       - Consolidate findings by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
       - Offer optional implementation support and ensure final suggestions respect SOLID principles.
+      {{ fragment:git/commit-standards }}
   your_task:
     body: |-
       1. Perform a leadership assessment with **@tech-lead-reviewer** — architectural impact assessment — to map risk areas and determine which specialized agents to involve.
@@ -36,8 +37,6 @@ instructions:
       - **Consolidated Analysis**: Merge findings, prioritize by impact/confidence, and produce actionable improvements.
       - **Optional Implementation**: Address security, quality, or UX issues as requested, then run tests and validations.
       - **Final Optimization**: Engage **@code-simplifier** — code simplification and optimization — to refactor implemented fixes, remove redundancy, and verify compliance with SOLID principles before finalizing the summary.
-follow_up:
-  offer_fix_implementation: true
 platform_overrides:
   claude:
     model: claude-haiku-4-5-20251001
