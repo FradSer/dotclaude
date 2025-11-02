@@ -10,68 +10,26 @@ prompt = """
 
 ## Requirements
 
-- Use isolated worktrees for development
-- Follow TDD approach and protected PR workflow
-- Issue resolution commit standards:
-  - Commit message title must be entirely lowercase
-  - Title must be less than 50 characters
-  - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
-  - Use atomic commits for logical units of work
-  - Include issue reference in commit body when relevant
-- Protected branches require PR + review + CI
+- Use isolated worktrees for development and follow the protected PR workflow.
+- Apply a TDD cycle (red → green → refactor) with appropriate sub-agent support.
+- Reference resolved issues in commits and PR descriptions using auto-closing keywords.
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Commit message body must use normal text formatting (proper capitalization and punctuation)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
+- Use atomic commits for logical units of work
 
-## Your task
+## Your Task
 
-Resolve GitHub issues using systematic worktree workflow:
+1. Inspect the repository context, select a target issue, and decide whether to create a new worktree or resume an existing one.
+2. Set up the worktree environment, implement the fix using TDD with specialized review agents, and ensure quality checks pass.
+3. Create the pull request, link the issue, and clean up the worktree after merge, documenting all results to the user.
 
-### Workflow Overview
+### Recommended Workflow
 
-1. **Select issue** - View open issues by priority and choose next one
-2. **Create worktree** - Set up isolated workspace with feature branch
-3. **TDD implementation** - Plan, implement, test, review with agents
-4. **PR creation** - Run quality checks, push branch, create PR
-5. **Cleanup** - Remove worktree after merge
-
-### Implementation Steps
-
-1. **Branch Detection**: Check if on main/develop or existing worktree
-2. **Issue Selection**: View open issues and select one to resolve
-3. **Worktree Creation**: Set up isolated development environment
-4. **TDD Implementation**: Follow red-green-refactor cycle with agent assistance
-5. **Quality Validation**: Run tests and checks before PR creation
-6. **PR Creation**: Create pull request with proper linking
-7. **Cleanup**: Remove worktree after merge
-
-### TDD Process
-
-1. **Planning** - Use @tech-lead-reviewer sub agent for strategy
-2. **Red** - Add failing test that reproduces the issue
-3. **Green** - Implement minimal fix to make test pass
-4. **Review** - Use specialized agents:
-   - code-reviewer for comprehensive review
-   - security-reviewer for sensitive code
-   - ux-reviewer for UI changes
-5. **Refactor** - Use @code-simplifier sub agent while keeping tests green
-6. **Commit** - Create atomic commits following conventional format
-
-### Worktree Management
-
-Based on current branch and existing worktrees:
-- **On main/develop**: Create new worktree or continue existing one
-- **In worktree**: Continue with TDD implementation
-- **After completion**: Clean up worktree and return to main branch
-
-### Quality Standards
-
-- Run project-specific quality checks (lint, test, build)
-- All tests must pass before PR creation
-- Follow atomic commit requirements
-- Use proper PR linking with auto-closing keywords (`fixes`, `closes`, `resolves`)
-
-### Branch Naming Convention
-
-Generate descriptive branch names:
-- `feature/123-webxr-fallback` - New functionality
-- `fix/456-auth-redirect` - Bug fixes
-- `refactor/789-api-cleanup` - Code improvements
+- **Issue Selection**: Evaluate open issues and prioritize the next actionable item.
+- **Worktree Setup**: Create or reuse an isolated worktree with a descriptive branch name (e.g. `fix/456-auth-redirect`).
+- **TDD Implementation**: Plan with @tech-lead-reviewer, write failing tests, implement fixes, and refactor with @code-simplifier while keeping tests green.
+- **Quality Validation**: Run project-specific lint, test, and build commands before PR creation.
+- **PR Creation & Cleanup**: Push the branch, raise a PR with auto-closing keywords, and remove the worktree after merge.
 """

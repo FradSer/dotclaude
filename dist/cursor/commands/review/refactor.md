@@ -9,60 +9,30 @@ argumentHint: "[files-or-directories]"
 - Current git status: `git status`
 - Current branch: `git branch --show-current`
 - Recent commits: `git log --oneline -5`
-- Code complexity indicators: Analyze files for functions >20 lines, nested conditionals, duplication
-- Project structure: `find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.go" | head -20`
+- Complexity indicators: Identify functions >20 lines, nested conditionals, and duplicated logic
+- Project snapshot: `find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.go" | head -20`
 
 ## Requirements
 
+- Preserve existing behaviour—tests should only be run, not altered.
+- Apply SOLID and Clean Code principles to reduce complexity and duplication.
+- Strengthen typing, error handling, and naming conventions.
+- Stage and commit refactors atomically, pushing updates after validation.
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
+- Commit message body must use normal text formatting (proper capitalization and punctuation)
 - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
 
-## Your task
+## Your Task
 
-Systematically improve code quality through structural refactoring while preserving functionality. Target files/areas specified in $ARGUMENTS or analyze entire codebase if no specific target given.
+1. Analyse the codebase (or `$ARGUMENTS` scope) to pinpoint high-impact refactor targets using @code-simplifier for guidance.
+2. Execute refactoring steps iteratively—eliminate duplication, simplify control flow, modernise syntax, and reinforce typing and error handling.
+3. Validate with existing tests, run lint/build checks, and produce atomic commits before summarising improvements and remaining risks.
 
-### Refactoring Process
+### Refactoring Workflow
 
-1. **Initial Assessment**
-   - Analyze current branch status and code structure
-   - Identify complexity indicators: long functions, nested conditionals, duplication
-   - Search codebase to understand existing patterns and conventions
-
-2. **Analysis and Planning**
-   - Use Task tool with code-simplifier agent for comprehensive analysis
-   - Prioritize improvements by impact: readability, maintainability, performance
-   - Plan atomic refactoring steps to avoid breaking changes
-
-3. **Apply Refactoring Techniques**
-   - **Eliminate redundancy**: Extract common logic, apply DRY principle
-   - **Reduce complexity**: Use guard clauses, early returns, break down large functions
-   - **Modernize syntax**: Leverage built-in features and idiomatic expressions
-   - **Improve structure**: Apply SOLID principles, enhance separation of concerns
-   - **Enhance error handling**: Add meaningful error messages for all scenarios
-   - **Strengthen typing**: Avoid loose types, use specific types throughout
-
-4. **Validation**
-   - **CRITICAL**: Never modify existing tests - only run them to validate
-   - Test thoroughly using existing test suite to ensure functionality preserved
-   - Run lint and build checks to ensure code quality standards
-   - Verify no regressions through comprehensive validation
-
-5. **Automatic Commits**
-   - **Stage and commit each logical refactoring unit automatically**
-   - Commit message title must be entirely lowercase
-   - Title must be less than 50 characters
-   - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
-   - Use atomic commits for logical units of work
-   - Ensure clean working directory before committing
-   - **Push commits automatically** after all refactoring is complete
-
-### Focus Areas
-
-- Extract methods from functions >20 lines
-- Replace magic numbers with named constants
-- Simplify complex conditional logic
-- Remove code duplication
-- Improve naming conventions
-- Apply modern language features and best practices
+- **Assessment**: Inspect branch status, catalogue complexity hot spots, and search for existing patterns to align with project conventions.
+- **Planning**: Prioritise improvements by readability, maintainability, and performance impact; map steps into Task tool actions.
+- **Execution**: Apply DRY, introduce guard clauses, extract helpers, adopt idiomatic constructs, and ensure descriptive names.
+- **Validation & Delivery**: Re-run tests, lint, and builds; ensure a clean working directory; stage and commit each logical unit; push results and report the refactor summary.

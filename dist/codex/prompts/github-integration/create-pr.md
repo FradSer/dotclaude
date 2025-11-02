@@ -12,9 +12,22 @@
 - GitHub authentication: `gh auth status`
 - Repository changes: `git diff --stat HEAD~1..HEAD 2>/dev/null || echo "No recent changes"`
 
-## Your task
+## Requirements
 
-Create comprehensive, secure pull requests using systematic validation and quality checks:
+- Ensure the repository is clean, authenticated, and ready for PR submission.
+- Complete lint, test, build, and security checks before creating the PR.
+- Link related issues and apply accurate labels for traceability.
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Commit message body must use normal text formatting (proper capitalization and punctuation)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
+- Use atomic commits for logical units of work
+
+## Your Task
+
+1. Validate repository readiness, analyse change scope, and detect any blockers.
+2. Run the necessary quality and security checks; resolve failures by collaborating with specialized agents when required.
+3. Assemble the pull request with the prescribed structure, link issues, apply labels, and report the final status to the team.
 
 ### Workflow Steps
 
@@ -28,11 +41,13 @@ Create comprehensive, secure pull requests using systematic validation and quali
 ### Quality Validation Process
 
 **Node.js Projects:**
+
 - Run lint, test, build, and type-check commands
 - Validate package.json changes
 - Check for security vulnerabilities
 
 **Python Projects:**
+
 - Run ruff, black, pytest, and mypy
 - Validate requirements and dependencies
 - Check for security issues
@@ -55,6 +70,7 @@ Create comprehensive, secure pull requests using systematic validation and quali
 ### Failure Resolution Process
 
 When quality checks fail:
+
 1. Use TodoWrite to create specific task list for failures
 2. Use Task tool with specialized agents (code-reviewer, security-reviewer)
 3. Fix issues systematically with validation after each fix
@@ -64,12 +80,14 @@ When quality checks fail:
 ### PR Structure Requirements
 
 **Title Guidelines:**
+
 - Maximum 70 characters
 - Use imperative mood
 - No emojis
 - Clear and descriptive
 
 **Body Template:**
+
 ```markdown
 ## Summary
 Brief description of changes and business impact
@@ -102,7 +120,6 @@ Fixes #123, Closes #456
 
 ### Automated Labeling
 
-Labels are automatically applied based on changes:
 - `testing` - Test file modifications
 - `documentation` - Documentation updates
 - `dependencies` - Package file changes
@@ -110,11 +127,12 @@ Labels are automatically applied based on changes:
 
 ### Commit Message Validation
 
-Before creating PR, validate all commits follow standards:
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
+- Commit message body must use normal text formatting (proper capitalization and punctuation)
 - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
+
 - Review all commits in branch for compliance
 - Handle non-standard commits by documenting in PR description or interactive rebase if safe
 
@@ -124,5 +142,3 @@ Before creating PR, validate all commits follow standards:
 - **Security validation**: Comprehensive scanning for vulnerabilities
 - **Issue linking**: Connect PRs to related issues with auto-closing keywords
 - **Small, focused changes**: Easier to review and merge
-- **Parallel execution**: Optimize tool calls for efficiency
-- **Commit standards**: Validate all commits follow conventional format

@@ -11,22 +11,21 @@ argument-hint: [feature description]
 - Existing feature branches: List all feature branches
 - Git status: !`git status --porcelain`
 
-## Your task
+## Requirements
+
+- Feature branches must use kebab-case names under the `feature/` prefix.
+- Maintain a clean working tree before switching or publishing branches.
+- Publish new feature branches to origin for collaboration.
+- Commit message title must be entirely lowercase
+- Title must be less than 50 characters
+- Commit message body must use normal text formatting (proper capitalization and punctuation)
+- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
+- Use atomic commits for logical units of work
+
+## Your Task
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-Start or continue feature development with description: $ARGUMENTS
-
-**Actions to take:**
-1. If no feature branches exist: Create new feature branch from develop
-2. If one feature branch exists: Switch to existing feature branch
-3. If multiple feature branches exist: Show options and let user choose
-4. Use kebab-case naming for branch names
-5. Publish new feature branch to remote for collaboration
-6. Ensure working directory is clean before switching branches
-
-**Required Commit Standards:**
-- Commit message title must be entirely lowercase
-- Title must be less than 50 characters
-- Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
-- Use atomic commits for logical units of work
+1. Determine whether to create a new `feature/$ARGUMENTS` branch or resume an existing one.
+2. Ensure the working directory is clean, then switch to the selected branch (creating it if necessary).
+3. Push the feature branch to origin if it is newly created and confirm readiness for development.

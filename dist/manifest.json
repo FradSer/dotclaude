@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-11-01T14:01:18.217Z",
+  "generatedAt": "2025-11-02T04:31:34.162Z",
   "plugins": [
     {
       "id": "dev-utilities",
@@ -20,7 +20,6 @@
         "finish-hotfix",
         "finish-release",
         "gitignore",
-        "push",
         "start-feature",
         "start-hotfix",
         "start-release"

@@ -8,24 +8,23 @@ argumentHint: "[additional-technologies]"
 
 - Project guidelines: @CLAUDE.md
 - Operating system: `uname -s`
-- Existing .gitignore: `test -f .gitignore && echo ".gitignore found" || echo ".gitignore not found"`
-- Project files: Analyze project structure to detect technologies
+- Existing .gitignore status: `test -f .gitignore && echo ".gitignore found" || echo ".gitignore not found"`
+- Project files: Analyze repository structure to detect technologies
 - Available templates: `curl -sL https://www.toptal.com/developers/gitignore/api/list`
 
-## Your task
+## Requirements
 
-Create or update the .gitignore file for this project:
+- Combine detected platforms and `$ARGUMENTS` into the generator request (e.g. `macos,node,docker`).
+- Preserve existing custom sections when updating `.gitignore`.
+- Present the resulting diff for confirmation.
 
-1. **Auto-detect technologies** from the context above and any additional technologies from: $ARGUMENTS
+## Your Task
 
-2. **Fetch and generate .gitignore:**
-   - Combine detected OS and technologies (e.g., "macos,node,docker")
-   - Add any additional technologies from arguments: $ARGUMENTS
-   - Generate .gitignore: `curl -sL https://www.toptal.com/developers/gitignore/api/{params}`
-   - Preserve existing custom rules when updating
+1. Detect operating systems and technologies from context plus `$ARGUMENTS`.
+2. Generate or update `.gitignore` using the Toptal API while retaining custom rules.
+3. Show the repository changes to confirm the update.
 
-3. **Verify results** by showing repository changes
+### Usage Examples
 
-**Usage examples:**
-- `/gitignore` - Auto-detect and create .gitignore
-- `/gitignore react typescript` - Add React and TypeScript to detected technologies
+- `/gitignore` — Auto-detect and create `.gitignore`.
+- `/gitignore react typescript` — Add React and TypeScript to detected technologies.

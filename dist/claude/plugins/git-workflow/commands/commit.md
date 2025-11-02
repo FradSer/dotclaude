@@ -4,11 +4,6 @@ description: Create atomic conventional git commit
 model: claude-haiku-4-5-20251001
 ---
 
-## Context
-
-- Current git status: !`git status`
-- All changes: !`git diff HEAD`
-
 ## Requirements
 
 - Commit message title must be entirely lowercase
@@ -17,18 +12,10 @@ model: claude-haiku-4-5-20251001
 - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
 
-## Your task
+## Your Task
 
 **IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
-Based on the above changes:
-
-1. **Analyze git diff** to identify logical units of work
-2. **Split into atomic commits** if multiple logical changes are detected:
-   - Each commit should represent one complete logical change
-   - Group related files that belong to the same feature or fix
-   - Separate different change types (feat, fix, chore, docs, etc.) into distinct commits
-3. **Create commits sequentially** for each logical unit:
-   - Stage only files related to current logical unit
-   - Create commit with proper conventional commit message
-   - Repeat for remaining logical units
+1. Analyze the pending changes to identify coherent logical units of work.
+2. For each logical unit, stage only the relevant files and craft a conventional commit message.
+3. Repeat the staging and committing process until every change is accounted for.

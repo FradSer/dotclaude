@@ -4,102 +4,56 @@ trigger: /create-command
 argumentHint: "[Project|Personal] [description of what the command should do]"
 ---
 
-Create a new custom slash command in `.claude/commands/` directory following the official Claude Code slash commands specifications.
+## Context
 
-## Task
+- Project commands live in `.claude/commands/` and are shared with the team.
+- Personal commands live in `~/.claude/commands/` and are available across repositories.
+- Every generated command must follow the Claude Code slash command specification.
 
-Analyze the user's request from `$ARGUMENTS` and create a properly structured slash command that follows all Claude Code slash command requirements.
+## Requirements
 
-## Official Specifications Overview
+### Command Scopes
 
-Custom slash commands are Markdown files that define frequently-used prompts. Commands are organized by scope:
+- **Project commands** — Stored in `.claude/commands/` and committed to source control.
+- **Personal commands** — Stored in `~/.claude/commands/` for individual reuse.
 
-### Command Types
+### Core Features
 
-#### Project commands
-Commands stored in your repository and shared with your team.
-**Location**: `.claude/commands/`
+- Organize commands with directory namespacing.
+- Support dynamic arguments through `$ARGUMENTS`, `$1`, `$2`, etc.
+- Run bash setup commands with the ```` prefix.
+- Reference files and folders via the `@` prefix.
+- Include extended thinking keywords when deeper reasoning is required.
+- Configure metadata through frontmatter.
 
-#### Personal commands
-Commands available across all your projects.
-**Location**: `~/.claude/commands/`
+### Frontmatter Options
 
-### Features
+- **`allowed-tools`** — Declare permitted tools (e.g. `Bash(git add:*), Write`).
+- **`argument-hint`** — Provide autocomplete hints (e.g. `[Project|Personal] [description]`).
+- **`description`** — Summarize the command intent.
+- **`model`** — Pick the Claude model (`claude-haiku-4-5-20251001`, `claude-sonnet-4-5-20250929`, `claude-opus-4-1-20250805`).
 
-- **Namespacing**: Organize commands in subdirectories
-- **Dynamic arguments**: Use `$ARGUMENTS`, `$1`, `$2`, etc.
-- **Bash execution**: Commands prefixed with ````
-- **File references**: Files referenced with ``@``
-- **Thinking mode**: Extended thinking keywords
-- **Frontmatter**: Metadata configuration
+### Argument Handling
 
-## Frontmatter Options
+- `$ARGUMENTS` captures the full argument string, e.g. `/fix-issue 123 high-priority`.
+- `$1`, `$2`, `$3` capture individual positions, e.g. `/review-pr 456 high alice`.
 
-Command files support frontmatter for specifying metadata:
+### Command Creation Process
 
-**`allowed-tools`**
-- Purpose: List of tools the command can use
-- Example: `Bash(git add:*), Write`
-- Default: Inherits from conversation
+1. Determine whether the command is Project or Personal (default Project).
+2. Extract the requested behavior from the remaining arguments.
+3. Generate a descriptive kebab-case command name.
+4. Create the target directory if it does not already exist.
+5. Author the Markdown command with frontmatter, context, and instructions.
+6. Add optional enhancements (arguments, bash commands, file references).
 
-**`argument-hint`**
-- Purpose: Arguments expected for auto-completion
-- Example: `[Project|Personal] [description of what the command should do]`
-- Default: None
+## Your Task
 
-**`description`**
-- Purpose: Brief description of the command
-- Example: `Review pull request`
-- Default: Uses first line from prompt
+1. Analyze `$ARGUMENTS` to determine the command scope and intent.
+2. Produce the Markdown command content following the specification and creation process.
+3. Present the completed command ready for placement in the correct directory.
 
-**`model`**
-- Purpose: Specific model to use
-- Options: `claude-haiku-4-5-20251001` (simple tasks), `claude-sonnet-4-5-20250929` (default), `claude-opus-4-1-20250805` (complex tasks, requires user confirmation)
-- Default: `claude-sonnet-4-5-20250929`
-
-## Argument Handling
-
-### All arguments with `$ARGUMENTS`
-```markdown
-Fix issue #$ARGUMENTS following our coding standards
-```
-Usage: `/fix-issue 123 high-priority` → `$ARGUMENTS` becomes "123 high-priority"
-
-### Individual arguments with `$1`, `$2`, etc.
-```markdown
-Review PR #$1 with priority $2 and assign to $3
-```
-Usage: `/review-pr 456 high alice` → `$1`="456", `$2`="high", `$3`="alice"
-
-## Bash Command Execution
-
-Execute bash commands before the slash command runs using the ```` prefix. The output is included in the command context. You *must* include `allowed-tools` with the `Bash` tool, but you can choose the specific bash commands to allow.
-
-## File References
-
-Include file contents in commands using the `@` prefix to reference files and directories.
-
-## Thinking Mode
-
-Slash commands can trigger extended thinking by including extended thinking keywords.
-
-## Namespacing
-
-Organize commands in subdirectories. The subdirectories are used for organization and appear in the command description, but they do not affect the command name itself.
-
-For example:
-- `.claude/commands/frontend/component.md` → `/component` (project:frontend)
-
-## Command Creation Process
-
-1. **Determine scope**: Extract first argument (Project/Personal, defaults to Project if not specified)
-2. **Extract purpose**: Understand what the user wants from remaining `$ARGUMENTS`
-3. **Generate name**: Create descriptive name (lowercase with hyphens)
-4. **Create directory**: Create appropriate commands directory structure
-5. **Write command file**: Include proper frontmatter and structure
-6. **Add features**: Arguments, bash commands, file references as needed
-
-## Usage Examples
+### Reference Examples
 
 ```bash
 /create-command Review pull request with security focus
@@ -108,11 +62,9 @@ For example:
 /create-command Project Create comprehensive unit tests
 ```
 
-The created command will follow all Claude Code slash command specifications and best practices.
+### Illustrative Templates
 
-## Complete Examples
-
-### Bash Command with Git Operations
+**Bash Command with Git Operations**
 
 ```markdown
 ---
@@ -121,18 +73,16 @@ description: Create a git commit
 ---
 
 ## Context
-
 - Current git status: `git status`
 - Current git diff (staged and unstaged changes): `git diff HEAD`
 - Current branch: `git branch --show-current`
 - Recent commits: `git log --oneline -10`
 
 ## Your task
-
 Based on the above changes, create a single git commit.
 ```
 
-### File References
+**File References**
 
 ```markdown
 ---
@@ -146,7 +96,7 @@ Review the implementation in @src/utils/helpers.js
 Compare @src/old-version.js with @src/new-version.js
 ```
 
-### Positional Arguments
+**Positional Arguments**
 
 ```markdown
 ---

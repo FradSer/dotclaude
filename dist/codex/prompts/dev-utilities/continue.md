@@ -4,4 +4,4 @@
 
 ---
 
-Continue from the prior context and keep working on the last active task without repeating information already provided.
+Continue the previous conversation exactly from where we left off, using the existing context without repeating prior information. Ask for clarification only if essential details are missing.

@@ -5,24 +5,23 @@ prompt = """
 - Current branch: `git branch --show-current`
 - Existing hotfix branches: List all hotfix branches
 - Latest tag: `git tag --list --sort=-creatordate | head -1`
-- Current version from main: Check version information in main branch configuration files
+- Current version from main: Inspect version files on the main branch
 - Git status: `git status --porcelain`
 
-## Your task
+## Requirements
 
-Start or continue hotfix development with description: $ARGUMENTS
-
-**Actions to take:**
-1. If no hotfix branches exist: Create new hotfix branch from main
-2. If hotfix branch exists: Switch to existing hotfix branch
-3. Auto-increment patch version from latest tag (1.2.3 → 1.2.4) if no version specified
-4. Update version files (package.json, Cargo.toml, pyproject.toml, etc.)
-5. Focus on critical bug fixes only
-6. Keep changes minimal and targeted
-
-**Required Commit Standards:**
+- Hotfix branches must use the `hotfix/` prefix and represent patch-level fixes.
+- Increment the patch version automatically if none is provided and update version files.
+- Keep scope limited to critical production fixes before publishing.
 - Commit message title must be entirely lowercase
 - Title must be less than 50 characters
+- Commit message body must use normal text formatting (proper capitalization and punctuation)
 - Follow conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Use atomic commits for logical units of work
+
+## Your Task
+
+1. Decide whether to create a new `hotfix/$ARGUMENTS` branch from `main` or resume an existing hotfix branch.
+2. Update version metadata and changelog entries to reflect the new patch before development begins.
+3. Switch to the hotfix branch, ensure the workspace is ready, and push the branch for collaboration if newly created.
 """
