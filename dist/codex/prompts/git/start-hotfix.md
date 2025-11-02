@@ -63,6 +63,8 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Decide whether to create a new `hotfix/$ARGUMENTS` branch from `main` or resume an existing hotfix branch.
+1. Decide whether to create a new `hotfix/<description (user may provide additional)>` branch from `main` or resume an existing hotfix branch.
 2. Update version metadata and changelog entries to reflect the new patch before development begins.
 3. Switch to the hotfix branch, ensure the workspace is ready, and push the branch for collaboration if newly created.
+
+**Note:** The user may provide additional input after the command. Use that input as <description> in the instructions above.

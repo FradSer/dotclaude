@@ -1,12 +1,12 @@
 {
-  "name": "dotclaude",
-  "version": "2.0.0",
+  "name": "dotagent",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "check": "biome check --write --unsafe",
-    "build:prompts": "node scripts/build/index.mjs",
-    "validate:prompts": "node scripts/build/check-dist.mjs"
+    "build:prompts": "node scripts/build/index.js",
+    "validate:prompts": "node scripts/build/check-dist.js"
   },
   "dependencies": {
     "yaml": "^2.5.0"

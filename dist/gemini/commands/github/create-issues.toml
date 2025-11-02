@@ -58,7 +58,7 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Assess the repository context and select an issue scope that fits `$ARGUMENTS`.
+1. Assess the repository context and select an issue scope that fits `<description (user may provide additional)>`.
 2. Create or update labels as needed, then draft the issue with the required structure and links.
 3. Document decisions (including branch strategy) and share follow-up actions with the team.
 
@@ -103,4 +103,6 @@ Closes #120. Linked to #115 and PR #122
 - Epic issues: manual linking, no auto-close keywords.
 - PR-scoped issues: designed for auto-close keywords.
 - Clear, actionable descriptions with proper context.
+
+**Note:** The user may provide additional input after the command. Use that input as <description> in the instructions above.
 """

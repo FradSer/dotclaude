@@ -1,7 +1,6 @@
 ---
 description: Streamlined code review for rapid assessment and targeted feedback
 trigger: /quick-review
-argumentHint: "[files-or-directories]"
 ---
 
 ## Context

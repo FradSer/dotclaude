@@ -1,10 +1,10 @@
-# FradSer 的 Claude Code 插件市场 ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
+# FradSer 的 dotagent ![](https://img.shields.io/badge/A%20FRAD%20PRODUCT-green)
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/FradSer?style=social)](https://twitter.com/FradSer) [![Claude Code](https://img.shields.io/badge/Claude%20Code-Plugin%20Marketplace-blue.svg)](https://docs.anthropic.com/en/docs/claude-code/plugins) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **[English](README.md) | 中文**
 
-`FradSer/dotclaude` 是一个跨平台工作流市场，涵盖代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具套件。所有命令/智能体都在 `prompts/` 维护，运行 `pnpm build:prompts` 会自动生成 Claude、Cursor、Codex、Gemini 的产物及 `.claude-plugin/marketplace.json`。
+`FradSer/dotagent` 是一个跨平台工作流市场，涵盖代码审查、Git 自动化、GitHub 操作、SwiftUI 架构审查和开发者工具套件。所有命令/智能体都在 `prompts/` 维护，运行 `pnpm build:prompts` 会自动生成 Claude、Cursor、Codex、Gemini 的产物及 `.claude-plugin/marketplace.json`。
 
 ## 插件安装
 
@@ -16,10 +16,10 @@
 #### 1. 添加插件市场
 
 ```bash
-/plugin marketplace add FradSer/dotclaude
+/plugin marketplace add FradSer/dotagent
 ```
 
-当清单名称是 `fradser-dotclaude` 时，Claude 会生成 `<插件>@fradser-dotclaude` 形式的安装标识。
+当清单名称是 `fradser-dotagent` 时，Claude 会生成 `<插件>@fradser-dotagent` 形式的安装标识。
 
 #### 2. 安装所需插件
 
@@ -28,14 +28,14 @@
 /plugin
 
 # 或者在已知安装标识时直接安装
-/plugin install review@fradser-dotclaude
-/plugin install git@fradser-dotclaude
-/plugin install github@fradser-dotclaude
-/plugin install swift@fradser-dotclaude
-/plugin install utils@fradser-dotclaude
+/plugin install review@fradser-dotagent
+/plugin install git@fradser-dotagent
+/plugin install github@fradser-dotagent
+/plugin install swift@fradser-dotagent
+/plugin install utils@fradser-dotagent
 ```
 
-> 建议先安装 `review@fradser-dotclaude` 与 `git@fradser-dotclaude` 作为核心组合，再按需添加其他插件。
+> 建议先安装 `review@fradser-dotagent` 与 `git@fradser-dotagent` 作为核心组合，再按需添加其他插件。
 
 </details>
 
@@ -124,7 +124,7 @@ bash sync-to-github.sh
 
 **远程运行（单行命令）：**
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotagent/main/sync-to-github.sh)
 ```
 
 ### 选项
@@ -145,7 +145,7 @@ sync-to-github.sh [选项]
 
 **非交互模式（优先使用本地更改）：**
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotclaude/main/sync-to-github.sh) --yes --prefer local
+bash <(curl -fsSL https://raw.githubusercontent.com/FradSer/dotagent/main/sync-to-github.sh) --yes --prefer local
 ```
 
 **非交互模式（优先使用仓库版本）：**
@@ -161,7 +161,7 @@ bash sync-to-github.sh
 ## 仓库结构
 
 ```text
-dotclaude/
+dotagent/
 ├── .claude-plugin/              # Claude 插件市场清单（构建时自动生成）
 ├── dist/                        # 构建产物（Claude/Cursor/Codex/Gemini）
 │   ├── claude/plugins/...       # Claude 插件包
@@ -182,7 +182,7 @@ dotclaude/
 
 ## 常见问题
 
-- **如何更新插件？** 使用 `/plugin update review@fradser-dotclaude`（替换为需要的插件名称）或重新安装。
+- **如何更新插件？** 使用 `/plugin update review@fradser-dotagent`（替换为需要的插件名称）或重新安装。
 - **可以 Fork 并定制吗？** 可以。Fork 仓库后更新插件内容、调整 `.claude-plugin/marketplace.json`，再让团队指向你的版本。
 - **是否可以只安装部分插件？** 可以。每个插件相互独立，根据工作流选择需要的组合即可。
 - **代码审查一定要调用所有智能体吗？** 不必。`review` 插件同时提供多个专家，按需唤起即可。

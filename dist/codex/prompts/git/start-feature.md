@@ -61,6 +61,8 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Determine whether to create a new `feature/$ARGUMENTS` branch or resume an existing one.
+1. Determine whether to create a new `feature/<description (user may provide additional)>` branch or resume an existing one.
 2. Ensure the working directory is clean, then switch to the selected branch (creating it if necessary).
 3. Push the feature branch to origin if it is newly created and confirm readiness for development.
+
+**Note:** The user may provide additional input after the command. Use that input as <description> in the instructions above.

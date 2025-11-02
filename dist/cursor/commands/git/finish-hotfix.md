@@ -1,7 +1,6 @@
 ---
 description: Complete and merge current hotfix development
 trigger: /finish-hotfix
-argumentHint: "[version]"
 ---
 
 ## Context
