@@ -1,0 +1,9 @@
+version: 1
+plugin:
+  id: utils
+  label: "Developer Utilities"
+  category: productivity
+  summary: "Utility commands for day-to-day automation."
+  tags:
+    - utility
+    - workflow

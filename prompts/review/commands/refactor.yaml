@@ -1,0 +1,59 @@
+slug: refactor
+title: Systematic Refactor
+summary: Systematic code refactoring to improve quality while preserving functionality
+argument_hint: "[files-or-directories]"
+instructions:
+  context:
+    body: |-
+      - Current git status: !`git status`
+      - Current branch: !`git branch --show-current`
+      - Recent commits: !`git log --oneline -5`
+      - Complexity indicators: Identify functions >20 lines, nested conditionals, and duplicated logic
+      - Project snapshot: !`find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.go" | head -20`
+  requirements:
+    body: |-
+      - Preserve existing behaviour—tests should only be run, not altered.
+      - Apply SOLID and Clean Code principles to reduce complexity and duplication.
+      - Strengthen typing, error handling, and naming conventions.
+      - Stage and commit refactors atomically, pushing updates after validation.
+      {{ fragment:git/commit-standards }}
+  your_task:
+    body: |-
+      1. Analyse the codebase (or `$ARGUMENTS` scope) to pinpoint high-impact refactor targets using **@code-simplifier** — optimization and complexity reduction — for guidance.
+      2. Execute refactoring steps iteratively—eliminate duplication, simplify control flow, modernise syntax, and reinforce typing and error handling.
+      3. Validate with existing tests, run lint/build checks, and produce atomic commits before summarising improvements and remaining risks.
+
+      ### Refactoring Workflow
+
+      - **Assessment**: Inspect branch status, catalogue complexity hot spots, and search for existing patterns to align with project conventions.
+      - **Planning**: Prioritise improvements by readability, maintainability, and performance impact; map steps into Task tool actions.
+      - **Execution**: Apply DRY, introduce guard clauses, extract helpers, adopt idiomatic constructs, and ensure descriptive names.
+      - **Validation & Delivery**: Re-run tests, lint, and builds; ensure a clean working directory; stage and commit each logical unit; push results and report the refactor summary.
+platform_overrides:
+  claude:
+    allowed_tools:
+      - Bash(git:*)
+      - Read
+      - Edit
+      - MultiEdit
+      - Glob
+      - Grep
+      - Task
+    require_task_tool: true
+  cursor:
+    rule:
+      globs:
+        - "**/*"
+      tags:
+        - refactor
+        - quality
+      always_apply: false
+    command:
+      palette: /systematic-refactor
+  codex:
+    tags:
+      - refactor
+      - quality
+  gemini:
+    namespace: review
+    filename: refactor

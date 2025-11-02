@@ -1,0 +1,10 @@
+version: 1
+plugin:
+  id: git
+  label: "Git Workflow"
+  category: development
+  summary: "Conventional Git and GitFlow automation."
+  tags:
+    - git
+    - workflow
+    - automation

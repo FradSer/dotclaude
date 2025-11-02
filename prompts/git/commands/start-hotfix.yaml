@@ -1,0 +1,47 @@
+slug: start-hotfix
+title: Start Hotfix
+summary: Start new hotfix or continue existing hotfix development
+argument_hint: "[hotfix description]"
+instructions:
+  context:
+    body: |-
+      - Current branch: !`git branch --show-current`
+      - Existing hotfix branches: List all hotfix branches
+      - Latest tag: !`git tag --list --sort=-creatordate | head -1`
+      - Current version from main: Inspect version files on the main branch
+      - Git status: !`git status --porcelain`
+  requirements:
+    body: |-
+      - Hotfix branches must use the `hotfix/` prefix and represent patch-level fixes.
+      - Increment the patch version automatically if none is provided and update version files.
+      - Keep scope limited to critical production fixes before publishing.
+      {{ fragment:git/commit-standards }}
+  your_task:
+    body: |-
+      1. Decide whether to create a new `hotfix/$ARGUMENTS` branch from `main` or resume an existing hotfix branch.
+      2. Update version metadata and changelog entries to reflect the new patch before development begins.
+      3. Switch to the hotfix branch, ensure the workspace is ready, and push the branch for collaboration if newly created.
+platform_overrides:
+  claude:
+    model: claude-haiku-4-5-20251001
+    allowed_tools:
+      - Task
+      - Bash
+    require_task_tool: true
+  cursor:
+    rule:
+      globs:
+        - "**/*"
+      tags:
+        - git
+        - workflow
+      always_apply: false
+    command:
+      palette: /start-hotfix
+  codex:
+    tags:
+      - git
+      - workflow
+  gemini:
+    namespace: git
+    filename: start-hotfix

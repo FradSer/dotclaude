@@ -1,0 +1,21 @@
+slug: continue
+title: "Continue"
+summary: "Resume the previous conversation or task without restating context"
+instructions: |-
+  Continue the previous conversation exactly from where we left off, using the existing context without repeating prior information. Ask for clarification only if essential details are missing.
+platform_overrides:
+  cursor:
+    rule:
+      globs:
+        - "**/*"
+      tags:
+        - utility
+      always_apply: false
+    command:
+      palette: "/continue"
+  codex:
+    tags:
+      - utility
+  gemini:
+    namespace: utils
+    filename: continue

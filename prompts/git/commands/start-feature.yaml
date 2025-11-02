@@ -1,0 +1,45 @@
+slug: start-feature
+title: Start Feature
+summary: Start new feature or continue existing feature development
+argument_hint: "[feature description]"
+instructions:
+  context:
+    body: |-
+      - Current branch: !`git branch --show-current`
+      - Existing feature branches: List all feature branches
+      - Git status: !`git status --porcelain`
+  requirements:
+    body: |-
+      - Feature branches must use kebab-case names under the `feature/` prefix.
+      - Maintain a clean working tree before switching or publishing branches.
+      - Publish new feature branches to origin for collaboration.
+      {{ fragment:git/commit-standards }}
+  your_task:
+    body: |-
+      1. Determine whether to create a new `feature/$ARGUMENTS` branch or resume an existing one.
+      2. Ensure the working directory is clean, then switch to the selected branch (creating it if necessary).
+      3. Push the feature branch to origin if it is newly created and confirm readiness for development.
+platform_overrides:
+  claude:
+    model: claude-haiku-4-5-20251001
+    allowed_tools:
+      - Task
+      - Bash
+    require_task_tool: true
+  cursor:
+    rule:
+      globs:
+        - "**/*"
+      tags:
+        - git
+        - workflow
+      always_apply: false
+    command:
+      palette: /start-feature
+  codex:
+    tags:
+      - git
+      - workflow
+  gemini:
+    namespace: git
+    filename: start-feature

@@ -3,37 +3,37 @@
   "description": "FradSer's Claude Code plugin marketplace featuring specialized agents and workflow automation",
   "owner": {
     "name": "FradSer",
-    "url": "https://github.com/FradSer"
+    "url": "https://frad.me"
   },
   "plugins": [
     {
-      "name": "review",
-      "source": "./plugins/code-review-toolkit",
-      "description": "Comprehensive code review toolkit with specialized agents for quality, security, architecture, UX, and refactoring",
-      "category": "productivity"
-    },
-    {
       "name": "git",
-      "source": "./plugins/git-workflow",
-      "description": "Git and GitFlow workflow automation with atomic commits and conventional commit messages",
+      "source": "./dist/claude/plugins/git",
+      "description": "Conventional Git and GitFlow automation.",
       "category": "development"
     },
     {
       "name": "github",
-      "source": "./plugins/github-integration",
-      "description": "GitHub integration toolkit for issue management, PR creation, and worktree-based development workflows",
+      "source": "./dist/claude/plugins/github",
+      "description": "GitHub project operations with quality gates.",
       "category": "productivity"
     },
     {
-      "name": "swift",
-      "source": "./plugins/swiftui-architecture",
-      "description": "SwiftUI Clean Architecture reviewer specializing in MVVM, SwiftData, and 4-layer architecture patterns",
+      "name": "review",
+      "source": "./dist/claude/plugins/review",
+      "description": "Multi-agent review system for enforcing high quality.",
+      "category": "productivity"
+    },
+    {
+      "name": "swiftui",
+      "source": "./dist/claude/plugins/swiftui",
+      "description": "SwiftUI Clean Architecture reviewer.",
       "category": "development"
     },
     {
-      "name": "ults",
-      "source": "./plugins/dev-utilities",
-      "description": "Development utility commands for session management and command template generation",
+      "name": "utils",
+      "source": "./dist/claude/plugins/utils",
+      "description": "Utility commands for day-to-day automation.",
       "category": "productivity"
     }
   ]

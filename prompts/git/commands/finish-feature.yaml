@@ -1,0 +1,45 @@
+slug: finish-feature
+title: Finish Feature
+summary: Complete and merge current feature development
+argument_hint: "[feature-name]"
+instructions:
+  context:
+    body: |-
+      - Current branch: !`git branch --show-current`
+      - Git status: !`git status --porcelain`
+      - Recent commits: !`git log --oneline -5`
+      - Test commands available: Detect available testing frameworks for this project
+  requirements:
+    body: |-
+      - Ensure all changes for feature `$ARGUMENTS` are committed before finishing.
+      - Run the relevant test suite and confirm all checks pass.
+      {{ fragment:git/commit-standards }}
+  your_task:
+    body: |-
+      1. Confirm the branch name follows the `feature/*` convention and the working tree is clean.
+      2. Execute the appropriate tests and resolve any failures before proceeding.
+      3. Merge the feature branch into `develop`, delete the feature branch locally and remotely, handle merge conflicts if they arise, and push the updated `develop` branch.
+platform_overrides:
+  claude:
+    model: claude-haiku-4-5-20251001
+    allowed_tools:
+      - Task
+      - Bash
+    require_task_tool: true
+  cursor:
+    rule:
+      globs:
+        - "**/*"
+      tags:
+        - git
+        - workflow
+      always_apply: false
+    command:
+      palette: /finish-feature
+  codex:
+    tags:
+      - git
+      - workflow
+  gemini:
+    namespace: git
+    filename: finish-feature

@@ -1,0 +1,37 @@
+slug: commit-and-push
+title: Commit and Push
+summary: Create atomic conventional git commit and push to remote
+instructions:
+  requirements:
+    body: |-
+      {{ fragment:git/commit-standards }}
+      - Pushes must target the current branch on the remote; create a tracking branch when necessary using `git push -u`.
+  your_task:
+    body: |-
+      1. Review the diff overview (e.g. `git status`, `git diff --stat`) to determine discrete logical units of work.
+      2. For each unit, stage the relevant files and create a conventional commit.
+      3. After committing all units, push the branch to the remote, configuring the upstream if it does not exist.
+platform_overrides:
+  claude:
+    model: claude-haiku-4-5-20251001
+    allowed_tools:
+      - Task
+      - Bash(git:*)
+    require_task_tool: true
+  cursor:
+    rule:
+      globs:
+        - "**/*"
+      tags:
+        - git
+        - workflow
+      always_apply: false
+    command:
+      palette: /commit-and-push
+  codex:
+    tags:
+      - git
+      - workflow
+  gemini:
+    namespace: git
+    filename: commit-and-push
