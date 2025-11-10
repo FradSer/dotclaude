@@ -27,7 +27,7 @@ Per-assistant capability files describe output folders and supported metadata:
 Generators will write rendered assets into:
 
 - `dist/cursor/commands/....md`
-- `dist/codex/prompts/....md`
+- `dist/codex/prompts/<plugin>-<slug>.md`
 - `dist/gemini/commands/....toml`
 - (Claude continues to use `plugins/<pack>/...` for marketplace exports.)
 
@@ -36,4 +36,3 @@ Generators will write rendered assets into:
 1. Port remaining plugins into `prompts/<plugin>/` following this structure.
 2. Implement build scripts under `scripts/build/` that hydrate each platform directory from the canonical YAML.
 3. Update documentation (`docs/{cursor,codex,gemini}.md`) with platform-specific import instructions once generators ship.
-

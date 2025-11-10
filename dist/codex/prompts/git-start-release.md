@@ -1,8 +1,12 @@
+---
+description: Start new release or continue existing release development
+tags:
+  - git
+---
+
 # Start Release
 
 **Summary:** Start new release or continue existing release development
-
----
 
 ## Context
 

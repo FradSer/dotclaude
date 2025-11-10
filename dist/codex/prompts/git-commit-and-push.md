@@ -1,22 +1,15 @@
-# Start Hotfix
-
-**Summary:** Start new hotfix or continue existing hotfix development
-
+---
+description: Create atomic conventional git commit and push to remote
+tags:
+  - git
 ---
 
-## Context
+# Commit and Push
 
-- Current branch: `git branch --show-current`
-- Existing hotfix branches: List all hotfix branches
-- Latest tag: `git tag --list --sort=-creatordate | head -1`
-- Current version from main: Inspect version files on the main branch
-- Git status: `git status --porcelain`
+**Summary:** Create atomic conventional git commit and push to remote
 
 ## Requirements
 
-- Hotfix branches must use the `hotfix/` prefix and represent patch-level fixes.
-- Increment the patch version automatically if none is provided and update version files.
-- Keep scope limited to critical production fixes before publishing.
 - **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
 - Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
@@ -61,10 +54,10 @@ BREAKING CHANGE: Authentication API now requires OAuth 2.0 tokens. Basic auth is
 Closes #120. Linked to #115 and PR #122
 ```
 
+- Pushes must target the current branch on the remote; create a tracking branch when necessary using `git push -u`.
+
 ## Your Task
 
-1. Decide whether to create a new `hotfix/<description (user may provide additional)>` branch from `main` or resume an existing hotfix branch.
-2. Update version metadata and changelog entries to reflect the new patch before development begins.
-3. Switch to the hotfix branch, ensure the workspace is ready, and push the branch for collaboration if newly created.
-
-**Note:** The user may provide additional input after the command. Use that input as <description> in the instructions above.
+1. Review the diff overview (e.g. `git status`, `git diff --stat`) to determine discrete logical units of work.
+2. For each unit, stage the relevant files and create a conventional commit.
+3. After committing all units, push the branch to the remote, configuring the upstream if it does not exist.

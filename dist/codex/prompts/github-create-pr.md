@@ -1,8 +1,12 @@
+---
+description: Create comprehensive GitHub pull requests with quality validation
+tags:
+  - github
+---
+
 # Create PR
 
 **Summary:** Create comprehensive GitHub pull requests with quality validation
-
----
 
 ## Context
 

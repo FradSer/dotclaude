@@ -1,8 +1,13 @@
+---
+description: Comprehensive multi-stage code review using specialized subagents
+argument-hint: "[files-or-directories]"
+tags:
+  - review
+---
+
 # Hierarchical Review
 
 **Summary:** Comprehensive multi-stage code review using specialized subagents
-
----
 
 ## Context
 

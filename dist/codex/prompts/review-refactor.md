@@ -1,24 +1,28 @@
-# Quick Review
-
-**Summary:** Streamlined code review for rapid assessment and targeted feedback
-
 ---
+description: Systematic code refactoring to improve quality while preserving functionality
+argument-hint: "[files-or-directories]"
+tags:
+  - review
+---
+
+# Systematic Refactor
+
+**Summary:** Systematic code refactoring to improve quality while preserving functionality
 
 ## Context
 
+- Current git status: `git status`
 - Current branch: `git branch --show-current`
-- Git status: `git status --porcelain`
-- Base branch: `(git show-branch | grep '*' | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -1 | sed 's/.*\[\([^]]*\)\].*/\1/' | sed 's/\^.*//' 2>/dev/null) || echo "develop"`
-- Changes since base: `BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git log --oneline $BASE..HEAD`
-- Files changed since base: `BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git diff --name-only $BASE..HEAD`
-- Test commands available: `([ -f package.json ] && echo "npm/pnpm/yarn test") || ([ -f Cargo.toml ] && echo "cargo test") || ([ -f pyproject.toml ] && echo "pytest/uv run pytest") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
+- Recent commits: `git log --oneline -5`
+- Complexity indicators: Identify functions >20 lines, nested conditionals, and duplicated logic
+- Project snapshot: `find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.java" -o -name "*.go" | head -20`
 
 ## Requirements
 
-- Use **@tech-lead-reviewer** — architectural impact assessment — to scope the review and decide which specialized agents are required.
-- Launch only the necessary specialized reviews to minimize turnaround time.
-- Summarize results by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
-- Offer optional implementation support and ensure resulting commits follow conventional standards.
+- Preserve existing behaviour—tests should only be run, not altered.
+- Apply SOLID and Clean Code principles to reduce complexity and duplication.
+- Strengthen typing, error handling, and naming conventions.
+- Stage and commit refactors atomically, pushing updates after validation.
 - **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
 - Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
@@ -65,19 +69,16 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Run an initial assessment with **@tech-lead-reviewer** — architectural impact assessment — to gauge architectural, security, and UX risk, and determine if a deeper review is needed.
-2. Trigger the relevant specialized reviews via the Task tool, gather targeted feedback, and resolve conflicting recommendations.
-3. Present a concise summary, ask whether the user wants fixes implemented, and if confirmed, apply changes, refactor with **@code-simplifier** — code simplification and optimization —, test, and stage commits before reporting outcomes.
+1. Analyse the codebase (or `$ARGUMENTS` scope) to pinpoint high-impact refactor targets using **@code-simplifier** — optimization and complexity reduction — for guidance.
+2. Execute refactoring steps iteratively—eliminate duplication, simplify control flow, modernise syntax, and reinforce typing and error handling.
+3. Validate with existing tests, run lint/build checks, and produce atomic commits before summarising improvements and remaining risks.
 
-### Targeted Review Flow
+### Refactoring Workflow
 
-- **Selective Agents**: 
-  - **@code-reviewer** — logic correctness, tests, error handling.
-  - **@security-reviewer** — authentication, data protection, validation.
-  - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
-- **Results Analysis**: Organize findings using the priority/confidence matrix and provide actionable steps.
-- **Optional Implementation**: Execute requested fixes, optimize the code, rerun tests, and prepare commits that adhere to the standards fragment.
-- **Closure**: Push updates if changes were made and confirm review completion with the user.
+- **Assessment**: Inspect branch status, catalogue complexity hot spots, and search for existing patterns to align with project conventions.
+- **Planning**: Prioritise improvements by readability, maintainability, and performance impact; map steps into Task tool actions.
+- **Execution**: Apply DRY, introduce guard clauses, extract helpers, adopt idiomatic constructs, and ensure descriptive names.
+- **Validation & Delivery**: Re-run tests, lint, and builds; ensure a clean working directory; stage and commit each logical unit; push results and report the refactor summary.
 
 ## Available Specialized Agents
 

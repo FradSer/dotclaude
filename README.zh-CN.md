@@ -166,7 +166,7 @@ dotagent/
 ├── dist/                        # 构建产物（Claude/Cursor/Codex/Gemini）
 │   ├── claude/plugins/...       # Claude 插件包
 │   ├── cursor/commands/...      # Cursor 命令文件
-│   ├── codex/prompts/...        # Copilot 参考提示
+│   ├── codex/prompts/...        # Copilot 参考提示（<plugin>-<slug>.md）
 │   └── gemini/commands/...      # Gemini 命令 TOML
 ├── prompts/                     # 跨平台规范化定义
 │   ├── <plugin>/plugin.yaml
