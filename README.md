@@ -166,7 +166,7 @@ dotagent/
 ├── dist/                        # Generated outputs for each assistant
 │   ├── claude/plugins/...       # Claude marketplace bundles
 │   ├── cursor/commands/...      # Cursor command palette entries
-│   ├── codex/prompts/...        # Copilot reference prompts
+│   ├── codex/prompts/...        # Copilot reference prompts (<plugin>-<slug>.md)
 │   └── gemini/commands/...      # Gemini command TOML files
 ├── prompts/                     # Canonical cross-assistant definitions
 │   ├── <plugin>/plugin.yaml

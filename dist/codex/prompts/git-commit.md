@@ -1,20 +1,15 @@
-# Finish Feature
-
-**Summary:** Complete and merge current feature development
-
+---
+description: Create atomic conventional git commit
+tags:
+  - git
 ---
 
-## Context
+# Commit
 
-- Current branch: `git branch --show-current`
-- Git status: `git status --porcelain`
-- Recent commits: `git log --oneline -5`
-- Test commands available: Detect available testing frameworks for this project
+**Summary:** Create atomic conventional git commit
 
 ## Requirements
 
-- Ensure all changes for current feature are committed before finishing.
-- Run the relevant test suite and confirm all checks pass.
 - **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
 - Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
@@ -61,8 +56,6 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Confirm the branch name follows the `feature/*` convention and the working tree is clean.
-2. Execute the appropriate tests and resolve any failures before proceeding.
-3. Merge the feature branch into `develop`, delete the feature branch locally and remotely, handle merge conflicts if they arise, and push the updated `develop` branch.
-
-**Note:** The user may provide additional input after the command. Use that input as <feature-name> in the instructions above.
+1. Analyze the pending changes to identify coherent logical units of work.
+2. For each logical unit, stage only the relevant files and craft a conventional commit message.
+3. Repeat the staging and committing process until every change is accounted for.

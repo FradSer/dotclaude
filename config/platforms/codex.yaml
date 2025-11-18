@@ -5,7 +5,7 @@ summary: >-
   documentation. Prompts are typically stored as Markdown snippets that can be
   pasted or referenced via notebooks.
 outputs:
-  prompts: "dist/codex/prompts/{plugin}/{slug}.md"
+  prompts: "dist/codex/prompts/{plugin}-{slug}.md"
   snippets: "dist/codex/snippets/{plugin}/{slug}.code-snippets"
 requirements:
   format: markdown
@@ -16,4 +16,3 @@ notes:
   - Provide optional code fences with illustrative patterns for Copilot to
     condition on.
   - Snippet output is useful when mapping prompts to VS Code key bindings.
-

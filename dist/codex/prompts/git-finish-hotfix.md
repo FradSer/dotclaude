@@ -1,11 +1,27 @@
-# Commit
-
-**Summary:** Create atomic conventional git commit
-
 ---
+description: Complete and merge current hotfix development
+argument-hint: "[version]"
+tags:
+  - git
+---
+
+# Finish Hotfix
+
+**Summary:** Complete and merge current hotfix development
+
+## Context
+
+- Current branch: `git branch --show-current`
+- Git status: `git status --porcelain`
+- Recent commits: `git log --oneline -5`
+- Test commands available: Detect available testing frameworks for this project
+- Current version: Check version information in project configuration files
 
 ## Requirements
 
+- Hotfix branches must follow the `hotfix/*` naming convention and remain narrowly scoped.
+- Update version metadata and changelog entries as part of the hotfix release.
+- Finish the Git Flow hotfix procedure (merge to `main` and `develop`, create release tag).
 - **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
 - Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
 - Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
@@ -52,6 +68,6 @@ Closes #120. Linked to #115 and PR #122
 
 ## Your Task
 
-1. Analyze the pending changes to identify coherent logical units of work.
-2. For each logical unit, stage only the relevant files and craft a conventional commit message.
-3. Repeat the staging and committing process until every change is accounted for.
+1. Validate the branch name, ensure the working tree is clean, and confirm all hotfix commits are present.
+2. Execute the relevant tests, increment the patch version if required, and refresh changelog entries before finalizing.
+3. Complete the hotfix workflow—merge into `main` and `develop`, create and push tags, publish the GitHub release summary, and remove the hotfix branch locally and remotely.
