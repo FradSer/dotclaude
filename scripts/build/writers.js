@@ -70,7 +70,6 @@ export async function writeClaudeMarketplace(promptFiles) {
 
 export async function writeManifest(promptFiles, platforms) {
   const manifest = {
-    generatedAt: new Date().toISOString(),
     plugins: promptFiles.map((file) => ({
       id: file.data.plugin.id,
       source: path.relative(config.repoRoot, file.path),
@@ -86,7 +85,7 @@ export async function writeManifest(promptFiles, platforms) {
   };
 
   const manifestPath = path.join(config.distRoot, "manifest.json");
-  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
 export async function resetDist() {
