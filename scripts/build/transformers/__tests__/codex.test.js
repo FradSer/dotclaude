@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import { formatCodexFrontmatter, getCodexFileName } from "../codex.js";
 
@@ -19,7 +19,7 @@ test("formatCodexFrontmatter builds required metadata", () => {
   assert.match(frontmatter, /description: Create atomic conventional git commit/);
   assert.match(frontmatter, /argument-hint: "\[scope\] \[ticket\]"/);
   assert.match(frontmatter, /allowed-tools: Task, Bash\(git:\*\)/);
-  assert.match(frontmatter, /tags:\n  - git/);
+  assert.match(frontmatter, /tags:\n {2}- git/);
   assert.match(frontmatter, /---\s*$/);
 });
 
