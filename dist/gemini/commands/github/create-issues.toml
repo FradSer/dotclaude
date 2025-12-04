@@ -1,5 +1,5 @@
 description="Create GitHub issues with TDD principles and proper labels"
-prompt = """
+prompt = '''
 ## Context
 
 - Current git status: `git status`
@@ -105,4 +105,4 @@ Closes #120. Linked to #115 and PR #122
 - Clear, actionable descriptions with proper context.
 
 **Note:** The user may provide additional input after the command. Use that input as <description> in the instructions above.
-"""
+'''

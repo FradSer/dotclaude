@@ -1,5 +1,5 @@
 description="Create a custom slash command following Claude Code specifications"
-prompt = """
+prompt = '''
 ## Context
 
 - Project commands live in `.claude/commands/` and are shared with the team.
@@ -105,4 +105,4 @@ Focus on security, performance, and code style.
 ```
 
 **Note:** The user may provide additional input after the command. Use that input as <the user input> in the instructions above.
-"""
+'''

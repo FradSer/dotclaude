@@ -1,5 +1,5 @@
 description="Complete and merge current release development"
-prompt = """
+prompt = '''
 ## Context
 
 - Current branch: `git branch --show-current`
@@ -74,4 +74,4 @@ Closes #120. Linked to #115 and PR #122
 - `git branch -d release/x.x.x && git push origin --delete release/x.x.x`
 - `git push origin main develop --tags`
 - Create the GitHub release
-"""
+'''

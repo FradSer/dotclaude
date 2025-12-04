@@ -37,7 +37,7 @@ export async function writeMarkdownWithFrontMatter(filePath, frontMatter, body) 
 }
 
 export function buildGeminiToml(description, prompt) {
-  return `description="${escapeTomlString(description)}"\nprompt = """\n${prompt}\n"""\n`;
+  return `description="${escapeTomlString(description)}"\nprompt = '''\n${prompt}\n'''\n`;
 }
 
 function escapeTomlString(value) {

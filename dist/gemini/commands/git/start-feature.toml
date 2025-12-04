@@ -1,5 +1,5 @@
 description="Start new feature or continue existing feature development"
-prompt = """
+prompt = '''
 ## Context
 
 - Current branch: `git branch --show-current`
@@ -62,4 +62,4 @@ Closes #120. Linked to #115 and PR #122
 3. Push the feature branch to origin if it is newly created and confirm readiness for development.
 
 **Note:** The user may provide additional input after the command. Use that input as <description> in the instructions above.
-"""
+'''
