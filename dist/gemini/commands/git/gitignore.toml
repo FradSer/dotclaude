@@ -1,5 +1,5 @@
 description="Create or update .gitignore file"
-prompt = """
+prompt = '''
 ## Context
 
 - Project guidelines: @CLAUDE.md
@@ -26,4 +26,4 @@ prompt = """
 - `/gitignore react typescript` — Add React and TypeScript to detected technologies.
 
 **Note:** The user may provide additional input after the command. Use that input as <additional-technologies> in the instructions above.
-"""
+'''

@@ -1,5 +1,5 @@
 description="Systematic code refactoring to improve quality while preserving functionality"
-prompt = """
+prompt = '''
 ## Context
 
 - Current git status: `git status`
@@ -304,4 +304,4 @@ Encourage small iterative improvements when immediate full fixes are impractical
 
 
 **Note:** The user may provide additional input after the command. Use that input as <files-or-directories> in the instructions above.
-"""
+'''
