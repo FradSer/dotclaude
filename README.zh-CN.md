@@ -45,7 +45,7 @@
 ```bash
 cd path/to/this/repo
 
-cp -r dist/cursor/ $HOME/.cursor
+cp -r dist/cursor/* $HOME/.cursor/
 ```
 
 这会将 `dist/cursor/` 中的所有 Cursor 命令文件复制到 Cursor 配置目录，使其在 Cursor 命令面板中可用。
@@ -58,7 +58,7 @@ cp -r dist/cursor/ $HOME/.cursor
 ```bash
 cd path/to/this/repo
 
-cp -r dist/codex/ $HOME/.codex
+cp -r dist/codex/* $HOME/.codex/
 ```
 
 这会将 `dist/codex/` 中的所有 Codex 提示文件复制到 Codex 配置目录，使其作为参考提示可用。
@@ -71,7 +71,7 @@ cp -r dist/codex/ $HOME/.codex
 ```bash
 cd path/to/this/repo
 
-cp -r dist/gemini/ $HOME/.gemini
+cp -r dist/gemini/* $HOME/.gemini/
 ```
 
 这会将 `dist/gemini/` 中的所有 Gemini 命令 TOML 文件复制到 Gemini 配置目录，使其在 Gemini 命令面板中可用。
