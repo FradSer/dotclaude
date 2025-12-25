@@ -1,5 +1,5 @@
 description="Create comprehensive GitHub pull requests with quality validation"
-prompt = """
+prompt = '''
 ## Context
 
 - Current git status: `git status`
@@ -216,4 +216,4 @@ Closes #120. Linked to #115 and PR #122
 - **Security validation**: Comprehensive scanning for vulnerabilities
 - **Issue linking**: Connect PRs to related issues with auto-closing keywords
 - **Small, focused changes**: Easier to review and merge
-"""
+'''

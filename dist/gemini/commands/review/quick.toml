@@ -1,5 +1,5 @@
 description="Streamlined code review for rapid assessment and targeted feedback"
-prompt = """
+prompt = '''
 ## Context
 
 - Current branch: `git branch --show-current`
@@ -306,4 +306,4 @@ You are a UX specialist tasked with evaluating user-facing changes for usability
 
 Encourage small iterative improvements when immediate full fixes are impractical.
 
-"""
+'''

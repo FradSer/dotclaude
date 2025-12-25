@@ -45,7 +45,7 @@ When the marketplace manifest name is `fradser-dotagent`, Claude generates insta
 ```bash
 cd path/to/this/repo
 
-cp -r dist/cursor/ $HOME/.cursor
+cp -r dist/cursor/* $HOME/.cursor/
 ```
 
 This will copy all Cursor command files from `dist/cursor/` to your Cursor configuration directory, making them available in the Cursor command palette.
@@ -58,7 +58,7 @@ This will copy all Cursor command files from `dist/cursor/` to your Cursor confi
 ```bash
 cd path/to/this/repo
 
-cp -r dist/codex/ $HOME/.codex
+cp -r dist/codex/* $HOME/.codex/
 ```
 
 This will copy all Codex prompt files from `dist/codex/` to your Codex configuration directory, making them available as reference prompts.
@@ -71,7 +71,7 @@ This will copy all Codex prompt files from `dist/codex/` to your Codex configura
 ```bash
 cd path/to/this/repo
 
-cp -r dist/gemini/ $HOME/.gemini
+cp -r dist/gemini/* $HOME/.gemini/
 ```
 
 This will copy all Gemini command TOML files from `dist/gemini/` to your Gemini configuration directory, making them available in the Gemini command palette.
