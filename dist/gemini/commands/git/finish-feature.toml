@@ -1,5 +1,5 @@
 description="Complete and merge current feature development"
-prompt = """
+prompt = '''
 ## Context
 
 - Current branch: `git branch --show-current`
@@ -62,4 +62,4 @@ Closes #120. Linked to #115 and PR #122
 3. Merge the feature branch into `develop`, delete the feature branch locally and remotely, handle merge conflicts if they arise, and push the updated `develop` branch.
 
 **Note:** The user may provide additional input after the command. Use that input as <feature-name> in the instructions above.
-"""
+'''

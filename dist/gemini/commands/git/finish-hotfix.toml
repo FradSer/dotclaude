@@ -1,5 +1,5 @@
 description="Complete and merge current hotfix development"
-prompt = """
+prompt = '''
 ## Context
 
 - Current branch: `git branch --show-current`
@@ -62,4 +62,4 @@ Closes #120. Linked to #115 and PR #122
 1. Validate the branch name, ensure the working tree is clean, and confirm all hotfix commits are present.
 2. Execute the relevant tests, increment the patch version if required, and refresh changelog entries before finalizing.
 3. Complete the hotfix workflow—merge into `main` and `develop`, create and push tags, publish the GitHub release summary, and remove the hotfix branch locally and remotely.
-"""
+'''
