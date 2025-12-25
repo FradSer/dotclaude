@@ -46,6 +46,11 @@ All CLAUDE.md files must satisfy these four mandatory criteria:
 - Reduce complexity using guard clauses and early returns
 - Modernize syntax and use strong typing
 - Handle all error scenarios with meaningful messages
+- **Avoid AI code slop** - Do not generate:
+  - Extra comments inconsistent with file style or that a human wouldn't add
+  - Unnecessary defensive checks/try-catch in trusted codepaths
+  - Casts to `any` to bypass type issues
+  - Any style inconsistent with surrounding code
 
 ## Implementation Standards
 
