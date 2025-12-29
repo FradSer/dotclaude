@@ -4,9 +4,22 @@ import { config } from "../config.js";
 import { injectTaskToolWarning } from "../transformers/index.js";
 import { formatTools, writeClaudeMarkdown } from "../writers.js";
 
-export async function generateClaude(pluginId, data, _platform) {
+export async function generateClaude(pluginId, data, platform) {
   const baseDir = path.join(config.distRoot, "claude", "plugins", pluginId);
   await fs.mkdir(baseDir, { recursive: true });
+
+  const pluginConfigDir = path.join(baseDir, ".claude-plugin");
+  await fs.mkdir(pluginConfigDir, { recursive: true });
+
+  const pluginJson = {
+    name: pluginId,
+    description: data.plugin.summary,
+    version: platform.version,
+  };
+  await fs.writeFile(
+    path.join(pluginConfigDir, "plugin.json"),
+    `${JSON.stringify(pluginJson, null, 2)}\n`,
+  );
 
   if (Array.isArray(data.commands)) {
     const commandsDir = path.join(baseDir, "commands");
