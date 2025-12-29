@@ -1,7 +1,4 @@
----
-description: Create or update .gitignore file
-trigger: /gitignore
----
+# Create or update .gitignore file
 
 ## Context
 

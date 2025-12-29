@@ -1,7 +1,4 @@
----
-description: Create a custom slash command following Claude Code specifications
-trigger: /create-command
----
+# Create a custom slash command following Claude Code specifications
 
 ## Context
 
