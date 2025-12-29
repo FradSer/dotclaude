@@ -10,7 +10,6 @@ import {
   removeTaskToolWarning,
   replaceArgumentsPlaceholders,
 } from "../transformers/index.js";
-import { writeMarkdownWithFrontMatter } from "../writers.js";
 
 export async function generateCursor(pluginId, data, _platform) {
   const baseDir = path.join(config.distRoot, "cursor");
@@ -23,10 +22,6 @@ export async function generateCursor(pluginId, data, _platform) {
     for (const command of data.commands) {
       const cursorOverrides = command.platform_overrides?.cursor ?? {};
       if (!cursorOverrides.command?.palette) continue;
-      const commandFrontMatter = {
-        description: command.summary,
-        trigger: cursorOverrides.command.palette,
-      };
       const hasArguments = hasArgumentsPlaceholder(command.instructions);
       let commandBody = removeTaskToolWarning(
         normaliseForCursor(command.instructions ?? ""),
@@ -35,7 +30,8 @@ export async function generateCursor(pluginId, data, _platform) {
       commandBody = appendAgentsDescriptionIfNeeded(commandBody, agentsDescription);
       commandBody = appendUserInputHint(commandBody, hasArguments, command.argument_hint);
       const commandPath = path.join(commandsDir, `${command.slug}.md`);
-      await writeMarkdownWithFrontMatter(commandPath, commandFrontMatter, commandBody);
+      const content = `# ${command.summary}\n\n${commandBody.trim()}\n`;
+      await fs.writeFile(commandPath, content);
     }
   }
 }
