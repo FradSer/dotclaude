@@ -35,6 +35,16 @@
       "source": "./dist/claude/plugins/utils",
       "description": "Utility commands for day-to-day automation.",
       "category": "productivity"
+    },
+    {
+      "name": "skills",
+      "source": "./dist/claude/skills",
+      "description": "Collection of specialized Claude Skills including patent application generation and more",
+      "category": "productivity",
+      "strict": false,
+      "skills": [
+        "./patent-architect"
+      ]
     }
   ]
 }
