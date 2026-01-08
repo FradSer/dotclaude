@@ -44,7 +44,28 @@ function escapeTomlString(value) {
   return value.replaceAll('"', '\\"');
 }
 
-export async function writeClaudeMarketplace(promptFiles) {
+export async function writeClaudeMarketplace(promptFiles, skills) {
+  const plugins = promptFiles.map((file) => {
+    const pluginId = file.data.plugin.id;
+    return {
+      name: pluginId,
+      source: `./dist/claude/plugins/${pluginId}`,
+      description: file.data.plugin.summary,
+      category: file.data.plugin.category,
+    };
+  });
+
+  if (skills && skills.length > 0) {
+    plugins.push({
+      name: "skills",
+      source: "./dist/claude/skills",
+      description: "Collection of specialized Claude Skills including patent application generation and more",
+      category: "productivity",
+      strict: false,
+      skills: skills.map((skill) => `./${path.basename(skill.path)}`),
+    });
+  }
+
   const marketplace = {
     name: "fradser-dotagent",
     description:
@@ -53,15 +74,7 @@ export async function writeClaudeMarketplace(promptFiles) {
       name: "FradSer",
       url: "https://frad.me",
     },
-    plugins: promptFiles.map((file) => {
-      const pluginId = file.data.plugin.id;
-      return {
-        name: pluginId,
-        source: `./dist/claude/plugins/${pluginId}`,
-        description: file.data.plugin.summary,
-        category: file.data.plugin.category,
-      };
-    }),
+    plugins,
   };
 
   await fs.mkdir(path.dirname(config.claudeMarketplacePath), { recursive: true });
@@ -91,4 +104,35 @@ export async function writeManifest(promptFiles, platforms) {
 export async function resetDist() {
   await fs.rm(config.distRoot, { recursive: true, force: true });
   await fs.mkdir(config.distRoot, { recursive: true });
+}
+
+export async function copySkills(skills) {
+  if (!skills || skills.length === 0) return;
+
+  const claudeSkillsDir = path.join(config.distRoot, "claude", "skills");
+  await fs.mkdir(claudeSkillsDir, { recursive: true });
+
+  for (const skill of skills) {
+    const skillSourcePath = path.join(config.repoRoot, skill.path);
+    const skillName = path.basename(skill.path);
+    const skillDestPath = path.join(claudeSkillsDir, skillName);
+
+    await copyDirectory(skillSourcePath, skillDestPath);
+  }
+}
+
+async function copyDirectory(src, dest) {
+  await fs.mkdir(dest, { recursive: true });
+  const entries = await fs.readdir(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      await copyDirectory(srcPath, destPath);
+    } else {
+      await fs.copyFile(srcPath, destPath);
+    }
+  }
 }

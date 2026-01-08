@@ -145,3 +145,49 @@ export async function loadSharedFragments() {
   await walk(config.sharedRoot);
   return fragments;
 }
+
+export async function readSkills() {
+  const skillsDir = path.join(config.repoRoot, "skills");
+  const entries = await safeReadDir(skillsDir);
+  const skills = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const skillPath = path.join(skillsDir, entry.name);
+    const skillMdPath = path.join(skillPath, "SKILL.md");
+
+    try {
+      await fs.access(skillMdPath);
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        console.warn(`Skipping ${entry.name} because SKILL.md is missing.`);
+        continue;
+      }
+      throw error;
+    }
+
+    const content = await fs.readFile(skillMdPath, "utf8");
+    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+
+    if (!frontmatterMatch) {
+      console.warn(`Skipping ${entry.name} because SKILL.md has no frontmatter.`);
+      continue;
+    }
+
+    const frontmatter = YAML.parse(frontmatterMatch[1]);
+
+    if (!frontmatter.name || !frontmatter.description) {
+      console.warn(`Skipping ${entry.name} because SKILL.md frontmatter is missing name or description.`);
+      continue;
+    }
+
+    skills.push({
+      name: frontmatter.name,
+      description: frontmatter.description,
+      version: frontmatter.version,
+      path: `./skills/${entry.name}`,
+    });
+  }
+
+  return skills;
+}

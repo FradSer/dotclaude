@@ -2,7 +2,6 @@
 name: patent-architect
 description: Generate Chinese patent application forms (专利申请表) from technical ideas. Use when user mentions patents, inventions, 专利, 申请表, or wants to protect technical innovations. Automatically searches prior art via SerpAPI before drafting.
 allowed-tools: Read, Grep, Glob, WebFetch, WebSearch, Write, Edit, Bash
-version: 1.0.0
 ---
 
 # Patent Architect
