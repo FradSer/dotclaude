@@ -1,9 +1,8 @@
 {
   "name": "review",
   "description": "Multi-agent review system for enforcing high quality.",
-  "version": "1.0.0",
   "author": {
     "name": "FradSer",
-    "url": "https://frad.me"
+    "email": "fradser@gmail.com"
   }
 }

@@ -1,9 +1,8 @@
 {
   "name": "swiftui",
   "description": "SwiftUI Clean Architecture reviewer.",
-  "version": "1.0.0",
   "author": {
     "name": "FradSer",
-    "url": "https://frad.me"
+    "email": "fradser@gmail.com"
   }
 }

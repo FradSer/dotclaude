@@ -1,45 +1,76 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "fradser-claude",
   "description": "FradSer's Claude Code plugin marketplace featuring specialized agents and workflow automation",
   "owner": {
     "name": "FradSer",
-    "url": "https://frad.me"
+    "email": "hi@frad.me"
   },
   "plugins": [
     {
       "name": "git",
-      "source": "./plugins/git",
       "description": "Conventional Git and GitFlow automation.",
+      "version": "1.0.0",
+      "author": {
+        "name": "FradSer",
+        "email": "hi@frad.me"
+      },
+      "source": "./plugins/git",
       "category": "development"
     },
     {
       "name": "github",
-      "source": "./plugins/github",
       "description": "GitHub project operations with quality gates.",
+      "version": "1.0.0",
+      "author": {
+        "name": "FradSer",
+        "email": "hi@frad.me"
+      },
+      "source": "./plugins/github",
       "category": "productivity"
     },
     {
       "name": "review",
-      "source": "./plugins/review",
       "description": "Multi-agent review system for enforcing high quality.",
+      "version": "1.0.0",
+      "author": {
+        "name": "FradSer",
+        "email": "hi@frad.me"
+      },
+      "source": "./plugins/review",
       "category": "productivity"
     },
     {
       "name": "swiftui",
-      "source": "./plugins/swiftui",
       "description": "SwiftUI Clean Architecture reviewer.",
+      "version": "1.0.0",
+      "author": {
+        "name": "FradSer",
+        "email": "hi@frad.me"
+      },
+      "source": "./plugins/swiftui",
       "category": "development"
     },
     {
       "name": "utils",
-      "source": "./plugins/utils",
       "description": "Utility commands for day-to-day automation.",
+      "version": "1.0.0",
+      "author": {
+        "name": "FradSer",
+        "email": "hi@frad.me"
+      },
+      "source": "./plugins/utils",
       "category": "productivity"
     },
     {
       "name": "patent-architect",
-      "source": "./plugins/patent-architect",
       "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
+      "version": "1.0.0",
+      "author": {
+        "name": "FradSer",
+        "email": "hi@frad.me"
+      },
+      "source": "./plugins/patent-architect",
       "category": "productivity",
       "strict": false
     }
