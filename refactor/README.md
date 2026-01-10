@@ -10,10 +10,15 @@ The Refactor Plugin provides specialized tools for code simplification and refac
 
 ### `code-simplifier`
 
-Expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality.
+Expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Supports three scope modes:
+
+**Scope Modes:**
+1. **Recent Changes Scope** - Focus on code that has been recently modified or touched in the current session (default)
+2. **File/Directory Scope** - Focus on specified files or directories provided by the user
+3. **Project Scope** - Analyze entire codebase for patterns and inconsistencies
 
 **What it does:**
-- Analyzes recently modified code
+- Analyzes code based on the specified scope
 - Applies refinements that preserve functionality
 - Follows project-specific coding standards (CLAUDE.md)
 - Enhances code clarity and structure
@@ -24,16 +29,16 @@ Expert code simplification specialist focused on enhancing code clarity, consist
 - Apply Project Standards: Follows CLAUDE.md standards
 - Enhance Clarity: Simplifies code structure
 - Maintain Balance: Avoids over-simplification
-- Focus Scope: Refines recently modified code by default
+- Focus Scope: Adapts based on invocation context
 
 **Model:** Opus
 
 **When triggered:**
-- Automatically by `/refactor` and `/refactor-project` commands
+- Automatically by `@refactor simple` and `@refactor project` commands
 - Can be invoked manually: `@code-simplifier Simplify this code`
 
 **Refinement process:**
-1. Identifies recently modified code sections
+1. Identifies target code sections based on scope
 2. Analyzes for opportunities to improve elegance and consistency
 3. Applies project-specific best practices and coding standards
 4. Ensures all functionality remains unchanged
