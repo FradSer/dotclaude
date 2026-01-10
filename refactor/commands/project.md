@@ -13,7 +13,7 @@ description: Project-wide code refactoring to improve quality and maintainabilit
 
 ## Scope
 
-**Project-wide refactoring**: Analyze and refactor code across the entire codebase, focusing on:
+**Project-wide refactoring**: Analyze and refactor code across the entire codebase using **@code-simplifier** agent for guidance, focusing on:
 
 1. **Cross-file patterns**: Identify and consolidate duplicate code patterns across multiple files
 2. **Consistent standards**: Ensure similar functionality uses consistent patterns throughout the codebase
@@ -54,7 +54,7 @@ description: Project-wide code refactoring to improve quality and maintainabilit
    - Analyze the entire codebase to identify duplicate code patterns across multiple files
    - Find inconsistent patterns that should be standardized
    - Identify complexity hotspots and opportunities for improvement
-   - Use **@code-simplifier** agent for guidance on refactoring principles
+   - Invoke **@code-simplifier** agent with clear scope context: "Please use Project Scope to analyze and refactor the entire codebase"
 
 2. **Plan and Execute Refactorings**:
    - Group related changes by pattern or module
@@ -92,48 +92,3 @@ description: Project-wide code refactoring to improve quality and maintainabilit
 4. **Modern Standards**: Update legacy patterns to modern best practices project-wide
 5. **Architecture Alignment**: Ensure refactored code aligns with project architecture and conventions
 
-### Commit Guidelines
-
-- **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change across related files
-- Group related changes together (e.g., all error handling improvements in one commit, all import modernizations in another)
-- Title: entirely lowercase, <50 chars, imperative mood, conventional commits format (refactor:, chore:)
-  - Scope (optional): lowercase noun, 1-2 words. Must match existing scopes in git history.
-- Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
-
-### Example Commits
-
-```
-refactor: consolidate duplicate error handling
-
-- Extract common error handling logic into utility functions
-- Standardize error response format across API endpoints
-- Remove redundant try/catch blocks in favor of guard clauses
-- Update error types to be consistent throughout codebase
-
-Improves maintainability and reduces code duplication across
-the project.
-```
-
-```
-refactor: modernize import statements project-wide
-
-- Convert CommonJS require() to ES6 import/export
-- Add file extensions to all import statements
-- Sort imports consistently across all modules
-- Remove unused imports discovered during migration
-
-Aligns codebase with modern JavaScript standards and improves
-build performance.
-```
-
-```
-refactor: consolidate utility functions across modules
-
-- Merge similar helper functions into shared utils
-- Remove redundant implementations found in 15+ files
-- Create centralized utility modules by category
-- Update all references to use consolidated functions
-
-Reduces code duplication and improves maintainability across
-the entire project.
-```
