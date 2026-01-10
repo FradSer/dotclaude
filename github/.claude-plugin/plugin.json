@@ -1,0 +1,8 @@
+{
+  "name": "github",
+  "description": "GitHub project operations with quality gates.",
+  "author": {
+        "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  }
+}
