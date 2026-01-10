@@ -1,0 +1,8 @@
+{
+  "name": "gitflow",
+  "description": "GitFlow workflow automation for feature, hotfix, and release branches",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  }
+}
