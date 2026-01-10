@@ -1,0 +1,111 @@
+---
+allowed-tools: Task, Write, Bash(mkdir:*)
+description: Create a custom slash command following Claude Code specifications
+argument-hint: [Project|Personal] [description of what the command should do]
+---
+
+## Context
+
+- Project commands live in `.claude/commands/` and are shared with the team.
+- Personal commands live in `~/.claude/commands/` and are available across repositories.
+- Every generated command must follow the Claude Code slash command specification.
+
+## Requirements
+
+### Command Scopes
+
+- **Project commands** — Stored in `.claude/commands/` and committed to source control.
+- **Personal commands** — Stored in `~/.claude/commands/` for individual reuse.
+
+### Core Features
+
+- Organize commands with directory namespacing.
+- Support dynamic arguments through `$ARGUMENTS`, `$1`, `$2`, etc.
+- Run bash setup commands with the ``!`` prefix.
+- Reference files and folders via the `@` prefix.
+- Include extended thinking keywords when deeper reasoning is required.
+- Configure metadata through frontmatter.
+
+### Frontmatter Options
+
+- **`allowed-tools`** — Declare permitted tools (e.g. `Bash(git add:*), Write`).
+- **`argument-hint`** — Provide autocomplete hints (e.g. `[Project|Personal] [description]`).
+- **`description`** — Summarize the command intent.
+- **`model`** — Pick the Claude model (`claude-haiku-4-5-20251001`, `claude-sonnet-4-5-20250929`, `claude-opus-4-1-20250805`).
+
+### Argument Handling
+
+- `$ARGUMENTS` captures the full argument string, e.g. `/fix-issue 123 high-priority`.
+- `$1`, `$2`, `$3` capture individual positions, e.g. `/review-pr 456 high alice`.
+
+### Command Creation Process
+
+1. Determine whether the command is Project or Personal (default Project).
+2. Extract the requested behavior from the remaining arguments.
+3. Generate a descriptive kebab-case command name.
+4. Create the target directory if it does not already exist.
+5. Author the Markdown command with frontmatter, context, and instructions.
+6. Add optional enhancements (arguments, bash commands, file references).
+
+## Your Task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
+
+1. Analyze `$ARGUMENTS` to determine the command scope and intent.
+2. Produce the Markdown command content following the specification and creation process.
+3. Present the completed command ready for placement in the correct directory.
+
+### Reference Examples
+
+```bash
+/create-command Review pull request with security focus
+/create-command Project Generate API documentation from code
+/create-command Personal Optimize database performance analysis
+/create-command Project Create comprehensive unit tests
+```
+
+### Illustrative Templates
+
+**Bash Command with Git Operations**
+
+```markdown
+---
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+description: Create a git commit
+---
+
+## Context
+- Current git status: !`git status`
+- Current git diff (staged and unstaged changes): !`git diff HEAD`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
+
+## Your task
+Based on the above changes, create a single git commit.
+```
+
+**File References**
+
+```markdown
+---
+description: Review code implementation
+---
+
+# Reference a specific file
+Review the implementation in @src/utils/helpers.js
+
+# Reference multiple files
+Compare @src/old-version.js with @src/new-version.js
+```
+
+**Positional Arguments**
+
+```markdown
+---
+argument-hint: [pr-number] [priority] [assignee]
+description: Review pull request
+---
+
+Review PR #$1 with priority $2 and assign to $3.
+Focus on security, performance, and code style.
+```
