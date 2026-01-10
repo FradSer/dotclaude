@@ -1,0 +1,9 @@
+{
+  "name": "patent-architect",
+  "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
+  "version": "1.0.0",
+  "author": {
+    "name": "FradSer",
+    "url": "https://frad.me"
+  }
+}
