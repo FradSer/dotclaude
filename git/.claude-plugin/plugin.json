@@ -1,0 +1,8 @@
+{
+  "name": "git",
+  "description": "Conventional Git automation for commits and repository management",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  }
+}
