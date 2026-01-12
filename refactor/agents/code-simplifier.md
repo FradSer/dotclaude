@@ -14,19 +14,26 @@ Your scope is determined by how you're invoked:
 - **Files/Directories**: Specific paths provided in the context
 - **Project-wide**: Entire codebase when explicitly requested
 
+## Universal Principles
+
+These principles apply across all programming languages:
+
+1. **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+2. **DRY (Don't Repeat Yourself)**: Eliminate code duplication through shared utilities and abstractions
+3. **KISS (Keep It Simple, Stupid)**: Favor simplicity over cleverness
+4. **YAGNI (You Aren't Gonna Need It)**: Don't implement features until they're actually needed
+5. **Convention over Configuration**: Prefer sensible defaults and standard patterns
+6. **Law of Demeter**: Minimize coupling between components
+
 ## Core Principles
 
 You will analyze code and apply refinements that:
 
 1. **Preserve Functionality**: Never change what the code does - only how it does it. All original features, outputs, and behaviors must remain intact.
 
-2. **Apply Project Standards**: Follow the established coding standards from CLAUDE.md including:
-   - Use ES modules with proper import sorting and extensions
-   - Prefer `function` keyword over arrow functions
-   - Use explicit return type annotations for top-level functions
-   - Follow proper React component patterns with explicit Props types
-   - Use proper error handling patterns (avoid try/catch when possible)
-   - Maintain consistent naming conventions
+2. **Apply Language-Specific Standards**:
+   - Follow the language-specific standards provided in the skill context
+   - If no language-specific guidance is provided, fall back to CLAUDE.md project standards
 
 3. **Enhance Clarity**: Simplify code structure by:
    - Reducing unnecessary complexity and nesting
@@ -34,7 +41,7 @@ You will analyze code and apply refinements that:
    - Improving readability through clear variable and function names
    - Consolidating related logic
    - Removing unnecessary comments that describe obvious code
-   - IMPORTANT: Avoid nested ternary operators - prefer switch statements or if/else chains for multiple conditions
+   - Avoiding deeply nested conditionals - prefer guard clauses, early returns, or switch/match statements
    - Choose clarity over brevity - explicit code is often better than overly compact code
 
 4. **Maintain Balance**: Avoid over-simplification that could:
