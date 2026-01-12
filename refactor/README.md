@@ -1,10 +1,10 @@
-# Refactoring Plugin
+# Refactor Plugin
 
 Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
 ## Overview
 
-The Refactoring Plugin provides specialized tools for code simplification and refactoring. It includes an expert code simplifier agent and commands for targeted and project-wide refactoring. All refactoring operations preserve functionality while improving clarity, consistency, and maintainability.
+The Refactor Plugin provides specialized tools for code simplification and refactoring. It includes an expert code simplifier agent and commands for targeted and project-wide refactoring. All refactoring operations preserve functionality while improving clarity, consistency, and maintainability.
 
 ## Agent
 
@@ -34,7 +34,7 @@ Expert code simplification specialist focused on enhancing code clarity, consist
 **Model:** Opus
 
 **When triggered:**
-- Automatically by `/refactoring:refactor` and `/refactoring:refactor-project` skills
+- Automatically by `/refactor:refactor` and `/refactor:refactor-project` skills
 - Can be invoked manually: `@code-simplifier Simplify this code`
 
 **Refinement process:**
@@ -52,7 +52,7 @@ Expert code simplification specialist focused on enhancing code clarity, consist
 
 ## Skills
 
-### `/refactoring:refactor`
+### `/refactor:refactor`
 
 Refactors code for specific files/directories or recently modified code in the current session.
 
@@ -100,7 +100,7 @@ Or with specific files:
 2. **Recently modified code**: If no arguments, focuses on recent changes
 3. **Session changes**: Prioritizes files edited in current conversation
 
-### `/refactoring:refactor-project`
+### `/refactor:refactor-project`
 
 Project-wide code refactoring to improve quality across the entire codebase.
 
