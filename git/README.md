@@ -46,27 +46,15 @@ Creates atomic conventional commits with automatic staging and quality checks.
 **Example commit message:**
 
 ```
-
 feat(auth): add google oauth login flow
 
-
-
 - Introduce Google OAuth 2.0 for user sign-in
-
 - Add backend callback endpoint `/auth/google/callback`
-
 - Update login UI with Google button and loading state
 
-
-
 Add a new authentication option improving cross-platform
-
 sign-in.
-
-
-
 Closes #42. Linked to #38 and PR #45
-
 ```
 
 ### `/git:commit-and-push`
