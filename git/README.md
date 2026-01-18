@@ -12,6 +12,13 @@ The Git Plugin provides Git automation commands following conventional commits s
 
 Creates atomic conventional commits with automatic staging and quality checks.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `haiku` |
+| Allowed Tools | `Task`, `Bash(git:*)` |
+
 **What it does:**
 
 1. Runs `git status` to check for untracked files
@@ -57,9 +64,18 @@ sign-in.
 Closes #42. Linked to #38 and PR #45
 ```
 
+---
+
 ### `/git:commit-and-push`
 
 Creates atomic conventional commits and pushes to remote repository.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `haiku` |
+| Allowed Tools | `Task`, `Bash(git:*)` |
 
 **What it does:**
 
@@ -79,14 +95,24 @@ Creates atomic conventional commits and pushes to remote repository.
 - Handles new branches by setting upstream tracking
 - Verifies push success before completing
 
+---
+
 ### `/git:gitignore`
 
 Creates or updates `.gitignore` file following best practices.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `haiku` |
+| Allowed Tools | `Task`, `Bash(curl:*)`, `Bash(uname:*)`, `Bash(git:*)`, `Read`, `Write`, `Edit`, `Glob` |
+| Argument Hint | `[additional-technologies]` |
+
 **What it does:**
 
 1. Analyzes project type and existing .gitignore
-2. Generates comprehensive .gitignore rules
+2. Generates comprehensive .gitignore rules using Toptal API
 3. Adds common patterns (node_modules, .env, build/, dist/, etc.)
 4. Adds language/framework specific patterns
 5. Preserves existing custom rules
@@ -94,15 +120,12 @@ Creates or updates `.gitignore` file following best practices.
 **Usage:**
 
 ```bash
-
 /git:gitignore [additional-technologies]
-
 ```
 
 **Usage Examples:**
 
 - `/git:gitignore` — Auto-detect and create `.gitignore`.
-
 - `/git:gitignore react typescript` — Add React and TypeScript to detected technologies.
 
 **Features:**
@@ -347,8 +370,4 @@ Frad LEE (fradser@gmail.com)
 
 ## Version
 
-2.3.0
-
-## License
-
-MIT License
+1.0.0

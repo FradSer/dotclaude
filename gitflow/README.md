@@ -28,6 +28,14 @@ develop (integration)  │
 
 Starts a new feature branch from develop or continues existing feature development.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task`, `Bash` |
+| Argument Hint | `[feature description]` |
+
 **Usage:**
 ```bash
 /gitflow:start-feature user-authentication
@@ -40,9 +48,19 @@ Starts a new feature branch from develop or continues existing feature developme
 - Publishes to origin for collaboration
 - Atomic commits with conventional format
 
+---
+
 ### `/gitflow:finish-feature`
 
 Completes and merges feature development into develop branch.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task`, `Bash` |
+| Argument Hint | `[feature-name]` |
 
 **Usage:**
 ```bash
@@ -56,9 +74,19 @@ Completes and merges feature development into develop branch.
 - Deletes branch locally and remotely
 - Handles merge conflicts
 
+---
+
 ### `/gitflow:start-hotfix`
 
 Starts a new hotfix branch from main for urgent production fixes.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task`, `Bash` |
+| Argument Hint | `[hotfix description]` |
 
 **Usage:**
 ```bash
@@ -72,9 +100,19 @@ Starts a new hotfix branch from main for urgent production fixes.
 - Publishes hotfix branch
 - Critical production fixes only
 
+---
+
 ### `/gitflow:finish-hotfix`
 
 Completes hotfix by merging to both main and develop, with version tagging.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task`, `Bash` |
+| Argument Hint | `[version]` |
 
 **Usage:**
 ```bash
@@ -88,9 +126,18 @@ Completes hotfix by merging to both main and develop, with version tagging.
 - Creates GitHub release
 - Deletes hotfix branches completely
 
+---
+
 ### `/gitflow:start-release`
 
 Starts a new release branch from develop for preparing production releases.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task`, `Bash` |
 
 **Usage:**
 ```bash
@@ -107,9 +154,18 @@ Starts a new release branch from develop for preparing production releases.
 - Auto-generates changelog
 - Updates version files
 
+---
+
 ### `/gitflow:finish-release`
 
 Completes release by merging to main and develop with version tagging.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task`, `Bash` |
 
 **Usage:**
 ```bash

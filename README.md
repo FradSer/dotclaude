@@ -31,57 +31,77 @@ dotclaude/
 Conventional Git automation for commits and repository management.
 
 **Commands:**
-- `/commit` - Create atomic conventional git commits
-- `/commit-and-push` - Create commits and push to remote
-- `/gitignore` - Manage `.gitignore` files
+| Command | Description | Model |
+|---------|-------------|-------|
+| `/git:commit` | Create atomic conventional git commit | `haiku` |
+| `/git:commit-and-push` | Create commits and push to remote | `haiku` |
+| `/git:gitignore` | Manage `.gitignore` files | `haiku` |
 
 **Features:**
 - Conventional commit format support
 - Atomic commit creation
 - Automated gitignore management
 
+---
+
 #### `gitflow` - GitFlow Workflow
 GitFlow workflow automation for feature, hotfix, and release branches.
 
 **Commands:**
-- `/start-feature` - Start new feature branch
-- `/finish-feature` - Finish and merge feature branch
-- `/start-hotfix` - Start new hotfix branch
-- `/finish-hotfix` - Finish and merge hotfix branch
-- `/start-release` - Start new release branch
-- `/finish-release` - Finish and merge release branch
+| Command | Description | Model |
+|---------|-------------|-------|
+| `/gitflow:start-feature` | Start new feature branch | `haiku` |
+| `/gitflow:finish-feature` | Finish and merge feature branch | `haiku` |
+| `/gitflow:start-hotfix` | Start new hotfix branch | `haiku` |
+| `/gitflow:finish-hotfix` | Finish and merge hotfix branch | `haiku` |
+| `/gitflow:start-release` | Start new release branch | `haiku` |
+| `/gitflow:finish-release` | Finish and merge release branch | `haiku` |
 
 **Features:**
 - Automated branch creation and management
 - Proper GitFlow branching strategy
 - Automatic merging and tagging
+- Semantic versioning
+
+---
 
 #### `refactor` - Code Refactoring
-Agent and commands for code simplification and refactoring to improve code quality while preserving functionality.
+Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
 **Agents:**
-- `code-simplifier` - Code simplification specialist (Opus model)
+| Agent | Description | Model | Color |
+|-------|-------------|-------|-------|
+| `code-simplifier` | Code simplification specialist | `opus` | `blue` |
 
-**Commands:**
-- `/refactor` - Refactor specific files/directories or recently modified code
-- `/refactor-project` - Project-wide code refactoring
+**Skills:**
+| Skill | Description |
+|-------|-------------|
+| `/refactor:refactor` | Refactor specific files/directories or recently modified code |
+| `/refactor:refactor-project` | Project-wide code refactoring |
 
 **Features:**
 - Automatic code simplification
 - Preserves functionality while improving clarity
 - Follows project coding standards
-- Uses **@code-simplifier** agent for guidance
+- Language-specific references (TypeScript, Python, Go, Swift)
+
+---
 
 #### `swiftui` - SwiftUI Architecture
 SwiftUI Clean Architecture reviewer for iOS/macOS development.
 
 **Agents:**
-- `swiftui-clean-architecture-reviewer` - Specialized SwiftUI architecture reviewer
+| Agent | Description | Model | Color |
+|-------|-------------|-------|-------|
+| `swiftui-clean-architecture-reviewer` | Specialized SwiftUI architecture reviewer | `opus` | `red` |
 
 **Features:**
 - Clean Architecture pattern enforcement
-- SwiftUI best practices
+- SwiftUI best practices (2024-2025)
+- @Observable and @MainActor validation
 - Architecture review and suggestions
+
+---
 
 ### Productivity Plugins
 
@@ -89,27 +109,36 @@ SwiftUI Clean Architecture reviewer for iOS/macOS development.
 GitHub project operations with quality gates.
 
 **Commands:**
-- `/create-issues` - Create GitHub issues
-- `/create-pr` - Create pull requests with quality checks
-- `/resolve-issues` - Resolve and close GitHub issues
+| Command | Description |
+|---------|-------------|
+| `/github:create-issues` | Create GitHub issues with TDD principles |
+| `/github:create-pr` | Create pull requests with quality checks |
+| `/github:resolve-issues` | Resolve issues using isolated worktrees |
 
 **Features:**
 - Automated PR creation with quality gates
 - Issue management automation
-- Quality assurance workflows
+- TDD workflow with worktrees
+- Multi-agent collaboration
+
+---
 
 #### `review` - Code Review System
 Multi-agent review system for enforcing high code quality.
 
 **Agents:**
-- `code-reviewer` - Expert reviewer for correctness, standards, and maintainability
-- `security-reviewer` - Security-focused code review
-- `tech-lead-reviewer` - Architecture and design review
-- `ux-reviewer` - User experience and UI review
+| Agent | Description | Model | Color |
+|-------|-------------|-------|-------|
+| `code-reviewer` | Expert reviewer for correctness, standards, and maintainability | `sonnet` | `blue` |
+| `security-reviewer` | Security-focused code review | `sonnet` | `green` |
+| `tech-lead-reviewer` | Architecture and design review | `sonnet` | `purple` |
+| `ux-reviewer` | User experience and UI review | `sonnet` | `orange` |
 
 **Commands:**
-- `/quick` - Quick code review
-- `/hierarchical` - Hierarchical multi-agent review
+| Command | Description |
+|---------|-------------|
+| `/review:quick` | Quick code review with selective agents |
+| `/review:hierarchical` | Comprehensive multi-agent review |
 
 **Features:**
 - Multiple specialized reviewers
@@ -117,11 +146,15 @@ Multi-agent review system for enforcing high code quality.
 - Security vulnerability detection
 - Architecture and design analysis
 
+---
+
 #### `office` - Patent Architect
 Specialized Claude Skill for patent application generation and intellectual property workflows.
 
 **Skills:**
-- `patent-architect` - Chinese patent application form generation
+| Skill | Description |
+|-------|-------------|
+| `/office:patent-architect` | Chinese patent application form generation |
 
 **Features:**
 - Automatic prior art search (SerpAPI and Exa.ai)
@@ -129,12 +162,16 @@ Specialized Claude Skill for patent application generation and intellectual prop
 - Patent terminology compliance
 - Multiple embodiment generation
 
+---
+
 #### `utils` - Utility Commands
 Utility commands for day-to-day automation.
 
 **Commands:**
-- `/continue` - Continue previous task or conversation
-- `/create-command` - Create new command templates
+| Command | Description |
+|---------|-------------|
+| `/utils:continue` | Continue previous task or conversation |
+| `/utils:create-command` | Create new command templates |
 
 **Features:**
 - Task continuation
@@ -190,46 +227,49 @@ These plugins are configured through the `marketplace.json` file and are automat
 
 ```bash
 # Create a conventional commit
-/commit feat: add user authentication
+/git:commit
 
 # Start a new feature
-/start-feature user-profile-page
+/gitflow:start-feature user-profile-page
 
 # Finish and merge feature
-/finish-feature user-profile-page
+/gitflow:finish-feature
 ```
 
 ### Code Review
 
 ```bash
 # Quick review of current changes
-/review quick
+/review:quick
 
-# Hierarchical review with all agents
-/review hierarchical
+# Comprehensive multi-agent review
+/review:hierarchical
 ```
 
 ### Code Refactoring
 
 ```bash
 # Refactor recently modified code
-/refactor
+/refactor:refactor
 
 # Refactor specific files
-/refactor src/auth/login.ts
+/refactor:refactor src/auth/login.ts
 
 # Project-wide refactoring
-/refactor-project
+/refactor:refactor-project
 ```
 
 ### GitHub Operations
 
 ```bash
 # Create a pull request
-/create-pr
+/github:create-pr
 
 # Create issues
-/create-issues "Fix authentication bug" "Update documentation"
+/github:create-issues "Fix authentication bug" "Update documentation"
+
+# Resolve issues with TDD
+/github:resolve-issues
 ```
 
 ## Development
@@ -276,6 +316,7 @@ Commands are defined as Markdown files in the `commands/` directory:
 allowed-tools: Bash(git:*), Read, Edit, MultiEdit, Glob, Grep, Task
 description: Command description
 argument-hint: [optional-argument]
+model: haiku
 ---
 
 ## Context
@@ -297,9 +338,34 @@ Agents are defined as Markdown files in the `agents/` directory:
 name: agent-name
 description: Agent description
 model: opus
+color: blue
+tools: Read, Edit, MultiEdit, Glob, Grep, Bash
 ---
 
 You are an expert [role]...
+```
+
+### Skill Structure
+
+Skills are defined as `SKILL.md` files in skill directories:
+
+```markdown
+---
+name: skill-name
+description: Skill description
+version: 1.0.0
+context: fork
+agent: agent-name
+allowed-tools: Bash(git:*), Read, Edit, Task
+---
+
+# Skill Title
+
+## Workflow
+
+1. Step one
+2. Step two
+...
 ```
 
 ## References

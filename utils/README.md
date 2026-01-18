@@ -8,9 +8,15 @@ The Utils Plugin provides helpful utility commands for everyday development work
 
 ## Commands
 
-### `/continue`
+### `/utils:continue`
 
 Resumes the previous conversation or task without restating context.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Description | Resume the previous conversation or task without restating context |
 
 **What it does:**
 1. Continues the previous conversation from where it left off
@@ -20,7 +26,7 @@ Resumes the previous conversation or task without restating context.
 
 **Usage:**
 ```bash
-/continue
+/utils:continue
 ```
 
 **Example workflow:**
@@ -29,7 +35,7 @@ Resumes the previous conversation or task without restating context.
 # ... conversation develops ...
 # Need to continue later or after interruption
 
-/continue
+/utils:continue
 
 # Claude will:
 # - Continue from where we left off
@@ -50,9 +56,18 @@ Resumes the previous conversation or task without restating context.
 - When continuing a complex multi-step task
 - After clarifying a misunderstanding
 
-### `/create-command`
+---
+
+### `/utils:create-command`
 
 Creates new command templates for Claude Code plugins.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Allowed Tools | `Task`, `Write`, `Bash(mkdir:*)` |
+| Argument Hint | `[Project\|Personal] [description of what the command should do]` |
 
 **What it does:**
 1. Guides you through creating a new command
@@ -61,33 +76,41 @@ Creates new command templates for Claude Code plugins.
 4. Provides example usage and documentation
 5. Creates command file in appropriate location
 
+**Command Scopes:**
+- **Project commands** — Stored in `.claude/commands/` and committed to source control
+- **Personal commands** — Stored in `~/.claude/commands/` for individual reuse
+
+**Core Features:**
+- Organize commands with directory namespacing
+- Support dynamic arguments through `$ARGUMENTS`, `$1`, `$2`, etc.
+- Run bash setup commands with the `!` prefix
+- Reference files and folders via the `@` prefix
+- Include extended thinking keywords when deeper reasoning is required
+- Configure metadata through frontmatter
+
+**Frontmatter Options:**
+- **`allowed-tools`** — Declare permitted tools (e.g. `Bash(git add:*)`, `Write`)
+- **`argument-hint`** — Provide autocomplete hints (e.g. `[Project|Personal] [description]`)
+- **`description`** — Summarize the command intent
+- **`model`** — Pick the Claude model (`claude-haiku-4-5-20251001`, `claude-sonnet-4-5-20250929`, `claude-opus-4-1-20250805`)
+
+**Argument Handling:**
+- `$ARGUMENTS` captures the full argument string, e.g. `/fix-issue 123 high-priority`
+- `$1`, `$2`, `$3` capture individual positions, e.g. `/review-pr 456 high alice`
+
 **Usage:**
 ```bash
-/create-command
+/utils:create-command
 ```
 
-**Example workflow:**
+**Example workflows:**
 ```bash
 # Create a new command
-/create-command
-
-# Claude will ask:
-# - Command name
-# - Command description
-# - Allowed tools
-# - Arguments (if any)
-# - Task description
-# - Example usage
-
-# Then generates command template
+/utils:create-command Review pull request with security focus
+/utils:create-command Project Generate API documentation from code
+/utils:create-command Personal Optimize database performance analysis
+/utils:create-command Project Create comprehensive unit tests
 ```
-
-**Features:**
-- Interactive command creation
-- Proper template structure
-- Frontmatter generation
-- Example usage included
-- Documentation guidance
 
 **Command template includes:**
 - Frontmatter with metadata (allowed-tools, description, etc.)
@@ -97,20 +120,63 @@ Creates new command templates for Claude Code plugins.
 - Example usage
 - Workflow guidance
 
+**Example Templates:**
+
+**Bash Command with Git Operations:**
+```markdown
+---
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
+description: Create a git commit
+---
+
+## Context
+- Current git status: !`git status`
+- Current git diff (staged and unstaged changes): !`git diff HEAD`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
+
+## Your task
+Based on the above changes, create a single git commit.
+```
+
+**File References:**
+```markdown
+---
+description: Review code implementation
+---
+
+# Reference a specific file
+Review the implementation in @src/utils/helpers.js
+
+# Reference multiple files
+Compare @src/old-version.js with @src/new-version.js
+```
+
+**Positional Arguments:**
+```markdown
+---
+argument-hint: [pr-number] [priority] [assignee]
+description: Review pull request
+---
+
+Review PR #$1 with priority $2 and assign to $3.
+Focus on security, performance, and code style.
+```
+
 ## Installation
 
 This plugin is included in the Claude Code repository. The commands are automatically available when using Claude Code.
 
 ## Best Practices
 
-### Using `/continue`
+### Using `/utils:continue`
 - Use when resuming work after interruption
 - Use for complex tasks that span multiple sessions
 - Use when context is clear and you want to continue
 - Don't use if you need to restart with different context
 - Trust Claude to maintain context appropriately
 
-### Using `/create-command`
+### Using `/utils:create-command`
 - Use when adding new commands to plugins
 - Provide clear command name and description
 - Think about allowed tools before creating
@@ -125,7 +191,7 @@ This plugin is included in the Claude Code repository. The commands are automati
 # ... work on task ...
 # Need to pause or interrupted
 
-/continue
+/utils:continue
 
 # Task continues seamlessly
 ```
@@ -133,7 +199,7 @@ This plugin is included in the Claude Code repository. The commands are automati
 ### Command Creation Workflow:
 ```bash
 # Need new command for plugin
-/create-command
+/utils:create-command
 
 # Follow interactive prompts
 # Review generated template
@@ -144,12 +210,12 @@ This plugin is included in the Claude Code repository. The commands are automati
 ## Requirements
 
 - Claude Code installed
-- For `/create-command`: Understanding of Claude Code command structure
-- For `/continue`: Previous conversation context
+- For `/utils:create-command`: Understanding of Claude Code command structure
+- For `/utils:continue`: Previous conversation context
 
 ## Troubleshooting
 
-### `/continue` loses context
+### `/utils:continue` loses context
 
 **Issue**: Command doesn't remember previous context
 
@@ -159,7 +225,7 @@ This plugin is included in the Claude Code repository. The commands are automati
 - May need to provide context if session changed
 - Re-state key details if needed
 
-### `/create-command` generates wrong template
+### `/utils:create-command` generates wrong template
 
 **Issue**: Template doesn't match your needs
 
@@ -171,8 +237,8 @@ This plugin is included in the Claude Code repository. The commands are automati
 
 ## Tips
 
-- **Use /continue frequently**: Maintains smooth workflow during interruptions
-- **Be specific with /create-command**: Clear guidance produces better templates
+- **Use /utils:continue frequently**: Maintains smooth workflow during interruptions
+- **Be specific with /utils:create-command**: Clear guidance produces better templates
 - **Review templates**: Always review and customize generated templates
 - **Iterate on commands**: Refine commands based on usage
 - **Share commands**: Well-designed commands can be reused

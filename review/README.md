@@ -12,151 +12,187 @@ The Review Plugin provides a comprehensive code review system with multiple spec
 
 Expert reviewer focusing on correctness, standards, and maintainability.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `sonnet` |
+| Color | `blue` |
+
 **Focus areas:**
 - Correctness and logic analysis
 - Standards compliance (CLAUDE.md)
 - Maintainability and readability
 - Error handling and edge cases
 - Code structure and organization
+- Performance and efficiency
+- Testing and quality assurance
+- Security considerations
 
 **When triggered:**
 - Automatically in `/hierarchical` review
 - Can be invoked manually when reviewing code
 
-**Model:** Sonnet
-
-**Color:** Blue
+---
 
 ### `security-reviewer`
 
-Security-focused code review agent.
+Security specialist auditing authentication, data protection, and inputs.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `sonnet` |
+| Color | `green` |
 
 **Focus areas:**
-- Security vulnerabilities
-- Input validation and sanitization
+- Common vulnerabilities (SQL Injection, XSS, CSRF, SSRF, XXE)
 - Authentication and authorization
-- Data protection and privacy
-- Security best practices
+- Input validation and data handling
+- Cryptography and data protection
+- Error handling and information disclosure
+- Dependency and configuration security
 
 **When triggered:**
 - Automatically in `/hierarchical` review
 - Can be invoked manually for security audits
 
-**Model:** Sonnet
+**Output structure:**
+1. CRITICAL VULNERABILITIES (immediate security risks)
+2. HIGH PRIORITY ISSUES (significant security concerns)
+3. MEDIUM PRIORITY ISSUES (potential security weaknesses)
+4. BEST PRACTICE RECOMMENDATIONS (security improvements)
+5. COMPLIANCE NOTES (OWASP, PCI-DSS, GDPR)
 
-**Color:** Red
+---
 
 ### `tech-lead-reviewer`
 
-Architecture and design review agent.
+Architectural reviewer focused on system-wide impact and risk.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `sonnet` |
+| Color | `purple` |
 
 **Focus areas:**
-- Architecture decisions
-- Design patterns and abstractions
-- Scalability and performance
-- Code organization and structure
-- Technical debt
+- Architectural integrity and Clean Architecture adherence
+- Domain boundaries and module responsibilities
+- Performance implications and scalability
+- Operational readiness (logging, metrics, rollout safety)
+- Risk assessment and mitigation strategies
+
+**Working process:**
+1. Map the change onto existing architecture
+2. Identify coupling points that may become maintenance liabilities
+3. Flag design decisions that violate guardrails or introduce hidden costs
+4. Recommend strategic improvements with rationale and estimated effort
 
 **When triggered:**
 - Automatically in `/hierarchical` review
 - Can be invoked manually for architecture review
 
-**Model:** Sonnet
-
-**Color:** Purple
+---
 
 ### `ux-reviewer`
 
-User experience and UI review agent.
+Experience specialist focused on usability and accessibility.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `sonnet` |
+| Color | `orange` |
 
 **Focus areas:**
-- User interface design
-- User experience flows
-- Accessibility and usability
-- UI/UX best practices
-- Interaction patterns
+- Information hierarchy, layout clarity, and visual rhythm
+- Interaction patterns, state management, and feedback mechanisms
+- Accessibility compliance (WCAG AA): semantics, keyboard flows, contrast
+- Copywriting tone, localization readiness, and content density
+- Performance considerations affecting perceived responsiveness
+
+**Process:**
+1. Review component structure and states (loading, empty, error, success)
+2. Assess controls for discoverability and affordance
+3. Validate color and typography against design tokens
+4. Recommend usability tests or analytics to validate assumptions
 
 **When triggered:**
-- Automatically in `/hierarchical` review
+- Automatically in `/hierarchical` review (if UI changes detected)
 - Can be invoked manually for UX review
-
-**Model:** Sonnet
-
-**Color:** Green
 
 ## Commands
 
-### `/quick`
+### `/review:quick`
 
 Streamlined code review for rapid assessment and targeted feedback.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Allowed Tools | `Task` |
+| Argument Hint | `[files-or-directories]` |
+
 **What it does:**
-1. Analyzes current branch changes
-2. Identifies files changed since base branch
-3. Performs focused review on changed files
-4. Provides targeted feedback quickly
-5. Highlights critical issues and improvements
+1. Runs initial assessment with **@tech-lead-reviewer** to gauge risk
+2. Triggers relevant specialized reviews selectively:
+   - **@code-reviewer** — logic correctness, tests, error handling
+   - **@security-reviewer** — authentication, data protection, validation
+   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI)
+3. Summarizes results by priority (Critical → High → Medium → Low)
+4. Offers optional implementation support with **@code-simplifier**
+5. Ensures resulting commits follow conventional standards
 
 **Usage:**
 ```bash
-/quick
+/review:quick
 ```
 
 Or with specific files:
 ```bash
-/quick src/auth/login.ts
-```
-
-**Example workflow:**
-```bash
-# Make some changes
-# Then run quick review
-/quick
-
-# Claude will:
-# - Analyze changed files
-# - Provide focused feedback
-# - Highlight critical issues
-# - Suggest improvements
+/review:quick src/auth/login.ts
 ```
 
 **Features:**
 - Fast, focused review
 - Targets only changed files
+- Selective agent execution (minimizes turnaround time)
 - Quick feedback cycle
 - Identifies critical issues
 - Suitable for rapid iterations
 
-### `/hierarchical`
+---
 
-Comprehensive hierarchical review using all specialized agents.
+### `/review:hierarchical`
+
+Comprehensive multi-stage code review using all specialized subagents.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `claude-haiku-4-5-20251001` |
+| Allowed Tools | `Task` |
+| Argument Hint | `[files-or-directories]` |
 
 **What it does:**
-1. Analyzes current branch changes
-2. Launches all 4 specialized agents in parallel:
-   - `code-reviewer` - Correctness and standards
-   - `security-reviewer` - Security vulnerabilities
-   - `tech-lead-reviewer` - Architecture and design
-   - `ux-reviewer` - User experience (if UI changes)
-3. Consolidates findings from all agents
-4. Prioritizes issues by severity
-5. Provides comprehensive review report
+1. Performs leadership assessment with **@tech-lead-reviewer** to map risk areas
+2. Launches specialized reviews in parallel:
+   - **@code-reviewer** — logic correctness, tests, error handling
+   - **@security-reviewer** — authentication, data protection, validation
+   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI)
+3. Consolidates findings by priority and confidence
+4. Offers optional implementation support
+5. Engages **@code-simplifier** for final optimization
 
 **Usage:**
 ```bash
-/hierarchical
-```
-
-**Example workflow:**
-```bash
-# Before creating PR, run comprehensive review
-/hierarchical
-
-# Claude will:
-# - Launch all review agents
-# - Consolidate findings
-# - Prioritize issues
-# - Provide comprehensive report
+/review:hierarchical
 ```
 
 **Features:**
@@ -165,6 +201,7 @@ Comprehensive hierarchical review using all specialized agents.
 - Consolidated findings
 - Prioritized issue reporting
 - Thorough quality assessment
+- Final optimization pass
 
 **Review report includes:**
 - Critical issues (must fix)
@@ -179,14 +216,14 @@ This plugin is included in the Claude Code repository. The commands and agents a
 
 ## Best Practices
 
-### Using `/quick`
+### Using `/review:quick`
 - Use for rapid feedback during development
 - Run after small changes
 - Great for iterative development
 - Use before committing changes
 - Fast turnaround for quick fixes
 
-### Using `/hierarchical`
+### Using `/review:hierarchical`
 - Use before creating PRs
 - Run on feature branches before merging
 - Use for comprehensive quality assessment
@@ -198,23 +235,23 @@ This plugin is included in the Claude Code repository. The commands and agents a
 - Use `security-reviewer` for security-critical code
 - Use `tech-lead-reviewer` for architectural decisions
 - Use `ux-reviewer` for UI/UX changes
-- Use all agents via `/hierarchical` for comprehensive review
+- Use all agents via `/review:hierarchical` for comprehensive review
 
 ## Workflow Integration
 
 ### Quick Review Workflow:
 ```bash
 # Make changes
-/quick
+/review:quick
 # Fix issues
-/quick
+/review:quick
 # Commit when satisfied
 ```
 
 ### Comprehensive Review Workflow:
 ```bash
 # Complete feature
-/hierarchical
+/review:hierarchical
 # Fix all critical issues
 # Re-run review if needed
 # Create PR when clean
@@ -247,7 +284,7 @@ This plugin is included in the Claude Code repository. The commands and agents a
 **Solution**:
 - This is normal for large changes
 - Agents run in parallel when possible
-- Use `/quick` for faster feedback
+- Use `/review:quick` for faster feedback
 - Review specific files instead of all changes
 
 ### Too many issues reported
@@ -258,7 +295,7 @@ This plugin is included in the Claude Code repository. The commands and agents a
 - Focus on critical issues first
 - Address important issues incrementally
 - Some issues may be false positives - review carefully
-- Use `/quick` for focused feedback
+- Use `/review:quick` for focused feedback
 
 ### Agent not finding issues
 
@@ -268,7 +305,7 @@ This plugin is included in the Claude Code repository. The commands and agents a
 - Provide more context in code
 - Check if agent is appropriate for the code type
 - Try different agent for different perspective
-- Use multiple agents via `/hierarchical`
+- Use multiple agents via `/review:hierarchical`
 
 ## Tips
 

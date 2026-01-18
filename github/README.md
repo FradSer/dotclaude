@@ -12,6 +12,12 @@ The GitHub Plugin automates GitHub operations including pull request creation, i
 
 Creates comprehensive GitHub pull requests with quality validation and gates.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Allowed Tools | `Task`, `Bash(gh:*)`, `Bash(git:*)` |
+
 **What it does:**
 1. Validates repository status and GitHub authentication
 2. Analyzes all commits in the branch (full history analysis)
@@ -68,57 +74,6 @@ Creates comprehensive GitHub pull requests with quality validation and gates.
 - **Security scanning**: Checks for sensitive data exposure
 - **Failure resolution**: Uses specialized agents to fix issues
 
-**Quality checks include:**
-- Lint validation (project-specific: eslint, ruff, etc.)
-- Test execution (jest, pytest, etc.)
-- Build verification
-- Security scanning (.env, .key, credentials)
-- Commit message validation
-- Input sanitization checks
-- Dependency vulnerability scanning
-
-**PR description structure:**
-```markdown
-## Summary
-Brief description of changes and business impact
-
-## Changes
-- Key technical modifications with rationale
-- Implementation details
-
-## Test Plan
-- [ ] Unit tests added/updated
-- [ ] All tests pass
-- [ ] Manual testing completed
-- [ ] Edge cases covered
-
-## Security & Quality
-- [ ] No sensitive data exposed
-- [ ] Input validation implemented
-- [ ] Linting and type checking passed
-- [ ] Build successful
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-```
-
-**Commit message examples:**
-```
-feat(auth): add google oauth login flow
-
-- Introduce Google OAuth 2.0 for user sign-in
-- Add backend callback endpoint `/auth/google/callback`
-- Update login UI with Google button
-
-Add a new authentication option improving cross-platform
-sign-in.
-
-Closes #42. Linked to #38 and PR #45
-```
-
 **Failure resolution process:**
 When quality checks fail, the command:
 1. Uses TodoWrite to create specific task lists
@@ -128,9 +83,18 @@ When quality checks fail, the command:
 3. Fixes issues systematically with validation
 4. Re-runs checks until all pass
 
+---
+
 ### `/github:create-issues`
 
 Creates GitHub issues following TDD principles with proper labels, scope, and auto-closing keywords.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Allowed Tools | `Task`, `Bash(gh:*)`, `Bash(git:*)` |
+| Argument Hint | `[description]` |
 
 **What it does:**
 1. Analyzes repository context and existing issues
@@ -150,16 +114,16 @@ Creates GitHub issues following TDD principles with proper labels, scope, and au
 
 **Usage:**
 ```bash
-/github:create-issues ["Bug description" "Feature description"]
+/github:create-issues [\"Bug description\" \"Feature description\"]
 ```
 
 **Example workflows:**
 ```bash
 # Create single issue
-/github:create-issues "Fix memory leak in auth service"
+/github:create-issues \"Fix memory leak in auth service\"
 
 # Create multiple issues
-/github:create-issues "Add rate limiting" "Update payment API" "Fix mobile layout"
+/github:create-issues \"Add rate limiting\" \"Update payment API\" \"Fix mobile layout\"
 
 # With detailed description (interactive)
 /github:create-issues
@@ -174,22 +138,6 @@ Creates GitHub issues following TDD principles with proper labels, scope, and au
 - **Auto-closing**: Uses keywords (Closes, Fixes, Resolves)
 - **Structured format**: Consistent issue templates
 
-**Issue structure:**
-```markdown
-## Description
-Clear problem statement or feature description
-
-## Acceptance Criteria
-- [ ] Specific, measurable criteria
-- [ ] Testable conditions
-- [ ] Completion indicators
-
-## Context
-- Related issues/PRs
-- Implementation notes
-- Dependencies
-```
-
 **Branch-based decision logic:**
 - **On main/develop**: Create issue directly
 - **On PR branch**: Ask "Must this be fixed before merge?"
@@ -201,14 +149,17 @@ Clear problem statement or feature description
 2. **PR-scoped issues**: Single PR resolution (use auto-close keywords)
 3. **Review issues**: Non-blocking feedback from PR reviews
 
-**Auto-closing keywords:**
-- `Closes #123` - Closes issue #123
-- `Fixes #456` - Closes and marks as bug fix
-- `Resolves #789` - Closes and marks as resolved
+---
 
 ### `/github:resolve-issues`
 
 Resolves GitHub issues using isolated worktrees and TDD workflow with comprehensive quality validation.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Allowed Tools | `Bash(gh:*)`, `Bash(git:*)`, `Bash(cd:*)`, `Bash(mkdir:*)`, `Task` |
 
 **What it does:**
 1. **Issue Selection**: Evaluates open issues and prioritizes next actionable item
@@ -239,7 +190,7 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 # - Write failing tests
 # - Implement fix
 # - Run quality checks
-# - Create PR with "Fixes #123"
+# - Create PR with \"Fixes #123\"
 # - Clean up worktree after merge
 ```
 
@@ -250,16 +201,6 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 - **Quality gates**: All checks must pass
 - **Auto-cleanup**: Removes worktrees after completion
 - **Documentation**: Tracks all decisions and actions
-
-**Worktree naming convention:**
-- Branch: `fix/123-auth-redirect` or `feature/456-oauth-integration`
-- Worktree directory: `../fix-123-auth-redirect`
-- Isolated from main repository state
-
-**TDD cycle:**
-1. **Red**: Write failing test for the issue
-2. **Green**: Implement minimal code to pass test
-3. **Refactor**: Optimize with code-simplifier while tests pass
 
 **Agent collaboration:**
 - **@tech-lead-reviewer**: Architectural review and planning
@@ -308,7 +249,7 @@ This plugin is included in the Claude Code repository. The commands are automati
 ### Complete development workflow:
 ```bash
 # 1. Create issue for feature
-/github:create-issues "Add OAuth authentication"
+/github:create-issues \"Add OAuth authentication\"
 
 # 2. Resolve the issue
 /github:resolve-issues
@@ -330,26 +271,6 @@ This plugin is included in the Claude Code repository. The commands are automati
 # 5. After merge, resolve issues
 /github:resolve-issues
 # - Issues closed automatically
-```
-
-### Branch protection workflow:
-```bash
-# Protected branches (main/develop) require PR workflow
-/github:create-issues "Critical bug fix"  # Create issue
-
-# Create feature branch
-# Make atomic commits following conventional format
-/git:commit
-/git:commit
-
-# Create PR with quality validation
-/github:create-pr
-# - Quality gates enforced
-# - Review required
-# - CI must pass
-
-# After merge, resolve issue
-/github:resolve-issues
 ```
 
 ## Requirements

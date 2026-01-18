@@ -1,6 +1,6 @@
 # Refactor Plugin
 
-Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
+Agent and commands for code simplification and refactoring to improve code quality while preserving functionality.
 
 ## Overview
 
@@ -10,42 +10,45 @@ The Refactor Plugin provides specialized tools for code simplification and refac
 
 ### `code-simplifier`
 
-Expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Supports three scope modes:
+Expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Adapts scope based on command invocation context.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `opus` |
+| Color | `blue` |
+| Tools | `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Bash` |
+| Skills | `refactor`, `refactor-project` |
 
 **Scope Modes:**
-1. **Recent Changes Scope** - Focus on code that has been recently modified or touched in the current session (default)
-2. **File/Directory Scope** - Focus on specified files or directories provided by the user
-3. **Project Scope** - Analyze entire codebase for patterns and inconsistencies
+1. **Default** - Recently modified code in the current session
+2. **Files/Directories** - Specific paths provided in the context
+3. **Project-wide** - Entire codebase when explicitly requested
 
-**What it does:**
-- Analyzes code based on the specified scope
-- Applies refinements that preserve functionality
-- Follows project-specific coding standards (CLAUDE.md)
-- Enhances code clarity and structure
-- Maintains balance between simplicity and clarity
+**Universal Principles:**
+- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
+- **DRY (Don't Repeat Yourself)**: Eliminate code duplication through shared utilities and abstractions
+- **KISS (Keep It Simple, Stupid)**: Favor simplicity over cleverness
+- **YAGNI (You Aren't Gonna Need It)**: Don't implement features until they're actually needed
+- **Convention over Configuration**: Prefer sensible defaults and standard patterns
+- **Law of Demeter**: Minimize coupling between components
 
-**Focus areas:**
-- Preserve Functionality: Never changes what code does - only how it does it
-- Apply Project Standards: Follows CLAUDE.md standards
-- Enhance Clarity: Simplifies code structure
-- Maintain Balance: Avoids over-simplification
-- Focus Scope: Adapts based on invocation context
+**Core Principles:**
+1. **Preserve Functionality**: Never change what the code does - only how it does it
+2. **Apply Language-Specific Standards**: Follow language-specific standards or fall back to CLAUDE.md
+3. **Enhance Clarity**: Simplify code structure, reduce complexity, improve readability
+4. **Maintain Balance**: Avoid over-simplification that reduces clarity or maintainability
 
-**Model:** Opus
+**Refinement Process:**
+1. Identify the target code sections based on scope
+2. Analyze for opportunities to improve elegance and consistency
+3. Apply project-specific best practices and coding standards
+4. Ensure all functionality remains unchanged
+5. Verify the refined code is simpler and more maintainable
+6. Document only significant changes that affect understanding
 
-**When triggered:**
-- Automatically by `/refactor:refactor` and `/refactor:refactor-project` skills
-- Can be invoked manually: `@code-simplifier Simplify this code`
-
-**Refinement process:**
-1. Identifies target code sections based on scope
-2. Analyzes for opportunities to improve elegance and consistency
-3. Applies project-specific best practices and coding standards
-4. Ensures all functionality remains unchanged
-5. Verifies refined code is simpler and more maintainable
-6. Documents only significant changes
-
-**Example usage:**
+**Example Usage:**
 ```
 @code-simplifier Simplify the authentication logic in src/auth/login.ts
 ```
@@ -54,101 +57,107 @@ Expert code simplification specialist focused on enhancing code clarity, consist
 
 ### `/refactor:refactor`
 
-Refactors code for specific files/directories or recently modified code in the current session.
+Quick refactoring for recently modified or specified code.
 
-**What it does:**
-1. Identifies target code (specified files/directories or recent changes)
-2. Analyzes code using **@code-simplifier** agent for guidance
-3. Applies refactoring improvements:
-   - Simplifies control flow, reduces nesting
-   - Eliminates redundancy
-   - Improves readability
-   - Maintains functionality
-4. Validates changes with tests and lint checks
-5. Documents significant changes
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Version | `1.0.0` |
+| Context | `fork` |
+| Agent | `code-simplifier` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Task` |
+
+**Scope:**
+- Refactor recently modified code in the current session
+- Or specific files/directories if provided
+
+**Language References:**
+
+Based on file extension, appropriate reference is loaded:
+- `.ts`, `.tsx`, `.js`, `.jsx` → `references/typescript.md`
+- `.py` → `references/python.md`
+- `.go` → `references/go.md`
+- `.swift` → `references/swift.md`
+- Universal principles → `references/universal.md`
+
+**Workflow:**
+1. **Identify**: Determine target scope (specified files or session modifications)
+2. **Load References**: Load language-specific references for the files being refactored
+3. **Analyze**: Review code for complexity, redundancy, and improvement opportunities
+4. **Execute**: Apply refinements following the loaded references
+5. **Validate**: Ensure tests pass and code is cleaner
 
 **Usage:**
 ```bash
+# Refactor recently modified code
 /refactor
-```
 
-Or with specific files:
-```bash
+# Refactor specific files
 /refactor src/auth/login.ts
 /refactor src/utils/
 ```
 
-**Example workflow:**
-```bash
-# Make some changes to code
-# Then refactor recently modified code
-/refactor
-
-# Or refactor specific files
-/refactor src/auth/
-```
-
-**Features:**
-- Targets specific files/directories or recent changes
-- Uses **@code-simplifier** agent for guidance
-- Preserves functionality while improving code
-- Applies project standards automatically
-- Validates changes with tests
-
-**Scope options:**
-1. **Specified files/directories**: If arguments provided, refactors only those
-2. **Recently modified code**: If no arguments, focuses on recent changes
-3. **Session changes**: Prioritizes files edited in current conversation
+---
 
 ### `/refactor:refactor-project`
 
-Project-wide code refactoring to improve quality across the entire codebase.
+Project-wide code refactoring for quality and maintainability across the entire codebase.
 
-**What it does:**
-1. Analyzes entire codebase to identify patterns
-2. Finds duplicate code across multiple files
-3. Identifies inconsistent patterns
-4. Plans and executes refactorings:
-   - Consolidates duplicate code
-   - Standardizes patterns project-wide
-   - Strengthens type safety
-   - Updates legacy patterns to modern standards
-5. Groups related changes by pattern or module
-6. Validates all changes with project-wide tests
-7. Creates atomic commits for logical units
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Version | `1.0.0` |
+| Context | `fork` |
+| Agent | `code-simplifier` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Task` |
+
+**Scope:**
+
+Refactor the entire codebase when explicitly requested, focusing on:
+1. **Cross-file patterns**: Identify and consolidate duplicate code patterns across multiple files
+2. **Consistent standards**: Ensure similar functionality uses consistent patterns throughout the codebase
+3. **Architecture alignment**: Ensure code aligns with project architecture and conventions
+
+**Language References:**
+
+Based on file extensions found in the project, appropriate references are loaded:
+- `.ts`, `.tsx`, `.js`, `.jsx` → `references/typescript.md`
+- `.py` → `references/python.md`
+- `.go` → `references/go.md`
+- `.swift` → `references/swift.md`
+- Universal principles → `references/universal.md`
+
+**Workflow:**
+1. **Assessment**: Analyze codebase structure and identify complexity hotspots
+2. **Load References**: Load language-specific references for all languages used in the project
+3. **Pattern Analysis**: Find cross-file duplication and inconsistent patterns
+4. **Execute**: Apply refinements consistently following the loaded references
+5. **Validate**: Ensure tests pass and code quality improves
+
+**Focus Areas:**
+1. **Cross-File Duplication**: Consolidate duplicate code patterns into shared utilities
+2. **Consistent Patterns**: Standardize similar functionality throughout the codebase
+3. **Type Safety**: Strengthen type annotations and error handling
+4. **Modern Standards**: Update legacy patterns to modern best practices
 
 **Usage:**
 ```bash
 /refactor-project
 ```
 
-**Example workflow:**
-```bash
-# Refactor entire project
-/refactor-project
+## Language References
 
-# Claude will:
-# - Analyze entire codebase
-# - Identify cross-file patterns
-# - Consolidate duplicate code
-# - Standardize patterns
-# - Apply improvements consistently
-```
+The plugin includes language-specific refactoring guidelines:
 
-**Features:**
-- Project-wide analysis and refactoring
-- Cross-file duplication consolidation
-- Consistent pattern application
-- Type safety strengthening
-- Modern standards migration
-- Atomic commits for related changes
-
-**Focus areas:**
-1. **Cross-File Duplication**: Consolidate duplicate patterns across files
-2. **Consistent Patterns**: Ensure similar functionality uses consistent patterns
-3. **Type Safety**: Strengthen type annotations across all modules
-4. **Modern Standards**: Update legacy patterns to modern best practices
-5. **Architecture Alignment**: Ensure code aligns with project architecture
+| Language | File | Extensions |
+|----------|------|------------|
+| TypeScript/JavaScript | `references/typescript.md` | `.ts`, `.tsx`, `.js`, `.jsx` |
+| Python | `references/python.md` | `.py` |
+| Go | `references/go.md` | `.go` |
+| Swift | `references/swift.md` | `.swift` |
+| Universal | `references/universal.md` | All languages |
 
 ## Installation
 

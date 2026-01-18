@@ -12,6 +12,13 @@ The SwiftUI Plugin provides specialized architecture review for SwiftUI applicat
 
 Expert Clean Architecture reviewer specializing in SwiftUI applications following 2024-2025 best practices.
 
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| Model | `opus` |
+| Color | `red` |
+
 **What it does:**
 - Reviews SwiftUI code implementations for Clean Architecture compliance
 - Identifies architectural violations
@@ -22,9 +29,9 @@ Expert Clean Architecture reviewer specializing in SwiftUI applications followin
 **Focus areas:**
 - **4-Layer Clean Architecture Structure**:
   - Presentation Layer (@Observable ViewModels + SwiftUI Views)
-  - Use Cases (business logic coordination)
-  - Domain Models (pure business entities)
-  - Data/Infrastructure (repositories and data sources)
+  - Domain Layer (Use Cases + Business Logic)
+  - Data Layer (Repositories + Persistence)
+  - Infrastructure Layer (External Services)
 
 **Architecture principles enforced:**
 - Dependency Inversion: Inner layers don't depend on outer layers
@@ -33,27 +40,42 @@ Expert Clean Architecture reviewer specializing in SwiftUI applications followin
 - Dependency Injection: Dependencies injected via initializers
 - Testability: All business logic testable in isolation
 
-**Model:** Opus
-
-**Color:** Red
-
 **When triggered:**
 - Can be invoked manually: `@swiftui-clean-architecture-reviewer Review this SwiftUI code`
 - Used automatically in architecture reviews
 
 **Review process:**
-1. Analyzes SwiftUI code structure
-2. Checks layer separation and dependencies
-3. Verifies MVVM pattern implementation
-4. Reviews ViewModel @Observable usage
-5. Checks @MainActor isolation
-6. Validates dependency injection
-7. Identifies architectural violations
-8. Provides specific improvement recommendations
+1. **Structural Analysis**: Verify layer separation and file organization
+2. **Pattern Compliance**: Check @Observable, @MainActor, Repository, Use Case patterns
+3. **Code Quality Assessment**: SOLID principles, DRY, function complexity, type safety
+4. **SwiftData Integration Review**: No Sendable on PersistentModel, MainActor access
+5. **Platform Compatibility**: Cross-platform considerations, semantic colors, adaptive layouts
 
-**Example usage:**
+**Output format:**
 ```
-@swiftui-clean-architecture-reviewer Review the authentication module in AuthView.swift
+### ✅ Architecture Compliance
+- List correctly implemented patterns
+- Highlight good architectural decisions
+
+### ⚠️ Architecture Violations
+- **Critical**: Breaking Clean Architecture principles
+- **Major**: Incorrect patterns or dependencies
+- **Minor**: Style or optimization issues
+
+For each violation:
+[VIOLATION TYPE] Description
+Location: File/Class/Method
+Issue: Specific problem explanation
+Recommendation: Concrete fix with code example
+
+### 🔄 Refactoring Suggestions
+- Prioritized list of improvements
+
+### 📊 Architecture Score (0-100)
+- Layer separation (25%)
+- Pattern compliance (25%)
+- Code quality (25%)
+- SwiftData/Concurrency handling (25%)
 ```
 
 **Key checks:**
@@ -65,6 +87,18 @@ Expert Clean Architecture reviewer specializing in SwiftUI applications followin
 - Dependencies flow inward (Dependency Inversion)
 - No business logic in Views
 - Proper error handling and state management
+- No Sendable on PersistentModel (SwiftData)
+
+**Modern Swift Standards (2024-2025):**
+- Async/await for all asynchronous operations
+- Task for standard concurrency (never _Concurrency.Task)
+- Swift Testing with @Suite and @Test for new tests
+- DocC for comprehensive API documentation
+
+**Example usage:**
+```
+@swiftui-clean-architecture-reviewer Review the authentication module in AuthView.swift
+```
 
 ## Installation
 
@@ -100,23 +134,33 @@ This plugin is included in the Claude Code repository. The agent is automaticall
 - Views should be pure SwiftUI without business logic
 - Use dependency injection for ViewModels
 
-**Use Cases:**
+**Domain Layer (Use Cases):**
 - Contain business logic coordination
 - Are independent of framework details
 - Can be tested in isolation
 - Define clear input/output protocols
+- Use Sendable when appropriate
 
-**Domain Models:**
+**Data Layer (Repositories):**
 - Pure Swift types (structs/classes)
 - No framework dependencies
 - Represent business concepts
 - Are platform-agnostic
 
-**Data/Infrastructure:**
+**Infrastructure Layer:**
 - Implement repository pattern
 - Handle data persistence
 - Manage network requests
 - Provide data to Use Cases via protocols
+
+### Acceptable Partial Implementations
+
+**3-layer architecture** acceptable for:
+- Simple UI modules (Dashboard)
+- Pure state management (Navigation)
+- Configuration modules (Settings)
+
+Document why 4th layer is unnecessary.
 
 ## Workflow Integration
 
