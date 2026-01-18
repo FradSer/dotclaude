@@ -4,7 +4,6 @@ description: Project-wide code refactoring for quality and maintainability acros
 version: 1.0.0
 context: fork
 agent: code-simplifier
-allowed-tools: Bash(git:*), Read, Edit, MultiEdit, Glob, Grep, Task
 ---
 
 # Code Refactoring (Project)

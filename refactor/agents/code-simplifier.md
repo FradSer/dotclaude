@@ -2,7 +2,6 @@
 name: code-simplifier
 description: Simplifies and refines code for clarity, consistency, and maintainability while preserving all functionality. Adapts scope based on command invocation context.
 skills: refactor, refactor-project
-tools: Read, Edit, MultiEdit, Glob, Grep, Bash
 model: opus
 color: blue
 ---
