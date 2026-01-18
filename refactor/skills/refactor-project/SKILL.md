@@ -1,6 +1,7 @@
 ---
 name: refactor-project
 description: Project-wide code refactoring for quality and maintainability across the entire codebase. Use when requested to refactor the whole project or improve code quality project-wide.
+version: 1.0.0
 context: fork
 agent: code-simplifier
 allowed-tools: Bash(git:*), Read, Edit, MultiEdit, Glob, Grep, Task

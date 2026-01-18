@@ -1,6 +1,7 @@
 ---
 name: refactor
 description: Quick refactoring for recently modified or specified code. Use when refactoring code, cleaning up after implementation, or improving code quality.
+version: 1.0.0
 context: fork
 agent: code-simplifier
 allowed-tools: Bash(git:*), Read, Edit, MultiEdit, Glob, Grep, Task

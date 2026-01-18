@@ -1,5 +1,6 @@
 {
   "name": "refactor",
+  "version": "1.0.0",
   "description": "Agent and commands for code simplification and refactoring to improve code quality while preserving functionality",
   "author": {
     "name": "Frad LEE",
