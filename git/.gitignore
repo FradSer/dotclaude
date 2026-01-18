@@ -1,0 +1,13 @@
+# Plugin settings (user-specific)
+.claude/*.local.md
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.log

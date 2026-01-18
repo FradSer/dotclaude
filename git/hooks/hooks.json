@@ -1,0 +1,28 @@
+{
+  "description": "Git commit validation hooks to ensure conventional commit format and atomic commit principles",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Analyze this Bash command to determine if it's a git commit. If it is a git commit command, validate the commit message follows conventional commits format:\n\n1. Title must be entirely lowercase\n2. Title format: type(scope): description where type is one of: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert\n3. Title under 72 characters (ideally under 50)\n4. Uses imperative mood (e.g., 'add' not 'added' or 'adds')\n5. No period at end of title\n6. If body exists, it must be separated by blank line and start with uppercase\n7. Body lines should be ≤72 characters\n\nCommand: $TOOL_INPUT\n\nIf this is NOT a git commit command, return {\"hookSpecificOutput\": {\"permissionDecision\": \"allow\"}, \"systemMessage\": \"Not a git commit, allowing\"}.\n\nIf this IS a git commit but violates format, return {\"hookSpecificOutput\": {\"permissionDecision\": \"deny\"}, \"systemMessage\": \"Commit message does not follow conventional commits format. Issues: [list specific violations]\"}.\n\nIf this IS a git commit and follows format correctly, return {\"hookSpecificOutput\": {\"permissionDecision\": \"allow\"}, \"systemMessage\": \"Commit message follows conventional commits format\"}.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review the task completion for git-related operations. If the user asked to commit or push changes, verify:\n\n1. All relevant changes have been committed\n2. Commit messages follow conventional commits format\n3. Commits are atomic (one logical change per commit)\n4. If push was requested, verify it was completed successfully\n5. No uncommitted changes remain (unless intentional)\n\nIf the task is complete, return {\"decision\": \"approve\", \"systemMessage\": \"Git operations completed successfully\"}.\n\nIf there are issues or incomplete work, return {\"decision\": \"block\", \"reason\": \"[specific issue]\", \"systemMessage\": \"[guidance for completing the task]\"}."
+          }
+        ]
+      }
+    ]
+  }
+}
