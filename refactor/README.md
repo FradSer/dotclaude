@@ -19,7 +19,7 @@ Expert code simplification specialist focused on enhancing code clarity, consist
 | Model | `opus` |
 | Color | `blue` |
 | Tools | `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Bash` |
-| Skills | `refactor`, `refactor-project` |
+| Skills | `best-practices` |
 
 **Scope Modes:**
 1. **Default** - Recently modified code in the current session
@@ -55,22 +55,19 @@ Expert code simplification specialist focused on enhancing code clarity, consist
 
 ## Skills
 
-### `/refactor:refactor`
+### `best-practices`
 
-Quick refactoring for recently modified or specified code.
+Comprehensive refactoring workflow with language-specific best practices and Next.js performance patterns.
 
 **Metadata:**
 
 | Field | Value |
 |-------|-------|
 | Version | `1.0.0` |
-| Context | `fork` |
-| Agent | `code-simplifier` |
-| Allowed Tools | `Bash(git:*)`, `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Task` |
 
 **Scope:**
-- Refactor recently modified code in the current session
-- Or specific files/directories if provided
+- Targeted refactoring of recently modified or specified code
+- Project-wide refactoring when explicitly requested
 
 **Language References:**
 
@@ -81,12 +78,24 @@ Based on file extension, appropriate reference is loaded:
 - `.swift` → `references/swift.md`
 - Universal principles → `references/universal.md`
 
+**Next.js Performance Patterns:**
+- 50+ specific optimization patterns organized by category
+- `references/nextjs/README.md` - Navigation guide
+- `references/nextjs/_sections.md` - Priority categories
+- Pattern categories: async, bundle, server, client, rerender, rendering, js
+
 **Workflow:**
-1. **Identify**: Determine target scope (specified files or session modifications)
-2. **Load References**: Load language-specific references for the files being refactored
+1. **Identify**: Determine target scope
+2. **Load References**: Load language-specific and Next.js references as needed
 3. **Analyze**: Review code for complexity, redundancy, and improvement opportunities
-4. **Execute**: Apply refinements following the loaded references
+4. **Execute**: Apply behavior-preserving refinements
 5. **Validate**: Ensure tests pass and code is cleaner
+
+## Commands
+
+### `/refactor`
+
+Quick refactoring for recently modified or specified code with interactive rule selection.
 
 **Usage:**
 ```bash
@@ -98,66 +107,126 @@ Based on file extension, appropriate reference is loaded:
 /refactor src/utils/
 ```
 
+**What it does:**
+- Analyzes target code and shows preview of applicable rules
+- **Interactive selection**: Lets you choose which rule categories to apply (if configured for interactive mode)
+- Launches the `code-simplifier` agent with targeted scope
+- Agent automatically loads the `best-practices` skill
+- Applies language-specific refactoring based on file extensions
+- Respects configuration from `.claude/refactor.local.md`
+- Preserves functionality while improving clarity
+
+**Interactive Features:**
+- Preview of detected languages and applicable rules
+- Multi-select rule categories (Next.js patterns, language-specific, universal)
+- Confirmation before applying changes
+
 ---
 
-### `/refactor:refactor-project`
+### `/refactor-project`
 
 Project-wide code refactoring for quality and maintainability across the entire codebase.
-
-**Metadata:**
-
-| Field | Value |
-|-------|-------|
-| Version | `1.0.0` |
-| Context | `fork` |
-| Agent | `code-simplifier` |
-| Allowed Tools | `Bash(git:*)`, `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Task` |
-
-**Scope:**
-
-Refactor the entire codebase when explicitly requested, focusing on:
-1. **Cross-file patterns**: Identify and consolidate duplicate code patterns across multiple files
-2. **Consistent standards**: Ensure similar functionality uses consistent patterns throughout the codebase
-3. **Architecture alignment**: Ensure code aligns with project architecture and conventions
-
-**Language References:**
-
-Based on file extensions found in the project, appropriate references are loaded:
-- `.ts`, `.tsx`, `.js`, `.jsx` → `references/typescript.md`
-- `.py` → `references/python.md`
-- `.go` → `references/go.md`
-- `.swift` → `references/swift.md`
-- Universal principles → `references/universal.md`
-
-**Workflow:**
-1. **Assessment**: Analyze codebase structure and identify complexity hotspots
-2. **Load References**: Load language-specific references for all languages used in the project
-3. **Pattern Analysis**: Find cross-file duplication and inconsistent patterns
-4. **Execute**: Apply refinements consistently following the loaded references
-5. **Validate**: Ensure tests pass and code quality improves
-
-**Focus Areas:**
-1. **Cross-File Duplication**: Consolidate duplicate code patterns into shared utilities
-2. **Consistent Patterns**: Standardize similar functionality throughout the codebase
-3. **Type Safety**: Strengthen type annotations and error handling
-4. **Modern Standards**: Update legacy patterns to modern best practices
 
 **Usage:**
 ```bash
 /refactor-project
 ```
 
+**What it does:**
+- Analyzes entire project and shows preview of potential improvements
+- **Always interactive**: Shows preview and requires confirmation for project-wide changes
+- Launches the `code-simplifier` agent with project-wide scope
+- Emphasizes cross-file duplication reduction and consistent patterns
+- Loads all relevant language references
+- Applies consistent refactoring across the entire codebase
+- Respects configuration from `.claude/refactor.local.md`
+
+**Focus Areas:**
+1. Cross-file duplication: Consolidate duplicate code patterns into shared utilities
+2. Consistent patterns: Standardize similar functionality throughout
+3. Type safety: Strengthen type annotations and error handling
+4. Modern standards: Update legacy patterns to modern best practices
+
+**Interactive Features:**
+- Preview of estimated files affected and changes per category
+- Multi-select rule categories
+- Confirmation required before proceeding (safety for project-wide changes)
+
 ## Language References
 
-The plugin includes language-specific refactoring guidelines:
+The `best-practices` skill includes language-specific refactoring guidelines:
 
 | Language | File | Extensions |
 |----------|------|------------|
-| TypeScript/JavaScript | `references/typescript.md` | `.ts`, `.tsx`, `.js`, `.jsx` |
-| Python | `references/python.md` | `.py` |
-| Go | `references/go.md` | `.go` |
-| Swift | `references/swift.md` | `.swift` |
-| Universal | `references/universal.md` | All languages |
+| TypeScript/JavaScript | `skills/best-practices/references/typescript.md` | `.ts`, `.tsx`, `.js`, `.jsx` |
+| Python | `skills/best-practices/references/python.md` | `.py` |
+| Go | `skills/best-practices/references/go.md` | `.go` |
+| Swift | `skills/best-practices/references/swift.md` | `.swift` |
+| Universal | `skills/best-practices/references/universal.md` | All languages |
+
+**Next.js Performance Patterns:**
+- 50+ specific patterns in `skills/best-practices/references/nextjs/`
+- Categories: async, bundle, server, client, rerender, rendering, js optimization
+## Configuration
+
+### Configuration File
+
+The plugin supports per-project configuration via `.claude/refactor.local.md`:
+
+**Location:** `.claude/refactor.local.md` (in project root)
+
+**Format:**
+```yaml
+---
+enabled: true
+default_mode: all  # all | selected | weighted
+rule_categories:
+  nextjs:
+    async: true      # Eliminating waterfalls (CRITICAL)
+    bundle: true     # Bundle size optimization (CRITICAL)
+    server: true     # Server-side performance (HIGH)
+    client: true     # Client-side data fetching (MEDIUM-HIGH)
+    rerender: true   # Re-render optimization (MEDIUM)
+    rendering: true  # Rendering performance (MEDIUM)
+    js: true         # JavaScript micro-optimizations (LOW-MEDIUM)
+    advanced: true   # Advanced patterns (LOW)
+  languages:
+    typescript: true
+    python: true
+    go: true
+    swift: true
+    universal: true  # Universal principles (SOLID, DRY, KISS, etc.)
+weighting_strategy: impact-based  # impact-based | equal | custom
+custom_weights: {}
+disabled_patterns: []
+---
+```
+
+**Configuration Options:**
+- `enabled`: Enable/disable refactoring (default: true)
+- `default_mode`: How rules are applied by default
+  - `all`: Apply all applicable rules (no interaction needed)
+  - `selected`: Always show interactive selection
+  - `weighted`: Apply rules based on weights
+- `rule_categories`: Enable/disable specific rule categories
+- `weighting_strategy`: How to prioritize rules
+  - `impact-based`: CRITICAL > HIGH > MEDIUM > LOW
+  - `equal`: All enabled rules have equal priority
+  - `custom`: Use `custom_weights` for specific priorities
+- `custom_weights`: Override weights for specific rules
+- `disabled_patterns`: List of pattern IDs to never apply
+
+**Creating Configuration:**
+- **First-time use**: Configuration is automatically set up when you first run `/refactor` or `/refactor-project`
+  - You'll be guided through interactive setup questions
+  - Configuration file will be created at `.claude/refactor.local.md`
+- **Manual setup**: Copy the example file: `cp examples/refactor.local.md .claude/refactor.local.md` and customize
+- **Edit existing**: Edit `.claude/refactor.local.md` manually anytime
+
+**Example File:**
+- See `examples/refactor.local.md` for a complete example configuration
+
+**Note:** The configuration file is gitignored and won't be committed to your repository.
 
 ## Installation
 
@@ -168,37 +237,61 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 ### Using `/refactor`
 - Use for targeted refactoring during development
 - Run after making changes to improve code quality
+- Review the preview and select appropriate rule categories
 - Review refactored code to ensure functionality is preserved
 - Use on specific files when focusing on particular areas
-- Let **@code-simplifier** agent guide improvements
+- The `code-simplifier` agent will automatically load the `best-practices` skill
+- Configuration from `.claude/refactor.local.md` is automatically respected
 
 ### Using `/refactor-project`
 - Use when starting large refactoring efforts
+- **Always review the preview** - shows estimated files affected
 - Ensure all tests pass before running
 - Review changes carefully - affects entire codebase
 - Use for modernizing legacy code
 - Group related changes together
+- Configuration from `.claude/refactor.local.md` is automatically respected
+
+### Configuration Setup
+- **First-time use**: When you first run `/refactor` or `/refactor-project`, you'll be guided through configuration setup
+- Choose rule categories that match your project's needs
+- Use `selected` mode if you want to choose rules each time
+- Use `all` mode for automatic application of all rules (recommended for quick start)
+- Use `weighted` mode with custom weights for fine-grained control
+- Edit `.claude/refactor.local.md` manually anytime to fine-tune settings
 
 ### Using `@code-simplifier` Agent
 - Invoke directly for specific code simplification
-- Use as guidance in refactoring commands
+- Agent automatically loads the `best-practices` skill
+- Agent respects configuration from `.claude/refactor.local.md`
 - Trust agent's expertise in code quality
 - Review changes to ensure they match your preferences
 
 ## Workflow Integration
 
+### Initial Setup:
+```bash
+# First-time use: Configuration is set up automatically
+/refactor
+# Or for project-wide refactoring:
+/refactor-project
+# You'll be guided through configuration questions
+```
+
 ### Development Workflow:
 ```bash
 # Make changes
-# Refactor recent changes
+# Refactor recent changes (with interactive selection if configured)
 /refactor
-# Review and commit
+# Review preview and select rules
+# Review changes and commit
 ```
 
 ### Targeted Refactoring:
 ```bash
 # Refactor specific module
 /refactor src/auth/
+# Review preview and select applicable rules
 # Review changes
 # Commit improvements
 ```
@@ -207,6 +300,9 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 ```bash
 # Plan project-wide refactoring
 /refactor-project
+# Review preview (always shown for safety)
+# Select rule categories to apply
+# Confirm project-wide changes
 # Review all changes
 # Commit in logical groups
 # Run full test suite
@@ -256,9 +352,16 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 
 - **Refactor frequently**: Keep code clean during development
 - **Use targeted refactoring**: Focus on specific areas when needed
-- **Trust the agent**: **@code-simplifier** has deep expertise
+- **Trust the agent**: `code-simplifier` has deep expertise and automatically loads best practices
 - **Review changes**: Always verify functionality is preserved
 - **Modernize gradually**: Use project-wide refactoring strategically
+
+## Acknowledgments
+
+**React/Next.js Best Practices:**
+- React and Next.js performance optimization guidelines are sourced from [Vercel Engineering's agent-skills repository](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices)
+- Contains 40+ rules across 8 categories, prioritized by impact
+- Originally created by [@shuding](https://x.com/shuding) at [Vercel](https://vercel.com)
 
 ## Author
 
