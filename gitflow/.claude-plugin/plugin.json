@@ -1,20 +1,8 @@
 {
   "name": "gitflow",
-  "version": "1.0.0",
-  "description": "GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning and conventional commits",
+  "description": "GitFlow workflow automation for feature, hotfix, and release branches",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  },
-  "license": "MIT",
-  "keywords": [
-    "gitflow",
-    "git",
-    "workflow",
-    "branching",
-    "version",
-    "release",
-    "conventional-commits"
-  ],
-  "repository": "https://github.com/FradSer/dotclaude"
+  }
 }

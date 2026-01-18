@@ -1,24 +1,62 @@
 ---
-allowed-tools: Bash(git:*)
+allowed-tools: Task, Bash(git:*)
 description: Create atomic conventional git commit and push to remote
+model: haiku
 ---
 
-## Context
+## Requirements
 
-- Git status: !`git status`
-- Staged changes: !`git diff --cached --stat`
-- Unstaged changes: !`git diff --stat`
-- Current branch: !`git branch --show-current`
-- Recent commits: !`git log --oneline -5`
+- **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
+- Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
+  - Scope (optional): lowercase noun, 1-2 words. Must match existing scopes in git history.
+- Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
+- Footer (optional): Must start with uppercase letter, standard capitalization. Reference issues/PRs (Closes #123, Fixes #456, Linked to PR #789). Use BREAKING CHANGE: prefix for breaking changes.
 
-## Your task
+### Examples
 
-Based on the above changes, create atomic commits and push to remote.
+```
+feat(auth): add google oauth login flow
 
-1. Analyze pending changes to identify coherent logical units of work
-2. Stage relevant files for each logical unit
-3. Create a commit with a conventional message (lowercase title < 50 chars, body describes what/why)
-4. Repeat until all changes are committed
-5. Push to remote, configure upstream if needed (`git push -u origin <branch>`)
+- Introduce Google OAuth 2.0 for user sign-in
+- Add backend callback endpoint `/auth/google/callback`
+- Update login UI with Google button and loading state
 
-Follow project commit conventions defined in `CLAUDE.md`. Never force push without explicit confirmation.
+Add a new authentication option improving cross-platform
+sign-in.
+
+Closes #42. Linked to #38 and PR #45
+```
+
+```
+fix(api): handle null payload in session refresh
+
+- Validate payload before accessing `user.id`
+- Return proper 400 response instead of 500
+- Add regression test for null input
+
+Prevents session refresh crash when token expires.
+
+Fixes #105
+```
+
+```
+feat(auth): migrate to oauth 2.0
+
+- Replace basic auth with OAuth 2.0 flow
+- Update authentication middleware
+- Add token refresh endpoint
+
+BREAKING CHANGE: Authentication API now requires OAuth 2.0 tokens. Basic auth is no longer supported.
+
+Closes #120. Linked to #115 and PR #122
+```
+
+- Pushes must target the current branch on the remote; create a tracking branch when necessary using `git push -u`.
+
+## Your Task
+
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
+
+1. Review the diff overview (e.g. `git status`, `git diff --stat`) to determine discrete logical units of work.
+2. For each unit, stage the relevant files and create a conventional commit.
+3. After committing all units, push the branch to the remote, configuring the upstream if it does not exist.

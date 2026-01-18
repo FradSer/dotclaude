@@ -1,24 +1,33 @@
 ---
-allowed-tools: Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
+allowed-tools: Task, Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
 description: Create or update .gitignore file
+model: haiku
 argument-hint: [additional-technologies]
 ---
 
 ## Context
 
+- Project guidelines: @CLAUDE.md
 - Operating system: !`uname -s`
-- Existing .gitignore: !`cat .gitignore 2>/dev/null || echo "(none)"`
-- Project files: !`ls -la`
+- Existing .gitignore status: !`test -f .gitignore && echo ".gitignore found" || echo ".gitignore not found"`
+- Project files: Analyze repository structure to detect technologies
+- Available templates: !`curl -sL https://www.toptal.com/developers/gitignore/api/list`
 
-## Your task
+## Requirements
 
-Create or update `.gitignore` using Toptal gitignore templates.
+- Combine detected platforms and `$ARGUMENTS` into the generator request (e.g. `macos,node,docker`).
+- Preserve existing custom sections when updating `.gitignore`.
+- Present the resulting diff for confirmation.
 
-1. Detect OS and technologies from project structure plus `$ARGUMENTS`
-2. Fetch template from `https://www.toptal.com/developers/gitignore/api/<platforms>`
-3. Preserve existing custom sections when updating
-4. Show diff for confirmation before applying
+## Your Task
 
-Examples:
-- `/gitignore` — Auto-detect and create
-- `/gitignore react typescript` — Add specific technologies
+**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
+
+1. Detect operating systems and technologies from context plus `$ARGUMENTS`.
+2. Generate or update `.gitignore` using the Toptal API while retaining custom rules.
+3. Show the repository changes to confirm the update.
+
+### Usage Examples
+
+- `/gitignore` — Auto-detect and create `.gitignore`.
+- `/gitignore react typescript` — Add React and TypeScript to detected technologies.

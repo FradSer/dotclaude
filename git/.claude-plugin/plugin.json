@@ -1,13 +1,8 @@
 {
   "name": "git",
-  "version": "1.0.0",
   "description": "Conventional Git automation for commits and repository management",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  },
-  "keywords": ["git", "conventional-commits", "atomic-commits", "version-control", "workflow", "automation"],
-  "homepage": "https://github.com/FradSer/dotclaude/tree/main/git",
-  "repository": "https://github.com/FradSer/dotclaude",
-  "license": "MIT"
+  }
 }
