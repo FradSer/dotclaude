@@ -1,9 +1,0 @@
-version: 1
-plugin:
-  id: swiftui
-  label: "SwiftUI Architecture"
-  category: development
-  summary: "SwiftUI Clean Architecture reviewer."
-  tags:
-    - swiftui
-    - architecture

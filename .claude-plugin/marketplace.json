@@ -1,40 +1,92 @@
 {
-  "name": "fradser-dotagent",
-  "description": "FradSer's Claude Code plugin marketplace featuring specialized agents and workflow automation",
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "frad-dotclaude",
+  "description": "Frad's Claude Code plugin marketplace featuring specialized agents and workflow automation",
   "owner": {
-    "name": "FradSer",
-    "url": "https://frad.me"
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
   },
   "plugins": [
     {
       "name": "git",
-      "source": "./dist/claude/plugins/git",
-      "description": "Conventional Git and GitFlow automation.",
+      "description": "Conventional Git automation for commits and repository management",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./git",
+      "category": "development"
+    },
+    {
+      "name": "gitflow",
+      "description": "GitFlow workflow automation for feature, hotfix, and release branches",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./gitflow",
       "category": "development"
     },
     {
       "name": "github",
-      "source": "./dist/claude/plugins/github",
       "description": "GitHub project operations with quality gates.",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./github",
       "category": "productivity"
     },
     {
       "name": "review",
-      "source": "./dist/claude/plugins/review",
       "description": "Multi-agent review system for enforcing high quality.",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./review",
       "category": "productivity"
     },
     {
       "name": "swiftui",
-      "source": "./dist/claude/plugins/swiftui",
       "description": "SwiftUI Clean Architecture reviewer.",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./swiftui",
       "category": "development"
     },
     {
       "name": "utils",
-      "source": "./dist/claude/plugins/utils",
       "description": "Utility commands for day-to-day automation.",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./utils",
       "category": "productivity"
+    },
+    {
+      "name": "office",
+      "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./office",
+      "category": "productivity",
+      "strict": false
+    },
+    {
+      "name": "refactor",
+      "description": "Agent and commands for code simplification and refactoring to improve code quality while preserving functionality",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./refactor",
+      "category": "development"
     }
   ]
 }
