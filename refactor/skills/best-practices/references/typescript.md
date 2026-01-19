@@ -172,7 +172,7 @@ function process(value: unknown) {
 ### Null Safety
 - Use optional chaining (`?.`) for safe property access
 - Use nullish coalescing (`??`) for default values
-- Avoid `!` (non-null assertion) unless absolutely certain
+- Avoid "!" (non-null assertion) unless absolutely certain
 
 ### Example
 ```typescript

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-19
+
+### Added
+- Git workflow skills and GitFlow automation commands
+- Refactor commands for project-wide code optimization
+- Safety checks to git commit command
+
+### Changed
+- Reorganized GitFlow workflow references and core commands
+- Enhanced TypeScript best-practices reference in refactor plugin
+- Improved documentation for git and utils plugins
+
+### Fixed
+- Fixed explicit skill tool calls in patent-architect command
+
 ## [1.0.0] - 2026-01-18
 
 ### Added
@@ -29,4 +44,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Aligned plugin structure with claude-plugins-official format
 - Fixed build scripts to use TOML literal strings for prompts
 
+[1.1.0]: https://github.com/FradSer/dotclaude/releases/tag/v1.1.0
 [1.0.0]: https://github.com/FradSer/dotclaude/releases/tag/v1.0.0

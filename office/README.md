@@ -2,107 +2,10 @@
 
 Specialized Claude Skill for patent application generation and intellectual property workflows.
 
-## Overview
+## Quick Start
 
-The Office Plugin provides specialized tools for patent attorneys and IP professionals to generate patent applications, manage IP workflows, and handle patent-related documentation.
+### 1. Setup API Keys
 
-## Skills
-
-### `/office:patent-architect`
-
-Generates structured Chinese patent application forms (专利申请表) from technical ideas.
-
-**Metadata:**
-
-| Field | Value |
-|-------|-------|
-| Allowed Tools | `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch`, `Write`, `Edit`, `Bash` |
-
-**Goal**: Transform technical ideas into complete Chinese patent application forms (专利申请表).
-
-**Workflow:**
-```
-用户输入技术想法 → 专利检索 (SerpAPI/Exa.ai) → 对比分析 → 生成申请表
-```
-
-**What it does:**
-1. **Understand the Invention**: Extract 技术领域, 技术问题, 技术方案, 技术效果
-2. **Prior Art Search (Mandatory)**: Search existing patents using SerpAPI and Exa.ai
-3. **Generate Application Form**: Output structured patent application with all required sections
-
-**Usage:**
-```bash
-/office:patent-architect \"Mobile Payment Authentication System\"
-```
-
-**Features:**
-- **Dual Search Strategy**: Uses both SerpAPI (structured search) and Exa.ai (semantic search)
-- **Automatic prior art search**: Searches patent databases before drafting
-- **Chinese patent application form generation**: Complete 专利申请表 structure
-- **Patent terminology compliance**: Uses proper patent language
-- **Multiple embodiment generation**: Provides at least 3 implementation examples
-
-**Prior Art Search Methods:**
-
-| Method | Best For |
-|--------|----------|
-| SerpAPI Google Patents | Patent number lookup, assignee/inventor filtering, exact keyword matching |
-| Exa.ai Semantic Search | Concept-level matching, finding similar inventions, natural language queries |
-
-**Output Structure:**
-```markdown
-# 背景技术
-[现有技术状况、存在的问题、技术挑战]
-
-# 检索分析
-检索过程及结论...
-
-# 发明内容
-1. 本发明要解决的核心技术问题
-2. 技术方案概述
-3. 有益效果
-
-# 具体实施方式
-## 实施例一：[场景]
-## 实施例二：[场景]
-## 实施例三：[场景]
-
-# 其他
-## 1. 关键创新点
-## 2. 本技术方案潜在的替代方案
-## 3. 本技术方案的缺陷
-```
-
-**Language Rules:**
-
-| Avoid | Use |
-|-------|-----|
-| 产品名称 (iPhone) | 移动终端设备 |
-| UI 术语 (按钮、页面) | 用户交互元素、显示界面 |
-| 品牌名称 | 通用技术术语 |
-| 口语化表达 | 专利规范用语 |
-
-**Common Patent Expressions:**
-- "一种..."
-- "包括/包含"
-- "用于..."
-- "其特征在于"
-- "所述..."
-- "根据...确定..."
-- "响应于..."
-- "配置为..."
-
-**Reference Files:**
-- `reference.md` - SerpAPI details and format specifications
-- `examples.md` - Complete application form examples
-
-## Requirements
-
-- **API Keys Required**:
-  - `SERPAPI_KEY` - For Google Patents search (get from serpapi.com)
-  - `EXA_API_KEY` - For semantic patent search (get from dashboard.exa.ai)
-
-**Setup:**
 ```bash
 export SERPAPI_KEY="your_serpapi_key"
 export EXA_API_KEY="your_exa_api_key"
@@ -110,50 +13,120 @@ export EXA_API_KEY="your_exa_api_key"
 source ~/.zshrc
 ```
 
-## Best Practices
+Get your API keys:
+- **SERPAPI_KEY**: Sign up at [serpapi.com](https://serpapi.com)
+- **EXA_API_KEY**: Get from [dashboard.exa.ai](https://dashboard.exa.ai)
 
-- Provide detailed technical descriptions for better patent drafts
-- Include specific implementation details and embodiments
-- Use technical terminology appropriate for the patent field
-- Review generated content for accuracy and completeness
-- Always verify prior art search results
-- Customize embodiments based on actual use cases
+### 2. Use the Patent Architect Command
+
+```bash
+/patent-architect "Mobile Payment Authentication System"
+```
+
+The command will:
+1. Understand your technical invention
+2. Search for prior art automatically
+3. Generate a complete Chinese patent application form
+
+## Commands
+
+### `/patent-architect`
+
+Generate Chinese patent application forms (专利申请表) from technical ideas.
+
+**Usage:**
+```bash
+/patent-architect "INVENTION_DESCRIPTION"
+```
+
+**Workflow:**
+```
+用户输入技术想法 → 专利检索 (SerpAPI/Exa.ai) → 对比分析 → 生成申请表
+```
+
+**Features:**
+- Dual search strategy (SerpAPI + Exa.ai)
+- Automatic prior art search
+- Chinese patent application form generation
+- Patent terminology compliance
+- Multiple embodiment generation (3+)
+
+## Scripts
+
+### `scripts/search-patents.sh`
+
+Helper script for patent search with argument parsing.
+
+**Usage:**
+```bash
+# SerpAPI search (default)
+./scripts/search-patents.sh mobile payment authentication
+
+# Exa.ai semantic search
+./scripts/search-patents.sh "biometric verification" --engine exa --num 5
+
+# Show help
+./scripts/search-patents.sh --help
+```
+
+**Options:**
+- `--engine <serpapi|exa>` - Search engine to use (default: serpapi)
+- `--num <n>` - Number of results (default: 10)
+- `-h, --help` - Show help message
+
+## Requirements
+
+### API Keys
+
+| Key | Description | Get from |
+|-----|-------------|----------|
+| SERPAPI_KEY | Google Patents search | [serpapi.com](https://serpapi.com) |
+| EXA_API_KEY | Semantic patent search | [dashboard.exa.ai](https://dashboard.exa.ai) |
+
+## Architecture
+
+```
+office/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin metadata
+├── commands/
+│   └── patent-architect.md  # Main command
+├── hooks/
+│   ├── hooks.json           # Hook configuration
+│   └── scripts/
+│       └── check-keys.sh    # API key validation
+├── lib/
+│   └── utils.sh             # Shared utilities
+├── scripts/
+│   └── search-patents.sh    # Patent search helper
+└── skills/
+    └── patent-architect/
+        ├── SKILL.md         # Skill definition
+        ├── template.md      # Output template
+        ├── reference.md     # API reference
+        └── examples.md      # Usage examples
+```
 
 ## Troubleshooting
 
-### API keys not set
+### API Keys Not Set
 
-**Issue**: Patent search fails with authentication error
-
-**Solution**:
-- Verify environment variables are set: `echo $SERPAPI_KEY`
-- Add exports to shell configuration file
-- Run `source ~/.zshrc` after adding exports
-- Get API keys from respective services
-
-### Search returns no results
-
-**Issue**: Prior art search finds no relevant patents
+**Symptoms**: Error message "Missing API Keys for Office Plugin"
 
 **Solution**:
+```bash
+export SERPAPI_KEY="your_key_here"
+export EXA_API_KEY="your_key_here"
+source ~/.zshrc
+```
+
+### Search Returns No Results
+
+**Solutions**:
 - Try different keyword combinations
 - Use both technical terms and natural language
-- Broaden search scope initially
-- Check if domain-specific filters are too restrictive
-
-### Output format issues
-
-**Issue**: Generated form doesn't match expected structure
-
-**Solution**:
-- Review reference.md and examples.md for correct format
-- Ensure input describes a technical invention
-- Provide more specific technical details
+- Switch between `--engine serpapi` and `--engine exa`
 
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-1.0.0
