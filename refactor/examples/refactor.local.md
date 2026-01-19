@@ -53,7 +53,7 @@ This configuration file controls which refactoring rules are applied and how the
 
 1. Copy this file to `.claude/refactor.local.md` in your project root
 2. Customize the settings according to your preferences
-3. Run `/refactor-config` for interactive setup, or edit manually
+3. Edit the file manually to adjust rule categories and preferences
 
 ## Configuration Options
 
@@ -68,4 +68,4 @@ This configuration file controls which refactoring rules are applied and how the
 
 - This file is gitignored and won't be committed
 - Changes take effect immediately (no restart needed)
-- Use `/refactor-config` command for interactive setup
+- The first time you run `/refactor` or `/refactor-project`, you'll be guided through interactive configuration setup

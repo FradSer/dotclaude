@@ -80,7 +80,7 @@ Based on file extension, appropriate reference is loaded:
 
 **Next.js Performance Patterns:**
 - 50+ specific optimization patterns organized by category
-- `references/nextjs/README.md` - Navigation guide
+- `references/nextjs/INDEX.md` - Complete pattern index with all patterns organized by impact level
 - `references/nextjs/_sections.md` - Priority categories
 - Pattern categories: async, bundle, server, client, rerender, rendering, js
 
@@ -167,6 +167,138 @@ The `best-practices` skill includes language-specific refactoring guidelines:
 **Next.js Performance Patterns:**
 - 50+ specific patterns in `skills/best-practices/references/nextjs/`
 - Categories: async, bundle, server, client, rerender, rendering, js optimization
+
+## Example Refactoring
+
+### TypeScript: Reducing Complexity
+
+**Before:**
+```typescript
+function processUser(user: any) {
+  if (user) {
+    if (user.age) {
+      if (user.age >= 18) {
+        if (user.verified) {
+          return { status: 'active', user: user };
+        } else {
+          return { status: 'unverified', user: user };
+        }
+      } else {
+        return { status: 'minor', user: user };
+      }
+    }
+  }
+  return { status: 'invalid', user: null };
+}
+```
+
+**After:**
+```typescript
+interface User {
+  age: number;
+  verified: boolean;
+}
+
+function processUser(user: User | null): { status: string; user: User | null } {
+  // Early returns for guard clauses
+  if (!user?.age) {
+    return { status: 'invalid', user: null };
+  }
+
+  if (user.age < 18) {
+    return { status: 'minor', user };
+  }
+
+  const status = user.verified ? 'active' : 'unverified';
+  return { status, user };
+}
+```
+
+**Improvements:**
+- Eliminated nested conditionals with guard clauses
+- Added proper TypeScript types
+- Reduced cognitive complexity from high to low
+- Made logic flow more obvious and testable
+
+### Next.js: Eliminating Waterfalls (CRITICAL)
+
+**Before:**
+```typescript
+export default async function UserProfile({ params }: { params: { id: string } }) {
+  const user = await fetchUser(params.id);
+  const posts = await fetchUserPosts(user.id);  // ⚠️ Waterfall: waits for user
+  const comments = await fetchUserComments(user.id);  // ⚠️ Waterfall: waits for posts
+
+  return <Profile user={user} posts={posts} comments={comments} />;
+}
+```
+
+**After:**
+```typescript
+export default async function UserProfile({ params }: { params: { id: string } }) {
+  // Parallelize independent operations
+  const [user, posts, comments] = await Promise.all([
+    fetchUser(params.id),
+    fetchUserPosts(params.id),  // ✅ Runs in parallel
+    fetchUserComments(params.id),  // ✅ Runs in parallel
+  ]);
+
+  return <Profile user={user} posts={posts} comments={comments} />;
+}
+```
+
+**Improvements:**
+- Eliminated sequential waterfalls with `Promise.all()`
+- Reduced loading time by ~66% (3 sequential → 1 parallel)
+- CRITICAL performance impact for user experience
+
+### Python: Applying DRY and Type Safety
+
+**Before:**
+```python
+def calculate_discount(price, customer_type):
+    if customer_type == "regular":
+        discount = price * 0.05
+        final_price = price - discount
+        return final_price
+    elif customer_type == "premium":
+        discount = price * 0.10
+        final_price = price - discount
+        return final_price
+    elif customer_type == "vip":
+        discount = price * 0.20
+        final_price = price - discount
+        return final_price
+    else:
+        return price
+```
+
+**After:**
+```python
+from enum import Enum
+from typing import Final
+
+class CustomerType(Enum):
+    REGULAR = 0.05
+    PREMIUM = 0.10
+    VIP = 0.20
+
+def calculate_discount(price: float, customer_type: CustomerType) -> float:
+    """Calculate final price after applying customer type discount."""
+    discount_rate = customer_type.value
+    return price * (1 - discount_rate)
+
+# Usage with type safety
+final_price = calculate_discount(100.0, CustomerType.PREMIUM)
+```
+
+**Improvements:**
+- Eliminated code duplication (DRY principle)
+- Added type safety with Enum and type hints
+- Simplified logic from 12 lines to 3 lines
+- Made discount rates configurable and discoverable
+- Prevented invalid customer types at compile time
+
 ## Configuration
 
 ### Configuration File
@@ -355,6 +487,104 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 - **Trust the agent**: `code-simplifier` has deep expertise and automatically loads best practices
 - **Review changes**: Always verify functionality is preserved
 - **Modernize gradually**: Use project-wide refactoring strategically
+
+## FAQ
+
+### Q: Will refactoring break my code?
+
+**A:** No. The `code-simplifier` agent is designed to preserve functionality while improving code quality. All refactoring operations maintain the exact same behavior - they only change *how* the code does something, never *what* it does. However, always review changes and run your test suite after refactoring to ensure everything works as expected.
+
+### Q: How do I disable specific rules or patterns?
+
+**A:** Add the rule ID to the `disabled_patterns` list in `.claude/refactor.local.md`:
+
+```yaml
+disabled_patterns: ["nextjs:async-defer-await", "typescript:no-explicit-any"]
+```
+
+You can find rule IDs in the YAML frontmatter of each pattern file in `skills/best-practices/references/`.
+
+### Q: Can I use this with frameworks other than Next.js?
+
+**A:** Yes! The plugin supports:
+- **TypeScript/JavaScript**: React, Vue, Angular, Node.js, or any JS/TS project
+- **Python**: Django, Flask, FastAPI, or any Python project
+- **Go**: Any Go project
+- **Swift**: iOS, macOS, or any Swift project
+- **Universal principles**: Apply to all languages (SOLID, DRY, KISS, YAGNI)
+
+The Next.js patterns are only applied when Next.js code is detected in your project.
+
+### Q: What's the difference between `/refactor` and `/refactor-project`?
+
+**A:**
+- **`/refactor`**: Targeted refactoring for recently modified or specified files. Fast, focused, and ideal for incremental improvements during development.
+- **`/refactor-project`**: Project-wide refactoring across the entire codebase. Emphasizes cross-file duplication reduction and consistent patterns. Always shows preview and requires confirmation for safety.
+
+Use `/refactor` for day-to-day work, and `/refactor-project` for major modernization efforts.
+
+### Q: How do I configure which rules are applied?
+
+**A:** The first time you run `/refactor` or `/refactor-project`, you'll be guided through interactive configuration setup. You can also manually edit `.claude/refactor.local.md`:
+
+1. **Rule categories**: Enable/disable entire categories (Next.js async, bundle, TypeScript, etc.)
+2. **Default mode**: Choose `all` (auto-apply), `selected` (interactive), or `weighted` (priority-based)
+3. **Weighting strategy**: Prioritize by impact level or use custom weights
+4. **Disabled patterns**: Exclude specific rules you don't want
+
+### Q: What if I don't have a test suite?
+
+**A:** While tests are recommended for validation, the refactoring will still work. The agent is designed to preserve functionality by design. However, we strongly recommend:
+
+1. **Manual review**: Carefully review all changes before committing
+2. **Incremental refactoring**: Use `/refactor` on small sections rather than `/refactor-project`
+3. **Git**: Always commit working code before refactoring so you can revert if needed
+4. **Build/lint**: Run your build and linting tools to catch any issues
+
+### Q: Can I customize the refactoring rules?
+
+**A:** Yes, in several ways:
+
+1. **Enable/disable categories**: Turn entire rule categories on/off in configuration
+2. **Disable specific patterns**: Add patterns to `disabled_patterns`
+3. **Custom weights**: Assign priority to specific rules with `custom_weights`
+4. **Add custom references**: Create additional reference files in `skills/best-practices/references/`
+
+### Q: How do I see what rules are available?
+
+**A:** You can explore the reference files:
+
+- **Language-specific**: `skills/best-practices/references/{typescript,python,go,swift,universal}.md`
+- **Next.js patterns**: `skills/best-practices/references/nextjs/` (50+ pattern files)
+- **Pattern categories**: See `skills/best-practices/references/nextjs/_sections.md` for organized categories
+
+Each pattern file includes a description, impact level, and code examples.
+
+### Q: What impact levels mean CRITICAL, HIGH, MEDIUM, LOW?
+
+**A:**
+- **CRITICAL**: Direct, measurable impact on user experience (e.g., page load time, Core Web Vitals). Fix these first.
+- **HIGH**: Significant performance or maintainability impact (e.g., server-side optimization, bundle size)
+- **MEDIUM**: Noticeable improvements in specific scenarios (e.g., re-render optimization, client-side fetching)
+- **LOW**: Micro-optimizations and code quality improvements (e.g., JavaScript patterns, advanced techniques)
+
+The `impact-based` weighting strategy automatically prioritizes CRITICAL > HIGH > MEDIUM > LOW.
+
+### Q: Does this work with monorepos?
+
+**A:** Yes! The plugin works with monorepos. You can:
+
+- Run `/refactor` on specific packages or workspaces
+- Use `/refactor-project` to refactor the entire monorepo (with caution)
+- Configure different rules per package by placing `.claude/refactor.local.md` in each package directory
+
+### Q: Can I use this in CI/CD?
+
+**A:** The plugin is designed for interactive use with Claude Code, not CI/CD automation. However, you can:
+
+1. Use the refactored code patterns as inspiration for linting rules
+2. Extract specific rules into ESLint/Pylint/golangci-lint configurations
+3. Run refactoring locally before pushing to CI/CD
 
 ## Acknowledgments
 

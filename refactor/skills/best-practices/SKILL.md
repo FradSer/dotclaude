@@ -21,12 +21,12 @@ Use the Task tool to launch the `code-simplifier` agent for execution. Pass the 
 
 Based on file extension, load the appropriate reference:
 
-- `.ts`, `.tsx`, `.js`, `.jsx` → See [`references/typescript.md`](references/typescript.md)
-- `.py` → See [`references/python.md`](references/python.md)
-- `.go` → See [`references/go.md`](references/go.md)
-- `.swift` → See [`references/swift.md`](references/swift.md)
+- `.ts`, `.tsx`, `.js`, `.jsx` → See `references/typescript.md`
+- `.py` → See `references/python.md`
+- `.go` → See `references/go.md`
+- `.swift` → See `references/swift.md`
 
-For universal principles applicable to all languages, see [`references/universal.md`](references/universal.md).
+For universal principles applicable to all languages, see `references/universal.md`.
 
 ## Next.js Best Practices References
 
@@ -38,7 +38,7 @@ Reference directory:
 
 Recommended entry points:
 
-1. Read `references/nextjs/README.md` for navigation and naming conventions.
+1. Read `references/nextjs/INDEX.md` for complete pattern index organized by impact level and category.
 2. Read `references/nextjs/_sections.md` to understand priorities and categories.
 3. Read the specific rule file(s) that match the pattern observed (for example, `async-defer-await.md`, `bundle-dynamic-imports.md`).
 

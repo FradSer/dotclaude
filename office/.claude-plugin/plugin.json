@@ -1,8 +1,8 @@
 {
   "name": "office",
-  "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
+  "description": "Specialized Claude Skill for patent application generation and intellectual property workflows.",
   "author": {
-        "name": "Frad LEE",
+    "name": "Frad LEE",
     "email": "fradser@gmail.com"
   }
 }

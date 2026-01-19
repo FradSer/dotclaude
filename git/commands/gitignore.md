@@ -1,5 +1,5 @@
 ---
-allowed-tools: Task, Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
+allowed-tools: Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
 description: Create or update .gitignore file
 model: haiku
 argument-hint: [additional-technologies]
@@ -20,8 +20,6 @@ argument-hint: [additional-technologies]
 - Present the resulting diff for confirmation.
 
 ## Your Task
-
-**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
 
 1. Detect operating systems and technologies from context plus `$ARGUMENTS`.
 2. Generate or update `.gitignore` using the Toptal API while retaining custom rules.
