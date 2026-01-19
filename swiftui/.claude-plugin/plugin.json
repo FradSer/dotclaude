@@ -1,5 +1,6 @@
 {
   "name": "swiftui",
+  "version": "0.1.0",
   "description": "SwiftUI Clean Architecture reviewer.",
   "author": {
         "name": "Frad LEE",

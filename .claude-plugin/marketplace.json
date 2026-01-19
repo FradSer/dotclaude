@@ -9,66 +9,79 @@
   "plugins": [
     {
       "name": "git",
+      "version": "0.2.0",
       "description": "Conventional Git automation for commits and repository management",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./git",
-      "category": "development"
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/git"
     },
     {
       "name": "gitflow",
+      "version": "0.2.0",
       "description": "GitFlow workflow automation for feature, hotfix, and release branches",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./gitflow",
-      "category": "development"
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/gitflow"
     },
     {
       "name": "github",
+      "version": "0.1.0",
       "description": "GitHub project operations with quality gates.",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./github",
-      "category": "productivity"
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/github"
     },
     {
       "name": "review",
+      "version": "0.1.0",
       "description": "Multi-agent review system for enforcing high quality.",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./review",
-      "category": "productivity"
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/review"
     },
     {
       "name": "swiftui",
+      "version": "0.1.0",
       "description": "SwiftUI Clean Architecture reviewer.",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./swiftui",
-      "category": "development"
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/swiftui"
     },
     {
       "name": "utils",
+      "version": "0.1.0",
       "description": "Utility commands for day-to-day automation.",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./utils",
-      "category": "productivity"
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/utils"
     },
     {
       "name": "office",
+      "version": "0.1.0",
       "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
       "author": {
         "name": "Frad LEE",
@@ -76,17 +89,20 @@
       },
       "source": "./office",
       "category": "productivity",
-      "strict": false
+      "strict": false,
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/office"
     },
     {
       "name": "refactor",
+      "version": "1.1.0",
       "description": "Agent and commands for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./refactor",
-      "category": "development"
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/refactor"
     }
   ]
 }

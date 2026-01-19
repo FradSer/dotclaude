@@ -1,5 +1,6 @@
 {
   "name": "github",
+  "version": "0.1.0",
   "description": "GitHub project operations with quality gates.",
   "author": {
         "name": "Frad LEE",

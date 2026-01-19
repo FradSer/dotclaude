@@ -1,5 +1,6 @@
 {
   "name": "utils",
+  "version": "0.1.0",
   "description": "Utility commands for day-to-day automation.",
   "author": {
         "name": "Frad LEE",

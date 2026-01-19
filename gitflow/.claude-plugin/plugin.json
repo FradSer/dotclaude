@@ -1,6 +1,6 @@
 {
   "name": "gitflow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GitFlow workflow automation for feature, hotfix, and release branches",
   "author": {
     "name": "Frad LEE",
