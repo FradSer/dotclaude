@@ -8,176 +8,112 @@ The GitFlow Plugin automates the GitFlow branching model, providing commands to 
 
 ## GitFlow Branch Model
 
-```
-main/master (production)
-  │
-  ├── hotfix/v1.0.1 ──┐
-  │                    │
-  └── release/v1.1.0 ──┤
-                       │
-develop (integration)  │
-  │                    │
-  ├── feature/auth ────┘
-  ├── feature/profile
-  └── feature/settings
-```
+Three workflow presets are supported:
+
+| Workflow | Description |
+|----------|-------------|
+| **Classic GitFlow** | main + develop with feature/, release/, hotfix/ branches |
+| **GitHub Flow** | main with feature/ branches only |
+| **GitLab Flow** | production + staging + main with feature/, hotfix/ branches |
 
 ## Commands
 
+All commands use the `Skill` tool to load `gitflow-workflow` for GitFlow operations.
+
 ### `/gitflow:start-feature`
 
-Starts a new feature branch from develop or continues existing feature development.
-
-**Metadata:**
+Start new feature branch from develop.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
-| Allowed Tools | `Task`, `Bash` |
-| Argument Hint | `[feature description]` |
+| Model | `haiku` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Skill` |
+| Argument | `[feature-name]` |
 
-**Usage:**
 ```bash
 /gitflow:start-feature user-authentication
 ```
-
-**Features:**
-- Automatic `feature/[kebab-case-name]` format
-- Branches from develop
-- Clean working tree validation
-- Publishes to origin for collaboration
-- Atomic commits with conventional format
 
 ---
 
 ### `/gitflow:finish-feature`
 
-Completes and merges feature development into develop branch.
-
-**Metadata:**
+Complete and merge feature branch to develop.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
-| Allowed Tools | `Task`, `Bash` |
-| Argument Hint | `[feature-name]` |
+| Model | `haiku` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Skill` |
+| Argument | `[feature-name]` |
 
-**Usage:**
 ```bash
 /gitflow:finish-feature
 ```
-
-**Features:**
-- Validates `feature/*` naming
-- Runs full test suite
-- Merges to develop with `--no-ff`
-- Deletes branch locally and remotely
-- Handles merge conflicts
 
 ---
 
 ### `/gitflow:start-hotfix`
 
-Starts a new hotfix branch from main for urgent production fixes.
-
-**Metadata:**
+Start new hotfix branch from main.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
-| Allowed Tools | `Task`, `Bash` |
-| Argument Hint | `[hotfix description]` |
+| Model | `haiku` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Write`, `Skill` |
+| Argument | `[hotfix-name]` |
 
-**Usage:**
 ```bash
 /gitflow:start-hotfix critical-security-fix
 ```
-
-**Features:**
-- Branches from main/master
-- Automatic patch version increment
-- Updates version files
-- Publishes hotfix branch
-- Critical production fixes only
 
 ---
 
 ### `/gitflow:finish-hotfix`
 
-Completes hotfix by merging to both main and develop, with version tagging.
-
-**Metadata:**
+Complete hotfix by merging to main and develop with version tagging.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
-| Allowed Tools | `Task`, `Bash` |
-| Argument Hint | `[version]` |
+| Model | `haiku` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Write`, `Skill` |
+| Argument | `[version]` |
 
-**Usage:**
 ```bash
 /gitflow:finish-hotfix
 ```
-
-**Features:**
-- Merges to both main and develop
-- Creates version tag
-- Updates changelog
-- Creates GitHub release
-- Deletes hotfix branches completely
 
 ---
 
 ### `/gitflow:start-release`
 
-Starts a new release branch from develop for preparing production releases.
-
-**Metadata:**
+Start new release branch from develop.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
-| Allowed Tools | `Task`, `Bash` |
+| Model | `haiku` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Write`, `Skill` |
+| Argument | `[version]` |
 
-**Usage:**
 ```bash
 /gitflow:start-release v1.2.0
 # or auto-determine version
 /gitflow:start-release
 ```
 
-**Features:**
-- Semantic version calculation from commits
-- Breaking changes → major bump (v2.0.0)
-- New features → minor bump (v1.2.0)
-- Bug fixes → patch bump (v1.1.1)
-- Auto-generates changelog
-- Updates version files
-
 ---
 
 ### `/gitflow:finish-release`
 
-Completes release by merging to main and develop with version tagging.
-
-**Metadata:**
+Complete release by merging to main and develop with version tagging.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
-| Allowed Tools | `Task`, `Bash` |
+| Model | `haiku` |
+| Allowed Tools | `Bash(git:*)`, `Read`, `Write`, `Skill` |
 
-**Usage:**
 ```bash
 /gitflow:finish-release
 ```
-
-**Features:**
-- Comprehensive test validation
-- Version tagging with release notes
-- Dual merge to main + develop
-- GitHub release creation
-- Complete branch cleanup
 
 ## Skills
 
@@ -195,10 +131,14 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 - git-flow-next command compatibility
 
 **Reference Documentation:**
-- `skills/gitflow-workflow/references/branch-strategy.md` - Branch strategies and naming conventions
-- `skills/gitflow-workflow/references/version-calculation.md` - Semantic version calculation logic
-- `skills/gitflow-workflow/references/git-flow-next-commands.md` - Complete git-flow-next command reference
-- `skills/gitflow-workflow/references/workflow-examples.md` - Complete workflow examples
+- `references/classic-gitflow.md` - Traditional GitFlow with main + develop
+- `references/github-flow.md` - Simplified workflow with main only
+- `references/gitlab-flow.md` - Multi-environment with production + staging
+- `references/naming-rules.md` - Branch naming conventions
+- `references/version-calculation.md` - Semantic version calculation logic
+- `references/context-gathering.md` - Pre-operation context requirements
+- `references/core-commands.md` - git-flow-next core commands (init, config)
+- `references/topic-commands.md` - Topic branch commands (start, finish, etc.)
 
 **External References:**
 - [git-flow-next Documentation](https://git-flow.sh/docs/)
