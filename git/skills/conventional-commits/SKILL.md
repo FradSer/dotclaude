@@ -29,7 +29,7 @@ The Conventional Commits specification provides a lightweight convention for com
 
 ### Message Structure
 
-- **Type**: Required noun (feat, fix, etc.) followed by optional scope, optional `!`, and required colon and space
+- **Type**: Required noun (feat, fix, etc.) followed by optional scope, optional "!", and required colon and space
 - **Description**: Short summary immediately after the colon and space
 - **Body**: Optional, begins one blank line after description, explains "why" not "how"
 - **Footer**: Optional, one blank line after body, uses git trailer format (e.g., `Closes #123`, `BREAKING CHANGE: description`)
@@ -37,14 +37,14 @@ The Conventional Commits specification provides a lightweight convention for com
 ### Breaking Changes
 
 Breaking changes MUST be indicated either:
-- In the type/scope prefix with `!` immediately before `:` (e.g., `feat!:`, `feat(api)!:`)
+- In the type/scope prefix with "!" immediately before ":" (e.g., `feat!:`, `feat(api)!:`)
 - As a footer entry: `BREAKING CHANGE: <description>`
 
 ## Capabilities
 
 - Creates conventional commits following the specification v1.0.0
 - Identifies atomic logical units of work from code changes
-- Properly indicates breaking changes with `!` or `BREAKING CHANGE:` footer
+- Properly indicates breaking changes with "!" or `BREAKING CHANGE:` footer
 - Validates commit message format against the specification
 
 ## Workflows
@@ -59,12 +59,15 @@ Breaking changes MUST be indicated either:
 **Step 2: Determine Type and Scope**
 1. Select the appropriate type: `feat:` (new features), `fix:` (bug fixes), or other types (see `references/types-reference.md`)
 2. Select scope based on the codebase area affected (optional, lowercase, 1-2 words)
-3. Add `!` before `:` if the change is breaking
+3. Add "!" before ":" if the change is breaking
 
 **Step 3: Craft Commit Message**
-1. **Title**: Format `<type>[optional scope]: <description>`, lowercase, <50 chars, imperative mood
-2. **Body** (optional): Blank line after title, ≤72 chars/line, explain "why" not "how", use bullet points
-3. **Footer** (optional): Blank line after body, issue references (`Closes #123`, `Fixes #456`), or `BREAKING CHANGE:` if not using `!` in title
+1. **Title**: Format `<type>[optional scope]: <description>`, **ALL LOWERCASE**, <50 chars, imperative mood (no capitalization, no period at end)
+2. **Body** (optional): Blank line after title, ≤72 chars/line
+   - Start with bullet points listing **what changes were made** (specific, actionable items)
+   - Each bullet starts with a verb (Add, Remove, Update, Fix, etc.)
+   - Follow with a paragraph explaining **why** this change was needed (the motivation/context)
+3. **Footer** (optional): Blank line after body, issue references (`Closes #123`, `Fixes #456`), or `BREAKING CHANGE:` if not using "!" in title
 
 **Step 4: Create Commit**
 1. Stage only files for this logical unit
@@ -81,7 +84,7 @@ When multiple unrelated changes exist:
 
 ### Breaking Changes
 
-Breaking changes can be indicated with `!` in the title or `BREAKING CHANGE:` in the footer. See `references/breaking-changes.md` for examples.
+Breaking changes can be indicated with "!" in the title or `BREAKING CHANGE:` in the footer. See `references/breaking-changes.md` for examples.
 
 ### Validating Commit Messages
 
@@ -90,10 +93,14 @@ Validate against: format spec, type validity, message structure, breaking change
 ## Best Practices
 
 - Each commit represents one complete, logical change (atomic)
-- Focus on "why" in the body, not "how" (code shows how)
+- **Title MUST be all lowercase** - no capitalization except for type prefixes
+- **Body structure**: List specific changes as bullets first, then explain why
+- Each bullet point starts with a verb (Add, Remove, Update, Fix, Improve, etc.)
+- Focus on "what changed" in bullets, "why it matters" in paragraph
 - Use consistent scopes across the project
 - Always indicate breaking changes clearly
 - Use imperative mood in description (e.g., "add" not "added")
+- No period at the end of title
 
 ## Examples
 
