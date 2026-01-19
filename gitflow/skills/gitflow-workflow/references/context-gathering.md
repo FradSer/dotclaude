@@ -133,16 +133,6 @@ This document describes the context information that should be gathered before e
 
 ## Error Handling
 
-### git-flow-next Not Installed
-
-If `git flow` command fails or is not found:
-1. **Check installation**: Run `git flow version`
-2. **If command not found**: Direct user to install git-flow-next
-   - Installation guide: https://git-flow.sh/docs/installation/
-   - macOS: `brew install gittower/tap/git-flow-next`
-   - Manual: Download from releases page and add to PATH
-3. **Do not proceed** with GitFlow operations until tool is installed
-
 ### Missing Branches
 
 If required branches don't exist:

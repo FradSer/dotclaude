@@ -16,7 +16,7 @@ Versions follow the format: `MAJOR.MINOR.PATCH`
 
 Bump major version when:
 - Commit contains `BREAKING CHANGE:` in footer
-- Commit type includes `!` (e.g., `feat!:`, `fix(api)!:`)
+- Commit type includes "!" (e.g., `feat!:`, `fix(api)!:`)
 - Breaking API changes are introduced
 
 **Example:**
@@ -66,7 +66,7 @@ Result: `v1.2.3` → `v1.2.4`
    - Use: `git log <base-tag>..develop --oneline`
 
 3. **Determine bump type**:
-   - If any commit has `BREAKING CHANGE` or `!` → **MAJOR**
+   - If any commit has `BREAKING CHANGE` or "!" → **MAJOR**
    - Else if any commit has `feat:` → **MINOR**
    - Else if any commit has `fix:` → **PATCH**
    - Else → **PATCH** (default for other changes)
@@ -200,11 +200,3 @@ Generate changelog entries grouped by version:
 ### Fixed
 - fix(api): handle null payload
 ```
-
-## Best Practices
-
-1. **Always tag releases**: Create tags on `main` after release/hotfix merge
-2. **Consistent format**: Use `v` prefix for all tags
-3. **Changelog updates**: Update CHANGELOG.md with each version
-4. **Version files**: Keep version files in sync with git tags
-5. **Breaking changes**: Clearly mark breaking changes in commits
