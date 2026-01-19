@@ -24,6 +24,7 @@ claude config --add-plugin "/Users/FradSer/Developer/FradSer/dotclaude/git"
 Creates atomic conventional commits by analyzing pending changes.
 
 **Features:**
+- **Safety Checks**: Detects sensitive files (.env, credentials, secrets), warns about large files (>1MB), and suggests breaking up commits >500 lines
 - Analyzes staged and unstaged changes
 - Identifies logical units of work
 - Generates concise, "why"-focused commit messages
