@@ -83,7 +83,7 @@ Creates new command templates for Claude Code plugins.
 **Core Features:**
 - Organize commands with directory namespacing
 - Support dynamic arguments through `$ARGUMENTS`, `$1`, `$2`, etc.
-- Run bash setup commands with the `!` prefix
+- Run bash setup commands with the "!" prefix
 - Reference files and folders via the `@` prefix
 - Include extended thinking keywords when deeper reasoning is required
 - Configure metadata through frontmatter

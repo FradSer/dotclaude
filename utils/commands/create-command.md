@@ -21,7 +21,7 @@ argument-hint: [Project|Personal] [description of what the command should do]
 
 - Organize commands with directory namespacing.
 - Support dynamic arguments through `$ARGUMENTS`, `$1`, `$2`, etc.
-- Run bash setup commands with the ``!`` prefix.
+- Run bash setup commands with the "!" prefix.
 - Reference files and folders via the `@` prefix.
 - Include extended thinking keywords when deeper reasoning is required.
 - Configure metadata through frontmatter.
