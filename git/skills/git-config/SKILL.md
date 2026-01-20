@@ -1,6 +1,7 @@
 ---
 name: git-config
 description: This skill should be used when analyzing project structure, generating git configuration, creating `.claude/git.local.md`, determining commit scopes, or setting up project-specific git settings.
+model: haiku
 version: 0.2.0
 ---
 

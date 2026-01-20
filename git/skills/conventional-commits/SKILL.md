@@ -1,6 +1,7 @@
 ---
 name: conventional-commits
 description: This skill should be used when creating conventional commits, following the Conventional Commits specification (v1.0.0), analyzing commit history for conventional format, or managing commit message conventions.
+model: haiku
 version: 0.2.0
 ---
 

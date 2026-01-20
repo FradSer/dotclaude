@@ -1,7 +1,8 @@
 ---
 name: best-practices
 description: This skill should be used when the user asks to "refactor", "refactor the whole project", "simplify code", "clean up code", "apply best practices", "improve readability", "reduce duplication", "standardize patterns", "improve performance", "optimize Next.js performance", "make code more maintainable", "follow coding standards", "optimize code quality", or requests behavior-preserving refactoring with best-practice guidance.
-version: 1.0.0
+user-invocable: false
+version: 1.1.0
 ---
 
 # Best Practices
