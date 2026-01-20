@@ -1,7 +1,6 @@
 ---
 name: conventional-commits
-description: This skill should be used when creating conventional commits, following the Conventional Commits specification (v1.0.0), analyzing commit history for conventional format, or managing commit message conventions.
-model: haiku
+description: This skill should be used when the user asks to "create a commit", "follow conventional commits", "analyze commit history", "check commit format", or mentions "Conventional Commits specification". Provides expertise in creating conventional commits following the Commitizen (cz) style and v1.0.0 specification.
 version: 0.2.0
 ---
 
@@ -32,18 +31,6 @@ version: 0.2.0
 **Footer** (optional): Blank line after body
 - Issue references: `Closes #123`, `Fixes #456`
 - Breaking changes: `BREAKING CHANGE: <description>`
-
-## Workflow
-
-1. **Analyze changes**: Identify atomic logical units of work
-2. **Determine type**: `feat:` (new feature), `fix:` (bug fix), or other (see `references/types-reference.md` if needed)
-3. **Add scope** (optional): Lowercase, 1-2 words for codebase area
-4. **Write title**: `<type>[scope]: <description>` - all lowercase, <50 chars
-5. **Write body** (if needed): Bullets for what changed, paragraph for why
-6. **Add footer** (if needed): Issue references or `BREAKING CHANGE:`
-7. **Stage and commit**: Only files for this logical unit
-
-For multiple unrelated changes, create separate commits for each logical unit.
 
 ## Reference Files
 

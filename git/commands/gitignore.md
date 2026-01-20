@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(curl:*), Bash(uname:*), Bash(git:*), Read, Write, Edit, Glob
+allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob"]
 description: Create or update .gitignore file
 model: haiku
 argument-hint: [additional-technologies]
