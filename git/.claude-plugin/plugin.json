@@ -7,5 +7,6 @@
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["git", "conventional-commits", "automation", "workflow", "version-control"]
+  "keywords": ["git", "conventional-commits", "automation", "workflow", "version-control"],
+  "hooks": "./hooks/hooks.json"
 }
