@@ -2,6 +2,13 @@
 name: conventional-commits
 description: This skill should be used when the user asks to "create a commit", "follow conventional commits", "analyze commit history", "check commit format", or mentions "Conventional Commits specification". Provides expertise in creating conventional commits following the Commitizen (cz) style and v1.0.0 specification.
 version: 0.2.0
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/validate-commit-pretool.sh"
+          timeout: 5
 ---
 
 ## Core Rules

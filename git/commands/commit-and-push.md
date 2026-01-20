@@ -23,7 +23,7 @@ model: haiku
       - **Validate the message** against the "Core Rules" defined in the `conventional-commits` skill.
       - Stage the relevant files
       - Create the commit with the validated message
-      - **IMPORTANT**: A PreToolUse hook will automatically validate the commit message format BEFORE execution. If validation fails, the hook will BLOCK the commit and provide error details. Ensure your message is correct to avoid blocked commits.
+      - **IMPORTANT**: The conventional-commits skill defines a PreToolUse hook that automatically validates commit message format BEFORE execution. If validation fails, the hook will BLOCK the commit and provide error details.
    c. Repeat until every change is committed
 
 5. **Push to Remote**:
