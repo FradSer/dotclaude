@@ -45,6 +45,13 @@ Check if `.claude/refactor.local.md` exists using Read tool:
 
 ### If Configuration Doesn't Exist (First-Time Setup)
 
+**IMPORTANT**: Before asking configuration questions, detect the project's frameworks and languages.
+
+**Detection Steps**:
+1. Use Bash to check for Next.js (look for `next.config.js`, `next.config.ts`, or `"next"` in package.json dependencies)
+2. Use Glob to detect language files (*.ts, *.tsx, *.py, *.go, *.swift)
+3. Determine which framework-specific and language-specific questions to ask
+
 Use AskUserQuestion to gather configuration preferences:
 
 **Question 1: Default Rule Application Mode**
@@ -55,7 +62,7 @@ Use AskUserQuestion to gather configuration preferences:
   - Selected (Always show interactive rule selection)
   - Weighted (Apply rules based on configured weights)
 
-**Question 2: Next.js Rule Categories**
+**Question 2: Next.js Rule Categories** (ONLY if Next.js is detected)
 - header: "Next.js rules"
 - question: "Which Next.js rule categories should be enabled?"
 - multiSelect: true
@@ -73,12 +80,12 @@ Use AskUserQuestion to gather configuration preferences:
 - header: "Language rules"
 - question: "Which language-specific rules should be enabled?"
 - multiSelect: true
-- options:
-  - typescript (TypeScript/JavaScript best practices)
-  - python (Python best practices)
-  - go (Go best practices)
-  - swift (Swift best practices)
-  - universal (Universal principles - SOLID, DRY, KISS, etc. - recommended)
+- options: (Dynamically include only detected languages + universal)
+  - typescript (TypeScript/JavaScript best practices) [if .ts/.tsx/.js/.jsx files detected]
+  - python (Python best practices) [if .py files detected]
+  - go (Go best practices) [if .go files detected]
+  - swift (Swift best practices) [if .swift files detected]
+  - universal (Universal principles - SOLID, DRY, KISS, etc. - recommended) [always include]
 
 After gathering answers, create `.claude/refactor.local.md` with:
 - YAML frontmatter containing all configuration

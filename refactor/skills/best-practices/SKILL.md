@@ -48,10 +48,44 @@ Recommended entry points:
 - Keep changes minimal and targeted; optimize only when the pattern is present in the code.
 - Preserve behavior and public interfaces; do not change externally visible semantics during a refactor.
 
+## Framework and Language Detection
+
+Before applying refactoring rules, detect the project's frameworks and languages:
+
+1. **Framework Detection**:
+   - Check for Next.js: Look for `next.config.js`, `next.config.ts`, or `"next"` in package.json dependencies
+   - Check for React: Look for `"react"` in package.json dependencies
+   - Check for Vite: Look for `vite.config.js`, `vite.config.ts`
+   - Check for other frameworks as needed
+
+2. **Language Detection**:
+   - Scan file extensions: `.ts`, `.tsx` (TypeScript), `.js`, `.jsx` (JavaScript)
+   - `.py` (Python), `.go` (Go), `.swift` (Swift)
+
+3. **Rule Category Selection**:
+   - Based on detected frameworks and user configuration, determine which rule categories to apply:
+     - **Next.js projects only**: async, bundle, server, client, rerender, rendering, js, advanced
+     - **React (non-Next.js) projects**: client, rerender, rendering, js
+     - **All projects**: Universal principles, language-specific rules
+
+**IMPORTANT**: Only apply Next.js-specific rules if Next.js is actually detected. For Tauri + React + Vite projects or other React setups without Next.js, only apply React-specific and universal rules.
+
+## Configuration-Driven Rule Application
+
+When user configuration exists (`.claude/refactor.local.md`), respect the configured rule categories:
+
+- `rule_categories.nextjs`: Only applied if Next.js is detected
+- `rule_categories.languages`: Applied based on detected file types
+- `default_mode`: Determines whether to apply all, selected, or weighted rules
+
+The configuration file controls which rules are active, but framework detection determines which categories are applicable.
+
 ## Workflow
 
 1. **Identify**: Determine target scope (specified files/directories, session modifications, or entire project)
-2. **Load References**: Load language references for the target files, plus Next.js best-practices references when applicable
-3. **Analyze**: Review code for complexity, redundancy, and best-practice violations that matter for the target scope
-4. **Execute**: Apply behavior-preserving refinements following the loaded references
-5. **Validate**: Ensure tests pass (or suggest the most relevant tests to run) and the code is cleaner
+2. **Detect**: Identify frameworks (Next.js, React, Vite, etc.) and languages in the codebase
+3. **Load References**: Load language references for the target files, plus framework-specific references when applicable
+4. **Filter Rules**: Only apply rules for detected frameworks (e.g., skip Next.js rules if Next.js not present)
+5. **Analyze**: Review code for complexity, redundancy, and best-practice violations that matter for the target scope
+6. **Execute**: Apply behavior-preserving refinements following the loaded references
+7. **Validate**: Ensure tests pass (or suggest the most relevant tests to run) and the code is cleaner
