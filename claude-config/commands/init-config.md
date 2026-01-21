@@ -1,142 +1,149 @@
 ---
 name: init-config
-description: Generate CLAUDE.md with AI-driven environment detection and advanced configuration options
+description: Generate $HOME/.claude/CLAUDE.md with AI-driven environment detection and advanced configuration options
 argument-hint: []
-allowed-tools: ["Read", "Write", "AskUserQuestion", "WebSearch", "Bash(which:*)", "Bash(test:*)", "Bash(mkdir:*)", "Bash(cp:*)", "Bash(wc:*)", "Bash(grep:*)", "Bash(chmod:*)", "Bash(echo:*)", "Bash(node:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(pip:*)", "Bash(uv:*)", "Bash(cargo:*)", "Bash(go:*)", "Bash(java:*)", "Bash(docker:*)", "Bash(git:*)"]
+allowed-tools:
+  # Core file and interaction tools
+  - Read
+  - Write
+  - TodoWrite
+  - AskUserQuestion
+  - WebSearch
+
+  # Bash: System commands
+  - Bash(*)
 ---
 
 You are an expert DevOps engineer tasked with generating personalized configuration files for AI development assistants.
 
+## Initialization
+1. **Track Progress**
+   - Use the **TodoWrite** tool to create a task list for all phases of this workflow.
+   - Update the status of tasks as you complete each phase.
+
 ## Phase 1: Environment Discovery
-Your first goal is to understand the user's preferred technology stack without asking basic questions.
+Understand the user's technology stack by detecting installed languages, tools, and package managers.
 
-1. **Investigate the Environment**
-   - Use the **Bash** tool to detect installed languages and tools.
-   - **Do NOT** just check for Node/Python. Look for a wide range: Rust (cargo), Go, Java, Docker, etc.
-   - *Tip*: Checking versions (e.g., `python3 --version`, `cargo --version`) is a good way to verify existence.
+1. **Detect Technologies and Package Managers**
+   - Detect installed languages (Node.js, Python, Rust, Go, Java, Docker, etc.)
+   - For languages with multiple package managers, detect all available options
+   - Store detected information for later selection
 
-2. **Formulate Recommendations**
-   - Based on your findings, decide which "Technology Stack" configurations should be included.
-   - If you find `pnpm`, recommend Node.js+pnpm.
-   - If you find `cargo`, recommend Rust best practices.
+## Phase 2: Developer Profile
+Ask for developer name and email using **AskUserQuestion** with 2 questions:
 
-## Phase 2: TDD Preference
-1. **Ask TDD Preference**
-   - Use the **AskUserQuestion** tool to ask if TDD should be included.
-   - **Header**: "TDD Mode"
-   - **Question**: "Should the configuration include Test-Driven Development (TDD) requirements?"
-   - **Options**:
-     - `{"label": "Include TDD (Recommended)", "description": "Add mandatory TDD workflow: RED → GREEN → REFACTOR"}`
-     - `{"label": "Exclude TDD", "description": "Generate configuration without TDD requirements"}`
+- **Question 1**: "What is your name?"
+  - Header: "Developer"
+  - Option: `{"label": "Skip name", "description": "Don't include name in configuration"}`
+  - Note: User inputs custom name via automatic "Other" option (no additional placeholder needed)
 
-2. **Select Template**
-   - If "Include TDD": Use `${CLAUDE_PLUGIN_ROOT}/assets/claude-template.md`
-   - If "Exclude TDD": Use `${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md`
+- **Question 2**: "What is your email address?"
+  - Header: "Contact"
+  - Option: `{"label": "Skip email", "description": "Don't include email in configuration"}`
+  - Note: User inputs custom email via automatic "Other" option (no additional placeholder needed)
 
-## Phase 3: Technology Stack Selection
-1. **Present Options**
-   - Use the **AskUserQuestion** tool with `multiSelect: true`.
-   - **Header**: "Tech Stack"
-   - **Question**: "Which technology stacks should be included in your configuration?"
-   - **Options**: Dynamically generate options based on your Phase 1 discovery.
-     - Example: If you found Go, create: `{"label": "Golang", "description": "Add Go best practices (Recommended)"}`
-     - Always mark discovered tools as "Recommended".
-     - Add a "Generic/Base Only" option for a clean setup.
+Important: Only provide the "Skip" option. The "Other" option is automatically provided for direct text input.
 
-## Phase 4: Best Practices Research
-1. **Ask About Web Search**
-   - Use the **AskUserQuestion** tool.
-   - **Header**: "Research"
-   - **Question**: "Search for latest best practices for selected technologies?"
-   - **Options**:
-     - `{"label": "Search and append (Recommended)", "description": "Find 2026 best practices and add brief summaries"}`
-     - `{"label": "Skip search", "description": "Use only base template"}`
+## Phase 3: TDD Preference
+Ask if TDD should be included using **AskUserQuestion**:
 
-2. **Execute Web Searches** (if user selected "Search and append"):
-   - For each selected technology stack:
-     - Use **WebSearch** tool with query: `"[Technology] development best practices 2026"`
-     - Extract 2-3 key sentences from search results
-     - Store these summaries to append after each tech stack section
+- Header: "TDD Mode"
+- Question: "Should the configuration include Test-Driven Development (TDD) requirements?"
+- Options:
+  - `{"label": "Include TDD (Recommended)", "description": "Add mandatory TDD workflow"}`
+  - `{"label": "Exclude TDD", "description": "Generate without TDD requirements"}`
 
-## Phase 5: Assembly & Generation
-1. **Read Base Template**
-   - Use the **Read** tool to read the selected template (from Phase 2).
+Select template based on answer:
+- Include TDD: `${CLAUDE_PLUGIN_ROOT}/assets/claude-template.md`
+- Exclude TDD: `${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md`
 
-2. **Generate Tech Stack Sections**
-   - For each selected tech stack:
-     - Synthesize a high-quality configuration section on-the-fly
-     - Focus on: Package management, Documentation standards, Code quality guidelines
-     - **If web search was enabled**: Append the 2-3 sentence summary under the tech stack section with a header `### Latest Best Practices (2026)`
+## Phase 4: Technology Stack & Package Manager Selection
+1. **Select Technology Stacks**
+   - Use **AskUserQuestion** with `multiSelect: true`
+   - Header: "Tech Stack"
+   - Question: "Which technology stacks should be included?"
+   - Dynamically generate options based on detected technologies
+   - Mark detected tools as "Recommended"
 
-3. **Assemble Final Content**
-   - Start with base template content
-   - Add `## Technology Stack` header
-   - Append all generated tech stack sections
-   - Include search summaries if web search was enabled
+2. **Select Package Managers** (if multiple detected for selected languages)
+   - For each language with multiple package managers, ask user preference
+   - **Node.js** options: npm, pnpm (Recommended), yarn, bun
+   - **Python** options: pip, uv (Recommended), poetry
+   - Only show detected package managers
 
-## Phase 6: Length Validation
-1. **Validate Length**
-   - Write the assembled content to a temporary location
-   - Use **Bash** to run: `${CLAUDE_PLUGIN_ROOT}/scripts/validate-length.sh [temp-file-path]`
-   - Capture the exit code and output
+## Phase 5: Best Practices Research
+Ask if web search should be performed using **AskUserQuestion**:
 
-2. **Handle Validation Results**
-   - **Exit code 0** (ACCEPTABLE or OPTIMAL): Proceed to Phase 7
-   - **Exit code 3 or 4** (TOO_LONG or EXCESSIVE):
-     - Use **AskUserQuestion** tool:
-       - **Header**: "Length"
-       - **Question**: "The configuration exceeds best practice length. How should I proceed?"
-       - **Options**:
-         - `{"label": "Auto-trim recommended", "description": "Remove less critical sections automatically"}`
-         - `{"label": "Keep as-is", "description": "Proceed with current length"}`
-         - `{"label": "Manual review", "description": "Show sections and let me choose what to remove"}`
-     - If "Auto-trim": Remove web search summaries first, then trim example sections
-     - If "Manual review": Present section list and wait for user selection
-   - **Exit code 2** (TOO_SHORT): Show info message but proceed
+- Header: "Research"
+- Question: "Search for latest best practices for selected technologies?"
+- Options:
+  - `{"label": "Search and append (Recommended)", "description": "Find 2026 best practices"}`
+  - `{"label": "Skip search", "description": "Use only base template"}`
 
-## Phase 7: Multi-file Sync
-1. **Ask About Sync**
-   - Use the **AskUserQuestion** tool with `multiSelect: true`.
-   - **Header**: "Sync"
-   - **Question**: "Which additional AI configuration files should be synchronized?"
-   - **Options**:
-     - `{"label": "GEMINI.md", "description": "Sync to Google Gemini configuration"}`
-     - `{"label": "AGENTS.md", "description": "Sync to general agents configuration"}`
-     - `{"label": "None", "description": "Only generate CLAUDE.md"}`
+If enabled, search and extract 2-3 key sentences for each technology:
+- **Plain text only**: Extract descriptive sentences about best practices
+- **No code snippets**: Exclude bash commands, code examples, or command-line instructions
+- **No URLs**: Remove all links and references to external resources
+- Format as simple, readable paragraphs or bullet points
 
-2. **Process Each Selected File**
-   - For each selected file (GEMINI.md / AGENTS.md):
-     - Check if `$HOME/.claude/[FILENAME]` exists using **Bash** (`test -f`)
-     - **If exists**:
-       - Backup: `cp $HOME/.claude/[FILENAME] $HOME/.claude/[FILENAME].bak`
-       - **Read** the existing file content
-       - **Merge**: Template-priority strategy:
-         - Use assembled CLAUDE.md content as base
-         - Parse existing file for unique sections (sections with headers not in CLAUDE.md)
-         - Append unique sections to the end
-       - **Write** merged content to `$HOME/.claude/[FILENAME]`
-     - **If not exists**:
-       - **Write** CLAUDE.md content directly to `$HOME/.claude/[FILENAME]`
+## Phase 6: Style Preference
+Ask emoji preference using **AskUserQuestion**:
 
-## Phase 8: Write CLAUDE.md
-1. **Final Write**
-   - Check if `$HOME/.claude/CLAUDE.md` exists using **Bash** (`test -f`)
-   - If exists: Backup using **Bash** (`cp $HOME/.claude/CLAUDE.md $HOME/.claude/CLAUDE.md.bak`)
-   - Ensure directory exists: **Bash** (`mkdir -p $HOME/.claude`)
-   - Use **Write** tool to write assembled content to `$HOME/.claude/CLAUDE.md`
+- Header: "Style"
+- Question: "Should emojis be used in the configuration files?"
+- Options:
+  - `{"label": "No Emojis (Recommended)", "description": "Professional, text-only formatting"}`
+  - `{"label": "Use Emojis", "description": "Add visual indicators using emojis"}`
 
-2. **Report Success**
-   - List what was included:
-     - TDD mode: Included/Excluded
-     - Technology stacks: List each one
-     - Web search: Enabled/Disabled
-     - Word count and validation status
-     - Synced files: GEMINI.md, AGENTS.md, or none
-   - Show file locations and backup locations if applicable
+## Phase 7: Assembly & Generation
+1. **Read selected template** from Phase 3
+
+2. **Prepare Developer Profile Section**
+   ```markdown
+   ## Developer Profile
+   - **Name**: [User's Name or "Developer"]
+   - **Email**: [User's Email or omit if skipped]
+   ```
+
+3. **Generate Tech Stack Sections**
+   - Generate configuration for each selected technology
+   - Use selected package managers in all examples
+   - Apply emoji preference
+   - Append web search summaries if enabled
+
+4. **Assemble Final Content**
+   - Combine: header + developer profile + base template + tech stack sections
+
+## Phase 8: Length Validation
+1. **Validate content length**
+   - Write assembled content to a temporary file
+   - Run validation script: `${CLAUDE_PLUGIN_ROOT}/scripts/validate-length.sh`
+
+2. **Handle results**:
+   - ACCEPTABLE/OPTIMAL: Proceed to Phase 9
+   - TOO_LONG/EXCESSIVE: Ask user via **AskUserQuestion**:
+     - Header: "Length"
+     - Question: "Configuration exceeds best practice length. How to proceed?"
+     - Options: Auto-trim / Keep as-is / Manual review
+   - TOO_SHORT: Show info and proceed
+
+## Phase 9: Write CLAUDE.md
+1. **Write final file to `$HOME/.claude/CLAUDE.md`**
+   - Check if `$HOME/.claude/CLAUDE.md` exists
+   - Backup to `$HOME/.claude/CLAUDE.md.bak` if needed
+   - Ensure directory `$HOME/.claude/` exists
+   - Write assembled content to `$HOME/.claude/CLAUDE.md`
+
+2. **Report summary**
+   - File location: `$HOME/.claude/CLAUDE.md`
+   - Backup location (if created)
+   - Developer info
+   - TDD mode
+   - Technology stacks with package managers
+   - Web search status
+   - Word count and validation status
 
 ## Best Practices
-- **Progressive workflow**: Each phase builds on previous results
-- **User control**: Always ask before making significant decisions
-- **Validation**: Check length before writing to ensure quality
-- **Safety**: Always backup existing files before overwriting
-- **Template-priority merge**: Maintain consistency across AI configs while preserving unique user content
+- Progressive workflow: Each phase builds on previous results
+- User control: Always ask before making significant decisions
+- Safety: Always backup existing files before overwriting

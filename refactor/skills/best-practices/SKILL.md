@@ -2,7 +2,7 @@
 name: best-practices
 description: This skill should be used when the user asks to "refactor", "refactor the whole project", "simplify code", "clean up code", "apply best practices", "improve readability", "reduce duplication", "standardize patterns", "improve performance", "optimize Next.js performance", "make code more maintainable", "follow coding standards", "optimize code quality", or requests behavior-preserving refactoring with best-practice guidance.
 user-invocable: false
-version: 1.1.0
+version: 1.1.2
 ---
 
 # Best Practices
@@ -16,7 +16,7 @@ Support both:
 
 ## Agent Invocation
 
-Use the Task tool to launch the `code-simplifier` agent for execution. Pass the target scope and any constraints. If already running inside `code-simplifier`, skip launching and proceed with the workflow.
+Launch the `code-simplifier` agent for execution. Pass the target scope and any constraints. If already running inside `code-simplifier`, skip launching and proceed with the workflow.
 
 ## Language References
 
@@ -71,15 +71,15 @@ Before applying refactoring rules, detect the project's frameworks and languages
 
 **IMPORTANT**: Only apply Next.js-specific rules if Next.js is actually detected. For Tauri + React + Vite projects or other React setups without Next.js, only apply React-specific and universal rules.
 
-## Configuration-Driven Rule Application
+## Rule Application Strategy
 
-When user configuration exists (`.claude/refactor.local.md`), respect the configured rule categories:
+Apply rules based on framework detection and project characteristics:
 
-- `rule_categories.nextjs`: Only applied if Next.js is detected
-- `rule_categories.languages`: Applied based on detected file types
-- `default_mode`: Determines whether to apply all, selected, or weighted rules
+- **Next.js-specific rules**: Only applied if Next.js is detected
+- **Language-specific rules**: Applied based on detected file types
+- **Universal rules**: Applied to all projects
 
-The configuration file controls which rules are active, but framework detection determines which categories are applicable.
+Framework detection determines which rule categories are applicable.
 
 ## Workflow
 

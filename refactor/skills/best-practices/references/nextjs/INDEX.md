@@ -206,8 +206,7 @@ Advanced patterns for specific edge cases.
 1. **Start with CRITICAL patterns**: These have the largest impact on user experience
 2. **Focus on your bottlenecks**: Use profiling to identify which categories matter most
 3. **Read pattern files**: Each pattern includes before/after examples and detailed explanations
-4. **Configure in refactor.local.md**: Enable/disable categories based on your needs
-5. **Use impact-based weighting**: Let the refactor plugin prioritize automatically
+4. **Use impact-based prioritization**: The refactor plugin automatically prioritizes CRITICAL > HIGH > MEDIUM > LOW
 
 ## Related Files
 

@@ -2,6 +2,7 @@
 description: Interactive git configuration setup
 argument-hint: "[no arguments needed - interactive setup]"
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
+model: haiku
 ---
 
 # Interactive Git Configuration

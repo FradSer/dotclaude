@@ -8,7 +8,7 @@ The Plugin Optimizer analyzes existing Claude Code plugins to ensure they follow
 
 ## Features
 
-- **Comprehensive Validation**: Checks against official PLUGIN_BEST_PRACTICES.md and FILE_PATTERNS.md standards
+- **Comprehensive Validation**: Checks against official Claude Code plugin best practices and file pattern standards
 - **Multi-level Issue Detection**: Reports critical errors, warnings, and informational suggestions
 - **Best Practices Compliance**: Generates checklist showing which standards are met/violated
 - **Auto-fix Suggestions**: Provides exact Edit tool parameters for quick fixes (not auto-applied)
@@ -25,7 +25,8 @@ claude plugin install plugin-optimizer
 ### Local Development
 
 ```bash
-cd /Users/FradSer/Developer/FradSer/dotclaude
+# Clone or navigate to the plugin directory
+cd /path/to/dotclaude
 claude --plugin-dir ./plugin-optimizer
 ```
 
@@ -99,7 +100,7 @@ Four automated validators in `scripts/`:
 - Tool invocation anti-patterns
 - File naming and format conventions
 
-See SKILL.md for detailed usage and examples.
+See `skills/plugin-best-practices/SKILL.md` for detailed validation workflow and best practices knowledge.
 
 ## Structure
 

@@ -12,6 +12,14 @@ Comprehensive knowledge base for validating and optimizing Claude Code plugins a
 
 This skill provides structured validation knowledge for analyzing Claude Code plugins. Use it when checking plugin quality, identifying issues, or generating optimization recommendations.
 
+## Official Documentation
+
+For the latest official Claude Code documentation, use the `claude-code-guide` agent to search and retrieve information about:
+- Plugin development guidelines
+- Component specifications (agents, commands, skills, hooks)
+- API references and tool usage
+- Best practices and examples
+
 ## Core Philosophy
 
 **Minimal Configuration**: Rely on auto-discovery. Do not manually list commands, agents, or skills in plugin.json unless absolutely necessary.
@@ -26,6 +34,8 @@ This skill provides structured validation knowledge for analyzing Claude Code pl
 **Portable Paths**: Always use `${CLAUDE_PLUGIN_ROOT}` for file references. Never hardcode absolute paths.
 
 **Naming Convention**: Use kebab-case for all files and directories (code-review.md, api-testing/).
+
+**Component Decoupling**: Components (skills/agents/commands) must be independent and self-contained. See `references/directory-structure.md` and component-specific references for implementation details.
 
 ## Quick Reference
 
@@ -46,6 +56,7 @@ This skill provides structured validation knowledge for analyzing Claude Code pl
 - No explicit tool invocations in component instructions
 - Agents have triggering examples in descriptions
 - Skills use imperative form, not second person
+- Components (skills/agents/commands) are decoupled and do not directly reference each other
 
 ## Core Validation Categories
 
@@ -86,30 +97,6 @@ Categorize validation issues into three severity levels:
 
 See reference files for specific examples of each severity level.
 
-## Additional Resources
-
-### Reference Files
-
-For detailed validation patterns, consult these reference files:
-
-- **`references/structure-organization.md`** - Plugin Structure & Organization (Section 1)
-- **`references/commands.md`** - Command Development patterns (Section 2)
-- **`references/agents.md`** - Agent Design standards (Section 3)
-- **`references/skills-development.md`** - Skill Implementation guidelines (Section 4)
-- **`references/tool-invocations.md`** - Tool Invocation Patterns (Section 5)
-- **`references/file-patterns.md`** - Complete file format patterns (Section 6)
-- **`references/manifests.md`** - Manifest patterns (Section 7)
-- **`references/hooks.md`** - Hook Usage patterns
-- **`references/mcp.md`** - MCP Integration patterns and configuration
-- **`references/todowrite.md`** - TodoWrite Tool Usage Standards
-
-### Example Files
-
-Working examples in `examples/`:
-
-- **`examples/good-plugin/`** - Well-structured plugin demonstrating best practices
-- **`examples/common-issues/`** - Examples of common mistakes and how to fix them
-
 ## Best Practices for Using This Skill
 
 **When analyzing a plugin:**
@@ -135,18 +122,33 @@ Working examples in `examples/`:
 3. Re-validate after fixes
 4. Iterate until all critical issues resolved
 
-## Progressive Disclosure Strategy
+## Reference Resources & Scenario Guide
 
-Load reference files based on validation focus:
+Use this guide to select the correct reference file based on the specific validation task or scenario encountered.
 
-- **Structure issues** → `references/structure-organization.md`
-- **Command issues** → `references/commands.md`
-- **Agent issues** → `references/agents.md`
-- **Skill issues** → `references/skills-development.md`
-- **Tool pattern issues** → `references/tool-invocations.md`
-- **Format issues** → `references/file-patterns.md`
-- **Manifest issues** → `references/manifests.md`
-- **Hook issues** → `references/hooks.md`
-- **MCP integration issues** → `references/mcp.md`
+### 1. Structure & Manifest Validation
+**Scenario**: Users report "plugin not found" or "invalid configuration".
+- **Directory Layout**: usage of `references/directory-structure.md` - Validates file hierarchy, naming conventions (kebab-case), and component placement.
+- **Manifest Configuration**: usage of `references/manifest-schema.md` - checks `plugin.json` fields, `marketplace.json` requirements, and metadata standards.
 
-Reference files contain complete, detailed patterns and examples from the official best practices documentation. Load them as needed rather than keeping all context loaded.
+### 2. Component Implementation
+**Scenario**: "How do I create an X?" or "Validation failed for component Y".
+- **Commands**: `references/components/commands.md` - For `options`, `arguments`, and inline execution syntax.
+- **Agents**: `references/components/agents.md` - For system prompts, persona definition, and triggering example blocks.
+- **Skills**: `references/components/skills.md` - For `SKILL.md` structure, progressive disclosure patterns, and instruction formats.
+- **Hooks**: `references/components/hooks.md` - For `PreStep`/`PostStep` triggers, `hooks.json` config, and exit code handling.
+- **Common Patterns**: `references/component-patterns.md` - Shared best practices applicable across all components (VSCode compatibility, error handling).
+
+### 3. Advanced Integrations & External Tools
+**Scenario**: Integrating external servers/tools or fixing tool call errors.
+- **MCP Servers**: `references/components/mcp-servers.md` & `references/mcp-patterns.md` - For defining and configuring Model Context Protocol servers.
+- **LSP Servers**: `references/components/lsp-servers.md` - For Language Server Protocol integration details.
+- **Tool Invocations**: `references/tool-invocations.md` - **CRITICAL**: Distinguishing between correct tool descriptions and forbidden explicit tool calls.
+
+### 4. Workflow, Debugging & Documentation
+**Scenario**: "Why isn't it working?" or "How do I test this?".
+- **Debugging**: `references/debugging.md` - Strategies for diagnosing agent loops, tool failures, and state issues.
+- **CLI Operations**: `references/cli-commands.md` - Reference for `claude` CLI commands used in testing and maintenance.
+- **Documentation Standards**: `references/todowrite-usage.md` - Guidelines for using TodoWrite to maintain plugin context and documentation.
+
+Load specific reference files as needed to provide detailed validation logic without overwhelming the context.

@@ -89,7 +89,7 @@ See [examples/git.local.md](examples/git.local.md) for configuration template.
 ### Commit Guidelines
 - **Atomic**: One logical change per commit.
 - **Conventional**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`.
-- **Descriptive**: 50-char lowercase titles; explain the "why" in the body.
+- **Descriptive**: 50-char lowercase titles; body with bullet list (what changed) and explanation paragraph (why it matters).
 
 ### Safety Protocol
 This plugin adheres to strict safety protocols:

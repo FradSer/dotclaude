@@ -8,5 +8,19 @@
   },
   "license": "MIT",
   "keywords": ["git", "conventional-commits", "automation", "workflow", "version-control"],
-  "hooks": "./hooks/hooks.json"
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "once": false,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/validate-commit-pretool.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
 }

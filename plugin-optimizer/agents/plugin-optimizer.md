@@ -63,4 +63,11 @@ The loaded `plugin-best-practices` skill provides complete validation standards,
 
 ## Output Format
 
-Follow the structured report format in the plugin-best-practices skill (Summary → Issues by Severity → Component Inventory → Positive Findings → Recommendations → Overall Assessment).
+Follow the structured report format in the plugin-best-practices skill:
+1. Summary
+2. Issues by Severity
+3. Component Inventory
+4. Positive Findings
+5. Recommendations
+6. Overall Assessment
+ 

@@ -1,6 +1,6 @@
 # Claude Code Plugin File Patterns Analysis
 
-This document summarizes the patterns and structure of various Markdown files in Claude Code plugins.
+This document summarizes the patterns and structure of various Markdown files in the `.research/claude-plugins-official/plugins` directory.
 
 ## Directory Structure
 
@@ -122,15 +122,32 @@ assistant: "[How Claude should respond]"
 
 ### System Prompt Structure
 
-Content after frontmatter becomes the agent's system prompt.
+Content after frontmatter becomes the agent's system prompt:
 
-For complete system prompt structure patterns and examples, see **`references/agents.md`** (Section 3: Agent Design) which covers:
-- System prompt template structure
-- Role definition patterns
-- Responsibility organization
-- Quality standards specification
-- Output format definition
-- Edge case handling approaches
+```markdown
+You are [role description] specializing in [domain].
+
+**Your Core Responsibilities:**
+1. [Primary responsibility]
+2. [Secondary responsibility]
+3. [Additional responsibilities...]
+
+**[Task Name] Process:**
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+**Quality Standards:**
+- [Standard 1]
+- [Standard 2]
+
+**Output Format:**
+[Output format description]
+
+**Edge Cases:**
+- [Edge case 1]: [Handling approach]
+- [Edge case 2]: [Handling approach]
+```
 
 ### Key Characteristics
 
@@ -196,13 +213,13 @@ You'll receive a report with vulnerability details.
 ### Dynamic Content
 
 - `$ARGUMENTS` - User-provided arguments
-- Pattern &#33;&#96;command&#96; (exclamation mark + backtick + command + backtick) - Execute bash commands to get context
+- `!` backticks execute bash commands to get context
 - `${CLAUDE_PLUGIN_ROOT}` - Plugin root directory path
 
 ### Key Characteristics
 
 - **Directive content**: Directly tells Claude what to do
-- **Can use bash**: Execute commands via the pattern &#33;&#96;command&#96; to get context
+- **Can use bash**: Execute commands via `!` to get context
 - **Tool restrictions**: Reduce permission prompts via `allowed-tools`
 
 ### Example
@@ -214,11 +231,10 @@ allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
 ---
 
 ## Context
-# Format: &#33;&#96;command&#96; (exclamation mark + backtick + command + backtick)
 
-- Current git status: &#33;&#96;git status&#96;
-- Current git diff: &#33;&#96;git diff HEAD&#96;
-- Current branch: &#33;&#96;git branch --show-current&#96;
+- Current git status: !`git status`
+- Current git diff: !`git diff HEAD`
+- Current branch: !`git branch --show-current`
 
 ## Your task
 
@@ -401,7 +417,7 @@ You're adding a console.log statement. Please consider:
 ## File Type Comparison
 
 | Type | Frontmatter | Content Audience | Primary Purpose | Required Fields |
-|------|-------------|------------------|-----------------|--------------------|
+|------|-------------|------------------|-----------------|-----------------|
 | SKILL.md | name, description | Claude | Provide domain knowledge | name, description |
 | Agent | name, description, model, color | Agent | Define agent behavior | name, description, model, color |
 | Command | description | Claude | Execute user commands | description |

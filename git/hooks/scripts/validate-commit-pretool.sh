@@ -7,11 +7,17 @@ set -euo pipefail
 # Read input from stdin
 input=$(cat)
 
-# Extract command from tool input
+# Extract tool_name and command from tool input
+tool_name=$(echo "$input" | jq -r '.tool_name // empty')
 command=$(echo "$input" | jq -r '.tool_input.command // empty')
 
-# Only validate git commit commands
-if [[ -z "$command" ]] || ! [[ "$command" =~ git[[:space:]]+commit ]]; then
+# Only process if this is a Bash tool invocation
+if [[ "$tool_name" != "Bash" ]]; then
+  exit 0
+fi
+
+# Only validate git commit commands (must start with "git commit")
+if [[ -z "$command" ]] || ! [[ "$command" =~ ^git[[:space:]]+commit ]]; then
   exit 0
 fi
 
@@ -96,6 +102,54 @@ if [[ "$title_line" =~ :[[:space:]]*$ ]]; then
   errors+=("Description cannot be empty")
 fi
 
+# 7. Validate commit body format
+# Extract body (everything after the first line)
+body=$(echo "$commit_msg" | tail -n +2)
+
+# Check if body exists and is not empty (after trimming whitespace)
+body_trimmed=$(echo "$body" | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
+
+if [[ -z "$body_trimmed" ]]; then
+  errors+=("Commit body is required. Body must contain bullet points describing changes.")
+  errors+=("Format: Use '- <verb> <description>' for each change")
+  errors+=("Example:")
+  errors+=("  - Add user authentication endpoint")
+  errors+=("  - Update middleware to validate tokens")
+else
+  # Body exists, now validate it has bullet points
+  # Look for lines starting with "- " (bullet points)
+  bullet_lines=$(echo "$body" | grep -E '^[[:space:]]*-[[:space:]]+' || true)
+
+  if [[ -z "$bullet_lines" ]]; then
+    errors+=("Body must contain bullet points (lines starting with '- ')")
+    errors+=("Current body format is invalid. Each change should be listed as:")
+    errors+=("  - <verb> <description>")
+    errors+=("Bullet points can be preceded by context paragraph and followed by explanation")
+  else
+    # Validate bullet points start with common verbs (soft check with warning)
+    # Common imperative verbs for commits
+    common_verbs="Add|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow"
+
+    invalid_bullets=()
+    while IFS= read -r line; do
+      # Extract the content after "- "
+      content=$(echo "$line" | sed -E 's/^[[:space:]]*-[[:space:]]*//')
+      # Check if it starts with a common verb (case-insensitive first letter, but verb should be capitalized)
+      if ! [[ "$content" =~ ^($common_verbs)[[:space:]] ]]; then
+        invalid_bullets+=("$line")
+      fi
+    done <<< "$bullet_lines"
+
+    if [[ ${#invalid_bullets[@]} -gt 0 ]]; then
+      warnings+=("Some bullet points may not start with imperative verbs:")
+      for bullet in "${invalid_bullets[@]}"; do
+        warnings+=("  $bullet")
+      done
+      warnings+=("Expected format: '- <Verb> <description>' (Add, Remove, Update, Fix, etc.)")
+    fi
+  fi
+fi
+
 # Output results and block execution if errors found
 if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
@@ -105,7 +159,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format: <type>[scope]: <description>\n   Example: feat(auth): add login validation\n   - Use lowercase in description\n   - Keep title under 50 characters\n   - Use imperative mood (add, fix, update)")
+    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n- <Verb> <change description>\n- <Verb> <change description>\n\n[Optional explanation paragraph]\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.")
   }' >&2
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then

@@ -32,46 +32,20 @@ Run the initialization command:
 /init-config
 ```
 
-The command will guide you through an 8-phase workflow:
+The command guides you through a 10-phase interactive workflow:
 
-### Phase 1: Environment Discovery
-Automatically detects your installed tools and languages without asking basic questions.
+1. **Environment Discovery** - Detects installed languages and tools
+2. **Developer Profile** - Captures name and email
+3. **TDD Preference** - Choose TDD inclusion
+4. **Technology Stack Selection** - Select tools and package managers
+5. **Best Practices Research** - Optional web search for 2026 best practices
+6. **Style Preference** - Choose emoji usage
+7. **Assembly & Generation** - Build final configuration
+8. **Length Validation** - Ensure optimal word count (1,500-3,000 words)
+9. **Multi-file Sync** - Optionally sync to GEMINI.md/AGENTS.md
+10. **Write CLAUDE.md** - Save with comprehensive report
 
-### Phase 2: TDD Preference
-Choose whether to include Test-Driven Development requirements:
-- **Include TDD**: Adds mandatory RED → GREEN → REFACTOR workflow
-- **Exclude TDD**: Generates configuration without TDD requirements
-
-### Phase 3: Technology Stack Selection
-Select which technology stacks to include (multi-select):
-- Discovered tools are marked as "Recommended"
-- AI automatically generates configurations for all selected technologies
-
-### Phase 4: Best Practices Research
-Optionally enable web search to find latest best practices:
-- **Search and append**: Searches for "2026 best practices" and adds 2-3 sentence summaries
-- **Skip search**: Uses only base template
-
-### Phase 5: Assembly & Generation
-Assembles the final configuration from:
-- Base template (with or without TDD)
-- AI-generated technology stack sections
-- Web search summaries (if enabled)
-
-### Phase 6: Length Validation
-Validates that the generated configuration meets best practices:
-- **Optimal**: 1,500-3,000 words
-- **Too Long**: Offers auto-trim or manual review options
-- **Too Short**: Shows info message but proceeds
-
-### Phase 7: Multi-file Sync
-Choose which additional AI configuration files to sync:
-- **GEMINI.md**: Google Gemini configuration
-- **AGENTS.md**: General agents configuration
-- Uses template-priority merge: keeps unique sections from existing files
-
-### Phase 8: Write CLAUDE.md
-Writes the final configuration with comprehensive success report.
+For detailed workflow steps, run `/init-config` and follow the interactive prompts.
 
 ## Structure
 
@@ -80,7 +54,7 @@ claude-config/
 ├── .claude-plugin/
 │   └── plugin.json           # Plugin manifest
 ├── commands/
-│   └── init-config.md        # Main command with 8-phase workflow
+│   └── init-config.md        # Main command with 10-phase workflow
 ├── assets/
 │   ├── claude-template.md    # Base template with TDD
 │   └── claude-template-no-tdd.md  # Base template without TDD
@@ -112,6 +86,10 @@ The validation script uses these thresholds:
 
 ```markdown
 # Claude Development Guidelines
+
+## Developer Profile
+- **Name**: Frad LEE
+- **Email**: fradlee@qq.com
 
 ## Core Principles
 [TDD requirements if enabled]
@@ -167,6 +145,14 @@ chmod +x scripts/validate-length.sh
 
 ## Version History
 
+### 1.1.1
+- Added keywords for better plugin discoverability
+- Optimized README structure to reduce redundancy
+- Improved documentation clarity
+
+### 1.1.0
+- Enhanced multi-file sync capabilities
+
 ### 1.0.0
 - Added TDD flexibility (include/exclude option)
 - Added web search integration for latest best practices
@@ -181,4 +167,4 @@ chmod +x scripts/validate-length.sh
 
 ## License
 
-This plugin is provided as-is for use with Claude Code.
+MIT License - see [LICENSE](LICENSE) file for details.
