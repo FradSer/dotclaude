@@ -72,5 +72,8 @@ Reduces query time from 500ms to 50ms.
 ```
 feat(lang): add polish language support
 
-Add Polish translation files and update language selector.
+- Add Polish translation files (pl.json)
+- Update language selector dropdown to include Polish
+
+Expands accessibility for Polish-speaking users.
 ```

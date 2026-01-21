@@ -5,7 +5,10 @@
 ```
 revert: let us never again speak of the noodle incident
 
-This reverts commit 676104e and a215868.
+- Revert commit 676104e implementing feature X
+- Revert commit a215868 updating component Y
+
+The original implementation caused critical production issues.
 
 Refs: 676104e, a215868
 ```
@@ -32,5 +35,8 @@ Closes #456
 ```
 feat: add polish language support
 
-Add Polish translation files and update language selector.
+- Add Polish translation files (pl.json)
+- Update language selector dropdown to include Polish
+
+Expands accessibility for Polish-speaking users.
 ```

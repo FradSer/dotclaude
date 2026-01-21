@@ -1,7 +1,8 @@
 {
   "name": "refactor",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Agent and commands for code simplification and refactoring to improve code quality while preserving functionality",
+  "keywords": ["refactor", "code-quality", "best-practices", "simplification", "maintainability"],
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"

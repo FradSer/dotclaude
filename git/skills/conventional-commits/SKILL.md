@@ -1,7 +1,7 @@
 ---
 name: conventional-commits
-description: This skill should be used when creating conventional commits, following the Conventional Commits specification (v1.0.0), analyzing commit history for conventional format, or managing commit message conventions.
-version: 0.2.0
+description: This skill should be used when the user asks to "create a commit", "follow conventional commits", "analyze commit history", "check commit format", or mentions "Conventional Commits specification". Provides expertise in creating conventional commits following the Commitizen (cz) style and v1.0.0 specification.
+version: 0.2.1
 ---
 
 ## Core Rules
@@ -24,25 +24,53 @@ version: 0.2.0
 
 **Common Types**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`, `build:`, `ci:`, `style:`
 
-**Body** (optional): Blank line after title, ≤72 chars/line
-- Bullet points listing what changed (start with verb: Add, Remove, Update, Fix)
-- Paragraph explaining why
+**Body** (optional but recommended): Blank line after title, ≤72 chars/line
+- **Bullet list**: What changed (start with verb: Add, Remove, Update, Fix)
+- **Blank line**
+- **Explanation paragraph**: Why it matters, what impact it has
+
+Example body structure:
+```
+- Add new user authentication endpoint
+- Update middleware to validate JWT tokens
+- Remove legacy session handling code
+
+Modernizes the authentication system and improves security
+by using industry-standard JWT tokens instead of sessions.
+```
+
+**IMPORTANT - Body Requirements** (enforced by git plugin hook):
+- **Body is mandatory** - all commits must include a body with bullet points
+- **Bullet points required** - use `- ` prefix for each change item
+- **Imperative verbs** - start each bullet with a verb (Add, Remove, Update, Fix, Implement, etc.)
+- **Optional paragraphs**:
+  - Context paragraph before bullets (to explain background)
+  - Explanation paragraph after bullets (to explain why/impact)
+
+**Valid body formats**:
+```
+# Simple: Just bullet points
+- Add feature X
+- Update component Y
+
+# With explanation:
+- Add feature X
+- Update component Y
+
+This improves performance by 50%.
+
+# With context and explanation:
+Previous implementation caused memory leaks.
+
+- Refactor memory management
+- Add cleanup handlers
+
+Resolves memory issues in production.
+```
 
 **Footer** (optional): Blank line after body
 - Issue references: `Closes #123`, `Fixes #456`
 - Breaking changes: `BREAKING CHANGE: <description>`
-
-## Workflow
-
-1. **Analyze changes**: Identify atomic logical units of work
-2. **Determine type**: `feat:` (new feature), `fix:` (bug fix), or other (see `references/types-reference.md` if needed)
-3. **Add scope** (optional): Lowercase, 1-2 words for codebase area
-4. **Write title**: `<type>[scope]: <description>` - all lowercase, <50 chars
-5. **Write body** (if needed): Bullets for what changed, paragraph for why
-6. **Add footer** (if needed): Issue references or `BREAKING CHANGE:`
-7. **Stage and commit**: Only files for this logical unit
-
-For multiple unrelated changes, create separate commits for each logical unit.
 
 ## Reference Files
 

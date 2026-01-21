@@ -10,48 +10,19 @@ The Refactor Plugin provides specialized tools for code simplification and refac
 
 ### `code-simplifier`
 
-Expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Adapts scope based on command invocation context.
-
-**Metadata:**
-
-| Field | Value |
-|-------|-------|
-| Model | `opus` |
-| Color | `blue` |
-| Tools | `Read`, `Edit`, `MultiEdit`, `Glob`, `Grep`, `Bash` |
-| Skills | `best-practices` |
+Expert code simplification specialist that enhances code clarity, consistency, and maintainability while preserving exact functionality. Automatically loads the `best-practices` skill and applies language-specific standards based on your project.
 
 **Scope Modes:**
-1. **Default** - Recently modified code in the current session
-2. **Files/Directories** - Specific paths provided in the context
-3. **Project-wide** - Entire codebase when explicitly requested
-
-**Universal Principles:**
-- **SOLID Principles**: Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
-- **DRY (Don't Repeat Yourself)**: Eliminate code duplication through shared utilities and abstractions
-- **KISS (Keep It Simple, Stupid)**: Favor simplicity over cleverness
-- **YAGNI (You Aren't Gonna Need It)**: Don't implement features until they're actually needed
-- **Convention over Configuration**: Prefer sensible defaults and standard patterns
-- **Law of Demeter**: Minimize coupling between components
-
-**Core Principles:**
-1. **Preserve Functionality**: Never change what the code does - only how it does it
-2. **Apply Language-Specific Standards**: Follow language-specific standards or fall back to CLAUDE.md
-3. **Enhance Clarity**: Simplify code structure, reduce complexity, improve readability
-4. **Maintain Balance**: Avoid over-simplification that reduces clarity or maintainability
-
-**Refinement Process:**
-1. Identify the target code sections based on scope
-2. Analyze for opportunities to improve elegance and consistency
-3. Apply project-specific best practices and coding standards
-4. Ensure all functionality remains unchanged
-5. Verify the refined code is simpler and more maintainable
-6. Document only significant changes that affect understanding
+- **Targeted**: Recently modified code or specific files/directories
+- **Project-wide**: Entire codebase when explicitly requested (via `/refactor-project`)
 
 **Example Usage:**
 ```
 @code-simplifier Simplify the authentication logic in src/auth/login.ts
 ```
+
+For detailed principles and workflow, see [code-simplifier.md](agents/code-simplifier.md) and [SKILL.md](skills/best-practices/SKILL.md).
+
 
 ## Skills
 
@@ -72,17 +43,15 @@ Comprehensive refactoring workflow with language-specific best practices and Nex
 **Language References:**
 
 Based on file extension, appropriate reference is loaded:
-- `.ts`, `.tsx`, `.js`, `.jsx` → `references/typescript.md`
-- `.py` → `references/python.md`
-- `.go` → `references/go.md`
-- `.swift` → `references/swift.md`
-- Universal principles → `references/universal.md`
+- `.ts`, `.tsx`, `.js`, `.jsx` → [typescript.md](skills/best-practices/references/typescript.md)
+- `.py` → [python.md](skills/best-practices/references/python.md)
+- `.go` → [go.md](skills/best-practices/references/go.md)
+- `.swift` → [swift.md](skills/best-practices/references/swift.md)
+- Universal principles → [universal.md](skills/best-practices/references/universal.md)
 
 **Next.js Performance Patterns:**
-- 50+ specific optimization patterns organized by category
-- `references/nextjs/INDEX.md` - Complete pattern index with all patterns organized by impact level
-- `references/nextjs/_sections.md` - Priority categories
-- Pattern categories: async, bundle, server, client, rerender, rendering, js
+- 47 performance optimization patterns organized by impact level and category
+- See [SKILL.md](skills/best-practices/SKILL.md) for complete pattern index and usage guidance
 
 **Workflow:**
 1. **Identify**: Determine target scope
@@ -95,7 +64,7 @@ Based on file extension, appropriate reference is loaded:
 
 ### `/refactor`
 
-Quick refactoring for recently modified or specified code with interactive rule selection.
+Quick refactoring for recently modified or specified code.
 
 **Usage:**
 ```bash
@@ -107,19 +76,7 @@ Quick refactoring for recently modified or specified code with interactive rule 
 /refactor src/utils/
 ```
 
-**What it does:**
-- Analyzes target code and shows preview of applicable rules
-- **Interactive selection**: Lets you choose which rule categories to apply (if configured for interactive mode)
-- Launches the `code-simplifier` agent with targeted scope
-- Agent automatically loads the `best-practices` skill
-- Applies language-specific refactoring based on file extensions
-- Respects configuration from `.claude/refactor.local.md`
-- Preserves functionality while improving clarity
-
-**Interactive Features:**
-- Preview of detected languages and applicable rules
-- Multi-select rule categories (Next.js patterns, language-specific, universal)
-- Confirmation before applying changes
+Launches the `code-simplifier` agent with targeted scope, automatically applies language-specific refactoring, and preserves functionality while improving clarity.
 
 ---
 
@@ -132,41 +89,11 @@ Project-wide code refactoring for quality and maintainability across the entire 
 /refactor-project
 ```
 
-**What it does:**
-- Analyzes entire project and shows preview of potential improvements
-- **Always interactive**: Shows preview and requires confirmation for project-wide changes
-- Launches the `code-simplifier` agent with project-wide scope
-- Emphasizes cross-file duplication reduction and consistent patterns
-- Loads all relevant language references
-- Applies consistent refactoring across the entire codebase
-- Respects configuration from `.claude/refactor.local.md`
-
-**Focus Areas:**
-1. Cross-file duplication: Consolidate duplicate code patterns into shared utilities
-2. Consistent patterns: Standardize similar functionality throughout
-3. Type safety: Strengthen type annotations and error handling
-4. Modern standards: Update legacy patterns to modern best practices
-
-**Interactive Features:**
-- Preview of estimated files affected and changes per category
-- Multi-select rule categories
-- Confirmation required before proceeding (safety for project-wide changes)
+Launches the `code-simplifier` agent with project-wide scope, emphasizing cross-file duplication reduction, consistent patterns, and modern standards.
 
 ## Language References
 
-The `best-practices` skill includes language-specific refactoring guidelines:
-
-| Language | File | Extensions |
-|----------|------|------------|
-| TypeScript/JavaScript | `skills/best-practices/references/typescript.md` | `.ts`, `.tsx`, `.js`, `.jsx` |
-| Python | `skills/best-practices/references/python.md` | `.py` |
-| Go | `skills/best-practices/references/go.md` | `.go` |
-| Swift | `skills/best-practices/references/swift.md` | `.swift` |
-| Universal | `skills/best-practices/references/universal.md` | All languages |
-
-**Next.js Performance Patterns:**
-- 50+ specific patterns in `skills/best-practices/references/nextjs/`
-- Categories: async, bundle, server, client, rerender, rendering, js optimization
+The `best-practices` skill includes language-specific refactoring guidelines for TypeScript, JavaScript, Python, Go, and Swift. Universal principles apply to all languages. See [SKILL.md](skills/best-practices/SKILL.md) for the complete reference guide and framework detection logic.
 
 ## Example Refactoring
 
@@ -222,143 +149,11 @@ function processUser(user: User | null): { status: string; user: User | null } {
 
 ### Next.js: Eliminating Waterfalls (CRITICAL)
 
-**Before:**
-```typescript
-export default async function UserProfile({ params }: { params: { id: string } }) {
-  const user = await fetchUser(params.id);
-  const posts = await fetchUserPosts(user.id);  // ⚠️ Waterfall: waits for user
-  const comments = await fetchUserComments(user.id);  // ⚠️ Waterfall: waits for posts
-
-  return <Profile user={user} posts={posts} comments={comments} />;
-}
-```
-
-**After:**
-```typescript
-export default async function UserProfile({ params }: { params: { id: string } }) {
-  // Parallelize independent operations
-  const [user, posts, comments] = await Promise.all([
-    fetchUser(params.id),
-    fetchUserPosts(params.id),  // ✅ Runs in parallel
-    fetchUserComments(params.id),  // ✅ Runs in parallel
-  ]);
-
-  return <Profile user={user} posts={posts} comments={comments} />;
-}
-```
-
-**Improvements:**
-- Eliminated sequential waterfalls with `Promise.all()`
-- Reduced loading time by ~66% (3 sequential → 1 parallel)
-- CRITICAL performance impact for user experience
+Demonstrates parallelizing independent async operations to eliminate sequential waterfalls, reducing loading time by up to 66%. See [async-parallel.md](skills/best-practices/references/nextjs/async-parallel.md) for detailed examples and patterns.
 
 ### Python: Applying DRY and Type Safety
 
-**Before:**
-```python
-def calculate_discount(price, customer_type):
-    if customer_type == "regular":
-        discount = price * 0.05
-        final_price = price - discount
-        return final_price
-    elif customer_type == "premium":
-        discount = price * 0.10
-        final_price = price - discount
-        return final_price
-    elif customer_type == "vip":
-        discount = price * 0.20
-        final_price = price - discount
-        return final_price
-    else:
-        return price
-```
-
-**After:**
-```python
-from enum import Enum
-from typing import Final
-
-class CustomerType(Enum):
-    REGULAR = 0.05
-    PREMIUM = 0.10
-    VIP = 0.20
-
-def calculate_discount(price: float, customer_type: CustomerType) -> float:
-    """Calculate final price after applying customer type discount."""
-    discount_rate = customer_type.value
-    return price * (1 - discount_rate)
-
-# Usage with type safety
-final_price = calculate_discount(100.0, CustomerType.PREMIUM)
-```
-
-**Improvements:**
-- Eliminated code duplication (DRY principle)
-- Added type safety with Enum and type hints
-- Simplified logic from 12 lines to 3 lines
-- Made discount rates configurable and discoverable
-- Prevented invalid customer types at compile time
-
-## Configuration
-
-### Configuration File
-
-The plugin supports per-project configuration via `.claude/refactor.local.md`:
-
-**Location:** `.claude/refactor.local.md` (in project root)
-
-**Format:**
-```yaml
----
-enabled: true
-default_mode: all  # all | selected | weighted
-rule_categories:
-  nextjs:
-    async: true      # Eliminating waterfalls (CRITICAL)
-    bundle: true     # Bundle size optimization (CRITICAL)
-    server: true     # Server-side performance (HIGH)
-    client: true     # Client-side data fetching (MEDIUM-HIGH)
-    rerender: true   # Re-render optimization (MEDIUM)
-    rendering: true  # Rendering performance (MEDIUM)
-    js: true         # JavaScript micro-optimizations (LOW-MEDIUM)
-    advanced: true   # Advanced patterns (LOW)
-  languages:
-    typescript: true
-    python: true
-    go: true
-    swift: true
-    universal: true  # Universal principles (SOLID, DRY, KISS, etc.)
-weighting_strategy: impact-based  # impact-based | equal | custom
-custom_weights: {}
-disabled_patterns: []
----
-```
-
-**Configuration Options:**
-- `enabled`: Enable/disable refactoring (default: true)
-- `default_mode`: How rules are applied by default
-  - `all`: Apply all applicable rules (no interaction needed)
-  - `selected`: Always show interactive selection
-  - `weighted`: Apply rules based on weights
-- `rule_categories`: Enable/disable specific rule categories
-- `weighting_strategy`: How to prioritize rules
-  - `impact-based`: CRITICAL > HIGH > MEDIUM > LOW
-  - `equal`: All enabled rules have equal priority
-  - `custom`: Use `custom_weights` for specific priorities
-- `custom_weights`: Override weights for specific rules
-- `disabled_patterns`: List of pattern IDs to never apply
-
-**Creating Configuration:**
-- **First-time use**: Configuration is automatically set up when you first run `/refactor` or `/refactor-project`
-  - You'll be guided through interactive setup questions
-  - Configuration file will be created at `.claude/refactor.local.md`
-- **Manual setup**: Copy the example file: `cp examples/refactor.local.md .claude/refactor.local.md` and customize
-- **Edit existing**: Edit `.claude/refactor.local.md` manually anytime
-
-**Example File:**
-- See `examples/refactor.local.md` for a complete example configuration
-
-**Note:** The configuration file is gitignored and won't be committed to your repository.
+Demonstrates eliminating code duplication using Enums and type hints, reducing logic complexity while improving type safety. See [python.md](skills/best-practices/references/python.md) for comprehensive Python refactoring patterns.
 
 ## Installation
 
@@ -369,33 +164,20 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 ### Using `/refactor`
 - Use for targeted refactoring during development
 - Run after making changes to improve code quality
-- Review the preview and select appropriate rule categories
 - Review refactored code to ensure functionality is preserved
 - Use on specific files when focusing on particular areas
 - The `code-simplifier` agent will automatically load the `best-practices` skill
-- Configuration from `.claude/refactor.local.md` is automatically respected
 
 ### Using `/refactor-project`
 - Use when starting large refactoring efforts
-- **Always review the preview** - shows estimated files affected
 - Ensure all tests pass before running
 - Review changes carefully - affects entire codebase
 - Use for modernizing legacy code
 - Group related changes together
-- Configuration from `.claude/refactor.local.md` is automatically respected
-
-### Configuration Setup
-- **First-time use**: When you first run `/refactor` or `/refactor-project`, you'll be guided through configuration setup
-- Choose rule categories that match your project's needs
-- Use `selected` mode if you want to choose rules each time
-- Use `all` mode for automatic application of all rules (recommended for quick start)
-- Use `weighted` mode with custom weights for fine-grained control
-- Edit `.claude/refactor.local.md` manually anytime to fine-tune settings
 
 ### Using `@code-simplifier` Agent
 - Invoke directly for specific code simplification
 - Agent automatically loads the `best-practices` skill
-- Agent respects configuration from `.claude/refactor.local.md`
 - Trust agent's expertise in code quality
 - Review changes to ensure they match your preferences
 
@@ -403,19 +185,17 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 
 ### Initial Setup:
 ```bash
-# First-time use: Configuration is set up automatically
+# Use targeted refactoring for recent changes
 /refactor
 # Or for project-wide refactoring:
 /refactor-project
-# You'll be guided through configuration questions
 ```
 
 ### Development Workflow:
 ```bash
 # Make changes
-# Refactor recent changes (with interactive selection if configured)
+# Refactor recent changes
 /refactor
-# Review preview and select rules
 # Review changes and commit
 ```
 
@@ -423,7 +203,6 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 ```bash
 # Refactor specific module
 /refactor src/auth/
-# Review preview and select applicable rules
 # Review changes
 # Commit improvements
 ```
@@ -432,9 +211,6 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 ```bash
 # Plan project-wide refactoring
 /refactor-project
-# Review preview (always shown for safety)
-# Select rule categories to apply
-# Confirm project-wide changes
 # Review all changes
 # Commit in logical groups
 # Run full test suite
@@ -496,13 +272,9 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 
 ### Q: How do I disable specific rules or patterns?
 
-**A:** Add the rule ID to the `disabled_patterns` list in `.claude/refactor.local.md`:
+**A:** The refactoring plugin applies best practices automatically based on detected frameworks and languages. For fine-grained control over specific patterns, you can provide feedback to the agent during refactoring to skip certain changes.
 
-```yaml
-disabled_patterns: ["nextjs:async-defer-await", "typescript:no-explicit-any"]
-```
-
-You can find rule IDs in the YAML frontmatter of each pattern file in `skills/best-practices/references/`.
+You can find rule IDs in the YAML frontmatter of each pattern file in [skills/best-practices/references/](skills/best-practices/references/).
 
 ### Q: Can I use this with frameworks other than Next.js?
 
@@ -519,18 +291,18 @@ The Next.js patterns are only applied when Next.js code is detected in your proj
 
 **A:**
 - **`/refactor`**: Targeted refactoring for recently modified or specified files. Fast, focused, and ideal for incremental improvements during development.
-- **`/refactor-project`**: Project-wide refactoring across the entire codebase. Emphasizes cross-file duplication reduction and consistent patterns. Always shows preview and requires confirmation for safety.
+- **`/refactor-project`**: Project-wide refactoring across the entire codebase. Emphasizes cross-file duplication reduction and consistent patterns.
 
 Use `/refactor` for day-to-day work, and `/refactor-project` for major modernization efforts.
 
 ### Q: How do I configure which rules are applied?
 
-**A:** The first time you run `/refactor` or `/refactor-project`, you'll be guided through interactive configuration setup. You can also manually edit `.claude/refactor.local.md`:
+**A:** The plugin automatically detects your project's frameworks and languages, then applies appropriate rules:
 
-1. **Rule categories**: Enable/disable entire categories (Next.js async, bundle, TypeScript, etc.)
-2. **Default mode**: Choose `all` (auto-apply), `selected` (interactive), or `weighted` (priority-based)
-3. **Weighting strategy**: Prioritize by impact level or use custom weights
-4. **Disabled patterns**: Exclude specific rules you don't want
+1. **Automatic framework detection**: Identifies Next.js, React, Vite, and other frameworks
+2. **Language detection**: Scans file extensions to determine languages in use
+3. **Rule application**: Applies only relevant rules based on detected frameworks and languages
+4. **Priority-based**: Uses impact-based weighting (CRITICAL > HIGH > MEDIUM > LOW) to prioritize changes
 
 ### Q: What if I don't have a test suite?
 
@@ -543,20 +315,20 @@ Use `/refactor` for day-to-day work, and `/refactor-project` for major moderniza
 
 ### Q: Can I customize the refactoring rules?
 
-**A:** Yes, in several ways:
+**A:** Yes, the plugin is designed to be flexible:
 
-1. **Enable/disable categories**: Turn entire rule categories on/off in configuration
-2. **Disable specific patterns**: Add patterns to `disabled_patterns`
-3. **Custom weights**: Assign priority to specific rules with `custom_weights`
-4. **Add custom references**: Create additional reference files in `skills/best-practices/references/`
+1. **Provide feedback**: During refactoring, you can guide the agent to skip certain patterns or focus on specific areas
+2. **Framework-aware**: The agent automatically applies only relevant rules based on detected frameworks
+3. **Impact-based**: Rules are prioritized by their impact level (CRITICAL > HIGH > MEDIUM > LOW)
+4. **Add custom references**: You can create additional reference files in [skills/best-practices/references/](skills/best-practices/references/) for project-specific patterns
 
 ### Q: How do I see what rules are available?
 
 **A:** You can explore the reference files:
 
-- **Language-specific**: `skills/best-practices/references/{typescript,python,go,swift,universal}.md`
-- **Next.js patterns**: `skills/best-practices/references/nextjs/` (50+ pattern files)
-- **Pattern categories**: See `skills/best-practices/references/nextjs/_sections.md` for organized categories
+- **Language-specific**: See language reference files in [skills/best-practices/references/](skills/best-practices/references/)
+- **Next.js patterns**: [nextjs/](skills/best-practices/references/nextjs/) (50+ pattern files)
+- **Pattern categories**: See [_sections.md](skills/best-practices/references/nextjs/_sections.md) for organized categories
 
 Each pattern file includes a description, impact level, and code examples.
 
@@ -568,7 +340,7 @@ Each pattern file includes a description, impact level, and code examples.
 - **MEDIUM**: Noticeable improvements in specific scenarios (e.g., re-render optimization, client-side fetching)
 - **LOW**: Micro-optimizations and code quality improvements (e.g., JavaScript patterns, advanced techniques)
 
-The `impact-based` weighting strategy automatically prioritizes CRITICAL > HIGH > MEDIUM > LOW.
+The `impact-based` approach automatically prioritizes CRITICAL > HIGH > MEDIUM > LOW.
 
 ### Q: Does this work with monorepos?
 
@@ -576,7 +348,6 @@ The `impact-based` weighting strategy automatically prioritizes CRITICAL > HIGH 
 
 - Run `/refactor` on specific packages or workspaces
 - Use `/refactor-project` to refactor the entire monorepo (with caution)
-- Configure different rules per package by placing `.claude/refactor.local.md` in each package directory
 
 ### Q: Can I use this in CI/CD?
 
@@ -597,6 +368,3 @@ The `impact-based` weighting strategy automatically prioritizes CRITICAL > HIGH 
 
 Frad LEE (fradser@gmail.com)
 
-## Version
-
-1.0.0
