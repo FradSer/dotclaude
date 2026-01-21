@@ -1,0 +1,17 @@
+{
+  "description": "Git plugin hooks for commit message validation",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/validate-commit-pretool.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
