@@ -141,66 +141,19 @@ curl -X POST 'https://api.exa.ai/search' \
 
 ## Application Form Format
 
+See `template.md` for the complete structural template. Key format requirements are provided below.
+
 ### Required Sections
 
-```markdown
-# 背景技术
-# 检索分析
-# 发明内容
-# 具体实施方式
-# 其他
-```
+All patent applications must include: Background Technology (背景技术), Search Analysis (检索分析), Invention Content (发明内容), Specific Implementation Modes (具体实施方式), and Others (其他).
 
-### 检索分析 Format
-
-```markdown
-检索过程及结论
-撰写提案前必须经过充分检索，充分检索有利于发明人自己理解发明创造的创意创新点
-
-1. 检索关键词：[技术领域 + 技术效果 + 技术特征]
-2. 检索式：[语义查询描述]
-3. 检索结果
-
-|编号|申请号|专利名称|发明内容|
-|-|-|-|-|
-|1|...|...|...|
-
-4. 检索结果分析
-与本提案最接近的专利为[专利号]...
-
-|最接近的现有技术专利申请号|与本提案的相同点|与本提案的区别点|
-|-|-|-|
-|...|...|...|
-```
-
-### 发明内容 Format
-
-```markdown
-1. 本发明要解决上述技术问题中最核心的技术问题是[核心问题]
-2. 从宏观上看，解决技术问题的技术方案可以概括提炼为[方案概述]
-3. 技术方案带来的有益效果体现在[有益效果]
-```
-
-### 具体实施方式 Format
+### Implementation Requirements
 
 Provide at least 3 embodiments with variations in:
 - 数据流向 (push/pull, sync/async)
 - 触发条件 (time-based, event-based, threshold-based)
 - 模块边界 (monolithic, distributed, edge-cloud)
 - 处理位置 (local, remote, edge)
-
-### 其他 Format
-
-```markdown
-## 1. 关键创新点
-- 创新点一：[区别于现有技术的技术特征]
-
-## 2. 本技术方案潜在的替代方案
-- 替代方案一：[可关联申请的方案]
-
-## 3. 本技术方案的缺陷
-- 潜在缺陷一：[诚实评估]
-```
 
 ---
 

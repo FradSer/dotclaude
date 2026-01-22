@@ -9,13 +9,12 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LIB_DIR="$SCRIPT_DIR/../lib"
 
-# Source shared utilities if available
+# Source shared utilities
 if [[ -f "$LIB_DIR/utils.sh" ]]; then
   source "$LIB_DIR/utils.sh"
 else
-  # Fallback definitions
-  log_error() { echo "❌ Error: $1" >&2; }
-  log_success() { echo "✅ $1"; }
+  echo "❌ Error: utils.sh not found in $LIB_DIR" >&2
+  exit 1
 fi
 
 # Default values
@@ -95,18 +94,12 @@ ENCODED_QUERY=$(printf '%s' "$QUERY" | jq -sRr @uri)
 # Execute search based on engine
 case "$ENGINE" in
   serpapi)
-    if [[ -z "${SERPAPI_KEY:-}" ]]; then
-      log_error "SERPAPI_KEY environment variable is not set"
-      exit 1
-    fi
+    require_env "SERPAPI_KEY"
     echo "🔍 Searching Google Patents via SerpAPI for: $QUERY"
     curl -s "https://serpapi.com/search.json?engine=google_patents&q=$ENCODED_QUERY&api_key=${SERPAPI_KEY}&num=$NUM_RESULTS"
     ;;
   exa)
-    if [[ -z "${EXA_API_KEY:-}" ]]; then
-      log_error "EXA_API_KEY environment variable is not set"
-      exit 1
-    fi
+    require_env "EXA_API_KEY"
     echo "🔍 Searching patents via Exa.ai for: $QUERY"
     curl -s -X POST 'https://api.exa.ai/search' \
       -H "x-api-key: ${EXA_API_KEY}" \

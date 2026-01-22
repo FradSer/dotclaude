@@ -1,7 +1,15 @@
 {
   "name": "office",
-  "version": "0.1.0",
+  "version": "0.3.0",
+  "license": "MIT",
   "description": "Specialized Claude Skill for patent application generation and intellectual property workflows.",
+  "keywords": [
+    "patent",
+    "legal",
+    "chinese",
+    "search",
+    "intellectual-property"
+  ],
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
