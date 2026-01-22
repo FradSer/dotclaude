@@ -7,7 +7,7 @@ model: haiku
 
 ## Your Task
 
-1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, STOP and inform user: "Configuration required. Run `/git:config` to set up project-specific settings."
+1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, automatically invoke the `/git:config` command to set up project-specific settings before proceeding.
 
 2. **Load the conventional-commits skill using the Skill tool** to access conventional commit capabilities.
 
@@ -20,9 +20,10 @@ model: haiku
 
 5. **For each logical unit**:
    a. Draft the commit message following conventional commits format
-   b. **Validate the message** against the "Core Rules" defined in the `conventional-commits` skill.
-   c. Stage the relevant files
-   d. Create the commit with the validated message
-   e. **IMPORTANT**: The conventional-commits skill defines a PreToolUse hook that automatically validates commit message format BEFORE execution. If validation fails, the hook will BLOCK the commit and provide error details.
+   b. **Check for new scopes**: If the commit message contains a scope that is not defined in `.claude/git.local.md`, automatically invoke the `/git:config` command to add the new scope to the configuration.
+   c. **Validate the message** against the "Core Rules" defined in the `conventional-commits` skill.
+   d. Stage the relevant files
+   e. Create the commit with the validated message
+   f. **IMPORTANT**: The conventional-commits skill defines a PreToolUse hook that automatically validates commit message format BEFORE execution. If validation fails, the hook will BLOCK the commit and provide error details.
 
 6. **Repeat** until every change is committed.

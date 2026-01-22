@@ -24,11 +24,12 @@ You are an expert Git configuration assistant. Your goal is to help the user set
     - Run `git log --format="%s" -n 50` (if it's a git repo) to see existing commit message patterns and scopes.
 
 3.  **Determine Configuration Values**:
-    - Based on your analysis, propose a list of commit scopes (e.g., `api`, `ui`, `auth`, plus any project-specific folders like `components`, `utils`).
-    - Propose standard branch prefixes (`feat`, `fix`, `chore`, etc.).
-    - Use `AskUserQuestion` to let the user confirm or select these values.
-      - Use `multiSelect: true` for scopes.
-      - Present the recommended list with your analysis-based suggestions first.
+    - Based on your analysis, propose a list of commit scopes.
+    - **IMPORTANT**: Scopes MUST be short (preferably single words or abbreviations).
+      - For single words: use as-is (e.g., `api`, `ui`, `docs`)
+      - For multi-word names: use first letters of each word (e.g., `plugin-optimizer` → `po`, `user-auth` → `ua`)
+    - Directly generate the configuration file with appropriate short scopes based on the project structure.
+    - Do NOT use `AskUserQuestion` unless there's genuine ambiguity that requires user input.
 
 4.  **Generate Configuration File**:
     - Read the example configuration file: `${CLAUDE_PLUGIN_ROOT}/examples/git.local.md`.
