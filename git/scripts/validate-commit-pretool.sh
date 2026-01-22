@@ -28,13 +28,19 @@ fi
 
 # Extract commit message from command
 # Handles multiple formats:
-# 1. git commit -m "message"
-# 2. git commit -m 'message'
-# 3. git commit -m "$(cat <<'EOF'...)"
+# 1. git commit -m "$(cat <<'EOF'...)" (heredoc - must check first!)
+# 2. git commit -m "message"
+# 3. git commit -m 'message'
 commit_msg=""
 
-# Try double quotes
-if [[ "$command" =~ -m[[:space:]]+\"([^\"]+)\" ]]; then
+# Handle heredoc style FIRST: git commit -m "$(cat <<'EOF'..."
+# This must be checked before simple quoted strings to avoid partial matches
+if [[ "$command" =~ cat[[:space:]]+\<\<[[:space:]]*[\'\"]?EOF ]]; then
+  # Extract the entire heredoc content (between <<'EOF' and EOF)
+  # Use a more flexible pattern that allows EOF to be followed by other characters
+  commit_msg=$(echo "$command" | sed -n "/<<.*EOF/,/EOF/p" | sed '1d;$d')
+# Try double quotes (but not heredoc)
+elif [[ "$command" =~ -m[[:space:]]+\"([^\"]+)\" ]]; then
   commit_msg="${BASH_REMATCH[1]}"
 # Try single quotes
 elif [[ "$command" =~ -m[[:space:]]+\'([^\']+)\' ]]; then
@@ -42,12 +48,6 @@ elif [[ "$command" =~ -m[[:space:]]+\'([^\']+)\' ]]; then
 # Try unquoted (simple case)
 elif [[ "$command" =~ -m[[:space:]]+([^[:space:]\"\']+) ]]; then
   commit_msg="${BASH_REMATCH[1]}"
-fi
-
-# Handle heredoc style: git commit -m "$(cat <<'EOF'..."
-if [[ -z "$commit_msg" ]] && [[ "$command" =~ cat[[:space:]]+\<\<[[:space:]]*[\'\"]?EOF ]]; then
-  # Extract the first line of the heredoc content
-  commit_msg=$(echo "$command" | sed -n "/<<.*EOF/,/^[[:space:]]*EOF/p" | sed '1d;$d' | head -1 | sed 's/^[[:space:]]*//')
 fi
 
 # If we couldn't extract the message, skip validation
