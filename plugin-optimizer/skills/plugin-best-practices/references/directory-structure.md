@@ -27,9 +27,9 @@ enterprise-plugin/
 ├── .mcp.json                # MCP server definitions
 ├── .lsp.json                # LSP server configurations
 ├── scripts/                 # Hook and utility scripts
-│   ├── security-scan.sh
-│   ├── format-code.py
-│   └── deploy.js
+│   ├── security-scan.sh     # Must be executable with shebang
+│   ├── format-code.py       # Must be executable with shebang
+│   └── deploy.js            # Must be executable with shebang
 ├── LICENSE                  # License file
 └── CHANGELOG.md             # Version history
 ```
@@ -47,3 +47,8 @@ enterprise-plugin/
 | **Hooks**       | `hooks/hooks.json`           | Hook configuration               |
 | **MCP servers** | `.mcp.json`                  | MCP server definitions           |
 | **LSP servers** | `.lsp.json`                  | Language server configurations   |
+| **Scripts**     | `scripts/`                    | Hook and utility scripts         |
+
+## Script Requirements
+
+Scripts must be executable (`chmod +x`), include proper shebang lines (`#!/bin/bash`, `#!/usr/bin/env python3`, etc.), and use `${CLAUDE_PLUGIN_ROOT}` in paths. See `references/debugging.md` (lines 47-50) for troubleshooting.

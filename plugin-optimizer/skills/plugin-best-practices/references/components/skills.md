@@ -30,6 +30,7 @@ skills/
 - **Use Imperative Style**: Write SKILL.md bodies using verb-first instructions ("Parse the file...", "Validate the input...") rather than "You should...".
 - **Third-Person Descriptions**: Write frontmatter descriptions in the third person ("This skill should be used when...").
 - **Structure Correctly**: Place the `SKILL.md` file inside a subdirectory (e.g., `skills/my-skill/SKILL.md`).
+- **Script Executability**: If a skill includes scripts, ensure they are executable (`chmod +x`), have shebang lines, and use `${CLAUDE_PLUGIN_ROOT}` in paths
 
 ### Should Do
 - **Keep Lean**: Keep SKILL.md lean (1,500-2,000 words). Move detailed docs to `references/` to save context window.

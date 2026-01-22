@@ -37,6 +37,8 @@ For the latest official Claude Code documentation, use the `claude-code-guide` a
 
 **Component Decoupling**: Components (skills/agents/commands) must be independent and self-contained. See `references/directory-structure.md` and component-specific references for implementation details.
 
+**Script Executability**: Scripts (`.sh`, `.py`, `.js`, etc.) must be executable (`chmod +x`), have a correct shebang, use `${CLAUDE_PLUGIN_ROOT}` in paths, and run without extra setup.
+
 ## Quick Reference
 
 **Critical Component Requirements**:
@@ -57,6 +59,7 @@ For the latest official Claude Code documentation, use the `claude-code-guide` a
 - Agents have triggering examples in descriptions
 - Skills use imperative form, not second person
 - Components (skills/agents/commands) are decoupled and do not directly reference each other
+- Scripts are executable with shebang and use `${CLAUDE_PLUGIN_ROOT}` in paths
 
 ## Core Validation Categories
 
@@ -124,31 +127,80 @@ See reference files for specific examples of each severity level.
 
 ## Reference Resources & Scenario Guide
 
-Use this guide to select the correct reference file based on the specific validation task or scenario encountered.
+Use this guide to select the correct reference file based on the specific validation task or scenario encountered. Each scenario maps to specific reference files with detailed validation patterns and best practices.
+
+### Quick Lookup Index
+
+| Issue/Question | Reference File | Key Section |
+|----------------|----------------|-------------|
+| Script not executing? | `references/debugging.md` | Hook script troubleshooting (lines 47-50) |
+| Directory structure wrong? | `references/directory-structure.md` | Standard plugin layout |
+| Tool invocation errors? | `references/tool-invocations.md` | Tool invocation rules |
+| Component validation failed? | `references/components/[type].md` | Component-specific reference |
+| Hook not triggering? | `references/debugging.md` | Hook troubleshooting (lines 45-57) |
+| MCP server issues? | `references/debugging.md` | MCP server troubleshooting (lines 58-71) |
+| Plugin.json errors? | `references/manifest-schema.md` | Manifest schema reference |
+| Script missing shebang? | `references/components/hooks.md` | Bash hook template (line 70) |
+| Script path errors? | `references/manifest-schema.md` | ${CLAUDE_PLUGIN_ROOT} usage (line 87) |
 
 ### 1. Structure & Manifest Validation
-**Scenario**: Users report "plugin not found" or "invalid configuration".
-- **Directory Layout**: usage of `references/directory-structure.md` - Validates file hierarchy, naming conventions (kebab-case), and component placement.
-- **Manifest Configuration**: usage of `references/manifest-schema.md` - checks `plugin.json` fields, `marketplace.json` requirements, and metadata standards.
 
-### 2. Component Implementation
-**Scenario**: "How do I create an X?" or "Validation failed for component Y".
-- **Commands**: `references/components/commands.md` - For `options`, `arguments`, and inline execution syntax.
-- **Agents**: `references/components/agents.md` - For system prompts, persona definition, and triggering example blocks.
-- **Skills**: `references/components/skills.md` - For `SKILL.md` structure, progressive disclosure patterns, and instruction formats.
-- **Hooks**: `references/components/hooks.md` - For `PreStep`/`PostStep` triggers, `hooks.json` config, and exit code handling.
-- **Common Patterns**: `references/component-patterns.md` - Shared best practices applicable across all components (VSCode compatibility, error handling).
+**When to use**: Validating plugin directory structure, file locations, naming conventions, or manifest configuration.
 
-### 3. Advanced Integrations & External Tools
-**Scenario**: Integrating external servers/tools or fixing tool call errors.
-- **MCP Servers**: `references/components/mcp-servers.md` & `references/mcp-patterns.md` - For defining and configuring Model Context Protocol servers.
-- **LSP Servers**: `references/components/lsp-servers.md` - For Language Server Protocol integration details.
-- **Tool Invocations**: `references/tool-invocations.md` - **CRITICAL**: Distinguishing between correct tool descriptions and forbidden explicit tool calls.
+**Scenarios**:
+- **Directory structure, file locations, naming**: Reference `references/directory-structure.md`
+- **Manifest errors**: Reference `references/manifest-schema.md`
+- **Script structure and executability**: Reference `references/directory-structure.md` + `references/debugging.md` (lines 47-50)
 
-### 4. Workflow, Debugging & Documentation
-**Scenario**: "Why isn't it working?" or "How do I test this?".
-- **Debugging**: `references/debugging.md` - Strategies for diagnosing agent loops, tool failures, and state issues.
-- **CLI Operations**: `references/cli-commands.md` - Reference for `claude` CLI commands used in testing and maintenance.
-- **Documentation Standards**: `references/todowrite-usage.md` - Guidelines for using TodoWrite to maintain plugin context and documentation.
+### 2. Component Implementation Validation
 
-Load specific reference files as needed to provide detailed validation logic without overwhelming the context.
+**When to use**: Validating or creating specific plugin components (commands, agents, skills, hooks, MCP servers, LSP servers).
+
+**Scenarios**:
+- **Commands**: Reference `references/components/commands.md`
+- **Agents**: Reference `references/components/agents.md` (requires 2-4 example blocks)
+- **Skills**: Reference `references/components/skills.md`
+- **Hooks**: Reference `references/components/hooks.md` (exit codes: 0=allow, 2=block)
+- **MCP Servers**: Reference `references/components/mcp-servers.md` & `references/mcp-patterns.md`
+- **LSP Servers**: Reference `references/components/lsp-servers.md`
+
+### 3. Tool Invocation Pattern Validation
+
+**When to use**: Checking for correct vs incorrect tool usage patterns in component instructions.
+
+**Scenarios**:
+- **Tool invocation patterns**: Reference `references/tool-invocations.md` - **CRITICAL** for correct vs incorrect tool usage
+
+### 4. Script Validation
+
+**When to use**: Validating script executability, shebang lines, and path configuration.
+
+**Scenarios**:
+- **Script not executing**: Reference `references/debugging.md` (lines 47-50) - Troubleshooting checklist
+- **Missing shebang or path errors**: Reference `references/components/hooks.md` (line 70) for template, `references/manifest-schema.md` (line 87) for `${CLAUDE_PLUGIN_ROOT}` usage
+
+### 5. Metadata & Configuration Validation
+
+**When to use**: Validating plugin.json, frontmatter, version management, and configuration files.
+
+**Scenarios**:
+- **plugin.json validation**: Reference `references/manifest-schema.md`
+- **Frontmatter validation**: Reference component-specific files in `references/components/`
+- **Version management**: Reference `references/debugging.md` (lines 96-120)
+
+### 6. Debugging & Troubleshooting
+
+**When to use**: Diagnosing plugin loading failures, component discovery issues, hook/MCP problems, or runtime errors.
+
+**Scenarios**:
+- **Plugin loading, component discovery, hooks, MCP issues**: Reference `references/debugging.md` - See specific sections for each issue type
+
+### 7. Workflow & Documentation
+
+**When to use**: Using CLI commands, maintaining documentation, or following development workflows.
+
+**Scenarios**:
+- **CLI commands**: Reference `references/cli-commands.md`
+- **Documentation/TodoWrite**: Reference `references/todowrite-usage.md`
+
+Load specific reference files as needed to provide detailed validation logic without overwhelming the context. Each reference file contains comprehensive patterns, examples, and anti-patterns for its specific domain.

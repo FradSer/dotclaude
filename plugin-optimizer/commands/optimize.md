@@ -15,6 +15,8 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 -   **Use TodoWrite**: Track all progress throughout the workflow.
 -   **Resolve Path First**: Always ensure you are working with the absolute path of the target plugin.
 
+**Initial request:** $ARGUMENTS
+
 ---
 
 ## Phase 1: Discovery & Validation
@@ -42,6 +44,8 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
     -   **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
 6.  **Review**: Analyze the output of each script to identify all failures and issues. Compile a comprehensive list of problems found.
 
+**Output**: Comprehensive list of validation issues categorized by type (structure, manifest, frontmatter, anti-patterns)
+
 ---
 
 ## Phase 2: Automated Fixes
@@ -59,21 +63,11 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 4.  **Verification**: Ask the agent to re-run the specific validation script that failed.
 5.  **Reporting**: Log all applied fixes.
 
----
-
-## Phase 3: Interactive Triage
-
-**Goal**: Consult user on uncertain issues and execute fixes immediately upon confirmation.
-
-**Actions**:
-1.  **Consult**: Use `AskUserQuestion` tool to present the initial findings.
-2.  **Prioritize**: Ask the user which categories of issues they want to prioritize (e.g., "Structure only", "Tool Patterns", "Full Report").
-3.  **CRITICAL**: Do not proceed to deep analysis until the user confirms.
-4.  **Execute Fixes**: If the user authorizes specific fixes for the prioritized issues, execute them immediately.
+**Output**: List of all automated fixes applied with verification results
 
 ---
 
-## Phase 4: Redundancy Analysis
+## Phase 3: Redundancy Analysis
 
 **Goal**: Identify content duplication and execute consolidation fixes after user confirmation.
 
@@ -84,9 +78,11 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 4.  **Report**: Report findings with severity classifications and consolidation recommendations.
 5.  **Execute Consolidation**: If the user confirms redundancy removal or content consolidation, perform the file operations immediately.
 
+**Output**: Redundancy analysis report with severity classifications and consolidation actions taken
+
 ---
 
-## Phase 5: Quality Review
+## Phase 4: Quality Review
 
 **Goal**: Validate documentation quality and fix issues (automatically or with confirmation).
 
@@ -95,9 +91,11 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 2.  **Consult**: **MUST** use `AskUserQuestion` tool to confirm with the user before classifying severity if issues are found.
 3.  **Apply Fixes**: If the user agrees to the quality improvements (e.g., updating README), apply the changes immediately.
 
+**Output**: Quality assessment report and documentation improvements applied
+
 ---
 
-## Phase 6: Version Management
+## Phase 5: Version Management
 
 **Goal**: Update plugin version based on optimization changes
 
@@ -112,9 +110,11 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
     -   Update the `version` field in `.claude-plugin/plugin.json`.
 4.  **Log**: Record the version change for the final report.
 
+**Output**: Updated plugin version number and change rationale
+
 ---
 
-## Phase 7: Summary & Report
+## Phase 6: Summary & Report
 
 **Goal**: Generate final optimization report
 
@@ -124,6 +124,8 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
     -   Provide `file:line` and exact `Edit` parameters.
 3.  **Redundancy Plan**: Suggestions for consolidating documentation.
 4.  **Final Report**: Generate the report using the following strict format:
+
+**Output**: Complete validation report in the specified format with all findings, fixes, and recommendations
 
 **Output Format**:
 
