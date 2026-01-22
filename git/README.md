@@ -97,6 +97,22 @@ This plugin adheres to strict safety protocols:
 - NEVER commits detected secrets (`.env`, credentials).
 - ALWAYS creates new commits rather than amending pushed ones.
 
+## Hooks
+
+This plugin uses **PreToolUse hooks** to validate commit messages BEFORE execution:
+
+- **Automatic Validation**: Every `git commit` command is validated before execution
+- **Format Checking**: Ensures conventional commit format compliance
+- **Early Prevention**: Blocks invalid commits before they are created
+- **No PostToolUse**: Validation happens pre-execution only (not after commit is created)
+
+The PreToolUse hook validates:
+- Commit message format: `<type>[scope]: <description>`
+- Required bullet points in commit body
+- Lowercase descriptions
+- Title length (<50 characters)
+- Imperative mood usage
+
 ## Troubleshooting
 
 - **Pre-commit hooks failed**: Fix the issues and run `/commit` again.

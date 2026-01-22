@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/validate-commit-pretool.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-commit-pretool.sh",
             "timeout": 10
           }
         ]
