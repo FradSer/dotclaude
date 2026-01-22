@@ -28,6 +28,22 @@ The command will:
 2. Search for prior art automatically
 3. Generate a complete Chinese patent application form
 
+## Skills
+
+### `browser-use`
+
+Browser automation skill for web testing, form filling, screenshots, and data extraction.
+
+**Source**: Synced from [browser-use/browser-use](https://github.com/browser-use/browser-use/tree/main/skills/browser-use)
+
+**Sync**: Use `./scripts/sync-browser-use.sh` to sync from upstream
+
+**Usage**:
+```bash
+# The skill is automatically available when needed
+# Claude will use it for browser automation tasks
+```
+
 ## Commands
 
 ### `/patent-architect`
@@ -52,6 +68,31 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Multiple embodiment generation (3+)
 
 ## Scripts
+
+### `scripts/sync-browser-use.sh`
+
+同步上游 browser-use skill 的脚本。
+
+**Usage:**
+```bash
+# 检查是否有更新
+./scripts/sync-browser-use.sh --check
+
+# 执行同步(会提示确认)
+./scripts/sync-browser-use.sh
+
+# 强制同步,跳过确认
+./scripts/sync-browser-use.sh --force
+
+# 同步但不创建备份
+./scripts/sync-browser-use.sh --no-backup
+```
+
+**Options:**
+- `-h, --help` - 显示帮助信息
+- `-c, --check` - 仅检查更新,不执行同步
+- `-f, --force` - 强制同步,跳过备份
+- `--no-backup` - 同步时不创建备份
 
 ### `scripts/search-patents.sh`
 
