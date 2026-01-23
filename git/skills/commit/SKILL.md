@@ -56,19 +56,13 @@ Previous implementation caused memory leaks.
 Resolves memory issues in production.
 ```
 
-## Footer (Mandatory)
+## Footer (Optional)
 
-Blank line after body, then add these footers:
+Blank line after body, then optionally add footers:
 
-**Required:**
-- **Co-Authored-By**: Always add this to attribute AI assistance. Detect the current model and use the appropriate format:
-  - Sonnet models: `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>`
-  - Opus models: `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`
-  - Haiku models: `Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>`
-
-**Optional:**
 - Issue references: `Closes #123`, `Fixes #456`
 - Breaking changes: `BREAKING CHANGE: <description>`
+- Co-authorship attribution: `Co-Authored-By: Name <email>`
 
 **Example commit message:**
 ```
@@ -77,8 +71,6 @@ feat(auth): add oauth login flow
 - Add Google OAuth 2.0 integration
 - Implement callback endpoint handler
 - Update session management
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 ## Your Task
@@ -97,8 +89,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
    b. **Validate the message** against the Title Rules and Body Rules:
       - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
       - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
-      - Footer: MUST include Co-Authored-By with the current model
    c. Stage the relevant files
-   d. Create the commit with the validated message (including Co-Authored-By footer)
+   d. Create the commit with the validated message
 
 5. **Repeat** until every change is committed.
