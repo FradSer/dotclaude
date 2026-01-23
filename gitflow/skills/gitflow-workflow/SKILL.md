@@ -1,56 +1,45 @@
 ---
 name: gitflow-workflow
-description: This skill should be used when working with GitFlow workflows including starting features ("create feature branch", "start new feature", "begin feature"), finishing branches ("merge feature", "complete feature", "finish release"), managing hotfixes ("urgent fix", "production hotfix", "critical bug fix", "hotfix from main"), preparing releases ("start release", "create release branch", "prepare version", "new release"), calculating semantic versions ("what version", "next version number", "bump version", "version calculation"), managing GitFlow branches ("gitflow branches", "feature branches", "show releases"), or applying git-flow-next commands. Use when executing GitFlow operations like start, finish, update, or branch management tasks.
+description: Use this skill for GitFlow tasks: starting/finishing features, releases, hotfixes; managing branches; versioning; or general GitFlow operations.
+user-invocable: false
+allowed-tools: Read
 version: 0.1.0
 ---
 
-## Overview
+## Purpose
 
-This skill provides expertise in GitFlow workflow automation based on [git-flow-next](https://git-flow.sh/docs/commands/). It handles branch management, semantic versioning, merge strategies, and follows GitFlow branching model conventions.
+All detailed command manuals live under `./references/` and should be consulted when you need exact flags/options.
 
-## Capabilities
+## Required invariants (used by the 6 skills)
 
-- GitFlow branch model (main, develop, feature, hotfix, release, support)
-- Workflow presets (Classic GitFlow, GitHub Flow, GitLab Flow)
-- Semantic version calculation from conventional commits
-- Branch naming validation and conventions
-- Merge strategies (merge, rebase, squash, --no-ff)
-- Version file updates and changelog generation
-- git-flow-next command compatibility
+### Preflight
 
-## Branch Model
+- Working tree should be clean before start/finish operations.
+- Confirm current branch and that the branch type matches the operation (`feature/*`, `hotfix/*`, `release/*`).
+- Identify the active workflow preset (Classic GitFlow vs GitHub Flow vs GitLab Flow) before deciding base/target branches.
 
-GitFlow uses base branches for stable code and topic branches for development work. Each workflow preset has different branch configurations - see the platform-specific reference files for details.
+### Branch naming
 
-## Workflow Presets
+- Use kebab-case and a strict prefix: `<type>/<kebab-case>` (e.g. `feature/user-authentication`).
 
-Before executing GitFlow operations, identify the workflow in use and reference the corresponding documentation:
+### Finish behavior
 
-| Workflow | When to Use | Reference |
-|----------|------------|-----------|
-| **Classic GitFlow** | Projects with main + develop branches, release cycles | `references/classic-gitflow.md` |
-| **GitHub Flow** | Simple projects with main only, continuous deployment | `references/github-flow.md` |
-| **GitLab Flow** | Multi-environment projects with production + staging | `references/gitlab-flow.md` |
+- Prefer non-fast-forward merges when finishing (e.g. `--no-ff`) to preserve a visible integration history, unless the repo workflow config says otherwise.
+- Run tests if available before finishing; fix failures before merging.
+- After finishing hotfix/release, ensure the integration branch receives the changes (often merging back into `develop`).
+- Delete topic branches locally and remotely after finishing when policy allows.
 
-> [!IMPORTANT]
-> Always check `.git-flow` config or branch structure first to determine which workflow is active, then reference ONLY the corresponding platform file for specific branch rules and merge strategies.
+## Minimal templates (what the 6 skills assume)
+The operation-specific templates have been moved into the corresponding `start-*` / `finish-*` skills to keep those tasks self-contained.
 
-## Branch Operations
+## Reference index
 
-All GitFlow operations (start, finish, update) require pre-operation context gathering and validation. See `references/topic-commands.md` for command details.
-
-## Reference Guide
-
-Comprehensive documentation for GitFlow workflows and operations:
-
-- **`references/context-gathering.md`** - Pre-operation context requirements for each GitFlow operation type (features, hotfixes, releases), including git status checks, branch listing, version tags, and project configuration detection
-- **`references/classic-gitflow.md`** - Traditional GitFlow workflow with main, develop, feature/, release/, hotfix/ branches
-- **`references/github-flow.md`** - Simplified workflow with main and feature/ branches for continuous deployment
-- **`references/gitlab-flow.md`** - Multi-environment workflow with production, staging, main branches
-- **`references/naming-rules.md`** - Branch naming conventions and examples
-- **`references/version-calculation.md`** - Semantic versioning calculation algorithms from conventional commits, including major/minor/patch bump rules, version file update patterns, and changelog generation from commit history
-- **`references/core-commands.md`** - Core git-flow-next commands (init, config, overview, version) with all options, workflow presets, and configuration management
-- **`references/topic-commands.md`** - Topic branch commands (start, finish, list, update, delete, rename) with complete options, merge strategies, tagging, and conflict handling procedures
+- `./references/context-gathering.md`
+- `./references/naming-rules.md`
+- `./references/workflow-presets.md`
+- `./references/versioning-and-tags.md`
+- `./references/commands-core.md`
+- `./references/commands-topic.md`
 
 ## External References
 

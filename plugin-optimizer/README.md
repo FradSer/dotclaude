@@ -35,7 +35,7 @@ claude --plugin-dir ./plugin-optimizer
 ### Optimize a Plugin
 
 ```bash
-/optimize ./path/to/your-plugin
+/optimize-plugin ./path/to/your-plugin
 ```
 
 The optimizer will validate your plugin against official best practices and generate a comprehensive report with actionable fix suggestions.
@@ -84,9 +84,9 @@ Comprehensive knowledge base covering:
 - Tool invocation patterns
 - File format patterns and conventions
 
-### Command: /optimize
+### Skill: optimize-plugin (User-Invocable)
 
-User-initiated plugin optimization accepting plugin path as argument.
+User-initiated plugin optimization accepting plugin path as argument. Accessible via `/optimize-plugin` command.
 
 ### Agent: plugin-optimizer
 
@@ -108,16 +108,15 @@ See `skills/plugin-best-practices/SKILL.md` for detailed validation workflow and
 plugin-optimizer/
 ├── .claude-plugin/
 │   └── plugin.json
-├── commands/
-│   └── optimize.md
 ├── agents/
 │   └── plugin-optimizer.md
 ├── scripts/             # Validation utilities
 ├── skills/
+│   ├── optimize-plugin/
+│   │   └── SKILL.md    # User-invocable via /optimize-plugin
 │   └── plugin-best-practices/
 │       ├── SKILL.md
-│       ├── references/          # Detailed documentation
-│       └── examples/            # Good/bad plugin examples
+│       └── references/          # Detailed documentation
 └── README.md
 ```
 

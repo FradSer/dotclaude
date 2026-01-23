@@ -4,6 +4,83 @@
 
 set -euo pipefail
 
+# Extract heredoc content (full multiline)
+extract_heredoc_content() {
+  local cmd="$1"
+  if [[ "$cmd" =~ cat[[:space:]]+\<\<[[:space:]]*-?[\'\"]?([A-Za-z_][A-Za-z0-9_]*) ]]; then
+    local delim="${BASH_REMATCH[1]}"
+    echo "$cmd" | awk -v delim="$delim" '
+      BEGIN { capturing = 0 }
+      $0 ~ "<<.*" delim { capturing = 1; next }
+      capturing && $0 ~ "^[[:space:]]*" delim "[[:space:]]*$" { exit }
+      capturing { gsub(/^[[:space:]]+/, ""); print }
+    '
+  fi
+}
+
+# Extract file path (handles quoted paths)
+extract_file_path() {
+  local cmd="$1"
+  local flag="$2"
+  case "$flag" in
+    "-F")
+      if [[ "$cmd" =~ -F[[:space:]]+\"([^\"]+)\" ]]; then
+        echo "${BASH_REMATCH[1]}"
+      elif [[ "$cmd" =~ -F[[:space:]]+\'([^\']+)\' ]]; then
+        echo "${BASH_REMATCH[1]}"
+      elif [[ "$cmd" =~ -F[[:space:]]+([^[:space:]\"\']+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+      fi
+      ;;
+    "--file=")
+      if [[ "$cmd" =~ --file=\"([^\"]+)\" ]]; then
+        echo "${BASH_REMATCH[1]}"
+      elif [[ "$cmd" =~ --file=\'([^\']+)\' ]]; then
+        echo "${BASH_REMATCH[1]}"
+      elif [[ "$cmd" =~ --file=([^[:space:]\"\']+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+      fi
+      ;;
+  esac
+}
+
+# Extract -m message (handles heredoc, escaped quotes)
+extract_m_message() {
+  local cmd="$1"
+
+  # Check for heredoc first
+  if [[ "$cmd" =~ cat[[:space:]]+\<\< ]]; then
+    extract_heredoc_content "$cmd"
+    return
+  fi
+
+  # Double quotes with escaped quotes handling
+  if [[ "$cmd" =~ -m[[:space:]]+\" ]]; then
+    local after_m="${cmd#*-m \"}"
+    local result="" i=0 len=${#after_m} prev_char=""
+    while [[ $i -lt $len ]]; do
+      local char="${after_m:$i:1}"
+      if [[ "$char" == "\"" && "$prev_char" != "\\" ]]; then break; fi
+      if [[ "$char" == "\\" && "${after_m:$((i+1)):1}" == "\"" ]]; then
+        result+="\""; i=$((i+2)); prev_char=""; continue
+      fi
+      result+="$char"; prev_char="$char"; i=$((i+1))
+    done
+    echo "$result"
+    return
+  fi
+
+  # Single quotes
+  if [[ "$cmd" =~ -m[[:space:]]+\'([^\']*)\' ]]; then
+    echo "${BASH_REMATCH[1]}"; return
+  fi
+
+  # Unquoted
+  if [[ "$cmd" =~ -m[[:space:]]+([^[:space:]\"\']+) ]]; then
+    echo "${BASH_REMATCH[1]}"; return
+  fi
+}
+
 # Read input from stdin
 input=$(cat)
 
@@ -26,34 +103,36 @@ if [[ "$command" =~ --amend ]] || [[ "$command" =~ --fixup ]] || [[ "$command" =
   exit 0
 fi
 
-# Extract commit message from command
-# Handles multiple formats:
-# 1. git commit -m "message"
-# 2. git commit -m 'message'
-# 3. git commit -m "$(cat <<'EOF'...)"
+# Extract commit message - try all methods
 commit_msg=""
 
-# Try double quotes
-if [[ "$command" =~ -m[[:space:]]+\"([^\"]+)\" ]]; then
-  commit_msg="${BASH_REMATCH[1]}"
-# Try single quotes
-elif [[ "$command" =~ -m[[:space:]]+\'([^\']+)\' ]]; then
-  commit_msg="${BASH_REMATCH[1]}"
-# Try unquoted (simple case)
-elif [[ "$command" =~ -m[[:space:]]+([^[:space:]\"\']+) ]]; then
-  commit_msg="${BASH_REMATCH[1]}"
+# Method 1: -m flag (most common)
+if [[ "$command" =~ -m[[:space:]] ]]; then
+  commit_msg=$(extract_m_message "$command")
 fi
 
-# Handle heredoc style: git commit -m "$(cat <<'EOF'..."
-if [[ -z "$commit_msg" ]] && [[ "$command" =~ cat[[:space:]]+\<\<[[:space:]]*[\'\"]?EOF ]]; then
-  # Extract the first line of the heredoc content
-  commit_msg=$(echo "$command" | sed -n "/<<.*EOF/,/^[[:space:]]*EOF/p" | sed '1d;$d' | head -1 | sed 's/^[[:space:]]*//')
+# Method 2: -F flag
+if [[ -z "$commit_msg" ]] && [[ "$command" =~ -F[[:space:]] ]]; then
+  file_path=$(extract_file_path "$command" "-F")
+  if [[ -n "$file_path" ]] && [[ -f "$file_path" ]]; then
+    commit_msg=$(cat "$file_path")
+  fi
 fi
 
-# If we couldn't extract the message, skip validation
-# (might be using -F file or other method)
+# Method 3: --file= flag
+if [[ -z "$commit_msg" ]] && [[ "$command" =~ --file= ]]; then
+  file_path=$(extract_file_path "$command" "--file=")
+  if [[ -n "$file_path" ]] && [[ -f "$file_path" ]]; then
+    commit_msg=$(cat "$file_path")
+  fi
+fi
+
+# Fail-closed: Block if we cannot extract the message
 if [[ -z "$commit_msg" ]]; then
-  exit 0
+  jq -n '{
+    systemMessage: ("VALIDATION BLOCKED: Cannot extract commit message\n\nThe commit message format is not recognized and cannot be validated.\nThis is a security measure to prevent bypassing conventional commit validation.\n\nSupported formats:\n  - git commit -m \"message\"\n  - git commit -F <file>\n  - git commit --file=<file>\n\nIf you believe this is an error, please check your commit command format.")
+  }' >&2
+  exit 2
 fi
 
 # Get just the title line (first line)
@@ -150,6 +229,26 @@ else
   fi
 fi
 
+# 8. Validate Co-Authored-By footer (required for AI-assisted commits)
+# Check if the commit message contains Co-Authored-By footer
+if ! echo "$commit_msg" | grep -q "^Co-Authored-By:"; then
+  errors+=("Co-Authored-By footer is required for AI-assisted commits")
+  errors+=("Add one of these lines after the body:")
+  errors+=("  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
+  errors+=("  Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>")
+  errors+=("  Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>")
+else
+  # Validate Co-Authored-By format
+  co_author_line=$(echo "$commit_msg" | grep "^Co-Authored-By:")
+  if ! [[ "$co_author_line" =~ ^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+\<noreply@anthropic\.com\>$ ]]; then
+    warnings+=("Co-Authored-By format may be incorrect")
+    warnings+=("Expected format: 'Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>'")
+    warnings+=("Examples:")
+    warnings+=("  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
+    warnings+=("  Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>")
+  fi
+fi
+
 # Output results and block execution if errors found
 if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
@@ -159,7 +258,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n- <Verb> <change description>\n- <Verb> <change description>\n\n[Optional explanation paragraph]\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.")
+    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n- <Verb> <change description>\n- <Verb> <change description>\n\n[Optional explanation paragraph]\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
   }' >&2
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then
