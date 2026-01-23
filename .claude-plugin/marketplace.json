@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "git",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "description": "Conventional Git automation for commits and repository management",
       "author": {
         "name": "Frad LEE",
@@ -32,9 +32,21 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/gitflow"
     },
     {
+      "name": "claude-config",
+      "version": "1.2.0",
+      "description": "Generate AI assistant configurations with environment detection, TDD options, best practices research, and multi-file sync",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./claude-config",
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/claude-config"
+    },
+    {
       "name": "github",
-      "version": "0.1.0",
-      "description": "GitHub project operations with quality gates.",
+      "version": "0.2.0",
+      "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -45,8 +57,8 @@
     },
     {
       "name": "review",
-      "version": "0.1.0",
-      "description": "Multi-agent review system for enforcing high quality.",
+      "version": "0.2.0",
+      "description": "Multi-agent review system for enforcing high quality",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -81,7 +93,7 @@
     },
     {
       "name": "office",
-      "version": "0.1.0",
+      "version": "0.3.1",
       "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
       "author": {
         "name": "Frad LEE",
@@ -94,7 +106,7 @@
     },
     {
       "name": "refactor",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "description": "Agent and commands for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
@@ -103,6 +115,18 @@
       "source": "./refactor",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/refactor"
+    },
+    {
+      "name": "plugin-optimizer",
+      "version": "0.4.0",
+      "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
+      "author": {
+        "name": "FradSer",
+        "email": "FradSer@users.noreply.github.com"
+      },
+      "source": "./plugin-optimizer",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/plugin-optimizer"
     }
   ]
 }
