@@ -4,6 +4,8 @@ description: Create or update .gitignore file
 user-invocable: true
 allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob"]
 model: haiku
+context: fork
+disable-model-invocation: true
 argument-hint: [additional-technologies]
 version: 0.1.0
 ---
