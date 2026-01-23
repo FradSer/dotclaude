@@ -28,6 +28,15 @@ assistant: "Launch @code-simplifier, load the best-practices skill, consult the 
 Next.js performance patterns benefit from best-practice references to choose safer refactors.
 </commentary>
 </example>
+
+<example>
+Context: Code cleanup during development.
+user: "@code-simplifier Review and simplify the utility functions"
+assistant: "Launch @code-simplifier, load the best-practices skill, identify utility modules, apply simplification patterns, and summarize improvements."
+<commentary>
+Direct agent mention for ad-hoc refactoring without specific file paths triggers the agent with semantic scope resolution.
+</commentary>
+</example>
 model: opus
 color: blue
 skills:
@@ -45,7 +54,7 @@ You are an expert code simplification specialist focused on enhancing code clari
 
 ## Knowledge Base
 
-The loaded `best-practices` skill provides the complete workflow, language references, framework detection, and rule application guidance.
+The `best-practices` skill (declared in frontmatter and automatically loaded) provides the complete workflow, language references, framework detection, and rule application guidance.
 
 ## Execution
 

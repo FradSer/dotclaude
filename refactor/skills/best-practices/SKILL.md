@@ -2,7 +2,7 @@
 name: best-practices
 description: This skill should be used when the user asks to "refactor", "refactor the whole project", "simplify code", "clean up code", "apply best practices", "improve readability", "reduce duplication", "standardize patterns", "improve performance", "optimize Next.js performance", "make code more maintainable", "follow coding standards", "optimize code quality", or requests behavior-preserving refactoring with best-practice guidance.
 user-invocable: false
-version: 1.1.2
+version: 1.2.0
 ---
 
 # Best Practices
@@ -81,6 +81,15 @@ Apply rules based on framework detection and project characteristics:
 
 Framework detection determines which rule categories are applicable.
 
+## Code Quality Standards
+
+Apply these standards during all refactoring operations:
+
+- **Comments**: Only add comments explaining complex business logic or non-obvious decisions; remove comments that restate code or conflict with file style
+- **Error Handling**: Add try-catch only where errors can be handled/recovered; remove defensive checks in trusted internal paths (validate only at boundaries: user input, external APIs)
+- **Type Safety**: Never use `any` to bypass type issues; use proper types, `unknown` with type guards, or refactor the root cause
+- **Style Consistency**: Match existing code style in file and project; check CLAUDE.md for conventions
+
 ## Workflow
 
 1. **Identify**: Determine target scope (specified files/directories, session modifications, or entire project)
@@ -88,5 +97,5 @@ Framework detection determines which rule categories are applicable.
 3. **Load References**: Load language references for the target files, plus framework-specific references when applicable
 4. **Filter Rules**: Only apply rules for detected frameworks (e.g., skip Next.js rules if Next.js not present)
 5. **Analyze**: Review code for complexity, redundancy, and best-practice violations that matter for the target scope
-6. **Execute**: Apply behavior-preserving refinements following the loaded references
+6. **Execute**: Apply behavior-preserving refinements following the loaded references and Code Quality Standards
 7. **Validate**: Ensure tests pass (or suggest the most relevant tests to run) and the code is cleaner
