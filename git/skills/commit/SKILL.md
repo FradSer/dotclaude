@@ -71,6 +71,8 @@ feat(auth): add oauth login flow
 - Add Google OAuth 2.0 integration
 - Implement callback endpoint handler
 - Update session management
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 ## Your Task
@@ -89,7 +91,8 @@ feat(auth): add oauth login flow
    b. **Validate the message** against the Title Rules and Body Rules:
       - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
       - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
+      - Footer: MUST include Co-Authored-By with the current model
    c. Stage the relevant files
-   d. Create the commit with the validated message
+   d. Create the commit with the validated message (including Co-Authored-By footer)
 
 5. **Repeat** until every change is committed.

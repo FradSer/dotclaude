@@ -229,6 +229,17 @@ else
   fi
 fi
 
+# 8. Validate Co-Authored-By footer
+# Check if footer contains Co-Authored-By (required for AI-assisted commits)
+if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
+  errors+=("Co-Authored-By footer is required for AI-assisted commits")
+  errors+=("Format: Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+  errors+=("Examples:")
+  errors+=("  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
+  errors+=("  Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>")
+  errors+=("  Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>")
+fi
+
 # Output results and block execution if errors found
 if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
@@ -238,7 +249,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n- <Verb> <change description>\n- <Verb> <change description>\n\n[Optional explanation paragraph]\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.")
+    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n- <Verb> <change description>\n- <Verb> <change description>\n\n[Optional explanation paragraph]\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
   }' >&2
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then
