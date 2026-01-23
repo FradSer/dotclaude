@@ -64,9 +64,9 @@ Blank line after body:
 
 ## Your Task
 
-1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, automatically invoke the `/config-git` command to set up project-specific settings before proceeding.
+1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, invoke `/config-git` to set up project-specific settings.
 
-2. **Perform safety checks** on pending changes (see Safety Protocol in plugin README):
+2. **Perform safety checks** on pending changes:
    - Detect sensitive files (credentials, secrets, .env files)
    - Warn about large files (>1MB) and large commits (>500 lines)
    - Request user confirmation if issues found
@@ -77,7 +77,7 @@ Blank line after body:
    a. Draft the commit message following the Conventional Commits format above
    b. **Validate the message** against the Title Rules and Body Rules:
       - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-      - Body: Required with bullet points (use `- ` prefix, start with imperative verb), blank line after title, ≤72 chars/line
+      - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
    c. Stage the relevant files
    d. Create the commit with the validated message
 
