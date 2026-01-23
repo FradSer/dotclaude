@@ -2,6 +2,26 @@
 
 A curated collection of plugins and skills for Claude Code, designed to enhance development workflows with specialized agents and automation tools.
 
+## Installation
+
+### Add Plugin Marketplace
+
+First, add this repository as a plugin marketplace:
+
+```bash
+claude plugin marketplace add FradSer/dotclaude
+```
+
+This will make all plugins in this marketplace available for installation.
+
+### Install Individual Plugins
+
+After adding the marketplace, you can install any plugin using:
+
+```bash
+claude plugin install <plugin-name>@frad-dotclaude
+```
+
 ## Available Plugins
 
 ### git - Git Automation
