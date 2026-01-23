@@ -1,8 +1,10 @@
 ---
+name: config-git
 description: Interactive git configuration setup
-argument-hint: "[no arguments needed - interactive setup]"
+user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
 model: haiku
+version: 0.1.0
 ---
 
 # Interactive Git Configuration

@@ -1,8 +1,11 @@
 ---
-allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob"]
+name: update-gitignore
 description: Create or update .gitignore file
+user-invocable: true
+allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob"]
 model: haiku
 argument-hint: [additional-technologies]
+version: 0.1.0
 ---
 
 ## Context
@@ -24,8 +27,3 @@ argument-hint: [additional-technologies]
 1. Detect operating systems and technologies from context plus `$ARGUMENTS`.
 2. Generate or update `.gitignore` using the Toptal API while retaining custom rules.
 3. Show the repository changes to confirm the update.
-
-### Usage Examples
-
-- `/gitignore` — Auto-detect and create `.gitignore`.
-- `/gitignore react typescript` — Add React and TypeScript to detected technologies.
