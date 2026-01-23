@@ -91,9 +91,10 @@ validate_single_file() {
         echo "✓ description present"
       fi
 
-      # Recommended: argument-hint
+      # Recommended: argument-hint (optional for commands that accept arguments)
       if ! echo "$FRONTMATTER" | grep -q "^argument-hint:"; then
-        echo "⚠ INFO: Missing optional 'argument-hint' (helps with autocomplete)"
+        echo "⚠ INFO: Missing optional 'argument-hint' field"
+        echo "  Note: Only needed if command accepts arguments (helps with autocomplete)"
       else
         echo "✓ argument-hint present"
       fi
@@ -202,6 +203,15 @@ validate_single_file() {
         # Note: Both formats are acceptable:
         # - Concise imperative: "Create or update .gitignore file"
         # - Third-person with triggers: "This skill should be used when user asks to..."
+      fi
+
+      # Recommended: argument-hint (optional for skills that accept arguments)
+      echo
+      if ! echo "$FRONTMATTER" | grep -q "^argument-hint:"; then
+        echo "⚠ INFO: Missing optional 'argument-hint' field"
+        echo "  Note: Only needed if skill accepts arguments (helps with autocomplete)"
+      else
+        echo "✓ argument-hint present"
       fi
       ;;
 
