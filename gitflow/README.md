@@ -131,14 +131,12 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 - git-flow-next command compatibility
 
 **Reference Documentation:**
-- `references/classic-gitflow.md` - Traditional GitFlow with main + develop
-- `references/github-flow.md` - Simplified workflow with main only
-- `references/gitlab-flow.md` - Multi-environment with production + staging
-- `references/naming-rules.md` - Branch naming conventions
-- `references/version-calculation.md` - Semantic version calculation logic
+- `references/commands-core.md` - git-flow-next core commands (init, config)
+- `references/commands-topic.md` - Topic branch commands (start, finish, etc.)
 - `references/context-gathering.md` - Pre-operation context requirements
-- `references/core-commands.md` - git-flow-next core commands (init, config)
-- `references/topic-commands.md` - Topic branch commands (start, finish, etc.)
+- `references/naming-rules.md` - Branch naming conventions
+- `references/versioning-and-tags.md` - Version management and tagging
+- `references/workflow-presets.md` - Workflow presets (Classic, GitHub, GitLab Flow)
 
 **External References:**
 - [git-flow-next Documentation](https://git-flow.sh/docs/)
@@ -281,4 +279,4 @@ Frad LEE (fradser@gmail.com)
 
 ## Version
 
-0.1.0
+0.2.0

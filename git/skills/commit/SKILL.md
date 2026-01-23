@@ -56,29 +56,49 @@ Previous implementation caused memory leaks.
 Resolves memory issues in production.
 ```
 
-## Footer (Optional)
+## Footer (Mandatory)
 
-Blank line after body:
+Blank line after body, then add these footers:
+
+**Required:**
+- **Co-Authored-By**: Always add this to attribute AI assistance. Detect the current model and use the appropriate format:
+  - Sonnet models: `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>`
+  - Opus models: `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`
+  - Haiku models: `Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>`
+
+**Optional:**
 - Issue references: `Closes #123`, `Fixes #456`
 - Breaking changes: `BREAKING CHANGE: <description>`
 
+**Example commit message:**
+```
+feat(auth): add oauth login flow
+
+- Add Google OAuth 2.0 integration
+- Implement callback endpoint handler
+- Update session management
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
 ## Your Task
 
-1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, automatically invoke the `/config-git` command to set up project-specific settings before proceeding.
+1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, invoke `/config-git` to set up project-specific settings.
 
-2. **Perform safety checks** on pending changes (see Safety Protocol in plugin README):
+2. **Perform safety checks** on pending changes:
    - Detect sensitive files (credentials, secrets, .env files)
    - Warn about large files (>1MB) and large commits (>500 lines)
    - Request user confirmation if issues found
 
-3. **Analyze pending changes** to identify coherent logical units of work.
+3. **Analyze pending changes** to identify coherent logical units of work and infer the needed commit scope(s). If any inferred scope is not listed in `.claude/git.local.md`, invoke `/config-git` to update the configuration before proceeding.
 
 4. **For each logical unit**:
    a. Draft the commit message following the Conventional Commits format above
    b. **Validate the message** against the Title Rules and Body Rules:
       - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-      - Body: Required with bullet points (use `- ` prefix, start with imperative verb), blank line after title, ≤72 chars/line
+      - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
+      - Footer: MUST include Co-Authored-By with the current model
    c. Stage the relevant files
-   d. Create the commit with the validated message
+   d. Create the commit with the validated message (including Co-Authored-By footer)
 
 5. **Repeat** until every change is committed.

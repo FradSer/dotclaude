@@ -2,8 +2,17 @@
   "name": "gitflow",
   "version": "0.2.0",
   "description": "GitFlow workflow automation for feature, hotfix, and release branches",
+  "keywords": ["git", "gitflow", "workflow", "branching", "release-management", "version-control"],
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  }
+  },
+  "commands": [
+    "./skills/finish-feature/",
+    "./skills/finish-hotfix/",
+    "./skills/finish-release/",
+    "./skills/start-feature/",
+    "./skills/start-hotfix/",
+    "./skills/start-release/"
+  ]
 }

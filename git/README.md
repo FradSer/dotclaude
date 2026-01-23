@@ -1,6 +1,6 @@
 # Git Plugin
 
-Conventional Git automation for commits and repository management.
+Conventional Git automation and advanced repository management.
 
 ## Overview
 
@@ -50,7 +50,7 @@ Creates or updates `.gitignore` files.
 - Preserves existing custom rules
 - Auto-detects OS and project structure
 
-### `/config`
+### `/config-git`
 Interactive git configuration setup.
 
 **Features:**
@@ -61,22 +61,36 @@ Interactive git configuration setup.
 
 ## Skills
 
-### `conventional-commits`
-Expert in creating conventional commits following the Commitizen (cz) style.
+This plugin provides 4 user-invocable skills:
 
-**Capabilities:**
-- **Conventional Format**: Follows conventional commits specification
-- **Atomic Commits**: Identifies logical units of work
-- **Message Structure**: Proper title, body, and footer formatting
-- **Configuration**: Applies project-specific scopes and types
+### `/commit`
+Creates atomic conventional commits following Commitizen style.
+- Validates against conventional commits specification v1.0.0
+- Enforces lowercase descriptions and imperative mood
+- Requires bullet-point body format
+
+### `/commit-and-push`
+Creates atomic commits and pushes to remote repository.
+- All `/commit` features
+- Automatic upstream branch configuration
+
+### `/config-git`
+Interactive configuration setup for project-specific Git conventions.
+- Analyzes project structure to suggest scopes
+- Generates `.claude/git.local.md` configuration
+- Validates user identity (name/email)
+
+### `/update-gitignore`
+Creates or updates `.gitignore` using Toptal's API.
+- Auto-detects technologies from project structure
+- Preserves custom rules when updating
+- Supports manual technology specification
 
 ## Configuration
 
 ### Auto-Configuration
 
-The plugin automatically generates configuration on first use when you run `/commit` or `/commit-and-push`. If `.claude/git.local.md` doesn't exist, the plugin will analyze your project structure and git history to generate appropriate scopes with interactive confirmation.
-
-You can also run `/git:config` manually at any time to regenerate the configuration.
+Configuration is auto-generated on first use or manually via the `/config-git` command.
 
 ### Manual Configuration
 
@@ -87,9 +101,7 @@ See [examples/git.local.md](examples/git.local.md) for configuration template.
 ## Best Practices
 
 ### Commit Guidelines
-- **Atomic**: One logical change per commit.
-- **Conventional**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`.
-- **Descriptive**: 50-char lowercase titles; body with bullet list (what changed) and explanation paragraph (why it matters).
+Follows conventional commits specification.
 
 ### Safety Protocol
 This plugin adheres to strict safety protocols:
