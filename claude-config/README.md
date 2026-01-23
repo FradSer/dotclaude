@@ -32,7 +32,7 @@ Run the initialization command:
 /init-config
 ```
 
-The command guides you through a 10-phase interactive workflow:
+The command guides you through a 9-phase interactive workflow:
 
 1. **Environment Discovery** - Detects installed languages and tools
 2. **Developer Profile** - Captures name and email
@@ -42,8 +42,7 @@ The command guides you through a 10-phase interactive workflow:
 6. **Style Preference** - Choose emoji usage
 7. **Assembly & Generation** - Build final configuration
 8. **Length Validation** - Ensure optimal word count (1,500-3,000 words)
-9. **Multi-file Sync** - Optionally sync to GEMINI.md/AGENTS.md
-10. **Write CLAUDE.md** - Save with comprehensive report
+9. **Write CLAUDE.md** - Save with comprehensive report
 
 For detailed workflow steps, run `/init-config` and follow the interactive prompts.
 
@@ -53,8 +52,9 @@ For detailed workflow steps, run `/init-config` and follow the interactive promp
 claude-config/
 ├── .claude-plugin/
 │   └── plugin.json           # Plugin manifest
-├── commands/
-│   └── init-config.md        # Main command with 10-phase workflow
+├── skills/
+│   └── init-config/
+│       └── SKILL.md          # User-invocable skill with 9-phase workflow
 ├── assets/
 │   ├── claude-template.md    # Base template with TDD
 │   └── claude-template-no-tdd.md  # Base template without TDD
