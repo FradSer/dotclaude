@@ -190,19 +190,18 @@ validate_single_file() {
       else
         local DESC=$(echo "$FRONTMATTER" | grep "^description:" | sed 's/description: *//')
 
-        # Check for third-person format
-        if ! echo "$DESC" | grep -qi "This skill should be used when"; then
-          echo "⚠ WARNING: Description should use third-person format: 'This skill should be used when...'"
+        # Check if description is empty or too short
+        local DESC_LENGTH=$(echo "$DESC" | tr -d ' ' | wc -c | tr -d ' ')
+        if [ $DESC_LENGTH -lt 10 ]; then
+          echo "⚠ WARNING: Description is too short (minimum 10 characters recommended)"
           ((warnings++))
         else
-          echo "✓ description uses third-person format"
+          echo "✓ description present"
         fi
 
-        # Check for trigger phrases
-        if ! echo "$DESC" | grep -q '"'; then
-          echo "⚠ WARNING: Description should include quoted trigger phrases"
-          ((warnings++))
-        fi
+        # Note: Both formats are acceptable:
+        # - Concise imperative: "Create or update .gitignore file"
+        # - Third-person with triggers: "This skill should be used when user asks to..."
       fi
       ;;
 
