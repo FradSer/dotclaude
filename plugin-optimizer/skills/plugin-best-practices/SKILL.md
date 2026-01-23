@@ -22,6 +22,7 @@ Validate and optimize Claude Code plugins against official standards.
 - Check components use kebab-case naming
 - Ensure scripts are executable with shebang and `${CLAUDE_PLUGIN_ROOT}` paths
 - Validate no explicit tool invocations in component instructions (use implicit descriptions)
+- **Verify skill references use qualified names**: Use `plugin-name:skill-name` format, not bare `skill-name`
 - Use AskUserQuestion tool when user confirmation is needed
 - Confirm all paths are relative and start with `./`
 - Verify components are at plugin root, not inside `.claude-plugin/`
@@ -74,6 +75,19 @@ Use imperative style instructions. Reference $ARGUMENTS for user input.
 2. Use tools implicitly (write "Read the file..." not "Use the Read tool")
 
 **Output**: Expected result or deliverable (optional)
+```
+
+### Skill Reference Pattern
+
+Always use fully qualified names when referencing skills: `plugin-name:skill-name`
+
+```markdown
+# In skills/commands
+Load the `gitflow:gitflow-workflow` skill using the Skill tool
+
+# In agent frontmatter
+skills:
+  - plugin-name:skill-name
 ```
 
 ### Agent Pattern
