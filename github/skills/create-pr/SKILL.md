@@ -1,6 +1,9 @@
 ---
+name: create-pr
 allowed-tools: Task, Bash(gh:*), Bash(git:*)
 description: Create comprehensive GitHub pull requests with quality validation
+argument-hint: [optional description or issue reference]
+user-invocable: true
 ---
 
 ## Context

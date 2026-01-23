@@ -2,6 +2,12 @@
 
 Utility commands for day-to-day automation.
 
+## Installation
+
+```bash
+claude plugin install utils@frad-dotclaude
+```
+
 ## Overview
 
 The Utils Plugin provides helpful utility commands for everyday development workflows. These commands streamline common tasks and improve productivity during development sessions.
@@ -129,14 +135,11 @@ allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*)
 description: Create a git commit
 ---
 
-## Context
-- Current git status: !`git status`
-- Current git diff (staged and unstaged changes): !`git diff HEAD`
-- Current branch: !`git branch --show-current`
-- Recent commits: !`git log --oneline -10`
+# Reference a specific file
+Review the implementation in @src/utils/helpers.js
 
-## Your task
-Based on the above changes, create a single git commit.
+# Reference multiple files
+Compare @src/old-version.js with @src/new-version.js
 ```
 
 **File References:**
@@ -162,10 +165,6 @@ description: Review pull request
 Review PR #$1 with priority $2 and assign to $3.
 Focus on security, performance, and code style.
 ```
-
-## Installation
-
-This plugin is included in the Claude Code repository. The commands are automatically available when using Claude Code.
 
 ## Best Practices
 
@@ -246,7 +245,3 @@ This plugin is included in the Claude Code repository. The commands are automati
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-1.0.0

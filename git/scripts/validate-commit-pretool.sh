@@ -229,24 +229,15 @@ else
   fi
 fi
 
-# 8. Validate Co-Authored-By footer (required for AI-assisted commits)
-# Check if the commit message contains Co-Authored-By footer
-if ! echo "$commit_msg" | grep -q "^Co-Authored-By:"; then
+# 8. Validate Co-Authored-By footer
+# Check if footer contains Co-Authored-By (required for AI-assisted commits)
+if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
   errors+=("Co-Authored-By footer is required for AI-assisted commits")
-  errors+=("Add one of these lines after the body:")
+  errors+=("Format: Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+  errors+=("Examples:")
   errors+=("  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
   errors+=("  Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>")
   errors+=("  Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>")
-else
-  # Validate Co-Authored-By format
-  co_author_line=$(echo "$commit_msg" | grep "^Co-Authored-By:")
-  if ! [[ "$co_author_line" =~ ^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+\<noreply@anthropic\.com\>$ ]]; then
-    warnings+=("Co-Authored-By format may be incorrect")
-    warnings+=("Expected format: 'Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>'")
-    warnings+=("Examples:")
-    warnings+=("  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
-    warnings+=("  Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>")
-  fi
 fi
 
 # Output results and block execution if errors found

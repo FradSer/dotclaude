@@ -7,7 +7,7 @@ scopes:
   - refactor
   - office
   - po
-  - claude-config
+  - cc
   - utils
   - docs
   - ci
@@ -39,7 +39,7 @@ This file configures the git plugin for this project. The settings above in the 
 - **refactor**: Code refactoring plugin
 - **office**: Office/patent-architect plugin
 - **po**: Plugin optimizer plugin
-- **claude-config**: Claude configuration plugin
+- **cc**: Claude configuration plugin
 - **utils**: Utility modules and helpers
 - **docs**: Documentation files and guides
 - **ci**: CI/CD configuration and GitHub Actions

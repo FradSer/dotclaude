@@ -4,6 +4,8 @@ description: Interactive git configuration setup
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
 model: haiku
+context: fork
+disable-model-invocation: true
 version: 0.1.0
 ---
 

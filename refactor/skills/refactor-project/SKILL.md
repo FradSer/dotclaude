@@ -1,7 +1,9 @@
 ---
+name: refactor-project
 description: Run project-wide refactoring with code-simplifier
 argument-hint: (no arguments needed - refactors entire project)
 allowed-tools: ["Task", "AskUserQuestion", "Read", "Write", "Bash(git:*)", "Grep", "Glob"]
+user-invocable: true
 ---
 
 # Refactor Project Command
@@ -21,7 +23,7 @@ allowed-tools: ["Task", "AskUserQuestion", "Read", "Write", "Bash(git:*)", "Grep
 ## Initial Setup
 
 **Actions**:
-1. Create todo list with all workflow steps:
+1. **Use TodoWrite tool** to create todo list with all workflow steps:
    - Analyze project scope
    - Confirm scope with user
    - Launch refactoring agent
@@ -57,7 +59,7 @@ Show preview summary:
 - Main directories
 - Warning about project-wide scope
 
-Use AskUserQuestion:
+Use AskUserQuestion tool:
 
 **Question: Scope Confirmation**
 - header: "Confirm scope"
@@ -86,17 +88,13 @@ If user confirms:
    - Discover and apply relevant best practices from skill references
    - Emphasize cross-file duplication and consistent patterns
    - Preserve functionality while improving clarity, consistency, and maintainability
-4. **Enforce Code Quality Standards** - The agent must apply these standards during refactoring:
-   - **Comments**: Only add comments explaining complex business logic or non-obvious decisions; remove comments that restate code or conflict with file style
-   - **Error Handling**: Add try-catch only where errors can be handled/recovered; remove defensive checks in trusted internal paths (validate only at boundaries: user input, external APIs)
-   - **Type Safety**: Never use `any` to bypass type issues; use proper types, `unknown` with type guards, or refactor the root cause
-   - **Style Consistency**: Match existing code style in file and project; check CLAUDE.md for conventions
+   - Apply Code Quality Standards as defined in the best-practices skill
 
 ## Step 4: Validate and Summary
 
 After completion:
 
-1. **Verify Code Quality Standards** were applied across the project:
+1. **Verify Code Quality Standards** were applied across the project (as defined in best-practices skill):
    - Comments are meaningful and match file style
    - No unnecessary defensive checks or empty try-catch blocks
    - No `any` types introduced
@@ -117,5 +115,5 @@ After completion:
 - Let the agent self-discover best practices from skills
 - Preserve functionality while improving clarity, consistency, and maintainability
 - Emphasize cross-file duplication reduction and consistent patterns
-- Enforce code quality standards as defined in Step 3
+- Apply Code Quality Standards as defined in the best-practices skill
 - ALWAYS show preview and get confirmation for project-wide changes

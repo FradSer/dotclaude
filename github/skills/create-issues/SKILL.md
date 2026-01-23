@@ -1,7 +1,9 @@
 ---
+name: create-issues
 allowed-tools: Task, Bash(gh:*), Bash(git:*)
 description: Create GitHub issues with TDD principles and proper labels
 argument-hint: [description]
+user-invocable: true
 ---
 
 ## Context

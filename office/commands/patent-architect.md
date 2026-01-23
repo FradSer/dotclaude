@@ -7,6 +7,9 @@ allowed-tools: Skill
 
 ## Your Task
 
-1. **Load the `patent-architect` skill** using the `Skill` tool with the invention idea as input.
+This command is a user-friendly shortcut to the `patent-architect` skill.
+
+1. **Load the `patent-architect` skill** using the `Skill` tool with `skill: "patent-architect"` and pass the invention idea as input via the `args` parameter.
 2. **Follow the skill workflow** - The skill contains all procedures for understanding the invention, conducting prior art search, and generating the application form.
-3. **Save Output**: Write the final patent application to `docs/YYYY-MM-DD-ShortName.md` (create the directory if needed).
+3. **Save Output** - The skill will save the final patent application to `docs/YYYY-MM-DD-ShortName.md`.
+

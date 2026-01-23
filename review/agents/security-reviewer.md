@@ -1,6 +1,12 @@
 ---
 name: security-reviewer
-description: Security specialist auditing authentication, data protection, and inputs
+description: |
+  Security specialist auditing authentication, data protection, and inputs
+
+  <example>Audit user input validation in form handlers for injection vulnerabilities</example>
+  <example>Review JWT token implementation for proper validation and expiration handling</example>
+  <example>Assess API endpoints for authentication bypass and broken access control</example>
+  <example>Evaluate cryptographic implementations for use of weak algorithms</example>
 model: sonnet
 color: green
 ---

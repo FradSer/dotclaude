@@ -2,6 +2,18 @@
 
 GitHub project operations with quality gates, TDD workflows, and comprehensive issue management.
 
+## Installation
+
+```bash
+claude plugin install github@frad-dotclaude
+```
+
+**Requirements:**
+- GitHub CLI (`gh`) must be installed and authenticated
+- Repository must have a GitHub remote
+- Project must have lint, test, and build commands configured
+- Git must support worktrees (Git 2.5+)
+
 ## Overview
 
 The GitHub Plugin automates GitHub operations including pull request creation, issue management, and quality validation. It ensures all PRs meet quality standards before submission and follows TDD principles with atomic commits and conventional commit formats.
@@ -207,16 +219,6 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 - **@code-simplifier**: Code optimization and simplification
 - **@security-reviewer**: Security validation (when applicable)
 
-## Installation
-
-This plugin is included in the Claude Code repository. The commands are automatically available when using Claude Code.
-
-**Requirements:**
-- GitHub CLI (`gh`) must be installed and authenticated
-- Repository must have a GitHub remote
-- Project must have lint, test, and build commands configured
-- Git must support worktrees (Git 2.5+)
-
 ## Best Practices
 
 ### Using `/github:create-pr`
@@ -359,7 +361,3 @@ This plugin is included in the Claude Code repository. The commands are automati
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-1.0.0

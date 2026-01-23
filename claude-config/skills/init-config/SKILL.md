@@ -2,6 +2,7 @@
 name: init-config
 description: Generate $HOME/.claude/CLAUDE.md with AI-driven environment detection and advanced configuration options
 argument-hint: []
+user-invocable: true
 allowed-tools:
   # Core file and interaction tools
   - Read

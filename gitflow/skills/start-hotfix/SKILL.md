@@ -9,7 +9,7 @@ user-invocable: true
 
 ## Your Task
 
-1. **Load the `gitflow-workflow` skill** using the `Skill` tool to access GitFlow workflow capabilities.
+1. **Load the `gitflow:gitflow-workflow` skill** using the `Skill` tool to access GitFlow workflow capabilities.
 2. Gather context: current branch, existing hotfix branches, latest tag, version files.
 3. Normalize the provided hotfix name from `$ARGUMENTS` to `$HOTFIX_NAME` using the normalization procedure in `./references/naming-rules.md`.
 4. Identify production base branch for the active workflow (usually `main` for Classic GitFlow, or `production` for GitLab Flow).

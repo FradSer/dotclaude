@@ -56,19 +56,13 @@ Previous implementation caused memory leaks.
 Resolves memory issues in production.
 ```
 
-## Footer (Mandatory)
+## Footer (Optional)
 
-Blank line after body, then add these footers:
+Blank line after body, then optionally add footers:
 
-**Required:**
-- **Co-Authored-By**: Always add this to attribute AI assistance. Detect the current model and use the appropriate format:
-  - Sonnet models: `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>`
-  - Opus models: `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>`
-  - Haiku models: `Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>`
-
-**Optional:**
 - Issue references: `Closes #123`, `Fixes #456`
 - Breaking changes: `BREAKING CHANGE: <description>`
+- Co-authorship attribution: `Co-Authored-By: Name <email>`
 
 **Example commit message:**
 ```

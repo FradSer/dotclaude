@@ -2,6 +2,12 @@
 
 A comprehensive Claude Code plugin to generate personalized AI assistant configurations with intelligent environment detection and advanced customization options.
 
+## Installation
+
+```bash
+claude plugin install claude-config@frad-dotclaude
+```
+
 ## Features
 
 - **AI-Driven Environment Detection**: Automatically detects installed languages and tools (Node.js, Python, Rust, Go, Java, Docker, etc.)
@@ -12,18 +18,6 @@ A comprehensive Claude Code plugin to generate personalized AI assistant configu
 - **Smart Merging**: Preserves unique user content while maintaining consistency across AI configurations
 - **Safe Operations**: Automatic backups before overwriting existing files
 
-## Installation
-
-1. Copy this plugin to your Claude plugins directory:
-   ```bash
-   cp -r claude-config ~/.claude/plugins/
-   ```
-
-2. Or use it locally with the `--plugin-dir` flag:
-   ```bash
-   claude --plugin-dir /path/to/claude-config
-   ```
-
 ## Usage
 
 Run the initialization command:
@@ -32,7 +26,7 @@ Run the initialization command:
 /init-config
 ```
 
-The command guides you through a 10-phase interactive workflow:
+The command guides you through a 9-phase interactive workflow:
 
 1. **Environment Discovery** - Detects installed languages and tools
 2. **Developer Profile** - Captures name and email
@@ -42,8 +36,7 @@ The command guides you through a 10-phase interactive workflow:
 6. **Style Preference** - Choose emoji usage
 7. **Assembly & Generation** - Build final configuration
 8. **Length Validation** - Ensure optimal word count (1,500-3,000 words)
-9. **Multi-file Sync** - Optionally sync to GEMINI.md/AGENTS.md
-10. **Write CLAUDE.md** - Save with comprehensive report
+9. **Write CLAUDE.md** - Save with comprehensive report
 
 For detailed workflow steps, run `/init-config` and follow the interactive prompts.
 
@@ -53,8 +46,9 @@ For detailed workflow steps, run `/init-config` and follow the interactive promp
 claude-config/
 ├── .claude-plugin/
 │   └── plugin.json           # Plugin manifest
-├── commands/
-│   └── init-config.md        # Main command with 10-phase workflow
+├── skills/
+│   └── init-config/
+│       └── SKILL.md          # User-invocable skill with 9-phase workflow
 ├── assets/
 │   ├── claude-template.md    # Base template with TDD
 │   └── claude-template-no-tdd.md  # Base template without TDD
@@ -168,3 +162,7 @@ chmod +x scripts/validate-length.sh
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Author
+
+Frad LEE (fradser@gmail.com)

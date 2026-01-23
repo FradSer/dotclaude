@@ -2,6 +2,12 @@
 
 GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning and conventional commits.
 
+## Installation
+
+```bash
+claude plugin install gitflow@frad-dotclaude
+```
+
 ## Overview
 
 The GitFlow Plugin automates the GitFlow branching model, providing commands to start and finish feature, hotfix, and release branches. It ensures proper branch naming, merging, and tagging according to GitFlow conventions, with automatic versioning and changelog generation.
@@ -163,9 +169,11 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 - Never add new features to release branch
 - Auto-generates changelog from commits
 
-## Complete Workflow Examples
+## Workflow Integration
 
-### Feature Development:
+### Complete Workflow Examples
+
+#### Feature Development:
 ```bash
 # Start feature
 /gitflow:start-feature user-authentication
@@ -178,7 +186,7 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 /gitflow:finish-feature
 ```
 
-### Critical Hotfix:
+#### Critical Hotfix:
 ```bash
 # Start from production
 /gitflow:start-hotfix fix-payment-bug
@@ -192,7 +200,7 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 # Creates v1.2.4 release
 ```
 
-### Major Release:
+#### Major Release:
 ```bash
 # Start release preparation
 /gitflow:start-release
@@ -205,6 +213,20 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 /gitflow:finish-release
 # Creates v1.2.0 release
 ```
+
+### Commit Format
+
+All GitFlow commands use the `@git/conventional-commits` skill for commit message formatting. This ensures:
+- **Atomic commits**: One logical change per commit
+- **Conventional format**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
+- **Proper structure**: Title, body, and footer formatting per Conventional Commits specification
+
+### Version Tagging
+
+- Hotfixes: v1.2.3 → v1.2.4 (patch)
+- Releases: v1.1.0 → v1.2.0 (minor) or v2.0.0 (major)
+- Tags created on main branch merge
+- GitHub releases auto-generated
 
 ## Requirements
 
@@ -259,24 +281,6 @@ git checkout -b main  # or master
 # Manually specify version if needed
 ```
 
-## Commit Format
-
-All GitFlow commands use the `@git/conventional-commits` skill for commit message formatting. This ensures:
-- **Atomic commits**: One logical change per commit
-- **Conventional format**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
-- **Proper structure**: Title, body, and footer formatting per Conventional Commits specification
-
-## Version Tagging
-
-- Hotfixes: v1.2.3 → v1.2.4 (patch)
-- Releases: v1.1.0 → v1.2.0 (minor) or v2.0.0 (major)
-- Tags created on main branch merge
-- GitHub releases auto-generated
-
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-0.2.0

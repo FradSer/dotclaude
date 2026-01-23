@@ -2,6 +2,12 @@
 
 Multi-agent review system for enforcing high code quality.
 
+## Installation
+
+```bash
+claude plugin install review@frad-dotclaude
+```
+
 ## Overview
 
 The Review Plugin provides a comprehensive code review system with multiple specialized agents. Each agent focuses on different aspects of code quality, providing thorough and actionable feedback.
@@ -76,7 +82,7 @@ Architectural reviewer focused on system-wide impact and risk.
 | Field | Value |
 |-------|-------|
 | Model | `sonnet` |
-| Color | `purple` |
+| Color | `magenta` |
 
 **Focus areas:**
 - Architectural integrity and Clean Architecture adherence
@@ -106,7 +112,7 @@ Experience specialist focused on usability and accessibility.
 | Field | Value |
 |-------|-------|
 | Model | `sonnet` |
-| Color | `orange` |
+| Color | `yellow` |
 
 **Focus areas:**
 - Information hierarchy, layout clarity, and visual rhythm
@@ -125,9 +131,9 @@ Experience specialist focused on usability and accessibility.
 - Automatically in `/hierarchical` review (if UI changes detected)
 - Can be invoked manually for UX review
 
-## Commands
+## User-Invocable Skills
 
-### `/review:quick`
+### `/quick`
 
 Streamlined code review for rapid assessment and targeted feedback.
 
@@ -150,12 +156,12 @@ Streamlined code review for rapid assessment and targeted feedback.
 
 **Usage:**
 ```bash
-/review:quick
+/quick
 ```
 
 Or with specific files:
 ```bash
-/review:quick src/auth/login.ts
+/quick src/auth/login.ts
 ```
 
 **Features:**
@@ -168,7 +174,7 @@ Or with specific files:
 
 ---
 
-### `/review:hierarchical`
+### `/hierarchical`
 
 Comprehensive multi-stage code review using all specialized subagents.
 
@@ -176,7 +182,6 @@ Comprehensive multi-stage code review using all specialized subagents.
 
 | Field | Value |
 |-------|-------|
-| Model | `claude-haiku-4-5-20251001` |
 | Allowed Tools | `Task` |
 | Argument Hint | `[files-or-directories]` |
 
@@ -192,7 +197,7 @@ Comprehensive multi-stage code review using all specialized subagents.
 
 **Usage:**
 ```bash
-/review:hierarchical
+/hierarchical
 ```
 
 **Features:**
@@ -210,20 +215,16 @@ Comprehensive multi-stage code review using all specialized subagents.
 - Agent-specific findings
 - File-specific recommendations
 
-## Installation
-
-This plugin is included in the Claude Code repository. The commands and agents are automatically available when using Claude Code.
-
 ## Best Practices
 
-### Using `/review:quick`
+### Using `/quick`
 - Use for rapid feedback during development
 - Run after small changes
 - Great for iterative development
 - Use before committing changes
 - Fast turnaround for quick fixes
 
-### Using `/review:hierarchical`
+### Using `/hierarchical`
 - Use before creating PRs
 - Run on feature branches before merging
 - Use for comprehensive quality assessment
@@ -235,23 +236,23 @@ This plugin is included in the Claude Code repository. The commands and agents a
 - Use `security-reviewer` for security-critical code
 - Use `tech-lead-reviewer` for architectural decisions
 - Use `ux-reviewer` for UI/UX changes
-- Use all agents via `/review:hierarchical` for comprehensive review
+- Use all agents via `/hierarchical` for comprehensive review
 
 ## Workflow Integration
 
 ### Quick Review Workflow:
 ```bash
 # Make changes
-/review:quick
+/quick
 # Fix issues
-/review:quick
+/quick
 # Commit when satisfied
 ```
 
 ### Comprehensive Review Workflow:
 ```bash
 # Complete feature
-/review:hierarchical
+/hierarchical
 # Fix all critical issues
 # Re-run review if needed
 # Create PR when clean
@@ -284,7 +285,7 @@ This plugin is included in the Claude Code repository. The commands and agents a
 **Solution**:
 - This is normal for large changes
 - Agents run in parallel when possible
-- Use `/review:quick` for faster feedback
+- Use `/quick` for faster feedback
 - Review specific files instead of all changes
 
 ### Too many issues reported
@@ -295,7 +296,7 @@ This plugin is included in the Claude Code repository. The commands and agents a
 - Focus on critical issues first
 - Address important issues incrementally
 - Some issues may be false positives - review carefully
-- Use `/review:quick` for focused feedback
+- Use `/quick` for focused feedback
 
 ### Agent not finding issues
 
@@ -305,7 +306,7 @@ This plugin is included in the Claude Code repository. The commands and agents a
 - Provide more context in code
 - Check if agent is appropriate for the code type
 - Try different agent for different perspective
-- Use multiple agents via `/review:hierarchical`
+- Use multiple agents via `/hierarchical`
 
 ## Tips
 
@@ -318,7 +319,3 @@ This plugin is included in the Claude Code repository. The commands and agents a
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-1.0.0

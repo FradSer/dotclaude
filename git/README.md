@@ -2,6 +2,12 @@
 
 Conventional Git automation and advanced repository management.
 
+## Installation
+
+```bash
+claude plugin install git@frad-dotclaude
+```
+
 ## Overview
 
 This plugin provides automated Git commands that ensure:
@@ -9,14 +15,6 @@ This plugin provides automated Git commands that ensure:
 - **Conventional Format**: Messages follow the conventional commits specification.
 - **Safety**: Quality gates and protections against committing secrets.
 - **Project Awareness**: Adapts to project-specific configurations.
-
-## Installation
-
-To install this plugin locally:
-
-```bash
-claude config --add-plugin "/path/to/git"
-```
 
 ## Commands
 
@@ -131,5 +129,10 @@ The PreToolUse hook validates:
 - **Nothing to commit**: Verify changes are not ignored.
 - **Push failed**: Check remote permissions and branch protection rules.
 
+## Author
+
+Frad LEE (fradser@gmail.com)
+
 ## License
+
 MIT

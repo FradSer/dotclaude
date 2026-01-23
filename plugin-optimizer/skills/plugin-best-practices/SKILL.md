@@ -22,6 +22,7 @@ Validate and optimize Claude Code plugins against official standards.
 - Check components use kebab-case naming
 - Ensure scripts are executable with shebang and `${CLAUDE_PLUGIN_ROOT}` paths
 - Validate no explicit tool invocations in component instructions (use implicit descriptions)
+- **Verify skill references use qualified names**: Use `plugin-name:skill-name` format, not bare `skill-name`
 - Use AskUserQuestion tool when user confirmation is needed
 - Confirm all paths are relative and start with `./`
 - Verify components are at plugin root, not inside `.claude-plugin/`
@@ -76,6 +77,19 @@ Use imperative style instructions. Reference $ARGUMENTS for user input.
 **Output**: Expected result or deliverable (optional)
 ```
 
+### Skill Reference Pattern
+
+Always use fully qualified names when referencing skills: `plugin-name:skill-name`
+
+```markdown
+# In skills/commands
+Load the `gitflow:gitflow-workflow` skill using the Skill tool
+
+# In agent frontmatter
+skills:
+  - plugin-name:skill-name
+```
+
 ### Agent Pattern
 
 ```yaml
@@ -108,4 +122,39 @@ You are an expert [role]. [System prompt in second person]
 ## Core Responsibilities
 1. **Responsibility 1**: Description
 2. **Responsibility 2**: Description
+```
+
+### Parallel Agent Execution
+
+Launch multiple agents simultaneously when tasks are independent to improve efficiency.
+
+**Request Parallel Execution**:
+
+```markdown
+# Explicit parallel request
+
+Launch all agents simultaneously:
+- code-reviewer agent
+- security-reviewer agent
+- ux-reviewer agent
+
+# Or use "in parallel" phrasing
+
+Launch 3 parallel Sonnet agents to review different aspects
+```
+
+**Best Practices**:
+- **Explicitly mention "parallel" or "simultaneously"** when launching multiple agents
+- **Use descriptive style**: "Launch code-reviewer agent" (preferred over explicit Task tool calls)
+- **Consolidate results**: Merge findings and resolve conflicts after parallel execution
+
+**Common Pattern**:
+
+```markdown
+1. Sequential setup (if needed)
+2. Launch specialized reviews in parallel:
+   - @code-reviewer — logic correctness
+   - @security-reviewer — vulnerabilities
+   - @ux-reviewer — usability
+3. Consolidate results
 ```

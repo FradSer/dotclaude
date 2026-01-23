@@ -9,7 +9,7 @@ user-invocable: true
 
 ## Your Task
 
-1. **Load the `gitflow-workflow` skill** using the `Skill` tool to access GitFlow workflow capabilities.
+1. **Load the `gitflow:gitflow-workflow` skill** using the `Skill` tool to access GitFlow workflow capabilities.
 2. Gather context: current branch, git status, recent commits, version files.
 3. Validate branch follows `release/*` convention and working tree is clean.
 4. Run tests if available and resolve any failures.

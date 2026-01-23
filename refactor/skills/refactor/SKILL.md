@@ -1,7 +1,9 @@
 ---
+name: refactor
 description: Refactor code with code-simplifier
 argument-hint: [files-or-directories-or-semantic-query]
 allowed-tools: ["Task", "AskUserQuestion", "Read", "Write", "Bash(git:*)", "Grep", "Glob"]
+user-invocable: true
 ---
 
 # Refactor Command
@@ -26,7 +28,7 @@ allowed-tools: ["Task", "AskUserQuestion", "Read", "Write", "Bash(git:*)", "Grep
 ## Initial Setup
 
 **Actions**:
-1. Create todo list with all workflow steps:
+1. **Use TodoWrite tool** to create todo list with all workflow steps:
    - Determine target scope
    - Confirm scope with user
    - Launch refactoring agent
@@ -63,7 +65,7 @@ allowed-tools: ["Task", "AskUserQuestion", "Read", "Write", "Bash(git:*)", "Grep
 
 3. **Present scope to user**:
    - Show identified files
-   - Use AskUserQuestion to confirm:
+   - Use AskUserQuestion tool to confirm:
      - header: "Confirm scope"
      - question: "I found these files related to recent changes. Should I refactor them?"
      - multiSelect: true
@@ -82,17 +84,13 @@ After user confirms the scope:
    - Analyze the code and detect languages/frameworks
    - Discover and apply relevant best practices from skill references
    - Preserve functionality while improving clarity, consistency, and maintainability
-4. **Enforce Code Quality Standards** - The agent must apply these standards during refactoring:
-   - **Comments**: Only add comments explaining complex business logic or non-obvious decisions; remove comments that restate code or conflict with file style
-   - **Error Handling**: Add try-catch only where errors can be handled/recovered; remove defensive checks in trusted internal paths (validate only at boundaries: user input, external APIs)
-   - **Type Safety**: Never use `any` to bypass type issues; use proper types, `unknown` with type guards, or refactor the root cause
-   - **Style Consistency**: Match existing code style in file and project; check CLAUDE.md for conventions
+   - Apply Code Quality Standards as defined in the best-practices skill
 
 ## Step 3: Validate and Summary
 
 After completion:
 
-1. **Verify Code Quality Standards** were applied:
+1. **Verify Code Quality Standards** were applied (as defined in best-practices skill):
    - Comments are meaningful and match file style
    - No unnecessary defensive checks or empty try-catch blocks
    - No `any` types introduced
@@ -110,5 +108,5 @@ After completion:
 - Follow the best-practices workflow and references in the refactor plugin skills
 - Let the agent self-discover best practices from skills
 - Preserve functionality while improving clarity, consistency, and maintainability
-- Enforce code quality standards as defined in Step 2
+- Apply Code Quality Standards as defined in the best-practices skill
 - If the user requests project-wide refactoring, direct them to use `/refactor-project`

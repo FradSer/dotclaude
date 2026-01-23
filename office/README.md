@@ -2,6 +2,12 @@
 
 Specialized Claude Skill for patent application generation and intellectual property workflows.
 
+## Installation
+
+```bash
+claude plugin install office@frad-dotclaude
+```
+
 ## Quick Start
 
 ### 1. Setup API Keys
@@ -114,15 +120,6 @@ Helper script for patent search with argument parsing.
 - `--engine <serpapi|exa>` - Search engine to use (default: serpapi)
 - `--num <n>` - Number of results (default: 10)
 - `-h, --help` - Show help message
-
-## Requirements
-
-### API Keys
-
-| Key | Description | Get from |
-|-----|-------------|----------|
-| SERPAPI_KEY | Google Patents search | [serpapi.com](https://serpapi.com) |
-| EXA_API_KEY | Semantic patent search | [dashboard.exa.ai](https://dashboard.exa.ai) |
 
 ## Architecture
 

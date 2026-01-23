@@ -1,16 +1,22 @@
 # Refactor Plugin
 
-Agent and commands for code simplification and refactoring to improve code quality while preserving functionality.
+Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
+
+## Installation
+
+```bash
+claude plugin install refactor@frad-dotclaude
+```
 
 ## Overview
 
-The Refactor Plugin provides specialized tools for code simplification and refactoring. It includes an expert code simplifier agent and commands for targeted and project-wide refactoring. All refactoring operations preserve functionality while improving clarity, consistency, and maintainability.
+The Refactor Plugin provides specialized tools for code simplification and refactoring. It includes an expert code simplifier agent and skills for targeted and project-wide refactoring. All refactoring operations preserve functionality while improving clarity, consistency, and maintainability.
 
 ## Agent
 
 ### `code-simplifier`
 
-Expert code simplification specialist that enhances code clarity, consistency, and maintainability while preserving exact functionality. Automatically loads the `best-practices` skill and applies language-specific standards based on your project.
+Expert code simplification specialist that enhances code clarity, consistency, and maintainability while preserving exact functionality. Automatically loads the `best-practices` skill (via frontmatter declaration) and applies language-specific standards based on your project.
 
 **Scope Modes:**
 - **Targeted**: Recently modified code or specific files/directories
@@ -34,7 +40,8 @@ Comprehensive refactoring workflow with language-specific best practices and Nex
 
 | Field | Value |
 |-------|-------|
-| Version | `1.0.0` |
+| Version | `1.2.0` |
+| User-invocable | No (internal skill) |
 
 **Scope:**
 - Targeted refactoring of recently modified or specified code
@@ -53,18 +60,30 @@ Based on file extension, appropriate reference is loaded:
 - 47 performance optimization patterns organized by impact level and category
 - See [SKILL.md](skills/best-practices/SKILL.md) for complete pattern index and usage guidance
 
+**Code Quality Standards:**
+- Comments: Only for complex business logic
+- Error Handling: Only at system boundaries
+- Type Safety: Never use `any` types
+- Style Consistency: Match existing code patterns
+
 **Workflow:**
 1. **Identify**: Determine target scope
-2. **Load References**: Load language-specific and Next.js references as needed
-3. **Analyze**: Review code for complexity, redundancy, and improvement opportunities
-4. **Execute**: Apply behavior-preserving refinements
-5. **Validate**: Ensure tests pass and code is cleaner
-
-## Commands
+2. **Detect**: Identify frameworks and languages
+3. **Load References**: Load language-specific and framework references
+4. **Filter Rules**: Apply only relevant rules
+5. **Analyze**: Review code for improvements
+6. **Execute**: Apply behavior-preserving refinements following Code Quality Standards
+7. **Validate**: Ensure tests pass and code is cleaner
 
 ### `/refactor`
 
 Quick refactoring for recently modified or specified code.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| User-invocable | Yes |
 
 **Usage:**
 ```bash
@@ -83,6 +102,12 @@ Launches the `code-simplifier` agent with targeted scope, automatically applies 
 ### `/refactor-project`
 
 Project-wide code refactoring for quality and maintainability across the entire codebase.
+
+**Metadata:**
+
+| Field | Value |
+|-------|-------|
+| User-invocable | Yes |
 
 **Usage:**
 ```bash
@@ -155,10 +180,6 @@ Demonstrates parallelizing independent async operations to eliminate sequential 
 
 Demonstrates eliminating code duplication using Enums and type hints, reducing logic complexity while improving type safety. See [python.md](skills/best-practices/references/python.md) for comprehensive Python refactoring patterns.
 
-## Installation
-
-This plugin is included in the Claude Code repository. The agent and commands are automatically available when using Claude Code.
-
 ## Best Practices
 
 ### Using `/refactor`
@@ -177,7 +198,7 @@ This plugin is included in the Claude Code repository. The agent and commands ar
 
 ### Using `@code-simplifier` Agent
 - Invoke directly for specific code simplification
-- Agent automatically loads the `best-practices` skill
+- Agent automatically loads the `best-practices` skill (via frontmatter declaration)
 - Trust agent's expertise in code quality
 - Review changes to ensure they match your preferences
 
@@ -357,14 +378,13 @@ The `impact-based` approach automatically prioritizes CRITICAL > HIGH > MEDIUM >
 2. Extract specific rules into ESLint/Pylint/golangci-lint configurations
 3. Run refactoring locally before pushing to CI/CD
 
-## Acknowledgments
+## Author
+
+Frad LEE (fradser@gmail.com)
+
+## Credits
 
 **React/Next.js Best Practices:**
 - React and Next.js performance optimization guidelines are sourced from [Vercel Engineering's agent-skills repository](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices)
 - Contains 40+ rules across 8 categories, prioritized by impact
 - Originally created by [@shuding](https://x.com/shuding) at [Vercel](https://vercel.com)
-
-## Author
-
-Frad LEE (fradser@gmail.com)
-

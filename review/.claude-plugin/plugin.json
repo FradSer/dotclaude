@@ -1,9 +1,24 @@
 {
   "name": "review",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Multi-agent review system for enforcing high quality.",
   "author": {
-        "name": "Frad LEE",
+    "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  }
+  },
+  "keywords": [
+    "code-review",
+    "quality",
+    "security",
+    "architecture",
+    "ux",
+    "accessibility",
+    "multi-agent",
+    "peer-review",
+    "best-practices"
+  ],
+  "commands": [
+    "./skills/quick/",
+    "./skills/hierarchical/"
+  ]
 }
