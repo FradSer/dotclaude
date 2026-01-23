@@ -37,12 +37,19 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
         -   `hooks/hooks.json` for hooks
     -   Verify auto-discovery works
     -   Report any missing directories or files (do NOT create them in this phase)
-5.  **Execute Validation Suite**: As the Orchestrator, run the following validation scripts directly using the `Bash` tool. Do NOT launch a sub-agent in this phase.
+5.  **Check for Commands Directory** (Modern Architecture Assessment):
+    -   **CRITICAL**: If a `commands/` directory exists with `.md` files:
+        -   Use `AskUserQuestion` tool to ask the user: "This plugin uses the legacy `commands/` structure. Modern best practice recommends using `skills/` for better modularity and self-contained documentation. Would you like to migrate commands to skills structure?"
+        -   Options: "Yes, migrate to skills" / "No, keep commands as-is"
+        -   If user chooses "Yes", record this decision for Phase 2 (Automated Fixes)
+        -   If user chooses "No", skip migration and proceed with validation
+    -   **Note**: This check aligns with modern plugin architecture where Skills are preferred over Commands for new functionality
+6.  **Execute Validation Suite**: As the Orchestrator, run the following validation scripts directly using the `Bash` tool. Do NOT launch a sub-agent in this phase.
     -   **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
     -   **Manifest**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
     -   **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
     -   **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
-6.  **Review**: Analyze the output of each script to identify all failures and issues. Compile a comprehensive list of problems found.
+7.  **Review**: Analyze the output of each script to identify all failures and issues. Compile a comprehensive list of problems found.
 
 **Output**: Comprehensive list of validation issues categorized by type (structure, manifest, frontmatter, anti-patterns)
 
@@ -56,6 +63,13 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 1.  **Delegate**: Launch the `plugin-optimizer:plugin-optimizer` agent. This must be the first time the sub-agent is launched.
 2.  **Context**: Provide the agent with the resolved absolute path and the validation errors from Phase 1.
 3.  **Fix Strategy**: Instruct the agent to:
+    -   **Commands to Skills Migration** (if user approved in Phase 1):
+        -   For each command in `commands/*.md`:
+            -   Create corresponding skill directory `skills/<command-name>/`
+            -   Transform command `.md` file to `SKILL.md` format with proper frontmatter
+            -   Add `user-invocable: true` to SKILL.md frontmatter
+            -   Update plugin.json to declare new skills in `commands` field
+            -   Document the migration in commit message
     -   **Missing README**: Create basic `README.md` using content from `plugin.json`.
     -   **Missing Frontmatter**: Add default frontmatter to agent/command files.
     -   **Directory Structure**: Create missing standard directories (`commands`, `agents`, `skills`).
