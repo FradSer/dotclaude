@@ -1,6 +1,6 @@
 {
   "name": "office",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "description": "Specialized Claude Skill for patent application generation and intellectual property workflows.",
   "keywords": [
@@ -13,5 +13,8 @@
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  }
+  },
+  "commands": [
+    "./skills/patent-architect/"
+  ]
 }
