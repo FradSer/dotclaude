@@ -19,7 +19,7 @@ The Plugin Optimizer analyzes existing Claude Code plugins to ensure they follow
 ### From Marketplace
 
 ```bash
-claude plugin install plugin-optimizer
+claude plugin install plugin-optimizer@frad-dotclaude
 ```
 
 ### Local Development

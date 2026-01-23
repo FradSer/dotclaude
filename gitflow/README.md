@@ -2,6 +2,12 @@
 
 GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning and conventional commits.
 
+## Installation
+
+```bash
+claude plugin install gitflow@frad-dotclaude
+```
+
 ## Overview
 
 The GitFlow Plugin automates the GitFlow branching model, providing commands to start and finish feature, hotfix, and release branches. It ensures proper branch naming, merging, and tagging according to GitFlow conventions, with automatic versioning and changelog generation.

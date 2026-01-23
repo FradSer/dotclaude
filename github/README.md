@@ -209,7 +209,9 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 
 ## Installation
 
-This plugin is included in the Claude Code repository. The commands are automatically available when using Claude Code.
+```bash
+claude plugin install github@frad-dotclaude
+```
 
 **Requirements:**
 - GitHub CLI (`gh`) must be installed and authenticated

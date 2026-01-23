@@ -6,6 +6,48 @@ A curated collection of plugins and skills for Claude Code, designed to enhance 
 
 This repository contains a comprehensive set of Claude Code plugins organized into development and productivity categories. Each plugin provides specialized functionality through skills and agents to streamline your coding workflow.
 
+## Available Plugins & Installation
+
+### Quick Install
+
+Install individual plugins using the Claude Code CLI:
+
+```bash
+claude plugin install <plugin-name>@frad-dotclaude
+```
+
+### Plugin Catalog
+
+| Plugin | Category | Description | Installation |
+|--------|----------|-------------|--------------|
+| **git** | Development | Conventional Git automation for commits and repository management | `claude plugin install git@frad-dotclaude` |
+| **gitflow** | Development | GitFlow workflow automation for feature, hotfix, and release branches | `claude plugin install gitflow@frad-dotclaude` |
+| **github** | Productivity | GitHub operations with quality gates and TDD workflows | `claude plugin install github@frad-dotclaude` |
+| **review** | Productivity | Multi-agent code review system with specialized reviewers | `claude plugin install review@frad-dotclaude` |
+| **refactor** | Development | Code simplification and refactoring with best practices | `claude plugin install refactor@frad-dotclaude` |
+| **swiftui** | Development | SwiftUI Clean Architecture reviewer for iOS/macOS | `claude plugin install swiftui@frad-dotclaude` |
+| **claude-config** | Productivity | Generate comprehensive CLAUDE.md configuration files | `claude plugin install claude-config@frad-dotclaude` |
+| **office** | Productivity | Patent application generation with prior art search | `claude plugin install office@frad-dotclaude` |
+| **plugin-optimizer** | Productivity | Validate and optimize Claude Code plugins | `claude plugin install plugin-optimizer@frad-dotclaude` |
+| **utils** | Productivity | Utility commands for day-to-day automation | `claude plugin install utils@frad-dotclaude` |
+
+### Install All Plugins
+
+To install all plugins at once:
+
+```bash
+claude plugin install git@frad-dotclaude \
+  gitflow@frad-dotclaude \
+  github@frad-dotclaude \
+  review@frad-dotclaude \
+  refactor@frad-dotclaude \
+  swiftui@frad-dotclaude \
+  claude-config@frad-dotclaude \
+  office@frad-dotclaude \
+  plugin-optimizer@frad-dotclaude \
+  utils@frad-dotclaude
+```
+
 ## Repository Structure
 
 ```
@@ -286,13 +328,25 @@ Plugins are configured in `.claude-plugin/marketplace.json`:
 }
 ```
 
-## Installation
+## Prerequisites
 
-These plugins are configured through the `marketplace.json` file and are automatically available in Claude Code when this repository is set as a plugin source.
+Before installing plugins, ensure you have:
 
-1. Ensure Claude Code is installed
-2. Configure this repository as a plugin source
-3. Plugins will be available for use in Claude Code
+1. **Claude Code CLI installed** - [Download from claude.ai/code](https://claude.ai/code)
+2. **Git configured** - Some plugins require git for version control operations
+3. **GitHub CLI (optional)** - Required for `github` plugin features
+
+## Verifying Installation
+
+After installing a plugin, verify it's available:
+
+```bash
+# List all installed plugins
+claude plugin list
+
+# Check plugin status
+claude plugin info <plugin-name>@frad-dotclaude
+```
 
 ## Usage Examples
 

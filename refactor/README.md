@@ -176,7 +176,9 @@ Demonstrates eliminating code duplication using Enums and type hints, reducing l
 
 ## Installation
 
-This plugin is included in the Claude Code repository. The agent and skills are automatically available when using Claude Code.
+```bash
+claude plugin install refactor@frad-dotclaude
+```
 
 ## Best Practices
 

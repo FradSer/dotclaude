@@ -14,15 +14,9 @@ A comprehensive Claude Code plugin to generate personalized AI assistant configu
 
 ## Installation
 
-1. Copy this plugin to your Claude plugins directory:
-   ```bash
-   cp -r claude-config ~/.claude/plugins/
-   ```
-
-2. Or use it locally with the `--plugin-dir` flag:
-   ```bash
-   claude --plugin-dir /path/to/claude-config
-   ```
+```bash
+claude plugin install claude-config@frad-dotclaude
+```
 
 ## Usage
 

@@ -102,7 +102,9 @@ Recommendation: Concrete fix with code example
 
 ## Installation
 
-This plugin is included in the Claude Code repository. The agent is automatically available when using Claude Code.
+```bash
+claude plugin install swiftui@frad-dotclaude
+```
 
 ## Best Practices
 

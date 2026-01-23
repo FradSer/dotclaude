@@ -211,7 +211,9 @@ Comprehensive multi-stage code review using all specialized subagents.
 
 ## Installation
 
-This plugin is included in the Claude Code repository. The commands and agents are automatically available when using Claude Code.
+```bash
+claude plugin install review@frad-dotclaude
+```
 
 ## Best Practices
 

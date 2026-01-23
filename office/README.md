@@ -2,6 +2,12 @@
 
 Specialized Claude Skill for patent application generation and intellectual property workflows.
 
+## Installation
+
+```bash
+claude plugin install office@frad-dotclaude
+```
+
 ## Quick Start
 
 ### 1. Setup API Keys

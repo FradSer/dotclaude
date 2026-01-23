@@ -165,7 +165,9 @@ Focus on security, performance, and code style.
 
 ## Installation
 
-This plugin is included in the Claude Code repository. The commands are automatically available when using Claude Code.
+```bash
+claude plugin install utils@frad-dotclaude
+```
 
 ## Best Practices
 

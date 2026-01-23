@@ -12,10 +12,8 @@ This plugin provides automated Git commands that ensure:
 
 ## Installation
 
-To install this plugin locally:
-
 ```bash
-claude config --add-plugin "/path/to/git"
+claude plugin install git@frad-dotclaude
 ```
 
 ## Commands
