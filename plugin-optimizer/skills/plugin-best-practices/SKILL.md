@@ -112,18 +112,12 @@ You are an expert [role]. [System prompt in second person]
 
 ### Parallel Agent Execution
 
-When multiple independent tasks can be performed simultaneously, launch agents in parallel to improve efficiency and reduce total execution time.
+Launch multiple agents simultaneously when tasks are independent to improve efficiency.
 
-**When to Use Parallel Execution**:
-- Multiple independent analysis tasks (e.g., code review, security check, UX review)
-- Batch processing of unrelated files or components
-- Gathering different types of information simultaneously
-- Tasks that don't depend on each other's results
-
-**How to Request Parallel Execution**:
+**Request Parallel Execution**:
 
 ```markdown
-# Explicit parallel request (recommended)
+# Explicit parallel request
 
 Launch all agents simultaneously:
 - code-reviewer agent
@@ -132,51 +126,21 @@ Launch all agents simultaneously:
 
 # Or use "in parallel" phrasing
 
-Launch 3 parallel Sonnet agents to review different aspects:
-- code-reviewer agent for logic correctness
-- security-reviewer agent for vulnerabilities
-- ux-reviewer agent for usability
-```
-
-**Sequential vs Parallel**:
-
-```markdown
-# Sequential (one at a time, when dependencies exist)
-
-1. Use a Haiku agent to check eligibility
-2. After it returns, use another Haiku agent to get file list
-3. Then launch 5 parallel Sonnet agents for review
-
-# Parallel (independent tasks)
-
-Launch all agents simultaneously:
-- code-reviewer agent
-- pr-test-analyzer agent
-- silent-failure-hunter agent
+Launch 3 parallel Sonnet agents to review different aspects
 ```
 
 **Best Practices**:
-- **Explicitly mention "parallel" or "simultaneously"** when launching multiple agents at once
-- **Use descriptive style**: "Launch code-reviewer agent", "Use security-reviewer agent" (preferred over explicit Task tool calls)
-- **Specify model tier**: "Use a Haiku agent" (fast), "launch Sonnet agents" (quality), "use Opus agent" (complex)
-- **Describe return value**: "ask the agent to return a summary", "agent should return a list of issues"
-- **Only use explicit Task tool** when providing full JSON structure for general-purpose agents
-- **Consolidate results**: After parallel execution, merge findings and resolve conflicts before presenting final output
+- **Explicitly mention "parallel" or "simultaneously"** when launching multiple agents
+- **Use descriptive style**: "Launch code-reviewer agent" (preferred over explicit Task tool calls)
+- **Consolidate results**: Merge findings and resolve conflicts after parallel execution
 
-**Example: Hierarchical Review Pattern**:
+**Common Pattern**:
 
 ```markdown
-## Requirements
-
-1. Perform a leadership assessment with @tech-lead-reviewer to scope architectural risk
-2. Launch the required specialized reviews in parallel via the Task tool:
-   - @code-reviewer — logic correctness, tests, error handling
-   - @security-reviewer — authentication, data protection, validation
-   - @ux-reviewer — usability and accessibility
-3. Collect outcomes, resolve conflicting feedback, and present consolidated report
+1. Sequential setup (if needed)
+2. Launch specialized reviews in parallel:
+   - @code-reviewer — logic correctness
+   - @security-reviewer — vulnerabilities
+   - @ux-reviewer — usability
+3. Consolidate results
 ```
-
-**Common Patterns**:
-- **Multi-stage with parallel middle stage**: Sequential setup → Parallel execution → Sequential consolidation
-- **Batch parallel processing**: Launch multiple agents of the same type for different files/components
-- **Specialized parallel reviews**: Different agents focus on different aspects (code, security, UX) simultaneously
