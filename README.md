@@ -2,51 +2,170 @@
 
 A curated collection of plugins and skills for Claude Code, designed to enhance development workflows with specialized agents and automation tools.
 
+## Available Plugins
+
+### git - Git Automation
+
+Conventional Git automation for commits and repository management with atomic commits and pre-commit hook validation.
+
+```bash
+claude plugin install git@frad-dotclaude
+```
+
+**Key Features:**
+- Conventional commit format support
+- Atomic commit creation
+- Automated gitignore management
+- Pre-commit hook validation
+
+---
+
+### gitflow - GitFlow Workflow
+
+GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning.
+
+```bash
+claude plugin install gitflow@frad-dotclaude
+```
+
+**Key Features:**
+- Automated branch creation and management
+- Proper GitFlow branching strategy
+- Automatic merging and tagging
+- Workflow coordination and orchestration
+
+---
+
+### github - GitHub Operations
+
+GitHub project operations with quality gates, TDD workflows, and automated PR creation.
+
+```bash
+claude plugin install github@frad-dotclaude
+```
+
+**Key Features:**
+- Automated PR creation with quality gates
+- Issue management automation
+- TDD workflow with worktrees
+- Conventional commits enforcement
+
+---
+
+### review - Code Review System
+
+Multi-agent review system for enforcing high code quality with specialized reviewers.
+
+```bash
+claude plugin install review@frad-dotclaude
+```
+
+**Key Features:**
+- Multiple specialized reviewers (code, security, tech-lead, UX)
+- Comprehensive code quality checks
+- Security vulnerability detection
+- Architecture and design analysis
+
+---
+
+### refactor - Code Refactoring
+
+Code simplification and refactoring with best practices to improve code quality while preserving functionality.
+
+```bash
+claude plugin install refactor@frad-dotclaude
+```
+
+**Key Features:**
+- Automatic code simplification
+- Language-specific references (TypeScript, Python, Go, Swift)
+- Next.js optimization patterns (47 specialized patterns)
+- Preserves functionality while improving clarity
+
+---
+
+### swiftui - SwiftUI Architecture
+
+SwiftUI Clean Architecture reviewer for iOS/macOS development with best practices enforcement.
+
+```bash
+claude plugin install swiftui@frad-dotclaude
+```
+
+**Key Features:**
+- Clean Architecture pattern enforcement
+- SwiftUI best practices (2024-2025)
+- @Observable and @MainActor validation
+- Architecture review and suggestions
+
+---
+
+### claude-config - AI Configuration Generation
+
+Generate comprehensive CLAUDE.md configuration files with environment detection and best practices.
+
+```bash
+claude plugin install claude-config@frad-dotclaude
+```
+
+**Key Features:**
+- 9-phase interactive configuration generation
+- Environment detection (Node.js, Python, Swift)
+- Technology stack research and best practices
+- TDD and Clean Architecture templates
+
+---
+
+### office - Patent Architect
+
+Patent application generation with prior art search and intellectual property workflows.
+
+```bash
+claude plugin install office@frad-dotclaude
+```
+
+**Key Features:**
+- Automatic prior art search (SerpAPI and Exa.ai)
+- Chinese patent application form generation
+- Patent terminology compliance
+- Multiple embodiment generation
+
+---
+
+### plugin-optimizer - Plugin Validation
+
+Validate and optimize Claude Code plugins against best practices.
+
+```bash
+claude plugin install plugin-optimizer@frad-dotclaude
+```
+
+**Key Features:**
+- Plugin manifest validation
+- Component structure analysis
+- Best practices enforcement
+- Optimization recommendations
+
+---
+
+### utils - Utility Commands
+
+Utility commands for day-to-day automation and workflow enhancement.
+
+```bash
+claude plugin install utils@frad-dotclaude
+```
+
+**Key Features:**
+- Task continuation
+- Command template generation
+- Daily workflow automation
+
+---
+
 ## Overview
 
 This repository contains a comprehensive set of Claude Code plugins organized into development and productivity categories. Each plugin provides specialized functionality through skills and agents to streamline your coding workflow.
-
-## Available Plugins & Installation
-
-### Quick Install
-
-Install individual plugins using the Claude Code CLI:
-
-```bash
-claude plugin install <plugin-name>@frad-dotclaude
-```
-
-### Plugin Catalog
-
-| Plugin | Category | Description | Installation |
-|--------|----------|-------------|--------------|
-| **git** | Development | Conventional Git automation for commits and repository management | `claude plugin install git@frad-dotclaude` |
-| **gitflow** | Development | GitFlow workflow automation for feature, hotfix, and release branches | `claude plugin install gitflow@frad-dotclaude` |
-| **github** | Productivity | GitHub operations with quality gates and TDD workflows | `claude plugin install github@frad-dotclaude` |
-| **review** | Productivity | Multi-agent code review system with specialized reviewers | `claude plugin install review@frad-dotclaude` |
-| **refactor** | Development | Code simplification and refactoring with best practices | `claude plugin install refactor@frad-dotclaude` |
-| **swiftui** | Development | SwiftUI Clean Architecture reviewer for iOS/macOS | `claude plugin install swiftui@frad-dotclaude` |
-| **claude-config** | Productivity | Generate comprehensive CLAUDE.md configuration files | `claude plugin install claude-config@frad-dotclaude` |
-| **office** | Productivity | Patent application generation with prior art search | `claude plugin install office@frad-dotclaude` |
-| **plugin-optimizer** | Productivity | Validate and optimize Claude Code plugins | `claude plugin install plugin-optimizer@frad-dotclaude` |
-| **utils** | Productivity | Utility commands for day-to-day automation | `claude plugin install utils@frad-dotclaude` |
-
-### Install All Plugins
-
-To install all plugins at once:
-
-```bash
-claude plugin install git@frad-dotclaude \
-  gitflow@frad-dotclaude \
-  github@frad-dotclaude \
-  review@frad-dotclaude \
-  refactor@frad-dotclaude \
-  swiftui@frad-dotclaude \
-  claude-config@frad-dotclaude \
-  office@frad-dotclaude \
-  plugin-optimizer@frad-dotclaude \
-  utils@frad-dotclaude
-```
 
 ## Repository Structure
 

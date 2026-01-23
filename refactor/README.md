@@ -2,6 +2,12 @@
 
 Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
+## Installation
+
+```bash
+claude plugin install refactor@frad-dotclaude
+```
+
 ## Overview
 
 The Refactor Plugin provides specialized tools for code simplification and refactoring. It includes an expert code simplifier agent and skills for targeted and project-wide refactoring. All refactoring operations preserve functionality while improving clarity, consistency, and maintainability.
@@ -173,12 +179,6 @@ Demonstrates parallelizing independent async operations to eliminate sequential 
 ### Python: Applying DRY and Type Safety
 
 Demonstrates eliminating code duplication using Enums and type hints, reducing logic complexity while improving type safety. See [python.md](skills/best-practices/references/python.md) for comprehensive Python refactoring patterns.
-
-## Installation
-
-```bash
-claude plugin install refactor@frad-dotclaude
-```
 
 ## Best Practices
 
@@ -378,14 +378,13 @@ The `impact-based` approach automatically prioritizes CRITICAL > HIGH > MEDIUM >
 2. Extract specific rules into ESLint/Pylint/golangci-lint configurations
 3. Run refactoring locally before pushing to CI/CD
 
-## Acknowledgments
+## Author
+
+Frad LEE (fradser@gmail.com)
+
+## Credits
 
 **React/Next.js Best Practices:**
 - React and Next.js performance optimization guidelines are sourced from [Vercel Engineering's agent-skills repository](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices)
 - Contains 40+ rules across 8 categories, prioritized by impact
 - Originally created by [@shuding](https://x.com/shuding) at [Vercel](https://vercel.com)
-
-## Author
-
-Frad LEE (fradser@gmail.com)
-

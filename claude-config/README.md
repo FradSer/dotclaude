@@ -2,6 +2,12 @@
 
 A comprehensive Claude Code plugin to generate personalized AI assistant configurations with intelligent environment detection and advanced customization options.
 
+## Installation
+
+```bash
+claude plugin install claude-config@frad-dotclaude
+```
+
 ## Features
 
 - **AI-Driven Environment Detection**: Automatically detects installed languages and tools (Node.js, Python, Rust, Go, Java, Docker, etc.)
@@ -11,12 +17,6 @@ A comprehensive Claude Code plugin to generate personalized AI assistant configu
 - **Multi-file Sync**: Sync configurations to GEMINI.md and AGENTS.md with template-priority merge strategy
 - **Smart Merging**: Preserves unique user content while maintaining consistency across AI configurations
 - **Safe Operations**: Automatic backups before overwriting existing files
-
-## Installation
-
-```bash
-claude plugin install claude-config@frad-dotclaude
-```
 
 ## Usage
 
@@ -162,3 +162,7 @@ chmod +x scripts/validate-length.sh
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+## Author
+
+Frad LEE (fradser@gmail.com)

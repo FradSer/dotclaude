@@ -2,6 +2,12 @@
 
 SwiftUI Clean Architecture reviewer for iOS/macOS development.
 
+## Installation
+
+```bash
+claude plugin install swiftui@frad-dotclaude
+```
+
 ## Overview
 
 The SwiftUI Plugin provides specialized architecture review for SwiftUI applications following Clean Architecture + MVVM patterns. It ensures strict adherence to modern Swift development standards and 2024-2025 best practices.
@@ -98,12 +104,6 @@ Recommendation: Concrete fix with code example
 **Example usage:**
 ```
 @swiftui-clean-architecture-reviewer Review the authentication module in AuthView.swift
-```
-
-## Installation
-
-```bash
-claude plugin install swiftui@frad-dotclaude
 ```
 
 ## Best Practices
@@ -252,7 +252,3 @@ Document why 4th layer is unnecessary.
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-1.0.0

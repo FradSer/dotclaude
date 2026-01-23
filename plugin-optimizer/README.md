@@ -2,18 +2,6 @@
 
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
 
-## Overview
-
-The Plugin Optimizer analyzes existing Claude Code plugins to ensure they follow official standards and best practices. It checks plugin structure, component formatting, metadata completeness, and tool invocation patterns, then provides detailed optimization reports with actionable recommendations.
-
-## Features
-
-- **Comprehensive Validation**: Checks against official Claude Code plugin best practices and file pattern standards
-- **Multi-level Issue Detection**: Reports critical errors, warnings, and informational suggestions
-- **Best Practices Compliance**: Generates checklist showing which standards are met/violated
-- **Auto-fix Suggestions**: Provides exact Edit tool parameters for quick fixes (not auto-applied)
-- **Automated Scripts**: Includes validation scripts for plugin.json, frontmatter, and file patterns
-
 ## Installation
 
 ### From Marketplace
@@ -29,6 +17,18 @@ claude plugin install plugin-optimizer@frad-dotclaude
 cd /path/to/dotclaude
 claude --plugin-dir ./plugin-optimizer
 ```
+
+## Overview
+
+The Plugin Optimizer analyzes existing Claude Code plugins to ensure they follow official standards and best practices. It checks plugin structure, component formatting, metadata completeness, and tool invocation patterns, then provides detailed optimization reports with actionable recommendations.
+
+## Features
+
+- **Comprehensive Validation**: Checks against official Claude Code plugin best practices and file pattern standards
+- **Multi-level Issue Detection**: Reports critical errors, warnings, and informational suggestions
+- **Best Practices Compliance**: Generates checklist showing which standards are met/violated
+- **Auto-fix Suggestions**: Provides exact Edit tool parameters for quick fixes (not auto-applied)
+- **Automated Scripts**: Includes validation scripts for plugin.json, frontmatter, and file patterns
 
 ## Usage
 
@@ -133,3 +133,7 @@ Issues and pull requests welcome at the repository.
 ## License
 
 MIT
+
+## Author
+
+Frad LEE (fradser@gmail.com)

@@ -2,6 +2,12 @@
 
 Multi-agent review system for enforcing high code quality.
 
+## Installation
+
+```bash
+claude plugin install review@frad-dotclaude
+```
+
 ## Overview
 
 The Review Plugin provides a comprehensive code review system with multiple specialized agents. Each agent focuses on different aspects of code quality, providing thorough and actionable feedback.
@@ -209,12 +215,6 @@ Comprehensive multi-stage code review using all specialized subagents.
 - Agent-specific findings
 - File-specific recommendations
 
-## Installation
-
-```bash
-claude plugin install review@frad-dotclaude
-```
-
 ## Best Practices
 
 ### Using `/quick`
@@ -319,7 +319,3 @@ claude plugin install review@frad-dotclaude
 ## Author
 
 Frad LEE (fradser@gmail.com)
-
-## Version
-
-1.0.0
