@@ -3,8 +3,8 @@
   "version": "0.4.0",
   "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
   "author": {
-    "name": "FradSer",
-    "email": "FradSer@users.noreply.github.com"
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
   },
   "keywords": ["validation", "optimization", "best-practices", "plugin-development", "quality-assurance"],
   "skills": ["./skills/plugin-best-practices/"],
