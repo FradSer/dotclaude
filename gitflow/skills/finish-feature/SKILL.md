@@ -9,7 +9,7 @@ user-invocable: true
 
 ## Your Task
 
-1. **Load the `gitflow-workflow` skill** using the `Skill` tool to access GitFlow workflow capabilities.
+1. **Load the `gitflow:gitflow-workflow` skill** using the `Skill` tool to access GitFlow workflow capabilities.
 2. Gather context: current branch, git status, recent commits.
 3. Normalize the provided feature name from `$ARGUMENTS` to `$FEATURE_NAME`:
    - Strip a leading `feature/` prefix if present
