@@ -124,23 +124,100 @@ else
   echo "✓ keywords present"
 fi
 
-# Check for anti-patterns
+# Check for best practices
 echo
-echo "Checking for anti-patterns..."
+echo "Checking commands field and path validation..."
 
+# Check commands field format (modern best practice)
 if has_json_field "$MANIFEST_PATH" "commands"; then
-  echo "⚠ WARNING: Unnecessary 'commands' field - rely on auto-discovery"
-  ((warnings++))
-fi
+  # Extract ALL paths from commands array (both valid and invalid formats)
+  # Use tr to convert newlines so grep can match multi-line arrays
+  all_paths=$(cat "$MANIFEST_PATH" | tr -d '\n' | grep -o '"commands"[[:space:]]*:[[:space:]]*\[[^]]*\]' | sed 's/.*\[//; s/\].*//' | grep -o '"[^"]*"' | tr -d '"')
 
-if has_json_field "$MANIFEST_PATH" "agents"; then
-  echo "⚠ WARNING: Unnecessary 'agents' field - rely on auto-discovery"
-  ((warnings++))
-fi
+  if [ -z "$all_paths" ]; then
+    echo "✗ CRITICAL: 'commands' array is empty"
+    ((errors++))
+  else
+    echo "Declared command paths in plugin.json:"
 
-if has_json_field "$MANIFEST_PATH" "skills"; then
-  echo "⚠ WARNING: Unnecessary 'skills' field - rely on auto-discovery"
-  ((warnings++))
+    # Validate each path
+    while IFS= read -r cmd_path; do
+      echo
+      echo "  Path: \"$cmd_path\""
+
+      # Check path format: must start with ./ and end with /
+      if [[ ! "$cmd_path" =~ ^\./.*\/$ ]]; then
+        echo "    ✗ CRITICAL: Invalid format - must be './relative/path/' format"
+        echo "    Suggestion: \"./skills/${cmd_path%/}/\" or \"./skills/${cmd_path}/\""
+        ((errors++))
+        continue  # Skip further validation for this invalid path
+      fi
+
+      # Format is correct, now check existence
+      clean_path="${cmd_path%/}"
+      full_path="$PLUGIN_DIR/$clean_path"
+
+      # Check if directory exists
+      if [ ! -d "$full_path" ]; then
+        echo "    ✗ ERROR: Directory does not exist at $full_path"
+        ((errors++))
+      else
+        echo "    ✓ Directory exists"
+
+        # Check if SKILL.md exists
+        if [ ! -f "$full_path/SKILL.md" ]; then
+          echo "    ✗ ERROR: SKILL.md not found in $full_path"
+          ((errors++))
+        else
+          echo "    ✓ SKILL.md found"
+        fi
+      fi
+    done <<< "$all_paths"
+
+    # Check for undeclared skills in skills/ directory
+    if [ -d "$PLUGIN_DIR/skills" ]; then
+      echo
+      echo "Checking for undeclared skills in skills/ directory..."
+      undeclared_found=0
+
+      # Get list of valid paths from commands (only well-formed ones)
+      valid_commands=$(echo "$all_paths" | grep '^\./.*\/$')
+
+      for skill_dir in "$PLUGIN_DIR/skills"/*/; do
+        if [ -d "$skill_dir" ] && [ -f "$skill_dir/SKILL.md" ]; then
+          skill_name=$(basename "$skill_dir")
+          skill_path="./skills/$skill_name/"
+
+          if ! echo "$valid_commands" | grep -qx "$skill_path"; then
+            # Check if skill is user-invocable
+            # Extract ONLY the first frontmatter block (line 1 to second ---)
+            skill_file="$skill_dir/SKILL.md"
+            # Use awk to extract only the first frontmatter block
+            user_invocable=$(awk '/^---$/{if(++count==2)exit;next}{if(count==1)print}' "$skill_file" | grep -i "user-invocable" | grep -i "true" || echo "")
+
+            if [ -n "$user_invocable" ]; then
+              # user-invocable: true but not in commands - this is an ERROR
+              if [ $undeclared_found -eq 0 ]; then
+                echo "✗ ERROR: Found user-invocable skills not declared in 'commands' field:"
+                undeclared_found=1
+              fi
+              echo "  - $skill_path (user-invocable: true but not in plugin.json)"
+              ((errors++))
+            fi
+            # If user-invocable is false or missing, it's an internal/knowledge skill - no warning needed
+          fi
+        fi
+      done
+
+      if [ $undeclared_found -eq 0 ]; then
+        echo "✓ All user-invocable skills are properly declared"
+      fi
+    fi
+  fi
+else
+  echo "⚠ INFO: No 'commands' field found"
+  echo "  Modern best practice: Explicitly declare skill paths for better maintainability"
+  echo "  Example: \"commands\": [\"./skills/optimize/\", \"./skills/deploy/\"]"
 fi
 
 # Summary

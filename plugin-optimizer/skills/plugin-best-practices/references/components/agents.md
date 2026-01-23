@@ -2,59 +2,63 @@
 
 Plugins can provide specialized subagents for specific tasks that Claude can invoke automatically when appropriate.
 
-**Location**: `agents/` directory in plugin root
+- **Location**: `agents/` (plugin root)
+- **Format**: YAML frontmatter + Markdown body (system prompt)
 
-**File format**: Markdown files describing agent capabilities
-
-## Agent structure
+## Recommended agent structure (matches plugin agents)
 
 ```markdown
 ---
-description: What this agent specializes in
-capabilities: ["task1", "task2", "task3"]
+name: code-reviewer
+description: Use this agent when reviewing code changes for quality and security. Trigger when user asks "review my changes", "do a code review", or after a refactor. Examples:
+
+<example>
+Context: User asks for code review
+user: "Can you review this?"
+assistant: "I'll use the code-reviewer agent to review the changes."
+<commentary>
+Direct review request should route to this agent.
+</commentary>
+</example>
+
+model: inherit
+color: blue
+tools: ["Read", "Glob", "Grep", "Bash"]
 ---
 
-# Agent Name
+You are a senior code reviewer.
 
-Detailed description of the agent's role, expertise, and when Claude should invoke it.
+## Core Responsibilities
 
-## Capabilities
-- Specific task the agent excels at
-- Another specialized capability
-- When to use this agent vs others
+1. Identify critical issues first (security, correctness)
+2. Flag warnings (maintainability, performance)
+3. Provide specific, actionable suggestions
 
-## Context and examples
-Provide examples of when this agent should be used and what kinds of problems it solves.
+## Output Format
+
+Output format:
+## Critical issues
+- ...
+## Warnings
+- ...
+## Suggestions
+- ...
 ```
 
-## Integration points
+## Frontmatter
 
-* Agents appear in the `/agents` interface
-* Claude can invoke agents automatically based on task context
-* Agents can be invoked manually by users
-* Agents work alongside built-in Claude agents
+### Official subagent fields
 
-## Best Practices
+- **Required**: `name`, `description`
+- **Optional**: `tools`, `disallowedTools`, `model`, `permissionMode`, `skills`, `hooks`
 
-### Must Do
-- **Concise Goal**: The goal description should be approximately 20 words or less - clear and direct.
-- **Define Triggering Examples**: You **must** include 2-4 `<example>` blocks in the description showing Context, User input, and Assistant response. This is critical for the router.
-- **Use Second Person**: Write system prompts addressing the agent directly ("You are an expert...", "Your responsibilities are...").
-- **Define Output Format**: Clearly specify exactly how the agent should structure its final response.
+### Plugin conventions (best-practice extensions)
 
-### Avoid
-- **First Person Prompts**: Never write "I am an agent..." in the system prompt.
-- **Vague Triggers**: Avoid generic descriptions like "Helps with code." Be specific: "Use this agent when..."
-
-## Configuration Reference
-
-### Model Selection
-- `inherit`: Default, uses parent context model
-- `haiku`: Fast validation/checks
-- `sonnet`: Balanced quality/speed
-- `opus`: Complex reasoning
+- **`color`**: UI hint for agent category.
+- **Tool selectors / matchers (example: `Bash(test:*)`)**: Some setups allow constrained tool usage encoded in `tools`. If unsupported, enforce the constraint via `hooks`.
 
 ### Color Coding
+
 - `blue`: Analysis/review
 - `green`: Validation/testing
 - `cyan`: Information gathering
@@ -62,29 +66,130 @@ Provide examples of when this agent should be used and what kinds of problems it
 - `magenta`: Generation/creation
 - `red`: Critical operations
 
-## Common Agent Patterns
+## Hooks (define hooks for subagents)
 
-### Read-Only Agent
-```yaml
-name: analyzer
-model: sonnet
-color: blue
-tools: ["Read", "Grep", "Glob"]
+Two ways to configure hooks:
+
+- **Frontmatter hooks**: active only while that subagent runs.
+- **`settings.json` hooks**: run in the main session on subagent start/stop.
+
+### Hooks in subagent frontmatter
+
+| Event | Matcher input | When it fires |
+| --- | --- | --- |
+| `PreToolUse` | Tool name | Before the subagent uses a tool |
+| `PostToolUse` | Tool name | After the subagent uses a tool |
+| `Stop` | (none) | When the subagent finishes |
+
+```markdown
+---
+name: code-reviewer
+description: Review code changes with automatic linting.
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "./scripts/validate-command.sh $TOOL_INPUT"
+  PostToolUse:
+    - matcher: "Edit|Write"
+      hooks:
+        - type: command
+          command: "./scripts/run-linter.sh"
+---
 ```
 
-### Code Generation Agent
-```yaml
+Note: `Stop` hooks in frontmatter are automatically converted to `SubagentStop` events.
+
+### Project-level hooks (`settings.json`)
+
+| Event | Matcher input | When it fires |
+| --- | --- | --- |
+| `SubagentStart` | Agent type name | When a subagent begins execution |
+| `SubagentStop` | Agent type name | When a subagent completes |
+
+```json
+{
+  "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "db-agent",
+        "hooks": [
+          { "type": "command", "command": "./scripts/setup-db-connection.sh" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "db-agent",
+        "hooks": [
+          { "type": "command", "command": "./scripts/cleanup-db-connection.sh" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Patterns
+
+```markdown
+---
+name: analyzer
+description: Read-only analysis specialist. Trigger for "analyze", "inspect", "explain how this works". Examples:
+
+color: blue
+tools: ["Read", "Glob", "Grep", "Bash"]
+model: inherit
+---
+```
+
+```markdown
+---
 name: generator
-model: sonnet
+description: Generate/refactor code with minimal edits. Trigger when user asks to "implement", "add feature", or "refactor". Examples:
+
 color: magenta
 tools: ["Read", "Write", "Edit"]
+model: sonnet
 permissionMode: acceptEdits
+---
 ```
 
-### Fast Validation
-```yaml
+```markdown
+---
 name: validator
-model: haiku
+description: Fast validation/checks. Trigger when user asks to "run tests", "lint", or "validate". Examples:
+
 color: yellow
 tools: ["Read", "Bash(test:*)"]
+model: haiku
+---
 ```
+
+```markdown
+---
+name: db-reader
+description: Execute read-only database queries.
+tools: ["Bash"]
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "./scripts/validate-readonly-query.sh"
+---
+```
+
+## Best practices
+
+- **`description`** should say *when to use* (routing triggers).
+- **Include one example**: Put a single `<example>` block inside `description` (as shown in plugin agent files) to make routing unambiguous.
+- **Minimize `tools`**; add `Write/Edit` only when required.
+- **Keep prompts short** and define a stable output format.
+- **Document conventions** if you use `color` or tool selectors.
+
+## Notes (plugin scope)
+
+- Plugin agents show up in `/agents`.
+- If the same `name` exists in multiple scopes, higher-priority scopes override plugin scope.

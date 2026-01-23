@@ -48,9 +48,11 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 
 ## Component path fields
 
+> **Best Practice**: Explicitly declare `commands` and `skills` fields in `plugin.json` even when using default directories. This improves clarity, maintainability, and serves as documentation for your plugin's capabilities.
+
 | Field          | Type           | Description                                                                                                                                              | Example                                |
 | :------------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- |
-| `commands`     | string\|array  | Additional command files/directories                                                                                                                     | `"./custom/cmd.md"` or `["./cmd1.md"]` |
+| `commands`     | string\|array  | Skill/command files/directories (recommended: declare explicitly)                                                                                        | `["./skills/commit/", "./skills/config/"]` |
 | `agents`       | string\|array  | Additional agent files                                                                                                                                   | `"./custom/agents/"`                   |
 | `skills`       | string\|array  | Additional skill directories                                                                                                                             | `"./custom/skills/"`                   |
 | `hooks`        | string\|object | Hook config path or inline config                                                                                                                        | `"./hooks.json"`                       |
@@ -62,18 +64,25 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 
 **Important**: Custom paths supplement default directories - they don't replace them.
 
-* If `commands/` exists, it's loaded in addition to custom command paths
+* If `commands/` or `skills/` directories exist, they're loaded in addition to custom paths
 * All paths must be relative to plugin root and start with `./`
 * Commands from custom paths use the same naming and namespacing rules
 * Multiple paths can be specified as arrays for flexibility
+
+**Recommended**: Explicitly declare skill/command paths in `commands` field for:
+- **Documentation**: Clear manifest of plugin capabilities
+- **Maintainability**: Easier to track what's exposed
+- **Control**: Explicitly choose which directories to include
+- **Clarity**: No ambiguity about plugin structure
 
 **Path examples**:
 
 ```json
 {
   "commands": [
-    "./specialized/deploy.md",
-    "./utilities/batch-process.md"
+    "./skills/commit/",
+    "./skills/commit-and-push/",
+    "./skills/config-git/"
   ],
   "agents": [
     "./custom-agents/reviewer.md",

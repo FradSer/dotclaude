@@ -13,7 +13,8 @@
 #   1 - One or more validations failed
 #
 
-set -e
+# Don't use set -e to allow proper error collection
+set +e
 
 # Function to validate a single file
 validate_single_file() {

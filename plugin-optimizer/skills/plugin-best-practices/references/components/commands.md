@@ -1,5 +1,7 @@
 # Commands Component Reference
 
+> **Modern Approach**: For new plugins, prefer using **Skills** over Commands. Skills provide better modularity, are self-contained, and support progressive disclosure patterns. Commands are primarily for backward compatibility and simple user-invoked operations. See the Skills component reference for the recommended approach.
+
 Plugins add custom slash commands that integrate seamlessly with Claude Code's command system.
 
 **Location**: `commands/` directory in plugin root

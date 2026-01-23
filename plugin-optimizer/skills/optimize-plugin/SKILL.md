@@ -1,6 +1,8 @@
 ---
-description: Validate and optimize Claude Code plugin structure and quality
+name: optimize-plugin
+description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", or mentions plugin optimization and validation tasks.
 argument-hint: <plugin-path>
+user-invocable: true
 allowed-tools: ["Read", "Glob", "Grep", "Bash(bash:*)", "Task", "TodoWrite", "AskUserQuestion"]
 ---
 
@@ -22,6 +24,11 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 ## Phase 1: Discovery & Validation
 
 **Goal**: Validate plugin structure and detect issues. No fixes are applied in this phase.
+
+**CRITICAL - Orchestrator Role**: As the Orchestrator, you will:
+1. Run validation scripts to identify issues
+2. Ask user for decisions (e.g., migration approval)
+3. **NEVER fix issues yourself** - all fixes are delegated to the agent in Phase 2
 
 **Actions**:
 1.  **Context**: User input is `$ARGUMENTS`.
@@ -50,34 +57,37 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
     -   **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
     -   **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
 7.  **Review**: Analyze the output of each script to identify all failures and issues. Compile a comprehensive list of problems found.
-
-**Output**: Comprehensive list of validation issues categorized by type (structure, manifest, frontmatter, anti-patterns)
+8.  **Do NOT Fix**: Even if you see obvious fixes, do NOT apply them. All fixes will be handled by the agent in Phase 2.
 
 ---
 
 ## Phase 2: Automated Fixes
 
-**Goal**: Launch the optimizer agent to apply fixes for issues found in Phase 1.
+**Goal**: Launch the optimizer agent to apply ALL fixes for issues found in Phase 1.
+
+**CRITICAL - Orchestrator Role**: You are the Orchestrator. Your ONLY job in this phase is to:
+1. Launch the agent with clear instructions
+2. Wait for the agent to complete
+3. Do NOT make any fixes yourself in the main session
 
 **Actions**:
 1.  **Delegate**: Launch the `plugin-optimizer:plugin-optimizer` agent. This must be the first time the sub-agent is launched.
 2.  **Context**: Provide the agent with the resolved absolute path and the validation errors from Phase 1.
-3.  **Fix Strategy**: Instruct the agent to:
+3.  **Fix Strategy**: Instruct the agent to apply ALL necessary fixes including:
     -   **Commands to Skills Migration** (if user approved in Phase 1):
         -   For each command in `commands/*.md`:
             -   Create corresponding skill directory `skills/<command-name>/`
             -   Transform command `.md` file to `SKILL.md` format with proper frontmatter
             -   Add `user-invocable: true` to SKILL.md frontmatter
-            -   Update plugin.json to declare new skills in `commands` field
+            -   Update plugin.json to declare new skills in `commands` field with full paths
             -   Document the migration in commit message
-    -   **Missing README**: Create basic `README.md` using content from `plugin.json`.
-    -   **Missing Frontmatter**: Add default frontmatter to agent/command files.
-    -   **Directory Structure**: Create missing standard directories (`commands`, `agents`, `skills`).
-    -   **Refactor**: Rename files to kebab-case if needed.
-4.  **Verification**: Ask the agent to re-run the specific validation script that failed.
-5.  **Reporting**: Log all applied fixes.
-
-**Output**: List of all automated fixes applied with verification results
+    -   **Validation Script Issues**: Fix any bugs or outdated logic in validation scripts themselves
+    -   **Missing README**: Create basic `README.md` using content from `plugin.json`
+    -   **Missing Frontmatter**: Add default frontmatter to agent/command files
+    -   **Directory Structure**: Create missing standard directories (`commands`, `agents`, `skills`)
+    -   **Refactor**: Rename files to kebab-case if needed
+4.  **NO Intermediate Verification**: The agent should NOT re-run validation scripts. All verification happens in Phase 6.
+5.  **Reporting**: Agent returns a list of all applied fixes.
 
 ---
 
@@ -85,14 +95,21 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 
 **Goal**: Identify content duplication and execute consolidation fixes after user confirmation.
 
+**CRITICAL - Agent Continuity**: Resume the SAME agent from Phase 2.
+
 **Actions**:
-1.  **Resume Agent**: **CRITICAL**: Use the `resume` parameter with the agent ID from the previous phase to preserve context. DO NOT spawn a new agent.
+1.  **Resume Agent**: **CRITICAL**: Resume the agent from Phase 2 to preserve context. DO NOT spawn a new agent.
 2.  **Analyze**: Perform **Comprehensive Redundancy Analysis** according to standards in `skills/plugin-best-practices/references/`.
 3.  **Consult**: Use `AskUserQuestion` tool when uncertain about classification.
 4.  **Report**: Report findings with severity classifications and consolidation recommendations.
-5.  **Execute Consolidation**: If the user confirms redundancy removal or content consolidation, perform the file operations immediately.
-
-**Output**: Redundancy analysis report with severity classifications and consolidation actions taken
+5.  **Confirm Before Fixing (Mandatory)**: After reporting, you MUST ask the user whether to apply the consolidation fixes using `AskUserQuestion` tool.
+    -   Always provide multiple options so the user can explicitly choose whether to proceed (no freeform fallback).
+    -   Use the title "Fix redundancy".
+    -   Ask: "Redundancy analysis found issues that can be consolidated. Do you want to apply all recommended redundancy fixes?"
+    -   Force a single choice with at least these two options:
+        -   "Yes, apply all recommended redundancy fixes"
+        -   "No, skip redundancy fixes"
+6.  **Execute Consolidation**: Only if the user selects "Yes", perform the file operations immediately. If "No", proceed to Phase 4 with no changes.
 
 ---
 
@@ -100,12 +117,12 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 
 **Goal**: Validate documentation quality and fix issues (automatically or with confirmation).
 
+**CRITICAL - Agent Continuity**: Resume the SAME agent from Phase 3.
+
 **Actions**:
 1.  **Validate README**: Verify `README.md` in the plugin directory. Ensure it accurately reflects the plugin's name, description, and installed components (Agents, Commands, Skills).
 2.  **Consult**: **MUST** use `AskUserQuestion` tool to confirm with the user before classifying severity if issues are found.
 3.  **Apply Fixes**: If the user agrees to the quality improvements (e.g., updating README), apply the changes immediately.
-
-**Output**: Quality assessment report and documentation improvements applied
 
 ---
 
@@ -113,8 +130,10 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 
 **Goal**: Update plugin version based on optimization changes
 
+**CRITICAL - Agent Continuity**: Resume the SAME agent from Phase 4.
+
 **Actions**:
-1.  **Assess Changes**: Review the extent of changes made during the `Automated Fixes` and other phases.
+1.  **Assess Changes**: Review the extent of changes made during Phases 2-4.
 2.  **Determine Increment**:
     -   **Patch Update (+0.0.1)**: For minor fixes (e.g., formatting, small documentation updates, frontmatter tweaks).
     -   **Minor Update (+0.1.0)**: For significant changes (e.g., directory restructuring, logic fixes, major redundancy removal).
@@ -124,20 +143,38 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
     -   Update the `version` field in `.claude-plugin/plugin.json`.
 4.  **Log**: Record the version change for the final report.
 
-**Output**: Updated plugin version number and change rationale
+---
+
+## Phase 6: Final Verification
+
+**Goal**: Re-run all validation scripts to verify fixes were correctly applied
+
+**CRITICAL - Orchestrator Role**: You take back control from the agent. Run validation scripts exactly ONCE to verify all fixes.
+
+**Actions**:
+1.  **Re-run Validation Suite**: Execute all validation scripts again using the `Bash` tool:
+    -   **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
+    -   **Manifest**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
+    -   **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
+    -   **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
+2.  **Compare Results**: Compare with Phase 1 validation results to confirm all critical issues were resolved
+3.  **Document Remaining Issues**: If any issues remain (e.g., design-decision warnings), document them clearly in the final report with explanations
+4.  **Do NOT Fix Issues**: If new issues are discovered, document them in the report. Do NOT attempt fixes in this phase.
 
 ---
 
-## Phase 6: Summary & Report
+## Phase 7: Summary & Report
 
 **Goal**: Generate final optimization report
 
+**CRITICAL - Orchestrator Role**: Synthesize all phase results into a comprehensive report.
+
 **Actions**:
-1.  **Compliance Checklist**: Summary of all checks.
-2.  **Actionable Fixes**: Grouped by Severity (Critical/Warning).
-    -   Provide `file:line` and exact `Edit` parameters.
-3.  **Redundancy Plan**: Suggestions for consolidating documentation.
-4.  **Final Report**: Generate the report using the following strict format:
+1.  **Compliance Checklist**: Summary of all checks (both Phase 1 and Phase 6 results).
+2.  **Applied Fixes Summary**: List all fixes applied by the agent during Phases 2-5.
+3.  **Verification Status**: Confirm validation results from Phase 6.
+4.  **Remaining Issues**: Document any issues that could not be automatically fixed, or are design decisions (e.g., internal-only skills not declared).
+5.  **Final Report**: Generate the report using the following strict format:
 
 **Output**: Complete validation report in the specified format with all findings, fixes, and recommendations
 
