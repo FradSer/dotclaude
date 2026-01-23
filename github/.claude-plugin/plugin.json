@@ -1,9 +1,22 @@
 {
   "name": "github",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GitHub project operations with quality gates.",
   "author": {
         "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  }
+  },
+  "commands": [
+    "./skills/create-issues/",
+    "./skills/create-pr/",
+    "./skills/resolve-issues/"
+  ],
+  "keywords": [
+    "github",
+    "issues",
+    "pull-requests",
+    "quality-gates",
+    "tdd",
+    "worktrees"
+  ]
 }

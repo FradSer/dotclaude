@@ -362,4 +362,4 @@ Frad LEE (fradser@gmail.com)
 
 ## Version
 
-1.0.0
+0.2.0
