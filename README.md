@@ -4,7 +4,7 @@ A curated collection of plugins and skills for Claude Code, designed to enhance 
 
 ## Overview
 
-This repository contains a comprehensive set of Claude Code plugins organized into development and productivity categories. Each plugin provides specialized functionality through commands and agents to streamline your coding workflow.
+This repository contains a comprehensive set of Claude Code plugins organized into development and productivity categories. Each plugin provides specialized functionality through skills and agents to streamline your coding workflow.
 
 ## Repository Structure
 
@@ -18,8 +18,10 @@ dotclaude/
 ├── review/                   # Code review plugin
 ├── refactor/                 # Code refactoring plugin
 ├── swiftui/                  # SwiftUI architecture plugin
-├── utils/                    # Utility commands plugin
+├── claude-config/            # AI configuration generation plugin
 ├── office/                   # Patent architect plugin
+├── plugin-optimizer/         # Plugin validation and optimization
+├── utils/                    # Utility commands plugin
 └── README.md                 # This file
 ```
 
@@ -30,38 +32,42 @@ dotclaude/
 #### `git` - Git Automation
 Conventional Git automation for commits and repository management.
 
-**Commands:**
-| Command | Description | Model |
-|---------|-------------|-------|
-| `/git:commit` | Create atomic conventional git commit | `haiku` |
-| `/git:commit-and-push` | Create commits and push to remote | `haiku` |
-| `/git:gitignore` | Manage `.gitignore` files | `haiku` |
+**Skills:**
+| Skill | Description |
+|-------|-------------|
+| `/git:commit` | Create atomic conventional git commit |
+| `/git:commit-and-push` | Create commits and push to remote |
+| `/git:update-gitignore` | Update `.gitignore` files with common patterns |
+| `/git:config-git` | Configure Git settings (user, email, etc.) |
 
 **Features:**
 - Conventional commit format support
 - Atomic commit creation
 - Automated gitignore management
+- Pre-commit hook validation
 
 ---
 
 #### `gitflow` - GitFlow Workflow
 GitFlow workflow automation for feature, hotfix, and release branches.
 
-**Commands:**
-| Command | Description | Model |
-|---------|-------------|-------|
-| `/gitflow:start-feature` | Start new feature branch | `haiku` |
-| `/gitflow:finish-feature` | Finish and merge feature branch | `haiku` |
-| `/gitflow:start-hotfix` | Start new hotfix branch | `haiku` |
-| `/gitflow:finish-hotfix` | Finish and merge hotfix branch | `haiku` |
-| `/gitflow:start-release` | Start new release branch | `haiku` |
-| `/gitflow:finish-release` | Finish and merge release branch | `haiku` |
+**Skills:**
+| Skill | Description |
+|-------|-------------|
+| `/gitflow:start-feature` | Start new feature branch |
+| `/gitflow:finish-feature` | Finish and merge feature branch |
+| `/gitflow:start-hotfix` | Start new hotfix branch |
+| `/gitflow:finish-hotfix` | Finish and merge hotfix branch |
+| `/gitflow:start-release` | Start new release branch |
+| `/gitflow:finish-release` | Finish and merge release branch |
+| `/gitflow:gitflow-workflow` | Comprehensive GitFlow workflow guidance |
 
 **Features:**
 - Automated branch creation and management
 - Proper GitFlow branching strategy
 - Automatic merging and tagging
 - Semantic versioning
+- Workflow coordination and orchestration
 
 ---
 
@@ -84,6 +90,8 @@ Agent and skills for code simplification and refactoring to improve code quality
 - Preserves functionality while improving clarity
 - Follows project coding standards
 - Language-specific references (TypeScript, Python, Go, Swift)
+- Next.js optimization patterns (47 specialized patterns)
+- Best practices skill auto-loaded by code-simplifier agent
 
 ---
 
@@ -108,9 +116,9 @@ SwiftUI Clean Architecture reviewer for iOS/macOS development.
 #### `github` - GitHub Operations
 GitHub project operations with quality gates.
 
-**Commands:**
-| Command | Description |
-|---------|-------------|
+**Skills:**
+| Skill | Description |
+|-------|-------------|
 | `/github:create-issues` | Create GitHub issues with TDD principles |
 | `/github:create-pr` | Create pull requests with quality checks |
 | `/github:resolve-issues` | Resolve issues using isolated worktrees |
@@ -119,7 +127,8 @@ GitHub project operations with quality gates.
 - Automated PR creation with quality gates
 - Issue management automation
 - TDD workflow with worktrees
-- Multi-agent collaboration
+- Conventional commits enforcement
+- Atomic commit validation
 
 ---
 
@@ -131,12 +140,12 @@ Multi-agent review system for enforcing high code quality.
 |-------|-------------|-------|-------|
 | `code-reviewer` | Expert reviewer for correctness, standards, and maintainability | `sonnet` | `blue` |
 | `security-reviewer` | Security-focused code review | `sonnet` | `green` |
-| `tech-lead-reviewer` | Architecture and design review | `sonnet` | `purple` |
-| `ux-reviewer` | User experience and UI review | `sonnet` | `orange` |
+| `tech-lead-reviewer` | Architecture and design review | `sonnet` | `magenta` |
+| `ux-reviewer` | User experience and UI review | `sonnet` | `yellow` |
 
-**Commands:**
-| Command | Description |
-|---------|-------------|
+**Skills:**
+| Skill | Description |
+|-------|-------------|
 | `/review:quick` | Quick code review with selective agents |
 | `/review:hierarchical` | Comprehensive multi-agent review |
 
@@ -145,22 +154,65 @@ Multi-agent review system for enforcing high code quality.
 - Comprehensive code quality checks
 - Security vulnerability detection
 - Architecture and design analysis
+- Hierarchical review orchestration
+
+---
+
+#### `claude-config` - AI Configuration Generation
+Generate comprehensive CLAUDE.md configuration files with environment detection and best practices.
+
+**Skills:**
+| Skill | Description |
+|-------|-------------|
+| `/claude-config:init-config` | Generate `$HOME/.claude/CLAUDE.md` with interactive workflow |
+
+**Features:**
+- 9-phase interactive configuration generation
+- Environment detection (Node.js, Python, Swift)
+- Technology stack research and best practices
+- TDD and Clean Architecture templates
+- Length validation (under 2400 words)
+- Web search integration for latest practices
 
 ---
 
 #### `office` - Patent Architect
-Specialized Claude Skill for patent application generation and intellectual property workflows.
+Specialized skills for patent application generation and intellectual property workflows.
 
 **Skills:**
 | Skill | Description |
 |-------|-------------|
 | `/office:patent-architect` | Chinese patent application form generation |
+| `/office:browser-use` | Browser automation for patent research (internal) |
 
 **Features:**
 - Automatic prior art search (SerpAPI and Exa.ai)
 - Chinese patent application form generation
 - Patent terminology compliance
 - Multiple embodiment generation
+- Hook-based API key validation
+
+---
+
+#### `plugin-optimizer` - Plugin Validation
+Validate and optimize Claude Code plugins against best practices.
+
+**Agents:**
+| Agent | Description | Model | Color |
+|-------|-------------|-------|-------|
+| `plugin-optimizer` | Plugin validation and optimization specialist | `opus` | `cyan` |
+
+**Skills:**
+| Skill | Description |
+|-------|-------------|
+| `/plugin-optimizer:optimize-plugin` | Validate and optimize plugin against best practices |
+
+**Features:**
+- Plugin manifest validation
+- Component structure analysis
+- Best practices enforcement
+- Optimization recommendations
+- Internal best-practices skill for comprehensive guidance
 
 ---
 
@@ -178,6 +230,8 @@ Utility commands for day-to-day automation.
 - Command template generation
 - Daily workflow automation
 
+---
+
 ## Plugin Structure
 
 Each plugin follows Claude Code's standard plugin structure:
@@ -185,15 +239,34 @@ Each plugin follows Claude Code's standard plugin structure:
 ```
 plugin-name/
 ├── .claude-plugin/
-│   └── plugin.json      # Plugin metadata (required)
-├── commands/            # Slash commands (optional)
+│   └── plugin.json          # Plugin metadata (required)
+├── commands/                # Slash commands (optional, legacy)
 │   └── command-name.md
-├── agents/              # Agent definitions (optional)
+├── agents/                  # Agent definitions (optional)
 │   └── agent-name.md
-├── skills/              # Skill definitions (optional)
+├── skills/                  # Skill definitions (optional)
 │   └── skill-name/
-│       └── SKILL.md
-└── README.md            # Plugin documentation (optional)
+│       ├── SKILL.md         # Main skill file
+│       └── references/      # Detailed reference materials
+├── hooks/                   # Hook configurations (optional)
+│   └── hooks.json
+├── scripts/                 # Utility scripts (optional)
+└── README.md                # Plugin documentation (optional)
+```
+
+### Skills vs Commands Architecture
+
+Modern plugins use **skills-based architecture** where each skill is a directory containing:
+- `SKILL.md` - Main skill file with YAML frontmatter
+- `references/` - Detailed reference materials for progressive disclosure
+
+**Skills registered as commands in plugin.json:**
+```json
+{
+  "commands": [
+    "./skills/skill-name/"
+  ]
+}
 ```
 
 ### Plugin Configuration
@@ -234,6 +307,9 @@ These plugins are configured through the `marketplace.json` file and are automat
 
 # Finish and merge feature
 /gitflow:finish-feature
+
+# Update gitignore
+/git:update-gitignore
 ```
 
 ### Code Review
@@ -272,13 +348,30 @@ These plugins are configured through the `marketplace.json` file and are automat
 /github:resolve-issues
 ```
 
+### Configuration & Optimization
+
+```bash
+# Generate AI configuration
+/claude-config:init-config
+
+# Optimize plugin
+/plugin-optimizer:optimize-plugin
+```
+
+### Patent Generation
+
+```bash
+# Generate Chinese patent application
+/office:patent-architect
+```
+
 ## Development
 
 ### Adding a New Plugin
 
 1. Create plugin directory structure:
    ```bash
-   mkdir -p new-plugin/commands new-plugin/agents new-plugin/.claude-plugin
+   mkdir -p new-plugin/skills new-plugin/agents new-plugin/.claude-plugin
    ```
 
 2. Create `plugin.json`:
@@ -307,7 +400,7 @@ These plugins are configured through the `marketplace.json` file and are automat
    }
    ```
 
-### Command Structure
+### Command Structure (Legacy)
 
 Commands are defined as Markdown files in the `commands/` directory:
 
@@ -353,9 +446,8 @@ Skills are defined as `SKILL.md` files in skill directories:
 ---
 name: skill-name
 description: Skill description
-version: 1.0.0
-context: fork
-agent: agent-name
+argument-hint: [optional-args]
+user-invocable: true
 allowed-tools: Bash(git:*), Read, Edit, Task
 ---
 
