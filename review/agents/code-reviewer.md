@@ -1,6 +1,11 @@
 ---
 name: code-reviewer
-description: Expert reviewer focusing on correctness, standards, and maintainability
+description: |
+  Expert reviewer focusing on correctness, standards, and maintainability
+
+  <example>Review new authentication middleware for proper error handling and null safety</example>
+  <example>Evaluate database query logic for potential race conditions and transaction safety</example>
+  <example>Assess test coverage for edge cases in payment processing module</example>
 model: sonnet
 color: blue
 ---
