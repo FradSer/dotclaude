@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "git",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "description": "Conventional Git automation for commits and repository management",
       "author": {
         "name": "Frad LEE",
@@ -106,8 +106,8 @@
     },
     {
       "name": "refactor",
-      "version": "1.2.0",
-      "description": "Agent and commands for code simplification and refactoring to improve code quality while preserving functionality",
+      "version": "1.3.1",
+      "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -118,7 +118,7 @@
     },
     {
       "name": "plugin-optimizer",
-      "version": "0.4.0",
+      "version": "0.6.0",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
