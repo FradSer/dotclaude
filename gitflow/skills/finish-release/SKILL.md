@@ -19,8 +19,8 @@ user-invocable: true
 6. Merge into `main` (often with `--no-ff`), create the version tag.
 7. Merge `main` back to `develop`, push all changes.
 8. Delete release branch locally and remotely when appropriate.
-9. Review changes and create GitHub release:
-   - Get previous version tag: `git tag --list --sort=-creatordate | head -2 | tail -1`
-   - Review changes: `git log <previous_tag>..v$RELEASE_VERSION --oneline --no-merges`
-   - Create GitHub release: `gh release create v$RELEASE_VERSION --title "Release v$RELEASE_VERSION" --notes "<release notes>"`
-   - If release already exists, update it: `gh release edit v$RELEASE_VERSION --notes "<updated notes>"`
+9. Analyze commit history and create GitHub release:
+   - Identify previous version tag using `git tag --list --sort=-creatordate | head -2 | tail -1`
+   - Collect commits since previous tag via `git log <previous_tag>..v$RELEASE_VERSION --oneline --no-merges`
+   - Create release via `gh release create v$RELEASE_VERSION --title "Release v$RELEASE_VERSION" --notes "<release notes>"`
+   - Update existing release if needed via `gh release edit v$RELEASE_VERSION --notes "<updated notes>"`
