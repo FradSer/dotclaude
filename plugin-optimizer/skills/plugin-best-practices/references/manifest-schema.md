@@ -52,9 +52,9 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 
 | Field          | Type           | Description                                                                                                                                              | Example                                |
 | :------------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- |
-| `commands`     | string\|array  | Skill/command files/directories (recommended: declare explicitly)                                                                                        | `["./skills/commit/", "./skills/config/"]` |
+| `commands`     | string\|array  | Instruction-type skills (`user-invocable: true` or default, including `disable-model-invocation: true`). Required for / menu. | `["./skills/commit/", "./skills/config/"]` |
 | `agents`       | string\|array  | Additional agent files                                                                                                                                   | `"./custom/agents/"`                   |
-| `skills`       | string\|array  | Additional skill directories                                                                                                                             | `"./custom/skills/"`                   |
+| `skills`       | string\|array  | Knowledge-type skills (`user-invocable: false`). Agent-only; not in / menu.                                                                 | `"./custom/skills/"`                   |
 | `hooks`        | string\|object | Hook config path or inline config                                                                                                                        | `"./hooks.json"`                       |
 | `mcpServers`   | string\|object | MCP config path or inline config                                                                                                                         | `"./mcp-config.json"`                  |
 | `outputStyles` | string\|array  | Additional output style files/directories                                                                                                                | `"./styles/"`                          |
@@ -65,20 +65,17 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 **Important**: Custom paths supplement default directories - they don't replace them.
 
 * If `commands/` or `skills/` directories exist, they're loaded in addition to custom paths
-* All paths must be relative to plugin root and start with `./`
+* All paths MUST be relative to plugin root and start with `./`
 * Commands from custom paths use the same naming and namespacing rules
 * Multiple paths can be specified as arrays for flexibility
 
-**Recommended**: Explicitly declare skill/command paths in `commands` field for:
-- **Documentation**: Clear manifest of plugin capabilities
-- **Maintainability**: Easier to track what's exposed
-- **Control**: Explicitly choose which directories to include
-- **Clarity**: No ambiguity about plugin structure
+**Recommended**: Declare by type: `user-invocable: false` → `skills`; `user-invocable: true` (or default) → `commands`. Improves documentation, maintainability, and clarity.
 
-**Path examples**:
+**Path examples** (knowledge-type in `skills`, instruction-type in `commands`):
 
 ```json
 {
+  "skills": ["./skills/plugin-best-practices/"],
   "commands": [
     "./skills/commit/",
     "./skills/commit-and-push/",

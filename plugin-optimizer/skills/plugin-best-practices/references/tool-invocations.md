@@ -4,7 +4,7 @@ Best practices for referencing tools in plugin components.
 
 ## Core Principle
 
-**Implicit Tool Usage**: Core file operations (Read, Write, Glob, Grep, Edit) should be described implicitly. Claude automatically infers the correct tool from context.
+**Implicit Tool Usage**: Core file operations (Read, Write, Glob, Grep, Edit) SHOULD be described implicitly. Claude automatically infers the correct tool from context.
 
 ## Tool Invocation Rules
 

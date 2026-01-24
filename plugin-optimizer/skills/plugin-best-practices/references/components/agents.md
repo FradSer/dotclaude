@@ -183,7 +183,7 @@ hooks:
 
 ## Best practices
 
-- **`description`** should say *when to use* (routing triggers).
+- **`description`** SHOULD say *when to use* (routing triggers).
 - **Include one example**: Put a single `<example>` block inside `description` (as shown in plugin agent files) to make routing unambiguous.
 - **Minimize `tools`**; add `Write/Edit` only when required.
 - **Keep prompts short** and define a stable output format.

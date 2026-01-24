@@ -75,22 +75,28 @@ commands/deploy.md:
 
 ## Components
 
+### Command: /optimize-plugin
+
+User-initiated plugin optimization workflow accepting plugin path as argument.
+
+**Technical implementation**: User-invocable skill (`user-invocable: true`) stored in `skills/optimize-plugin/` and registered in `plugin.json` `commands` array. This follows the modern pattern where skills can serve as commands.
+
+**What it does**: Executes a 7-phase validation and optimization workflow that launches the plugin-optimizer agent to analyze plugin structure, fix issues, and generate comprehensive reports.
+
 ### Skill: plugin-best-practices
 
-Comprehensive knowledge base covering:
-- Plugin structure and organization
-- Command, agent, skill, and hook development
-- TodoWrite tool usage standards
-- Tool invocation patterns
-- File format patterns and conventions
+Background knowledge base (non-user-invocable) loaded by the plugin-optimizer agent. Covers:
+- Plugin structure and organization standards
+- Component development patterns (commands, agents, skills, hooks)
+- Tool invocation best practices
+- File format validation rules
+- Progressive disclosure and redundancy analysis
 
-### Skill: optimize-plugin (User-Invocable)
-
-User-initiated plugin optimization accepting plugin path as argument. Accessible via `/optimize-plugin` command.
+**Technical implementation**: Knowledge-type skill (`user-invocable: false`) stored in `skills/plugin-best-practices/` with extensive `references/` subdirectory, registered in `plugin.json` `skills` array.
 
 ### Agent: plugin-optimizer
 
-Autonomous analysis agent that validates plugins and generates detailed reports.
+Autonomous analysis agent launched by the optimize-plugin workflow. Validates plugins against best practices, applies automated fixes, performs redundancy analysis, and generates quality reports. Preloads the plugin-best-practices skill for validation rules.
 
 ### Validation Scripts
 
@@ -107,16 +113,21 @@ See `skills/plugin-best-practices/SKILL.md` for detailed validation workflow and
 ```
 plugin-optimizer/
 ├── .claude-plugin/
-│   └── plugin.json
+│   └── plugin.json              # Manifest (commands: [./skills/optimize-plugin/])
 ├── agents/
-│   └── plugin-optimizer.md
-├── scripts/             # Validation utilities
+│   └── plugin-optimizer.md      # Analysis agent
+├── scripts/                     # Validation utilities
+│   ├── validate-file-patterns.sh
+│   ├── validate-plugin-json.sh
+│   ├── validate-frontmatter.sh
+│   └── check-tool-invocations.sh
 ├── skills/
-│   ├── optimize-plugin/
-│   │   └── SKILL.md    # User-invocable via /optimize-plugin
-│   └── plugin-best-practices/
-│       ├── SKILL.md
-│       └── references/          # Detailed documentation
+│   ├── optimize-plugin/         # User-invocable skill (registered as command)
+│   │   └── SKILL.md            # 7-phase optimization workflow
+│   └── plugin-best-practices/   # Knowledge-type skill (agent-only)
+│       ├── SKILL.md            # Core validation rules (121 lines)
+│       └── references/          # Detailed documentation (14 files)
+│           └── components/      # Component-specific guides
 └── README.md
 ```
 

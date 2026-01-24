@@ -49,7 +49,7 @@ LSP integration provides:
 
 | Field                 | Description                                  |
 | :-------------------- | :------------------------------------------- |
-| `command`             | The LSP binary to execute (must be in PATH)  |
+| `command`             | The LSP binary to execute (MUST be in PATH)  |
 | `extensionToLanguage` | Maps file extensions to language identifiers |
 
 ## Optional fields
@@ -67,7 +67,7 @@ LSP integration provides:
 | `restartOnCrash`        | Whether to automatically restart the server if it crashes |
 | `maxRestarts`           | Maximum number of restart attempts before giving up       |
 
-> **Warning**: **You must install the language server binary separately.** LSP plugins configure how Claude Code connects to a language server, but they don't include the server itself. If you see `Executable not found in $PATH` in the `/plugin` Errors tab, install the required binary for your language.
+> **Warning**: **You MUST install the language server binary separately.** LSP plugins configure how Claude Code connects to a language server, but they don't include the server itself. If you see `Executable not found in $PATH` in the `/plugin` Errors tab, install the required binary for your language.
 
 ## Available LSP plugins
 

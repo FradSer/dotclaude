@@ -69,6 +69,13 @@ Skills support string substitution for dynamic values:
 
 **Note**: There is a known limitation where plugin skills may not appear in the slash command menu, even though project-level skills do. See [GitHub issue #17271](https://github.com/anthropics/claude-code/issues/17271#issuecomment-3785693359) for details.
 
+## Declaring in plugin.json
+
+Declare by frontmatter (see `user-invocable` and `disable-model-invocation` fields above):
+- **Knowledge-type** (`user-invocable: false`) → `plugin.json` **`skills`** field
+- **Instruction-type** (default or `user-invocable: true`) → **`commands`** field
+- **`disable-model-invocation: true`** → **`commands`** (still instruction-type; prevents Claude auto-invoke)
+
 ## Best Practices
 
 ### Golden Rule: < 500 Lines
@@ -96,8 +103,8 @@ Use a two-level approach:
 - Use imperative style in bodies ("Parse the file...", "Validate the input...")
 - Write frontmatter descriptions in third person ("This skill should be used when...")
 - Keep main `SKILL.md` under 500 lines with progressive disclosure
-- Each skill should have a single, well-defined responsibility
-- Scripts must be executable with shebang and `${CLAUDE_PLUGIN_ROOT}` paths
+- Each skill SHOULD have a single, well-defined responsibility
+- Scripts MUST be executable with shebang and `${CLAUDE_PLUGIN_ROOT}` paths
 - Reference supporting files from SKILL.md so Claude knows what they contain
 
 ### Should Do
@@ -109,3 +116,142 @@ Use a two-level approach:
 - Exceeding 500 lines (indicates poor design—refactor)
 - Duplicating information between `SKILL.md` and reference files
 - Combining multiple unrelated capabilities into a single skill
+
+## Text Structure Patterns
+
+### Instruction-Type vs Knowledge-Type Structure
+
+| Aspect | Instruction-Type (user-invocable) | Knowledge-Type (agent-only) |
+|--------|-----------------------------------|------------------------------|
+| **Opening** | "You are the [Role]..." (2nd person) | "[What this does]..." (declarative) |
+| **Sections** | Linear workflow (Phase 1-7) | Topic-based chapters |
+| **Instructions** | Specific operations: "Use Glob to find...", "Run bash..." | Validation rules: "Verify skills are < 500 lines" |
+| **Density** | High: 3-4 levels of detail | Low: Single-line rules + external references |
+| **Examples** | Inline commands & output templates | Standard YAML templates |
+| **Navigation** | Vertical single-file reading | Radial multi-file with references/ |
+
+### Writing Style Guidelines
+
+#### Instruction-Type Style
+```markdown
+# Task Name
+
+You are the Orchestrator. Execute these phases sequentially.
+
+## Phase 1: Discovery
+
+**Goal**: Validate structure and detect issues.
+
+**Actions**:
+1. **Resolution**: Use `realpath` to resolve the absolute path...
+2. **Validation**: Ensure the resolved path exists.
+3. **Execute Scripts**:
+   - Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh "$TARGET"`
+   - Analyze output for failures
+
+**Output**: Comprehensive list of issues found
+```
+
+**Characteristics**:
+- Second person commands: "You will...", "Use...", "Ensure..."
+- Executable specifics: tool names, commands, paths
+- Multi-level detail expansion (3-4 levels deep)
+- Self-contained: all details inline
+
+#### Knowledge-Type Style
+```markdown
+# Standards Reference
+
+Validate plugins against official standards.
+
+## Key Rules
+
+**Critical Checks**:
+- Verify skills are < 500 lines with progressive disclosure
+- Verify agents include 2-4 `<example>` blocks
+- Check components use kebab-case naming
+- Validate no explicit tool invocations
+
+**Severity Levels**:
+- **Critical**: MUST fix before plugin works
+- **Warning**: SHOULD fix for best practices
+- **Info**: MAY improve (optional)
+
+## Detailed References
+
+See `references/components/agents.md` for agent specifications.
+See `references/manifest-schema.md` for plugin.json details.
+```
+
+**Characteristics**:
+- Imperative rules: "Verify", "Check", "Ensure" (no "You")
+- High-level standards with external references
+- Single-line rules (1-2 levels deep)
+- Navigation layer: points to detailed docs
+
+### Content Organization Rules
+
+**Instruction-Type MUST**:
+- Include all execution details inline (< 300 lines total)
+- Use numbered phases/steps for sequential workflows
+- Provide complete commands with variables: `bash $SCRIPT "$ARG"`
+- Include output format templates
+
+**Knowledge-Type MUST**:
+- Keep SKILL.md under 200 lines as navigation layer
+- Move detailed content to `references/[topic].md`
+- Use bullet lists for quick scanning
+- Reference external docs: "See `references/X.md` for..."
+
+### Writing Pattern Examples
+
+#### Same Concept, Two Styles
+
+**Validation Requirement**: Agent must have required frontmatter fields
+
+**Instruction-Type Expression**:
+```markdown
+**Actions**:
+4. **Validate Agent Frontmatter**:
+   - Use Read to open `agents/*.md` files
+   - Extract YAML between `---` markers
+   - Verify required fields:
+     - `name`: 3-50 chars, kebab-case
+     - `description`: Must contain 2-4 `<example>` blocks
+     - `model`: Must be inherit|sonnet|opus|haiku
+     - `color`: Must be blue|cyan|green|yellow|magenta|red
+   - Add missing fields to error list
+```
+
+**Knowledge-Type Expression**:
+```markdown
+**Critical Checks**:
+- Verify agents have clear descriptions for delegation
+- Verify agents include 2-4 `<example>` blocks in description
+
+See `references/components/agents.md` for complete frontmatter specification.
+```
+
+### Decision Guide
+
+**Use Instruction-Type when**:
+- Task requires precise execution order
+- User invokes via slash command
+- Workflow is < 300 lines total
+- Need to specify exact commands/tools
+
+**Use Knowledge-Type when**:
+- Providing standards/best practices
+- Content exceeds 500 lines
+- Agent-only reference (not user-facing)
+- Content requires frequent updates
+
+**Anti-Pattern Warning**:
+```markdown
+# DON'T: Mix styles
+You are an expert. Verify agents are valid.  # ← Confusing: 2nd person + imperative
+
+# DO: Pick one style
+You are an expert. Validate all agents...     # ← Instruction-type
+Verify agents have required fields...         # ← Knowledge-type
+```
