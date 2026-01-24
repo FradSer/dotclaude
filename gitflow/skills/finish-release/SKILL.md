@@ -1,6 +1,6 @@
 ---
 name: finish-release
-allowed-tools: Bash(git:*), Read, Write, Skill
+allowed-tools: Bash(git:*), Bash(gh:*), Read, Write, Skill
 description: Complete and merge release branch
 model: haiku
 argument-hint: [version]
@@ -19,3 +19,8 @@ user-invocable: true
 6. Merge into `main` (often with `--no-ff`), create the version tag.
 7. Merge `main` back to `develop`, push all changes.
 8. Delete release branch locally and remotely when appropriate.
+9. Review changes and create GitHub release:
+   - Get previous version tag: `git tag --list --sort=-creatordate | head -2 | tail -1`
+   - Review changes: `git log <previous_tag>..v$RELEASE_VERSION --oneline --no-merges`
+   - Create GitHub release: `gh release create v$RELEASE_VERSION --title "Release v$RELEASE_VERSION" --notes "<release notes>"`
+   - If release already exists, update it: `gh release edit v$RELEASE_VERSION --notes "<updated notes>"`
