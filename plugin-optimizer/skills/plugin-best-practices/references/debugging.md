@@ -23,7 +23,7 @@ This shows:
 | Commands not appearing              | Wrong directory structure       | Ensure `commands/` at root, not in `.claude-plugin/`                              |
 | Hooks not firing                    | Script not executable           | Run `chmod +x script.sh`                                                          |
 | MCP server fails                    | Missing `${CLAUDE_PLUGIN_ROOT}` | Use variable for all plugin paths                                                 |
-| Path errors                         | Absolute paths used             | All paths must be relative and start with `./`                                    |
+| Path errors                         | Absolute paths used             | All paths MUST be relative and start with `./`                                    |
 | LSP `Executable not found in $PATH` | Language server not installed   | Install the binary (e.g., `npm install -g typescript-language-server typescript`) |
 
 ## Example error messages
@@ -45,7 +45,7 @@ This shows:
 **Hook script not executing**:
 
 1. Check the script is executable: `chmod +x ./scripts/your-script.sh`
-2. Verify the shebang line: First line should be `#!/bin/bash` or `#!/usr/bin/env bash`
+2. Verify the shebang line: First line SHOULD be `#!/bin/bash` or `#!/usr/bin/env bash`
 3. Check the path uses `${CLAUDE_PLUGIN_ROOT}`: `"command": "${CLAUDE_PLUGIN_ROOT}/scripts/your-script.sh"`
 4. Test the script manually: `./scripts/your-script.sh`
 
@@ -74,7 +74,7 @@ This shows:
 
 **Symptoms**: Plugin loads but components (commands, agents, hooks) are missing.
 
-**Correct structure**: Components must be at the plugin root, not inside `.claude-plugin/`. Only `plugin.json` belongs in `.claude-plugin/`.
+**Correct structure**: Components MUST be at the plugin root, not inside `.claude-plugin/`. Only `plugin.json` belongs in `.claude-plugin/`.
 
 ```
 my-plugin/

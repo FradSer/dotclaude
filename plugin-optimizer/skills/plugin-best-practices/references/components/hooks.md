@@ -55,7 +55,7 @@ Plugins can provide event handlers that respond to Claude Code events automatica
 - **Return Valid JSON**: Ensure your hooks output valid JSON structures for decisions (`allow`/`deny`) and messages.
 
 ### Avoid
-- **Blocking Errors**: Avoid returning exit code `2` (Blocking Error) unless the operation is critical and must be stopped. Use `1` (Non-blocking) or `0` (Success) otherwise.
+- **Blocking Errors**: Avoid returning exit code `2` (Blocking Error) unless the operation is critical and MUST be stopped. Use `1` (Non-blocking) or `0` (Success) otherwise.
 - **Modifying Global State**: Avoid hooks that change the environment unexpectedly, as execution order is not guaranteed.
 
 ## Implementation Reference

@@ -51,7 +51,7 @@ enterprise-plugin/
 }
 ```
 
-> **Warning**: The `.claude-plugin/` directory contains the `plugin.json` file. All other directories (commands/, agents/, skills/, hooks/) must be at the plugin root, not inside `.claude-plugin/`.
+> **Warning**: The `.claude-plugin/` directory contains the `plugin.json` file. All other directories (commands/, agents/, skills/, hooks/) MUST be at the plugin root, not inside `.claude-plugin/`.
 
 > **Best Practice**: See `manifest-schema.md` for plugin.json declaration guidance.
 
@@ -70,4 +70,4 @@ enterprise-plugin/
 
 ## Script Requirements
 
-Scripts must be executable (`chmod +x`), include proper shebang lines (`#!/bin/bash`, `#!/usr/bin/env python3`, etc.), and use `${CLAUDE_PLUGIN_ROOT}` in paths. See `references/debugging.md` (lines 47-50) for troubleshooting.
+Scripts MUST be executable (`chmod +x`), include proper shebang lines (`#!/bin/bash`, `#!/usr/bin/env python3`, etc.), and use `${CLAUDE_PLUGIN_ROOT}` in paths. See `references/debugging.md` (lines 47-50) for troubleshooting.
