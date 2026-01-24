@@ -43,6 +43,7 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
         -   `skills/` for skill directories
         -   `hooks/hooks.json` for hooks
     -   Verify auto-discovery works
+    -   Validate manifest: `user-invocable: false` → `skills`; `user-invocable: true` (or default) → `commands`.
     -   Report any missing directories or files (do NOT create them in this phase)
 5.  **Check for Commands Directory** (Modern Architecture Assessment):
     -   **CRITICAL**: If a `commands/` directory exists with `.md` files:
@@ -70,8 +71,16 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
 2. Wait for the agent to complete
 3. Do NOT make any fixes yourself in the main session
 
+**CRITICAL - Agent Requirements**: The `plugin-optimizer:plugin-optimizer` agent MUST:
+- Load and follow ALL validation rules from `plugin-optimizer:plugin-best-practices` skill
+- Apply RFC 2119 terminology (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY)
+- Use the complete Skill Pattern template structure
+- Enforce all component naming conventions (kebab-case)
+- Validate skill type vs manifest declaration consistency
+- Check for explicit tool invocation anti-patterns
+
 **Actions**:
-1.  **Delegate**: Launch the `plugin-optimizer:plugin-optimizer` agent. This must be the first time the sub-agent is launched.
+1.  **Delegate**: Launch the `plugin-optimizer:plugin-optimizer` agent. This MUST be the first time the sub-agent is launched.
 2.  **Context**: Provide the agent with the resolved absolute path and the validation errors from Phase 1.
 3.  **Fix Strategy**: Instruct the agent to apply ALL necessary fixes including:
     -   **Commands to Skills Migration** (if user approved in Phase 1):
@@ -79,14 +88,14 @@ You are the Orchestrator. Guide the Agent through these strict phases to ensure 
             -   Create corresponding skill directory `skills/<command-name>/`
             -   Transform command `.md` file to `SKILL.md` format with proper frontmatter
             -   Add `user-invocable: true` to SKILL.md frontmatter
-            -   Update plugin.json to declare new skills in `commands` field with full paths
+            -   Update plugin.json: declare in **`commands`** field (not `skills`). `user-invocable: true` → `commands`.
             -   Document the migration in commit message
     -   **Validation Script Issues**: Fix any bugs or outdated logic in validation scripts themselves
     -   **Missing README**: Create basic `README.md` using content from `plugin.json`
     -   **Missing Frontmatter**: Add default frontmatter to agent/command files
     -   **Directory Structure**: Create missing standard directories (`commands`, `agents`, `skills`)
     -   **Refactor**: Rename files to kebab-case if needed
-4.  **NO Intermediate Verification**: The agent should NOT re-run validation scripts. All verification happens in Phase 6.
+4.  **NO Intermediate Verification**: The agent SHOULD NOT re-run validation scripts. All verification happens in Phase 6.
 5.  **Reporting**: Agent returns a list of all applied fixes.
 
 ---
