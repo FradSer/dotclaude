@@ -3,222 +3,177 @@ name: optimize-plugin
 description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", or mentions plugin optimization and validation tasks.
 argument-hint: <plugin-path>
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Bash(bash:*)", "Task", "TodoWrite", "AskUserQuestion"]
+allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "AskUserQuestion"]
 ---
 
 # Plugin Optimization
 
-You are the Orchestrator. Guide the Agent through these strict phases to ensure a comprehensive audit and optimization of the target plugin.
+Comprehensive plugin validation and optimization workflow. Orchestrate validation through specialized agent that applies fixes based on `plugin-optimizer:plugin-best-practices` skill.
+
+**Target plugin:** $ARGUMENTS
 
 ## Core Principles
 
--   **Strict Phases**: Follow the phases sequentially. Do not skip steps.
--   **User Confirmation**: Ask for user input and confirmation where specified.
--   **Use TodoWrite**: Track all progress throughout the workflow.
--   **Resolve Path First**: Always ensure you are working with the absolute path of the target plugin.
-
-**Initial request:** $ARGUMENTS
+- **Strict Phases**: Follow phases sequentially without skipping steps
+- **User Confirmation**: Ask for user input and decisions where specified
+- **Agent-Based Optimization**: Delegate all fixes to specialized agent
+- **Reference-Driven**: Agent must consult appropriate `references/` files for each issue category
 
 ---
 
 ## Phase 1: Discovery & Validation
 
-**Goal**: Validate plugin structure and detect issues. No fixes are applied in this phase.
+**Goal**: Validate plugin structure and detect all issues. Orchestrator MUST NOT apply fixes in this phase.
 
-**CRITICAL - Orchestrator Role**: As the Orchestrator, you will:
-1. Run validation scripts to identify issues
-2. Ask user for decisions (e.g., migration approval)
-3. **NEVER fix issues yourself** - all fixes are delegated to the agent in Phase 2
+**Orchestrator Role**: Run validation scripts, ask user for decisions, compile issues list.
 
 **Actions**:
-1.  **Context**: User input is `$ARGUMENTS`.
-2.  **Resolution**: Use `realpath` to resolve the absolute path to the plugin by treating `$ARGUMENTS` as a path.
-3.  **Validation**: Ensure the resolved path exists.
-4.  **Validate Directory Structure**:
-    -   Check for `.claude-plugin/plugin.json` manifest file (required)
-    -   Use Glob to find component directories
-    -   Check standard locations:
-        -   `commands/` for slash commands
-        -   `agents/` for agent definitions
-        -   `skills/` for skill directories
-        -   `hooks/hooks.json` for hooks
-    -   Verify auto-discovery works
-    -   Validate manifest: `user-invocable: false` → `skills`; `user-invocable: true` (or default) → `commands`.
-    -   Report any missing directories or files (do NOT create them in this phase)
-5.  **Check for Commands Directory** (Modern Architecture Assessment):
-    -   **CRITICAL**: If a `commands/` directory exists with `.md` files:
-        -   Use `AskUserQuestion` tool to ask the user: "This plugin uses the legacy `commands/` structure. Modern best practice recommends using `skills/` for better modularity and self-contained documentation. Would you like to migrate commands to skills structure?"
-        -   Options: "Yes, migrate to skills" / "No, keep commands as-is"
-        -   If user chooses "Yes", record this decision for Phase 2 (Automated Fixes)
-        -   If user chooses "No", skip migration and proceed with validation
-    -   **Note**: This check aligns with modern plugin architecture where Skills are preferred over Commands for new functionality
-6.  **Execute Validation Suite**: As the Orchestrator, run the following validation scripts directly using the `Bash` tool. Do NOT launch a sub-agent in this phase.
-    -   **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
-    -   **Manifest**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
-    -   **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
-    -   **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
-7.  **Review**: Analyze the output of each script to identify all failures and issues. Compile a comprehensive list of problems found.
-8.  **Do NOT Fix**: Even if you see obvious fixes, do NOT apply them. All fixes will be handled by the agent in Phase 2.
+1. **Path Resolution**: Use `realpath` to resolve absolute path from `$ARGUMENTS`
+2. **Existence Check**: Verify the resolved path exists
+3. **Directory Structure Validation**:
+   - Check for `.claude-plugin/plugin.json` manifest (required)
+   - Find component directories: `commands/`, `agents/`, `skills/`, `hooks/`
+   - Verify auto-discovery configuration
+   - Report missing directories or files (MUST NOT create them)
+4. **Modern Architecture Assessment**:
+   - If `commands/` directory exists with `.md` files:
+     - Ask user: "This plugin uses legacy `commands/` structure. Modern best practice recommends `skills/` for better modularity. Would you like to migrate commands to skills structure?"
+     - Options: "Yes, migrate to skills" / "No, keep commands as-is"
+     - Record user decision for Phase 2
+5. **Execute Validation Suite** - Run all scripts using Bash tool:
+   - **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
+   - **Manifest**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
+   - **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
+   - **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
+6. **Analysis**: Review output from all scripts and compile comprehensive list of issues by severity:
+   - Critical issues (MUST fix)
+   - Warnings (SHOULD fix)
+   - Info (MAY improve)
+
+**Critical**: Orchestrator MUST NOT fix any issues. All fixes delegated to agent in Phase 2.
 
 ---
 
-## Phase 2: Automated Fixes
+## Phase 2: Agent-Based Optimization
 
-**Goal**: Launch the optimizer agent to apply ALL fixes for issues found in Phase 1.
-
-**CRITICAL - Orchestrator Role**: You are the Orchestrator. Your ONLY job in this phase is to:
-1. Launch the agent with clear instructions
-2. Wait for the agent to complete
-3. Do NOT make any fixes yourself in the main session
-
-**CRITICAL - Agent Requirements**: The `plugin-optimizer:plugin-optimizer` agent MUST:
-- Load and follow ALL validation rules from `plugin-optimizer:plugin-best-practices` skill
-- Apply RFC 2119 terminology (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY)
-- Use the complete Skill Pattern template structure
-- Enforce all component naming conventions (kebab-case)
-- Validate skill type vs manifest declaration consistency
-- Check for explicit tool invocation anti-patterns
+**Goal**: Launch agent to apply ALL fixes based on issues found in Phase 1.
 
 **Actions**:
-1.  **Delegate**: Launch the `plugin-optimizer:plugin-optimizer` agent. This MUST be the first time the sub-agent is launched.
-2.  **Context**: Provide the agent with the resolved absolute path and the validation errors from Phase 1.
-3.  **Fix Strategy**: Instruct the agent to apply ALL necessary fixes including:
-    -   **Commands to Skills Migration** (if user approved in Phase 1):
-        -   For each command in `commands/*.md`:
-            -   Create corresponding skill directory `skills/<command-name>/`
-            -   Transform command `.md` file to `SKILL.md` format with proper frontmatter
-            -   Add `user-invocable: true` to SKILL.md frontmatter
-            -   Update plugin.json: declare in **`commands`** field (not `skills`). `user-invocable: true` → `commands`.
-            -   Document the migration in commit message
-    -   **Validation Script Issues**: Fix any bugs or outdated logic in validation scripts themselves
-    -   **Missing README**: Create basic `README.md` using content from `plugin.json`
-    -   **Missing Frontmatter**: Add default frontmatter to agent/command files
-    -   **Directory Structure**: Create missing standard directories (`commands`, `agents`, `skills`)
-    -   **Refactor**: Rename files to kebab-case if needed
-4.  **NO Intermediate Verification**: The agent SHOULD NOT re-run validation scripts. All verification happens in Phase 6.
-5.  **Reporting**: Agent returns a list of all applied fixes.
+1. Launch `plugin-optimizer:plugin-optimizer` agent
+2. Provide context:
+   - Target plugin absolute path
+   - Validation issues from Phase 1 (organized by severity)
+   - User decisions (migration choice if applicable)
+3. Wait for agent to complete optimization workflow
+4. Receive list of applied fixes from agent
+
+**Critical**: Launch agent ONCE with all context. Orchestrator MUST NOT make fixes in main session.
 
 ---
 
-## Phase 3: Redundancy Analysis
+## Phase 3: Redundancy & Quality Analysis
 
-**Goal**: Identify content duplication and execute consolidation fixes after user confirmation.
-
-**CRITICAL - Agent Continuity**: Resume the SAME agent from Phase 2.
+**Goal**: Identify and fix content duplication, validate documentation quality.
 
 **Actions**:
-1.  **Resume Agent**: **CRITICAL**: Resume the agent from Phase 2 to preserve context. DO NOT spawn a new agent.
-2.  **Analyze**: Perform **Comprehensive Redundancy Analysis** according to standards in `skills/plugin-best-practices/references/`.
-3.  **Consult**: Use `AskUserQuestion` tool when uncertain about classification.
-4.  **Report**: Report findings with severity classifications and consolidation recommendations.
-5.  **Confirm Before Fixing (Mandatory)**: After reporting, you MUST ask the user whether to apply the consolidation fixes using `AskUserQuestion` tool.
-    -   Always provide multiple options so the user can explicitly choose whether to proceed (no freeform fallback).
-    -   Use the title "Fix redundancy".
-    -   Ask: "Redundancy analysis found issues that can be consolidated. Do you want to apply all recommended redundancy fixes?"
-    -   Force a single choice with at least these two options:
-        -   "Yes, apply all recommended redundancy fixes"
-        -   "No, skip redundancy fixes"
-6.  **Execute Consolidation**: Only if the user selects "Yes", perform the file operations immediately. If "No", proceed to Phase 4 with no changes.
+1. Resume SAME agent from Phase 2 (preserve context)
+2. Agent performs redundancy analysis and quality review
+3. Agent asks for user confirmation before applying fixes
+4. Receive report of redundancy and quality improvements
+
+**Critical**: Resume agent from Phase 2. Orchestrator MUST NOT spawn new agent.
 
 ---
 
-## Phase 4: Quality Review
+## Phase 4: Final Verification
 
-**Goal**: Validate documentation quality and fix issues (automatically or with confirmation).
+**Goal**: Re-run validation scripts to verify all fixes were applied correctly.
 
-**CRITICAL - Agent Continuity**: Resume the SAME agent from Phase 3.
+**Orchestrator Role**: You take back control. Run validation suite ONCE to verify.
 
 **Actions**:
-1.  **Validate README**: Verify `README.md` in the plugin directory. Ensure it accurately reflects the plugin's name, description, and installed components (Agents, Commands, Skills).
-2.  **Consult**: **MUST** use `AskUserQuestion` tool to confirm with the user before classifying severity if issues are found.
-3.  **Apply Fixes**: If the user agrees to the quality improvements (e.g., updating README), apply the changes immediately.
+1. **Re-run Validation Suite** using Bash tool:
+   - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
+   - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
+   - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
+   - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
+2. **Compare Results**: Compare with Phase 1 validation to confirm critical issues resolved
+3. **Document Remaining Issues**: Note any issues that remain (design decisions, optional improvements)
+
+**Critical**: Orchestrator MUST NOT attempt fixes in this phase. Only verify and document.
 
 ---
 
-## Phase 5: Version Management
+## Phase 5: Summary Report
 
-**Goal**: Update plugin version based on optimization changes
+**Goal**: Generate comprehensive validation report with all findings and fixes.
 
-**CRITICAL - Agent Continuity**: Resume the SAME agent from Phase 4.
+**Orchestrator Role**: Synthesize all phase results into final report.
 
-**Actions**:
-1.  **Assess Changes**: Review the extent of changes made during Phases 2-4.
-2.  **Determine Increment**:
-    -   **Patch Update (+0.0.1)**: For minor fixes (e.g., formatting, small documentation updates, frontmatter tweaks).
-    -   **Minor Update (+0.1.0)**: For significant changes (e.g., directory restructuring, logic fixes, major redundancy removal).
-3.  **Update Version**:
-    -   Read the current version from `.claude-plugin/plugin.json`.
-    -   Calculate the new version based on the increment.
-    -   Update the `version` field in `.claude-plugin/plugin.json`.
-4.  **Log**: Record the version change for the final report.
-
----
-
-## Phase 6: Final Verification
-
-**Goal**: Re-run all validation scripts to verify fixes were correctly applied
-
-**CRITICAL - Orchestrator Role**: You take back control from the agent. Run validation scripts exactly ONCE to verify all fixes.
-
-**Actions**:
-1.  **Re-run Validation Suite**: Execute all validation scripts again using the `Bash` tool:
-    -   **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
-    -   **Manifest**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
-    -   **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
-    -   **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
-2.  **Compare Results**: Compare with Phase 1 validation results to confirm all critical issues were resolved
-3.  **Document Remaining Issues**: If any issues remain (e.g., design-decision warnings), document them clearly in the final report with explanations
-4.  **Do NOT Fix Issues**: If new issues are discovered, document them in the report. Do NOT attempt fixes in this phase.
-
----
-
-## Phase 7: Summary & Report
-
-**Goal**: Generate final optimization report
-
-**CRITICAL - Orchestrator Role**: Synthesize all phase results into a comprehensive report.
-
-**Actions**:
-1.  **Compliance Checklist**: Summary of all checks (both Phase 1 and Phase 6 results).
-2.  **Applied Fixes Summary**: List all fixes applied by the agent during Phases 2-5.
-3.  **Verification Status**: Confirm validation results from Phase 6.
-4.  **Remaining Issues**: Document any issues that could not be automatically fixed, or are design decisions (e.g., internal-only skills not declared).
-5.  **Final Report**: Generate the report using the following strict format:
-
-**Output**: Complete validation report in the specified format with all findings, fixes, and recommendations
-
-**Output Format**:
+**Report Format**:
 
 ```markdown
 ## Plugin Validation Report
 
 ### Plugin: [name]
-Location: [path]
+Location: [absolute-path]
+Version: [old] → [new]
 
 ### Summary
-[Overall assessment - pass/fail with key stats]
+[Overall assessment with key statistics]
 
-### Issues by Severity
+### Phase 1: Issues Detected
 #### Critical ([count])
-- `file/path` - [Issue] - [Fix]
+- `file/path` - [Issue description]
 
 #### Warnings ([count])
-- `file/path` - [Issue] - [Recommendation]
+- `file/path` - [Issue description]
+
+#### Info ([count])
+- `file/path` - [Suggestion]
+
+### Phase 2-3: Fixes Applied
+#### Structure Fixes
+- [Fix description]
+
+#### Manifest Fixes
+- [Fix description]
+
+#### Component Fixes
+- [Fix description]
+
+#### Migration Performed
+- [Details if commands migrated to skills]
+
+#### Redundancy Fixes
+- [Consolidations applied]
+
+#### Quality Improvements
+- [Documentation updates]
+
+### Phase 4: Verification Results
+- Structure validation: [PASS/FAIL]
+- Manifest validation: [PASS/FAIL]
+- Component validation: [PASS/FAIL]
+- Tool patterns validation: [PASS/FAIL]
 
 ### Component Inventory
 - Commands: [count] found, [count] valid
 - Agents: [count] found, [count] valid
 - Skills: [count] found, [count] valid
-- Hooks: [present/not present], [valid/invalid]
+- Hooks: [present/absent], [valid/invalid]
 - MCP Servers: [count] configured
 
+### Remaining Issues
+[Issues that couldn't be auto-fixed or are design decisions with explanations]
+
 ### Positive Findings
-- [What's done well]
+- [What's implemented well]
 
 ### Recommendations
-1. [Priority recommendation]
-2. [Additional recommendation]
+1. [Priority recommendation for manual follow-up]
+2. [Additional suggestions]
 
 ### Overall Assessment
-[PASS/FAIL] - [Reasoning]
+[PASS/FAIL] - [Detailed reasoning based on validation results]
 ```
