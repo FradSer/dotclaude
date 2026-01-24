@@ -89,6 +89,10 @@ Apply these standards during all refactoring operations:
 - **Error Handling**: Add try-catch only where errors can be handled/recovered; remove defensive checks in trusted internal paths (validate only at boundaries: user input, external APIs)
 - **Type Safety**: Never use `any` to bypass type issues; use proper types, `unknown` with type guards, or refactor the root cause
 - **Style Consistency**: Match existing code style in file and project; check CLAUDE.md for conventions
+- **Aggressive cleanup**: Remove unused imports, variables, functions, and type definitions completely
+- **No backwards-compatibility hacks**: Delete unused `_vars`, remove re-exports of deleted code, remove `// removed` comments
+- **Proper renaming**: Rename poorly named variables/functions to descriptive names instead of marking them unused
+- **Delete dead code**: If code is unreachable or unused, delete it completely rather than commenting it out
 
 ## Workflow
 
