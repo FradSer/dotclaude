@@ -23,36 +23,20 @@ Get your API keys:
 - **SERPAPI_KEY**: Sign up at [serpapi.com](https://serpapi.com)
 - **EXA_API_KEY**: Get from [dashboard.exa.ai](https://dashboard.exa.ai)
 
-### 2. Use the Patent Architect Command
+### 2. Use the Patent Architect Skill
 
 ```bash
 /patent-architect "Mobile Payment Authentication System"
 ```
 
-The command will:
+The skill will:
 1. Understand your technical invention
 2. Search for prior art automatically
 3. Generate a complete Chinese patent application form
 
 ## Skills
 
-### `browser-use`
-
-Browser automation skill for web testing, form filling, screenshots, and data extraction.
-
-**Source**: Synced from [browser-use/browser-use](https://github.com/browser-use/browser-use/tree/main/skills/browser-use)
-
-**Sync**: Use `./scripts/sync-browser-use.sh` to sync from upstream
-
-**Usage**:
-```bash
-# The skill is automatically available when needed
-# Claude will use it for browser automation tasks
-```
-
-## Commands
-
-### `/patent-architect`
+### `patent-architect`
 
 Generate Chinese patent application forms (专利申请表) from technical ideas.
 
@@ -72,6 +56,20 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Chinese patent application form generation
 - Patent terminology compliance
 - Multiple embodiment generation (3+)
+
+### `browser-use`
+
+Browser automation skill for web testing, form filling, screenshots, and data extraction.
+
+**Source**: Synced from [browser-use/browser-use](https://github.com/browser-use/browser-use/tree/main/skills/browser-use)
+
+**Sync**: Use `./scripts/sync-browser-use.sh` to sync from upstream
+
+**Usage**:
+```bash
+# The skill is automatically available when needed
+# Claude will use it for browser automation tasks
+```
 
 ## Scripts
 
@@ -127,8 +125,6 @@ Helper script for patent search with argument parsing.
 office/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin metadata
-├── commands/
-│   └── patent-architect.md  # Main command
 ├── hooks/
 │   ├── hooks.json           # Hook configuration
 │   └── scripts/
@@ -136,13 +132,16 @@ office/
 ├── lib/
 │   └── utils.sh             # Shared utilities
 ├── scripts/
-│   └── search-patents.sh    # Patent search helper
+│   ├── search-patents.sh    # Patent search helper
+│   └── sync-browser-use.sh  # Browser-use skill sync
 └── skills/
-    └── patent-architect/
-        ├── SKILL.md         # Skill definition
-        ├── template.md      # Output template
-        ├── reference.md     # API reference
-        └── examples.md      # Usage examples
+    ├── patent-architect/    # Patent application generation skill
+    │   ├── SKILL.md         # Skill definition
+    │   ├── template.md      # Output template
+    │   ├── reference.md     # API reference
+    │   └── examples.md      # Usage examples
+    └── browser-use/         # Browser automation skill
+        └── SKILL.md         # Skill definition
 ```
 
 ## Troubleshooting
