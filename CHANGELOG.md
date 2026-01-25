@@ -2,62 +2,124 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-01-21
+## [Unreleased]
 
-### Added
-- Plugin optimizer plugin for best practices enforcement
-- Claude config plugin for configuration management
-- Git hooks configuration file
-- Git config command and commit validation hook
-- Conventional commit validation hook
+## [v1.5.0] - 2026-01-24
 
 ### Changed
-- Migrated git hooks to external file structure
-- Updated agent definitions for skills integration
-- Streamlined plugin architecture and documentation
 
-## [1.1.0] - 2026-01-19
+- Update marketplace plugin versions
+- Clarify Plugin Optimizer guidance with RFC 2119 and component references
+- Improve Plugin Optimizer skill documentation structure
+- Simplify Refactor docs and README organization
+- Enhance Git commit and .gitignore workflow guidance
+
+## [v1.4.0] - 2026-01-24
 
 ### Added
-- Git workflow skills and GitFlow automation commands
-- Refactor commands for project-wide code optimization
-- Safety checks to git commit command
+
+- Add Review skills for quick and hierarchical review
+- Add GitHub skills for issue and PR operations
+- Add co-authored-by validation support in the Git workflow
 
 ### Changed
-- Reorganized GitFlow workflow references and core commands
-- Enhanced TypeScript best-practices reference in refactor plugin
-- Improved documentation for git and utils plugins
+
+- Migrate plugin commands to skills across Office, Claude Config, GitHub, Review, and Refactor
+- Make co-authored-by optional in the Git workflow
+- Standardize README structure and installation instructions across plugins
+- Add plugin marketplace installation guide
+- Improve Plugin Optimizer skill reference guidance and parallel agent execution guidance
+- Update GitFlow skill references and plugin configuration metadata
+
+### Removed
+
+- Remove legacy command files
+
+## [v1.3.0] - 2026-01-23
+
+### Added
+
+- Add co-authored-by requirement option in Git validation
+- Add Office browser-use skill sync tool
+- Add Plugin Optimizer commands-to-skills migration check
+- Enhance Office patent-architect structure
+
+### Changed
+
+- Optimize GitFlow workflows and reduce redundancy
+- Migrate Git plugin to skills structure and update plugin config
+- Relax Plugin Optimizer skill description validation
+- Improve Git command documentation and workflow guidance
+- Add Claude Code project guidance and plugin marketplace documentation
 
 ### Fixed
-- Fixed explicit skill tool calls in patent-architect command
 
-## [1.0.0] - 2026-01-18
+- Improve Git message extraction for heredoc and validation
+
+## [v1.2.0] - 2026-01-21
 
 ### Added
-- Git automation plugin with conventional commit support
-- GitFlow workflow plugin for feature, hotfix, and release branches
-- GitHub operations plugin with quality gates
-- Multi-agent code review system (code-reviewer, security-reviewer, tech-lead-reviewer, ux-reviewer)
-- Code refactoring plugin with code-simplifier agent
-- SwiftUI Clean Architecture reviewer
-- Utility commands plugin for task continuation and command creation
-- Office plugin with patent architect skill for Chinese patent applications
-- Comprehensive plugin documentation and README files
-- Marketplace configuration for Claude Code plugins
+
+- Add Plugin Optimizer plugin for best practices
+- Add Claude Config plugin for configuration management
+- Add Git hooks configuration and validation hooks
+- Add Git config command for commit validation
 
 ### Changed
-- Restructured project to match claude-plugins-official format
-- Updated refactor plugin to conform to Claude Code best practices
-- Improved markdown formatting and example clarity in git plugin
+
+- Migrate Git hooks to external files and SKILL.md frontmatter
+- Update agent definitions for skills
+- Streamline plugin documentation and framework detection
+- Add comprehensive Claude development guides
+
+## [v1.1.0] - 2026-01-19
+
+### Added
+
+- Add Git workflow skills
+- Add refactor commands
+- Add safety checks to the Git commit command
+
+### Changed
+
+- Reorganize GitFlow workflow references and docs
+- Enhance TypeScript best-practices reference in Refactor
+- Improve Git conventional commit documentation
+- Consolidate skills into a best-practices structure
+- Optimize Office plugin patterns and code-simplifier config
 
 ### Fixed
-- Updated marketplace.json plugin source paths after migration
-- Aligned plugin structure with claude-plugins-official format
-- Fixed build scripts to use TOML literal strings for prompts
 
-[1.2.0]: https://github.com/FradSer/dotclaude/releases/tag/v1.2.0
-[1.1.0]: https://github.com/FradSer/dotclaude/releases/tag/v1.1.0
-[1.0.0]: https://github.com/FradSer/dotclaude/releases/tag/v1.0.0
+- Use explicit skill tool call in the patent-architect command
+
+## [v1.0.0] - 2026-01-18
+
+### Added
+
+- Initial release of the plugin marketplace with Git, GitFlow, GitHub, Review, Refactor, Utils, Office, and SwiftUI plugins
+- Command system with standardized workflows, TDD, and Clean Architecture requirements
+- Build pipeline for marketplace artifacts and plugin manifests
+- Sync-to-GitHub script and local agent management
+- Comprehensive READMEs and command guides
+
+### Changed
+
+- Restructure repository to the claude-plugins-official layout
+- Refactor build scripts and prompt generation for maintainability
+- Standardize command formats, commit standards, and documentation
+
+### Fixed
+
+- Fix build and release scripts for version detection and TOML prompts
+- Improve sync script compatibility and error handling
+
+[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.5.0...HEAD
+[v1.5.0]: https://github.com/FradSer/dotclaude/compare/v1.4.0...v1.5.0
+[v1.4.0]: https://github.com/FradSer/dotclaude/compare/v1.3.0...v1.4.0
+[v1.3.0]: https://github.com/FradSer/dotclaude/compare/v1.2.0...v1.3.0
+[v1.2.0]: https://github.com/FradSer/dotclaude/compare/v1.1.0...v1.2.0
+[v1.1.0]: https://github.com/FradSer/dotclaude/compare/v1.0.0...v1.1.0
+[v1.0.0]: https://github.com/FradSer/dotclaude/releases/tag/v1.0.0
