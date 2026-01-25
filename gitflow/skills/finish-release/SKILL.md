@@ -16,11 +16,16 @@ user-invocable: true
 5. Normalize the provided version from `$ARGUMENTS` to `$RELEASE_VERSION`:
    - Accept `v1.2.3`, `1.2.3`, or `release/1.2.3`
    - Normalize to `1.2.3` (and tag as `v$RELEASE_VERSION` when tagging)
-6. Merge into `main` (often with `--no-ff`), create the version tag.
-7. Merge `main` back to `develop`, push all changes.
-8. Delete release branch locally and remotely when appropriate.
-9. Analyze commit history and create GitHub release:
-   - Identify previous version tag using `git tag --list --sort=-creatordate | head -2 | tail -1`
-   - Collect commits since previous tag via `git log <previous_tag>..v$RELEASE_VERSION --oneline --no-merges`
-   - Create release via `gh release create v$RELEASE_VERSION --title "Release v$RELEASE_VERSION" --notes "<release notes>"`
-   - Update existing release if needed via `gh release edit v$RELEASE_VERSION --notes "<updated notes>"`
+6. **Update CHANGELOG**:
+   - Identify previous version tag.
+   - Collect commits since previous tag (filtering for `feat`, `fix`, etc.).
+   - See `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md` for the standard changelog template format.
+   - Update `CHANGELOG.md` (or create if missing) with the new version and date.
+   - Commit the updated `CHANGELOG.md` to the current release branch using conventional commit format (e.g., `chore: update changelog for v$RELEASE_VERSION`).
+   - **Commit Rules**: The message title MUST be lowercase, under 50 characters, use imperative mood, and MUST include the `Co-Authored-By` footer.
+7. Merge into `main` (often with `--no-ff`), create the version tag.
+8. Merge `main` back to `develop`, push all changes.
+9. Delete release branch locally and remotely when appropriate.
+10. **Publish GitHub Release**:
+   - Use the `gh` CLI to create the release using the version tag.
+   - `gh release create v$RELEASE_VERSION --title "Release v$RELEASE_VERSION" --notes "<content from CHANGELOG for this version>"`
