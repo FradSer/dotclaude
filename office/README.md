@@ -36,7 +36,7 @@ The skill will:
 
 ## Skills
 
-### `patent-architect`
+### `/patent-architect` (Command)
 
 Generate Chinese patent application forms (专利申请表) from technical ideas.
 
@@ -57,39 +57,35 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Patent terminology compliance
 - Multiple embodiment generation (3+)
 
-### `browser-use`
+### `agent-browser` (Reference Skill)
 
-Browser automation skill for web testing, form filling, screenshots, and data extraction.
+Browser automation command reference for agents and workflows.
 
-**Source**: Synced from [browser-use/browser-use](https://github.com/browser-use/browser-use/tree/main/skills/browser-use)
+**Source**: Synced from [browser-use/agent-browser](https://github.com/browser-use/agent-browser)
 
-**Sync**: Use `./scripts/sync-browser-use.sh` to sync from upstream
+**Purpose**: Provides browser automation command reference for agents that need to interact with web pages.
 
-**Usage**:
-```bash
-# The skill is automatically available when needed
-# Claude will use it for browser automation tasks
-```
+**Sync**: Use `./scripts/sync-agent-browser.sh` to update from upstream
 
 ## Scripts
 
-### `scripts/sync-browser-use.sh`
+### `scripts/sync-agent-browser.sh`
 
-同步上游 browser-use skill 的脚本。
+同步上游 agent-browser skill 的脚本。
 
 **Usage:**
 ```bash
 # 检查是否有更新
-./scripts/sync-browser-use.sh --check
+./scripts/sync-agent-browser.sh --check
 
 # 执行同步(会提示确认)
-./scripts/sync-browser-use.sh
+./scripts/sync-agent-browser.sh
 
 # 强制同步,跳过确认
-./scripts/sync-browser-use.sh --force
+./scripts/sync-agent-browser.sh --force
 
 # 同步但不创建备份
-./scripts/sync-browser-use.sh --no-backup
+./scripts/sync-agent-browser.sh --no-backup
 ```
 
 **Options:**
@@ -132,16 +128,16 @@ office/
 ├── lib/
 │   └── utils.sh             # Shared utilities
 ├── scripts/
-│   ├── search-patents.sh    # Patent search helper
-│   └── sync-browser-use.sh  # Browser-use skill sync
+│   ├── search-patents.sh      # Patent search helper
+│   └── sync-agent-browser.sh  # Agent-browser skill sync
 └── skills/
-    ├── patent-architect/    # Patent application generation skill
-    │   ├── SKILL.md         # Skill definition
-    │   ├── template.md      # Output template
-    │   ├── reference.md     # API reference
-    │   └── examples.md      # Usage examples
-    └── browser-use/         # Browser automation skill
-        └── SKILL.md         # Skill definition
+    ├── patent-architect/      # Patent application generation skill
+    │   ├── SKILL.md           # Skill definition
+    │   ├── template.md        # Output template
+    │   ├── reference.md       # API reference
+    │   └── examples.md        # Usage examples
+    └── agent-browser/         # Browser automation skill
+        └── SKILL.md           # Skill definition
 ```
 
 ## Troubleshooting
