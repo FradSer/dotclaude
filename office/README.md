@@ -23,36 +23,20 @@ Get your API keys:
 - **SERPAPI_KEY**: Sign up at [serpapi.com](https://serpapi.com)
 - **EXA_API_KEY**: Get from [dashboard.exa.ai](https://dashboard.exa.ai)
 
-### 2. Use the Patent Architect Command
+### 2. Use the Patent Architect Skill
 
 ```bash
 /patent-architect "Mobile Payment Authentication System"
 ```
 
-The command will:
+The skill will:
 1. Understand your technical invention
 2. Search for prior art automatically
 3. Generate a complete Chinese patent application form
 
 ## Skills
 
-### `browser-use`
-
-Browser automation skill for web testing, form filling, screenshots, and data extraction.
-
-**Source**: Synced from [browser-use/browser-use](https://github.com/browser-use/browser-use/tree/main/skills/browser-use)
-
-**Sync**: Use `./scripts/sync-browser-use.sh` to sync from upstream
-
-**Usage**:
-```bash
-# The skill is automatically available when needed
-# Claude will use it for browser automation tasks
-```
-
-## Commands
-
-### `/patent-architect`
+### `/patent-architect` (Command)
 
 Generate Chinese patent application forms (专利申请表) from technical ideas.
 
@@ -73,25 +57,35 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Patent terminology compliance
 - Multiple embodiment generation (3+)
 
+### `agent-browser` (Reference Skill)
+
+Browser automation command reference for agents and workflows.
+
+**Source**: Synced from [browser-use/agent-browser](https://github.com/browser-use/agent-browser)
+
+**Purpose**: Provides browser automation command reference for agents that need to interact with web pages.
+
+**Sync**: Use `./scripts/sync-agent-browser.sh` to update from upstream
+
 ## Scripts
 
-### `scripts/sync-browser-use.sh`
+### `scripts/sync-agent-browser.sh`
 
-同步上游 browser-use skill 的脚本。
+同步上游 agent-browser skill 的脚本。
 
 **Usage:**
 ```bash
 # 检查是否有更新
-./scripts/sync-browser-use.sh --check
+./scripts/sync-agent-browser.sh --check
 
 # 执行同步(会提示确认)
-./scripts/sync-browser-use.sh
+./scripts/sync-agent-browser.sh
 
 # 强制同步,跳过确认
-./scripts/sync-browser-use.sh --force
+./scripts/sync-agent-browser.sh --force
 
 # 同步但不创建备份
-./scripts/sync-browser-use.sh --no-backup
+./scripts/sync-agent-browser.sh --no-backup
 ```
 
 **Options:**
@@ -127,8 +121,6 @@ Helper script for patent search with argument parsing.
 office/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin metadata
-├── commands/
-│   └── patent-architect.md  # Main command
 ├── hooks/
 │   ├── hooks.json           # Hook configuration
 │   └── scripts/
@@ -136,13 +128,16 @@ office/
 ├── lib/
 │   └── utils.sh             # Shared utilities
 ├── scripts/
-│   └── search-patents.sh    # Patent search helper
+│   ├── search-patents.sh      # Patent search helper
+│   └── sync-agent-browser.sh  # Agent-browser skill sync
 └── skills/
-    └── patent-architect/
-        ├── SKILL.md         # Skill definition
-        ├── template.md      # Output template
-        ├── reference.md     # API reference
-        └── examples.md      # Usage examples
+    ├── patent-architect/      # Patent application generation skill
+    │   ├── SKILL.md           # Skill definition
+    │   ├── template.md        # Output template
+    │   ├── reference.md       # API reference
+    │   └── examples.md        # Usage examples
+    └── agent-browser/         # Browser automation skill
+        └── SKILL.md           # Skill definition
 ```
 
 ## Troubleshooting

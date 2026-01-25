@@ -216,10 +216,10 @@ Expert in GitFlow branching model and semantic versioning, based on [git-flow-ne
 
 ### Commit Format
 
-All GitFlow commands use the `@git/conventional-commits` skill for commit message formatting. This ensures:
+All GitFlow commands follow conventional commit principles for commit message formatting. This ensures:
 - **Atomic commits**: One logical change per commit
 - **Conventional format**: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
-- **Proper structure**: Title, body, and footer formatting per Conventional Commits specification
+- **Proper structure**: Lowercase title (<50 characters), imperative mood, with `Co-Authored-By` footer
 
 ### Version Tagging
 

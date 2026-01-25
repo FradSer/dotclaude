@@ -1,6 +1,8 @@
 # Commands Component Reference
 
 > **Modern Approach**: For new plugins, prefer using **Skills** over Commands. Skills provide better modularity, are self-contained, and support progressive disclosure patterns. Commands are primarily for backward compatibility and simple user-invoked operations. See the Skills component reference for the recommended approach.
+>
+> Use this template when migrating a command to a modern instruction-type skill. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for the modern instruction-skill template.
 
 Plugins add custom slash commands that integrate seamlessly with Claude Code's command system.
 
@@ -14,14 +16,7 @@ Plugins add custom slash commands that integrate seamlessly with Claude Code's c
 
 ### Frontmatter (YAML)
 
-```yaml
----
-description: Brief description of what this command does
-argument-hint: <required-arg> [optional-arg]
-allowed-tools: ["Read", "Write", "Bash(git:*)"]  # Optional: restrict tool access
-disable-model-invocation: true  # Optional: for user-only commands
----
-```
+Use this template when converting command-style logic into a phase-based instruction skill. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for the modern instruction template.
 
 **Required Fields**:
 - `description`: Short description shown in command list
@@ -35,31 +30,7 @@ disable-model-invocation: true  # Optional: for user-only commands
 
 Write **directives FOR Claude** (instructions), not descriptions to users.
 
-**Structure Pattern**:
-```markdown
-# Command Title
-
-Brief introduction of what Claude will do.
-
-## Core Principles (Optional)
-- Guiding principle 1
-- Guiding principle 2
-
-## Phase 1: Phase Name
-
-**Goal**: What this phase accomplishes
-
-**CRITICAL**: Important instruction or warning (Optional)
-
-**Actions**:
-1. Specific instruction 1
-2. Specific instruction 2
-
-If the user says "condition", do specific action.
-
-## Phase 2: Next Phase
-...
-```
+Use this structure when documenting phased execution logic. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for a full phase-based structure pattern.
 
 ## Integration Points
 
