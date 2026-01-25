@@ -25,8 +25,11 @@ Minimum context to collect before any start/finish operation:
 
 ## Test commands (if available)
 
-Detect and run the appropriate test command(s) for the repository before finishing:
-- Node.js: `pnpm test` / `npm test`
-- Python: `pytest`
-- Other stacks: use the repo’s documented test command
+Detect and run the appropriate test command(s) for the repository before finishing operations:
+- Node.js: `pnpm test` or `npm test` (check for package.json)
+- Python: `pytest` (check for pytest.ini or pyproject.toml)
+- Swift: `swift test` (check for Package.swift)
+- Other stacks: use the repo's documented test command (check README.md)
+
+If no test command is found, proceed without running tests but inform the user.
 
