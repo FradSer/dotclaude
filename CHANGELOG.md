@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add changelog example and update skills in GitFlow plugin
 - Add GitHub release creation step to finish-release workflow
 
+### Changed
+
+- Update marketplace plugin versions
+- Clarify Plugin Optimizer guidance with RFC 2119 and component references
+- Improve Plugin Optimizer skill documentation structure
+- Simplify Refactor docs and README organization
+- Enhance Git commit and .gitignore workflow guidance
+
 ## [v1.5.0] - 2026-01-24
 
 ### Changed
