@@ -1,6 +1,7 @@
 ---
 name: plugin-best-practices
 description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", "review plugin structure", "find plugin issues", "check best practices", "analyze plugin", or mentions plugin validation, optimization, or quality assurance.
+argument-hint: (no arguments - provides knowledge only)
 user-invocable: false
 version: 0.2.0
 ---
@@ -241,6 +242,12 @@ Components are modular extensions to Claude's functionality.
 | Length | Any length | < 200 lines + references/ |
 
 See `references/components/skills.md` for detailed guidance.
+
+### Prompt Repetition Best Practices
+
+- Repeat critical rules, MUST/SHOULD requirements, or safety constraints naturally within workflow phases
+- Use concise restatement rather than verbatim duplication
+- Focus on essentials: only repeat information critical for correct execution
 
 ## Pattern References
 

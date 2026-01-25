@@ -255,3 +255,9 @@ You are an expert. Verify agents are valid.  # ← Confusing: 2nd person + imper
 You are an expert. Validate all agents...     # ← Instruction-type
 Verify agents have required fields...         # ← Knowledge-type
 ```
+
+### Prompt Repetition Best Practices
+
+- Repeat critical rules, MUST/SHOULD requirements, or safety constraints naturally within workflow phases
+- Use concise restatement rather than verbatim duplication
+- Focus on essentials: only repeat information critical for correct execution

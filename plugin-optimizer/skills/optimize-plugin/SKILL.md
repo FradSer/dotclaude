@@ -1,6 +1,6 @@
 ---
 name: optimize-plugin
-description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", or mentions plugin optimization and validation tasks.
+description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", "review plugin structure", or mentions plugin optimization and validation tasks.
 argument-hint: <plugin-path>
 user-invocable: true
 allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "AskUserQuestion"]
@@ -8,24 +8,15 @@ allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "Ask
 
 # Plugin Optimization
 
-Comprehensive plugin validation and optimization workflow. Orchestrate validation through specialized agent that applies fixes based on `plugin-optimizer:plugin-best-practices` skill.
+Execute plugin validation and optimization workflow through specialized agent.
 
 **Target plugin:** $ARGUMENTS
-
-## Core Principles
-
-- **Strict Phases**: Follow phases sequentially without skipping steps
-- **User Confirmation**: Ask for user input and decisions where specified
-- **Agent-Based Optimization**: Delegate all fixes to specialized agent
-- **Reference-Driven**: Agent must consult appropriate `references/` files for each issue category
 
 ---
 
 ## Phase 1: Discovery & Validation
 
 **Goal**: Validate plugin structure and detect all issues. Orchestrator MUST NOT apply fixes in this phase.
-
-**Orchestrator Role**: Run validation scripts, ask user for decisions, compile issues list.
 
 **Actions**:
 1. **Path Resolution**: Use `realpath` to resolve absolute path from `$ARGUMENTS`
@@ -50,8 +41,6 @@ Comprehensive plugin validation and optimization workflow. Orchestrate validatio
    - Warnings (SHOULD fix)
    - Info (MAY improve)
 
-**Critical**: Orchestrator MUST NOT fix any issues. All fixes delegated to agent in Phase 2.
-
 ---
 
 ## Phase 2: Agent-Based Optimization
@@ -64,8 +53,68 @@ Comprehensive plugin validation and optimization workflow. Orchestrate validatio
    - Target plugin absolute path
    - Validation issues from Phase 1 (organized by severity)
    - User decisions (migration choice if applicable)
+   - Current workflow phase: "initial fixes"
+   - **Path reference validation rules**:
+     - Files within same skill/agent directory: Use relative paths (e.g., `./reference.md`, `examples/example.md`)
+     - Files outside skill/agent directory: MUST use `${CLAUDE_PLUGIN_ROOT}` paths (e.g., `${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh`, `${CLAUDE_PLUGIN_ROOT}/lib/utils.sh`)
+     - Verify all file references follow correct path pattern
+   - **Component templates** (for reference when creating/fixing components):
+     
+     **Instruction-Type Skill** (`user-invocable: true` → `commands`):
+     - Imperative voice: "Load...", "Create...", "Analyze..."
+     - Structure: Phase-based workflow with Actions lists
+     - Example:
+       ```markdown
+       ## Phase 1: Preparation
+       **Actions**:
+       1. Gather required input
+       2. Load necessary knowledge skills
+       3. Validate preconditions
+       ```
+     
+     **Knowledge-Type Skill** (`user-invocable: false` → `skills`):
+     - Declarative voice: "Commands are...", "Skills provide...", "Use when..."
+     - Structure: Topic-based sections with rules and best practices
+     - Example:
+       ```markdown
+       ## Core Concepts
+       Components are modular units that extend Claude's capabilities.
+       
+       **Best Practices**:
+       - Components MUST follow naming conventions
+       - Components SHOULD have clear responsibilities
+       ```
+     
+     **Agent**:
+     - Descriptive voice: "You are an expert [domain] specialist..."
+     - Structure: Core Responsibilities, Knowledge Base, Approach sections
+     - Example:
+       ```markdown
+       You are an expert [domain] specialist for [context].
+
+       ## Knowledge Base
+       The loaded `[plugin-name]:[skill-name]` skill provides:
+       - [Domain] standards and validation rules
+
+       ## Core Responsibilities
+       1. **Analyze [inputs]** to understand requirements
+       2. **Apply [expertise]** based on domain knowledge
+       3. **Generate [outputs]** meeting quality criteria
+
+       ## Approach
+       - **Autonomous**: Make decisions based on expertise
+       - **Comprehensive**: Track all actions and results
+       ```
 3. Wait for agent to complete optimization workflow
 4. Receive list of applied fixes from agent
+5. **Update Plugin Documentation**:
+   - Update README.md with current plugin structure, components, and usage
+   - Ensure README reflects any migrations or structural changes
+6. **Update Plugin Version**:
+   - Increment version in `.claude-plugin/plugin.json` based on extent of changes:
+     - Patch (x.y.Z+1): Bug fixes, minor corrections
+     - Minor (x.Y+1.0): New components, feature additions
+     - Major (X+1.0.0): Breaking changes, major migrations
 
 **Critical**: Launch agent ONCE with all context. Orchestrator MUST NOT make fixes in main session.
 
@@ -77,19 +126,18 @@ Comprehensive plugin validation and optimization workflow. Orchestrate validatio
 
 **Actions**:
 1. Resume SAME agent from Phase 2 (preserve context)
-2. Agent performs redundancy analysis and quality review
+2. Agent performs redundancy analysis and quality review:
+   - Identify true duplication (verbatim repetition without purpose)
+   - **Allow strategic repetition** of critical content: core validation rules, MUST/SHOULD requirements, safety constraints, key workflow steps that must not be missed, critical decision points or constraints, templates, and examples
+   - Distinguish progressive disclosure (summary → detail) from redundancy
 3. Agent asks for user confirmation before applying fixes
 4. Receive report of redundancy and quality improvements
-
-**Critical**: Resume agent from Phase 2. Orchestrator MUST NOT spawn new agent.
 
 ---
 
 ## Phase 4: Final Verification
 
 **Goal**: Re-run validation scripts to verify all fixes were applied correctly.
-
-**Orchestrator Role**: You take back control. Run validation suite ONCE to verify.
 
 **Actions**:
 1. **Re-run Validation Suite** using Bash tool:
@@ -98,9 +146,12 @@ Comprehensive plugin validation and optimization workflow. Orchestrate validatio
    - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
    - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
 2. **Compare Results**: Compare with Phase 1 validation to confirm critical issues resolved
-3. **Document Remaining Issues**: Note any issues that remain (design decisions, optional improvements)
-
-**Critical**: Orchestrator MUST NOT attempt fixes in this phase. Only verify and document.
+3. **Fix Remaining Issues**: If validation reveals new or unresolved issues:
+   - Resume agent from Phase 2-3 (preserve context)
+   - Provide remaining issues from verification results
+   - Wait for agent to apply additional fixes
+   - Receive updated fix report
+4. **Document Remaining Issues**: Note any issues that remain (design decisions, optional improvements)
 
 ---
 
@@ -108,7 +159,11 @@ Comprehensive plugin validation and optimization workflow. Orchestrate validatio
 
 **Goal**: Generate comprehensive validation report with all findings and fixes.
 
-**Orchestrator Role**: Synthesize all phase results into final report.
+**Actions**:
+1. Synthesize all phase results into final report
+2. Use report format template below
+3. Include: issues detected, fixes applied, verification results, component inventory, remaining issues, recommendations
+4. Provide overall assessment (PASS/FAIL) with detailed reasoning
 
 **Report Format**:
 

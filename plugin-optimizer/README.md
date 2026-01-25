@@ -20,7 +20,7 @@ claude --plugin-dir ./plugin-optimizer
 
 ## Overview
 
-The Plugin Optimizer analyzes existing Claude Code plugins to ensure they follow official standards and best practices. It checks plugin structure, component formatting, metadata completeness, and tool invocation patterns, then provides detailed optimization reports with actionable recommendations.
+The Plugin Optimizer validates Claude Code plugins against official best practices and file patterns. It checks plugin structure, component formatting, metadata completeness, and tool invocation patterns, providing detailed optimization reports with actionable recommendations.
 
 ## Features
 
@@ -79,43 +79,38 @@ commands/deploy.md:
 
 User-initiated plugin optimization workflow accepting plugin path as argument.
 
-**Technical implementation**: User-invocable skill (`user-invocable: true`) stored in `skills/optimize-plugin/` and registered in `plugin.json` `commands` array. This follows the modern pattern where skills can serve as commands.
+**Technical implementation**: User-invocable skill (`user-invocable: true`) stored in `skills/optimize-plugin/` and registered in `plugin.json` `commands` array following the modern pattern where skills serve as commands.
 
-**What it does**: Executes a 7-phase validation and optimization workflow that launches the plugin-optimizer agent to analyze plugin structure, fix issues, and generate comprehensive reports.
+**What it does**: Executes a multi-phase validation and optimization workflow that launches the plugin-optimizer agent to analyze plugin structure, fix issues, and generate comprehensive reports.
 
 ### Skill: plugin-best-practices
 
-Background knowledge base (non-user-invocable) loaded by the plugin-optimizer agent. Covers:
-- Plugin structure and organization standards
-- Component development patterns (commands, agents, skills, hooks)
-- Tool invocation best practices
-- File format validation rules
-- Progressive disclosure and redundancy analysis
+Background knowledge base (non-user-invocable) loaded by the plugin-optimizer agent. Provides comprehensive validation standards including plugin structure, component patterns, tool invocation best practices, file format rules, and progressive disclosure guidelines.
 
 **Technical implementation**: Knowledge-type skill (`user-invocable: false`) stored in `skills/plugin-best-practices/` with extensive `references/` subdirectory, registered in `plugin.json` `skills` array.
 
 ### Agent: plugin-optimizer
 
-Autonomous analysis agent launched by the optimize-plugin workflow. Validates plugins against best practices, applies automated fixes, performs redundancy analysis, and generates quality reports. Preloads the plugin-best-practices skill for validation rules.
+Autonomous analysis agent launched by the optimize-plugin workflow. Validates plugins against best practices, applies automated fixes, performs redundancy analysis, and generates quality reports. Preloads the plugin-best-practices skill for comprehensive validation rules.
 
 ### Validation Scripts
 
 Four automated validators in `scripts/`:
-- Manifest structure and required fields
-- Component frontmatter (YAML)
-- Tool invocation anti-patterns
-- File naming and format conventions
+- **Manifest structure**: Validates plugin.json schema and required fields
+- **Component frontmatter**: Validates YAML frontmatter in component files
+- **Tool invocations**: Checks for anti-patterns in tool usage
+- **File patterns**: Validates naming conventions and directory structure
 
-See `skills/plugin-best-practices/SKILL.md` for detailed validation workflow and best practices knowledge.
+See `skills/plugin-best-practices/SKILL.md` for detailed validation workflow and best practices.
 
 ## Structure
 
 ```
 plugin-optimizer/
 ├── .claude-plugin/
-│   └── plugin.json              # Manifest (commands: [./skills/optimize-plugin/])
+│   └── plugin.json              # Manifest (skills: [./skills/plugin-best-practices/], commands: [./skills/optimize-plugin/])
 ├── agents/
-│   └── plugin-optimizer.md      # Analysis agent
+│   └── plugin-optimizer.md      # Autonomous analysis agent
 ├── scripts/                     # Validation utilities
 │   ├── validate-file-patterns.sh
 │   ├── validate-plugin-json.sh
@@ -123,9 +118,9 @@ plugin-optimizer/
 │   └── check-tool-invocations.sh
 ├── skills/
 │   ├── optimize-plugin/         # User-invocable skill (registered as command)
-│   │   └── SKILL.md            # 7-phase optimization workflow
+│   │   └── SKILL.md            # Multi-phase optimization workflow
 │   └── plugin-best-practices/   # Knowledge-type skill (agent-only)
-│       ├── SKILL.md            # Core validation rules (121 lines)
+│       ├── SKILL.md            # Core validation rules
 │       └── references/          # Detailed documentation (14 files)
 │           └── components/      # Component-specific guides
 └── README.md
