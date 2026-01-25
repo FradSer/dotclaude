@@ -7,43 +7,7 @@ Plugins can provide specialized subagents for specific tasks that Claude can inv
 
 ## Recommended agent structure (matches plugin agents)
 
-```markdown
----
-name: code-reviewer
-description: Use this agent when reviewing code changes for quality and security. Trigger when user asks "review my changes", "do a code review", or after a refactor. Examples:
-
-<example>
-Context: User asks for code review
-user: "Can you review this?"
-assistant: "I'll use the code-reviewer agent to review the changes."
-<commentary>
-Direct review request should route to this agent.
-</commentary>
-</example>
-
-model: inherit
-color: blue
-tools: ["Read", "Glob", "Grep", "Bash"]
----
-
-You are a senior code reviewer.
-
-## Core Responsibilities
-
-1. Identify critical issues first (security, correctness)
-2. Flag warnings (maintainability, performance)
-3. Provide specific, actionable suggestions
-
-## Output Format
-
-Output format:
-## Critical issues
-- ...
-## Warnings
-- ...
-## Suggestions
-- ...
-```
+Use this template when you need the canonical agent frontmatter and system prompt structure. See `${CLAUDE_PLUGIN_ROOT}/examples/agent.md` for the complete agent template.
 
 ## Frontmatter
 
@@ -129,56 +93,6 @@ Note: `Stop` hooks in frontmatter are automatically converted to `SubagentStop` 
     ]
   }
 }
-```
-
-## Patterns
-
-```markdown
----
-name: analyzer
-description: Read-only analysis specialist. Trigger for "analyze", "inspect", "explain how this works". Examples:
-
-color: blue
-tools: ["Read", "Glob", "Grep", "Bash"]
-model: inherit
----
-```
-
-```markdown
----
-name: generator
-description: Generate/refactor code with minimal edits. Trigger when user asks to "implement", "add feature", or "refactor". Examples:
-
-color: magenta
-tools: ["Read", "Write", "Edit"]
-model: sonnet
-permissionMode: acceptEdits
----
-```
-
-```markdown
----
-name: validator
-description: Fast validation/checks. Trigger when user asks to "run tests", "lint", or "validate". Examples:
-
-color: yellow
-tools: ["Read", "Bash(test:*)"]
-model: haiku
----
-```
-
-```markdown
----
-name: db-reader
-description: Execute read-only database queries.
-tools: ["Bash"]
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: "./scripts/validate-readonly-query.sh"
----
 ```
 
 ## Best practices

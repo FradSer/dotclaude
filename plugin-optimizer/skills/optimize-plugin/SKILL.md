@@ -3,7 +3,7 @@ name: optimize-plugin
 description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", "review plugin structure", or mentions plugin optimization and validation tasks.
 argument-hint: <plugin-path>
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "AskUserQuestion"]
+allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "AskUserQuestion", "TodoWrite"]
 ---
 
 # Plugin Optimization
@@ -11,6 +11,19 @@ allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "Ask
 Execute plugin validation and optimization workflow through specialized agent.
 
 **Target plugin:** $ARGUMENTS
+
+---
+
+## Phase 0: Initialization
+
+**Goal**: Set up task tracking for the optimization workflow.
+
+**Actions**:
+1. Use TodoWrite tool to create task list with all phases:
+   - **Phase 1: Discovery & Validation** - Validate plugin structure and detect all issues
+   - **Phase 2: Agent-Based Optimization & Quality Analysis** - Launch agent to apply fixes and perform quality improvements
+   - **Phase 3: Final Verification** - Re-run validation scripts to verify all fixes
+   - **Phase 4: Summary Report** - Generate comprehensive validation report
 
 ---
 
@@ -26,26 +39,76 @@ Execute plugin validation and optimization workflow through specialized agent.
    - Find component directories: `commands/`, `agents/`, `skills/`, `hooks/`
    - Verify auto-discovery configuration
    - Report missing directories or files (MUST NOT create them)
-4. **Modern Architecture Assessment**:
+4. **Skill Type Classification & Manifest Validation**:
+   - For each SKILL.md file, classify it using the checklist below (Instruction-type vs Knowledge-type)
+   - Validate plugin.json declarations match skill types
+   - Report mismatches as CRITICAL issues
+   - Record classification results for Phase 2 agent
+5. **Modern Architecture Assessment**:
    - If `commands/` directory exists with `.md` files:
-     - Ask user: "This plugin uses legacy `commands/` structure. Modern best practice recommends `skills/` for better modularity. Would you like to migrate commands to skills structure?"
-     - Options: "Yes, migrate to skills" / "No, keep commands as-is"
+     - Ask user about migrating to skills structure
      - Record user decision for Phase 2
-5. **Execute Validation Suite** - Run all scripts using Bash tool:
+6. **Execute Validation Suite** - Run all scripts:
    - **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
    - **Manifest**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"`
    - **Components**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"`
    - **Anti-Patterns**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
-6. **Analysis**: Review output from all scripts and compile comprehensive list of issues by severity:
+7. **Analysis**: Compile comprehensive list of issues by severity:
    - Critical issues (MUST fix)
    - Warnings (SHOULD fix)
    - Info (MAY improve)
 
+### Skill Type Classification
+
+Classify each `./skills/**/SKILL.md` as Instruction-type vs Knowledge-type, then verify the `plugin.json` declaration matches.
+
+1. Read the complete file (frontmatter + body) so you can compare metadata vs writing style
+2. Check frontmatter `user-invocable`:
+   - `user-invocable: true` -> Instruction-type (preliminary)
+   - `user-invocable: false` -> Knowledge-type (preliminary)
+   - Missing -> Continue with content analysis
+3. Determine the natural writing style (pick the best match):
+
+Imperative indicators (Instruction-type):
+- Imperative verbs: "Load", "Create", "Execute", "Analyze", "Generate", "Launch"
+- Phase/step structure: "## Phase 1", "## Step 1", "**Actions**:"
+- Workflow sequences: numbered action lists, linear process flow
+- Direct constraints: "MUST NOT apply fixes", "Wait for agent"
+
+Declarative indicators (Knowledge-type):
+- Declarative verbs: "is", "are", "provides", "defines", "describes"
+- Topic-based structure: "## Core Concepts", "## Best Practices", "## Patterns"
+- Reference content: definitions, tables, examples without an execution sequence
+- Teaching tone: "Skills are...", "Use when...", "Components MUST..."
+
+4. Flag CRITICAL mismatches:
+   - Frontmatter vs content conflict -> CRITICAL
+   - Content style implies Instruction-type but missing phase structure -> CRITICAL template violation
+5. Validate `plugin.json` declaration:
+   - Instruction-type MUST be in `commands`
+   - Knowledge-type MUST be in `skills`
+6. Record results for Phase 2 agent:
+   - Skill path, detected type, `user-invocable` value, manifest location, style indicators, recommended fix
+
+Mismatch examples:
+```text
+Skill `./skills/foo/SKILL.md` has `user-invocable: true` but uses declarative style (suggests Knowledge-type)
+Instruction-type skill `./skills/bar/` declared in `skills`, MUST move to `commands`
+Skill `./skills/baz/` uses imperative voice but missing phase structure (should follow Instruction-type template)
+```
+
+Quick reference:
+
+| Type | user-invocable | Voice | Structure | Declared in |
+|------|----------------|-------|-----------|-------------|
+| Instruction | `true` | Imperative | Phase-based | `commands` |
+| Knowledge | `false` | Declarative | Topic-based | `skills` |
+
 ---
 
-## Phase 2: Agent-Based Optimization
+## Phase 2: Agent-Based Optimization & Quality Analysis
 
-**Goal**: Launch agent to apply ALL fixes based on issues found in Phase 1.
+**Goal**: Launch agent to apply ALL fixes based on issues found in Phase 1, including redundancy and quality improvements.
 
 **Actions**:
 1. Launch `plugin-optimizer:plugin-optimizer` agent
@@ -53,64 +116,26 @@ Execute plugin validation and optimization workflow through specialized agent.
    - Target plugin absolute path
    - Validation issues from Phase 1 (organized by severity)
    - User decisions (migration choice if applicable)
-   - Current workflow phase: "initial fixes"
+   - Current workflow phase: "optimization and quality analysis"
    - **Path reference validation rules**:
      - Files within same skill/agent directory: Use relative paths (e.g., `./reference.md`, `examples/example.md`)
-     - Files outside skill/agent directory: MUST use `${CLAUDE_PLUGIN_ROOT}` paths (e.g., `${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh`, `${CLAUDE_PLUGIN_ROOT}/lib/utils.sh`)
+     - Files outside skill/agent directory: MUST use `${CLAUDE_PLUGIN_ROOT}` paths
      - Verify all file references follow correct path pattern
-   - **Component templates** (for reference when creating/fixing components):
-     
-     **Instruction-Type Skill** (`user-invocable: true` → `commands`):
-     - Imperative voice: "Load...", "Create...", "Analyze..."
-     - Structure: Phase-based workflow with Actions lists
-     - Example:
-       ```markdown
-       ## Phase 1: Preparation
-       **Actions**:
-       1. Gather required input
-       2. Load necessary knowledge skills
-       3. Validate preconditions
-       ```
-     
-     **Knowledge-Type Skill** (`user-invocable: false` → `skills`):
-     - Declarative voice: "Commands are...", "Skills provide...", "Use when..."
-     - Structure: Topic-based sections with rules and best practices
-     - Example:
-       ```markdown
-       ## Core Concepts
-       Components are modular units that extend Claude's capabilities.
-       
-       **Best Practices**:
-       - Components MUST follow naming conventions
-       - Components SHOULD have clear responsibilities
-       ```
-     
-     **Agent**:
-     - Descriptive voice: "You are an expert [domain] specialist..."
-     - Structure: Core Responsibilities, Knowledge Base, Approach sections
-     - Example:
-       ```markdown
-       You are an expert [domain] specialist for [context].
-
-       ## Knowledge Base
-       The loaded `[plugin-name]:[skill-name]` skill provides:
-       - [Domain] standards and validation rules
-
-       ## Core Responsibilities
-       1. **Analyze [inputs]** to understand requirements
-       2. **Apply [expertise]** based on domain knowledge
-       3. **Generate [outputs]** meeting quality criteria
-
-       ## Approach
-       - **Autonomous**: Make decisions based on expertise
-       - **Comprehensive**: Track all actions and results
-       ```
-3. Wait for agent to complete optimization workflow
-4. Receive list of applied fixes from agent
-5. **Update Plugin Documentation**:
+   - **Component templates**: See `${CLAUDE_PLUGIN_ROOT}/examples/` for complete templates and validation checklist
+   - **Redundancy analysis requirements**:
+     - Identify true duplication (verbatim repetition without purpose)
+     - **Allow strategic repetition** of critical content: core validation rules, MUST/SHOULD requirements, safety constraints, key workflow steps that must not be missed, critical decision points or constraints, templates, and examples
+     - Distinguish progressive disclosure (summary → detail) from redundancy
+3. Agent performs optimization workflow:
+   - Apply all fixes based on Phase 1 issues
+   - Perform redundancy analysis and quality review
+   - Ask for user confirmation before applying redundancy fixes
+4. Wait for agent to complete all optimization tasks
+5. Receive comprehensive list of applied fixes from agent (including redundancy and quality improvements)
+6. **Update Plugin Documentation**:
    - Update README.md with current plugin structure, components, and usage
    - Ensure README reflects any migrations or structural changes
-6. **Update Plugin Version**:
+7. **Update Plugin Version**:
    - Increment version in `.claude-plugin/plugin.json` based on extent of changes:
      - Patch (x.y.Z+1): Bug fixes, minor corrections
      - Minor (x.Y+1.0): New components, feature additions
@@ -120,22 +145,7 @@ Execute plugin validation and optimization workflow through specialized agent.
 
 ---
 
-## Phase 3: Redundancy & Quality Analysis
-
-**Goal**: Identify and fix content duplication, validate documentation quality.
-
-**Actions**:
-1. Resume SAME agent from Phase 2 (preserve context)
-2. Agent performs redundancy analysis and quality review:
-   - Identify true duplication (verbatim repetition without purpose)
-   - **Allow strategic repetition** of critical content: core validation rules, MUST/SHOULD requirements, safety constraints, key workflow steps that must not be missed, critical decision points or constraints, templates, and examples
-   - Distinguish progressive disclosure (summary → detail) from redundancy
-3. Agent asks for user confirmation before applying fixes
-4. Receive report of redundancy and quality improvements
-
----
-
-## Phase 4: Final Verification
+## Phase 3: Final Verification
 
 **Goal**: Re-run validation scripts to verify all fixes were applied correctly.
 
@@ -147,7 +157,7 @@ Execute plugin validation and optimization workflow through specialized agent.
    - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"`
 2. **Compare Results**: Compare with Phase 1 validation to confirm critical issues resolved
 3. **Fix Remaining Issues**: If validation reveals new or unresolved issues:
-   - Resume agent from Phase 2-3 (preserve context)
+   - Resume agent from Phase 2 (preserve context)
    - Provide remaining issues from verification results
    - Wait for agent to apply additional fixes
    - Receive updated fix report
@@ -155,24 +165,24 @@ Execute plugin validation and optimization workflow through specialized agent.
 
 ---
 
-## Phase 5: Summary Report
+## Phase 4: Summary Report
 
 **Goal**: Generate comprehensive validation report with all findings and fixes.
 
 **Actions**:
 1. Synthesize all phase results into final report
-2. Use report format template below
+2. Use the report format below
 3. Include: issues detected, fixes applied, verification results, component inventory, remaining issues, recommendations
 4. Provide overall assessment (PASS/FAIL) with detailed reasoning
 
-**Report Format**:
+### Report Template
 
 ```markdown
 ## Plugin Validation Report
 
 ### Plugin: [name]
 Location: [absolute-path]
-Version: [old] → [new]
+Version: [old] -> [new]
 
 ### Summary
 [Overall assessment with key statistics]
@@ -187,7 +197,7 @@ Version: [old] → [new]
 #### Info ([count])
 - `file/path` - [Suggestion]
 
-### Phase 2-3: Fixes Applied
+### Phase 2: Fixes Applied
 #### Structure Fixes
 - [Fix description]
 
@@ -232,3 +242,11 @@ Version: [old] → [new]
 ### Overall Assessment
 [PASS/FAIL] - [Detailed reasoning based on validation results]
 ```
+
+Section guidelines (keep these while writing, omit them from the final report if the user asks for brevity):
+- Summary: 2-3 sentences, include counts and whether production-ready
+- Issues: sort Critical -> Warnings -> Info, include line numbers when relevant
+- Fixes: group by category, be concrete about changes
+- Verification: report PASS/FAIL per script and compare vs Phase 1
+- Inventory: counts for found vs valid per component type
+- Remaining issues: explain why not fixed (blocker vs design), include manual next steps

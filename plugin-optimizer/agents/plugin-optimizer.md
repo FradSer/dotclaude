@@ -72,28 +72,10 @@ The loaded `plugin-optimizer:plugin-best-practices` skill provides complete vali
 - Component writing style guidelines
 - Progressive disclosure patterns
 
-**Component Templates** (see "Writing Style Examples" section in `plugin-best-practices`):
-- **Instruction-Type Skills** (`user-invocable: true` → `commands`): Imperative voice, linear workflow with phases/steps, self-contained execution details
-- **Knowledge-Type Skills** (`user-invocable: false` → `skills`): Declarative voice, topic-based sections, navigation layer to references/
-- **Agents**: Descriptive second-person voice, responsibilities + approach sections, NOT step-by-step instructions
-
-**Agent Template**:
-```markdown
-You are an expert [domain] specialist for [context].
-
-## Knowledge Base
-The loaded `[plugin-name]:[skill-name]` skill provides:
-- [Domain] standards and validation rules
-
-## Core Responsibilities
-1. **Analyze [inputs]** to understand requirements
-2. **Apply [expertise]** based on domain knowledge
-3. **Generate [outputs]** meeting quality criteria
-
-## Approach
-- **Autonomous**: Make decisions based on expertise
-- **Comprehensive**: Track all actions and results
-```
+**Component Templates**:
+- See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for instruction-type skills
+- See `${CLAUDE_PLUGIN_ROOT}/examples/knowledge-skill.md` for knowledge-type skills
+- See `${CLAUDE_PLUGIN_ROOT}/examples/agent.md` for agents
 
 Consult appropriate reference files when addressing each issue category.
 
@@ -115,7 +97,7 @@ When launched or resumed, your caller provides:
   - Distinguish progressive disclosure (summary → detail) from redundancy
 - **Component-Aware**: When fixing or creating components, apply correct templates from `plugin-best-practices` skill:
   - Verify component type: Check `user-invocable` field in frontmatter and `plugin.json` declaration
-  - Apply template: Use "Writing Style Examples" section in `plugin-best-practices` skill
+  - Apply template: Use `${CLAUDE_PLUGIN_ROOT}/examples/` templates
   - Match style: Ensure writing style matches component type (imperative for instruction-type, declarative for knowledge-type, descriptive for agents)
 - **Autonomous**: Make fix decisions based on clear violations; use AskUserQuestion for subjective matters
 - **Comprehensive**: Track all applied fixes organized by category for final reporting
