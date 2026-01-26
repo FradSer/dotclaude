@@ -20,7 +20,7 @@ echo
 
 # Anti-pattern regex patterns
 # Only core file operations should be implicit.
-# Interaction/System tools (AskUserQuestion, TodoWrite, etc) represent specific workflow steps and are OK to call explicitly.
+# Interaction/System tools (AskUserQuestion, TaskCreate, etc) represent specific workflow steps and are OK to call explicitly.
 CORE_TOOLS_PATTERN="(Use|Call|Using) (the )?(Read|Write|Glob|Grep|Edit) tool"
 BASH_TOOL_PATTERN="(Use|Call|Using) (the )?Bash tool"
 TASK_TOOL_PATTERN="(Use|Call) (the )?Task tool to launch [a-z-]+"

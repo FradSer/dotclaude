@@ -57,7 +57,7 @@ Core file operations (Read, Write, Glob, Grep, Edit, Bash, Task) use implicit st
 | Task | Implicit | "Launch `plugin-name:agent-name` agent" (NOT "Use Task tool") |
 | Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" |
 | AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" |
-| TodoWrite | **Explicit** | "**Use TodoWrite tool** to track progress" |
+| TaskCreate | **Explicit** | "**Use TaskCreate tool** to track progress" |
 
 **Qualified names**: Plugin components MUST use `plugin-name:component-name` format. Claude Code built-in components use their own names directly.
 
@@ -75,7 +75,7 @@ See `references/tool-invocations.md` for complete patterns and examples.
 
 ## Validation Checklist
 
-- Skills are under 500 lines with progressive disclosure to `references/`.
+- Skills are under 500 lines with progressive disclosure to supporting files (same directory or `references/` subdirectory).
 - Agents include clear delegation descriptions and a single responsibility.
 - Agent descriptions include 2–4 `<example>` blocks.
 - Component names use kebab-case.
@@ -102,7 +102,11 @@ Links to external templates or example files include a one-sentence description 
 
 ## Additional Resources
 
-Reference documents live in `references/`:
+Supporting files MAY be placed at SKILL.md level or in a `references/` subdirectory:
+- Same level: `./component-guide.md`, `./examples.md`
+- Subdirectory: `references/detailed-rules.md`, `references/components/agents.md`
+
+This plugin's reference documents:
 - **Components**: `references/components/[type].md` — component-specific requirements.
 - **Structure**: `references/directory-structure.md` — layout and naming conventions.
 - **Manifest**: `references/manifest-schema.md` — plugin.json schema and configuration.
@@ -110,11 +114,12 @@ Reference documents live in `references/`:
 - **MCP Patterns**: `references/mcp-patterns.md` — MCP server integration.
 - **Debugging**: `references/debugging.md` — diagnostics for loading failures.
 - **CLI Commands**: `references/cli-commands.md` — plugin CLI operations.
-- **TodoWrite Tool**: `references/todowrite-usage.md` — TodoWrite usage.
+- **Task Management**: `references/task-management.md` — TaskCreate and TaskUpdate usage.
 
 ## Prompt Repetition
 
-- Critical rules and safety constraints appear in multiple phases only when execution depends on it.
+- Critical rules and safety constraints MAY appear in multiple phases when execution depends on it.
+- Strategic repetition is allowed for: core rules, safety constraints, MUST/SHOULD requirements, templates, and examples.
 - Repetition favors concise restatement rather than verbatim duplication.
 
 ## Parallel Agent Execution

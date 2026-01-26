@@ -34,7 +34,7 @@ Launch the Explore agent to analyze codebase
 **Workflow & External Tools:**
 - Skill: "**Load `plugin-name:skill-name` skill** using the Skill tool"
 - AskUserQuestion: "Use `AskUserQuestion` tool to [action]"
-- TodoWrite: "**Use TodoWrite tool** to track progress"
+- TaskCreate: "**Use TaskCreate tool** to track progress"
 - WebFetch, WebSearch: "Use WebFetch tool to read docs"
 
 ```markdown
@@ -43,7 +43,7 @@ Launch the Explore agent to analyze codebase
 **Load `git:conventional-commits` skill** using the Skill tool
 Use `AskUserQuestion` tool to ask user about migration options
 Use `AskUserQuestion` tool to get user confirmation before applying fixes
-**Use TodoWrite tool** to track validation progress
+**Use TaskCreate tool** to track validation progress
 Use WebFetch tool to read official documentation
 ```
 
@@ -98,6 +98,6 @@ Launch the validator agent
 | Bash | Implicit | "Run `git status`", "Check with `npm test`" |
 | Task | Implicit | "Launch `plugin-name:agent-name` agent", "Launch Explore agent" |
 | Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" |
-| TodoWrite | **Explicit** | "**Use TodoWrite tool** to track progress" |
+| TaskCreate | **Explicit** | "**Use TaskCreate tool** to track progress" |
 | AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" |
 | WebFetch/WebSearch | **Explicit** | "Use WebFetch tool to read docs" |
