@@ -8,7 +8,7 @@ Versions follow `MAJOR.MINOR.PATCH`.
 
 - MAJOR:
   - commit footer contains `BREAKING CHANGE:`, or
-  - commit type includes `!` (e.g. `feat!:`, `fix(api)!:`)
+  - commit type includes ! (e.g. `feat!:`, `fix(api)!:`)
 - MINOR:
   - at least one `feat:` since last tag, and no breaking changes
 - PATCH:
