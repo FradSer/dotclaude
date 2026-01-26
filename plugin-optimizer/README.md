@@ -58,9 +58,8 @@ Validates 6 core aspects: structure, commands, agents, skills, tool patterns, an
 CRITICAL (1):
 - commands/deploy.md:5 - Missing required 'description' field in frontmatter
 
-WARNING (3):
+WARNING (2):
 - commands/test.md:12 - Explicit tool call "Use Read tool" should be descriptive
-- agents/reviewer.md:8 - Missing <example> blocks in description
 - skills/api/SKILL.md:23 - Using second person "You should" instead of imperative
 
 INFO (1):

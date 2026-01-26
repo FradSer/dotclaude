@@ -50,28 +50,28 @@ validate_single_file() {
   fi
 
   # Basic YAML syntax validation (pure shell, no dependencies)
-  local yaml_valid=true
+  local is_yaml_valid=true
 
   # Check for tabs (YAML doesn't allow tabs for indentation)
   if echo "$FRONTMATTER" | grep -q $'\t'; then
     echo "✗ CRITICAL: YAML cannot use tabs for indentation"
-    yaml_valid=false
+    is_yaml_valid=false
   fi
 
   # Check for unbalanced quotes
   local quote_count=$(echo "$FRONTMATTER" | grep -o '"' | wc -l | tr -d ' ')
   if [ $((quote_count % 2)) -ne 0 ]; then
     echo "✗ CRITICAL: Unbalanced double quotes in YAML"
-    yaml_valid=false
+    is_yaml_valid=false
   fi
 
   # Check for basic structure (key: value pattern)
   if ! echo "$FRONTMATTER" | grep -q '^[a-zA-Z_-]\+:'; then
     echo "✗ CRITICAL: No valid YAML key-value pairs found"
-    yaml_valid=false
+    is_yaml_valid=false
   fi
 
-  if [ "$yaml_valid" = false ]; then
+  if [ "$is_yaml_valid" = false ]; then
     return 1
   fi
 
@@ -135,13 +135,6 @@ validate_single_file() {
         ((errors++))
       else
         echo "✓ description present"
-
-        # Check for examples in description
-        local FULL_FILE=$(cat "$FILE_PATH")
-        if ! echo "$FULL_FILE" | grep -q "<example>"; then
-          echo "⚠ WARNING: Description should include 2-4 <example> blocks"
-          ((warnings++))
-        fi
       fi
 
       # Required: model
@@ -206,7 +199,6 @@ validate_single_file() {
       fi
 
       # Recommended: argument-hint (optional for skills that accept arguments)
-      echo
       if ! echo "$FRONTMATTER" | grep -q "^argument-hint:"; then
         echo "⚠ INFO: Missing optional 'argument-hint' field"
         echo "  Note: Only needed if skill accepts arguments (helps with autocomplete)"
