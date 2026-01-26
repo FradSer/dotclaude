@@ -118,7 +118,7 @@
     },
     {
       "name": "plugin-optimizer",
-      "version": "0.6.0",
+      "version": "0.9.0",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
