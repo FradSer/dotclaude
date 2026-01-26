@@ -16,47 +16,6 @@ This plugin provides automated Git commands that ensure:
 - **Safety**: Quality gates and protections against committing secrets.
 - **Project Awareness**: Adapts to project-specific configurations.
 
-## Commands
-
-### `/commit`
-Creates atomic conventional commits by analyzing pending changes.
-
-**Features:**
-- **Safety Checks**: Detects sensitive files (.env, credentials, secrets), warns about large files (>1MB), and suggests breaking up commits >500 lines
-- Analyzes staged and unstaged changes
-- Identifies logical units of work
-- Generates concise, "why"-focused commit messages
-- Skips secrets and build artifacts automatically
-
-### `/commit-and-push`
-Creates atomic commits and pushes to the remote repository.
-
-**Features:**
-- All `/commit` features
-- Automatically sets upstream for new branches
-- Verifies push success
-
-### `/gitignore` [technologies...]
-Creates or updates `.gitignore` files.
-
-**Usage:**
-- `/gitignore` - Auto-detect project technologies
-- `/gitignore node react` - Add specific technologies
-
-**Features:**
-- Uses Toptal's API for comprehensive rules
-- Preserves existing custom rules
-- Auto-detects OS and project structure
-
-### `/config-git`
-Interactive git configuration setup.
-
-**Features:**
-- Verifies and sets user.name and user.email
-- Analyzes project structure and commit history
-- Generates project-specific scopes and conventions
-- Creates `.claude/git.local.md` configuration file
-
 ## Skills
 
 This plugin provides 4 user-invocable skills:

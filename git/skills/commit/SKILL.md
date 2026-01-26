@@ -3,6 +3,7 @@ name: commit
 description: Create atomic conventional git commit following the Commitizen (cz) style and v1.0.0 specification
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill"]
+argument-hint: "[no arguments needed]"
 model: haiku
 version: 0.1.0
 ---
@@ -75,24 +76,52 @@ feat(auth): add oauth login flow
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
-## Your Task
+## Phase 1: Configuration Verification
 
-1. **Verify configuration exists**: Check if `.claude/git.local.md` exists. If NOT found, invoke `/config-git` to set up project-specific settings.
+**Goal**: Ensure project-specific git configuration exists
 
-2. **Perform safety checks** on pending changes:
-   - Detect sensitive files (credentials, secrets, .env files)
-   - Warn about large files (>1MB) and large commits (>500 lines)
-   - Request user confirmation if issues found
+**Actions**:
+1. Check if `.claude/git.local.md` exists
+2. If NOT found, invoke `/config-git` to set up project-specific settings
 
-3. **Analyze pending changes** to identify coherent logical units of work and infer the needed commit scope(s). If any inferred scope is not listed in `.claude/git.local.md`, invoke `/config-git` to update the configuration before proceeding.
+---
 
-4. **For each logical unit**:
-   a. Draft the commit message following the Conventional Commits format above
-   b. **Validate the message** against the Title Rules and Body Rules:
-      - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-      - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
-      - Footer: MUST include Co-Authored-By with the current model
-   c. Stage the relevant files
-   d. Create the commit with the validated message (including Co-Authored-By footer)
+## Phase 2: Safety Validation
 
-5. **Repeat** until every change is committed.
+**Goal**: Perform safety checks on pending changes before committing
+
+**Actions**:
+1. Detect sensitive files (credentials, secrets, .env files)
+2. Warn about large files (>1MB) and large commits (>500 lines)
+3. Request user confirmation if issues found
+
+---
+
+## Phase 3: Change Analysis
+
+**Goal**: Identify coherent logical units of work and infer commit scopes
+
+**Actions**:
+1. Run `git diff --cached` (for staged changes) and `git diff` (for unstaged changes) to get the actual code differences
+2. Analyze the diff output to identify coherent logical units of work
+3. Infer the needed commit scope(s) for each logical unit based on the file paths and code changes shown in the diff
+4. If any inferred scope is not listed in `.claude/git.local.md`, invoke `/config-git` to update the configuration before proceeding
+
+---
+
+## Phase 4: Commit Creation
+
+**Goal**: Create atomic commits following Conventional Commits format
+
+**Actions**:
+
+For each logical unit:
+
+1. Draft the commit message following the Conventional Commits format above
+2. **Validate the message** against the Title Rules and Body Rules:
+   - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
+   - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
+   - Footer: MUST include Co-Authored-By with the current model
+3. Stage the relevant files
+4. Create the commit with the validated message (including Co-Authored-By footer)
+5. **Repeat** until every change is committed

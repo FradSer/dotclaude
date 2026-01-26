@@ -3,6 +3,7 @@ name: config-git
 description: Interactive git configuration setup
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
+argument-hint: "[no arguments needed]"
 model: haiku
 context: fork
 version: 0.1.0

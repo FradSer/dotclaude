@@ -17,14 +17,33 @@ version: 0.1.0
 - Project files: Analyze repository structure to detect technologies
 - Available templates: !`curl -sL https://www.toptal.com/developers/gitignore/api/list`
 
-## Requirements
+---
 
-- Combine detected platforms and `$ARGUMENTS` into the generator request (e.g. `macos,node,docker`).
-- Preserve existing custom sections when updating `.gitignore`.
-- Present the resulting diff for confirmation.
+## Phase 1: Technology Detection
 
-## Your Task
+**Goal**: Identify operating systems and technologies to include in .gitignore
 
-1. Detect operating systems and technologies from context plus `$ARGUMENTS`.
-2. Generate or update `.gitignore` using the Toptal API while retaining custom rules.
-3. Show the repository changes to confirm the update.
+**Actions**:
+1. Detect operating systems and technologies from context
+2. Combine detected platforms with `$ARGUMENTS` into the generator request (e.g. `macos,node,docker`)
+
+---
+
+## Phase 2: Generate or Update .gitignore
+
+**Goal**: Create or update .gitignore file using Toptal API
+
+**Actions**:
+1. Generate or update `.gitignore` using the Toptal API
+2. Preserve existing custom sections when updating `.gitignore`
+3. Retain all custom rules from existing file
+
+---
+
+## Phase 3: Confirmation
+
+**Goal**: Present changes for user review
+
+**Actions**:
+1. Show the repository changes (diff) to confirm the update
+2. Present the resulting diff for user confirmation
