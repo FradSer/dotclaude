@@ -23,7 +23,7 @@ RFC 2119 terms are mandatory: use only MUST, MUST NOT, SHOULD, SHOULD NOT, MAY. 
 Skills are markdown prompts that run in the main conversation context and extend knowledge or provide workflows.
 
 Two skill types are supported:
-- **Instruction-type** (`user-invocable: true` → `commands`): imperative voice, phase-based workflows, user-invoked.
+- **Instruction-type** (`user-invocable: true` → `commands`): imperative voice, phase-based workflows (with optional "Initialization" and "Background Knowledge" pre-phase sections), user-invoked.
 - **Knowledge-type** (`user-invocable: false` → `skills`): declarative voice, topic-based references, auto-loaded.
 
 ### Agents
@@ -46,6 +46,25 @@ Key characteristics:
 
 Templates are centralized for reuse across components. See `${CLAUDE_PLUGIN_ROOT}/examples/` for complete templates.
 
+## Tool Invocation Patterns
+
+Core file operations (Read, Write, Glob, Grep, Edit, Bash, Task) use implicit style. Workflow tools require explicit invocation.
+
+| Tool | Style | Format |
+|------|-------|--------|
+| Read, Write, Edit, Glob, Grep | Implicit | "Find files matching...", "Read the file..." |
+| Bash | Implicit | "Run `git status`" (NOT "Use Bash tool") |
+| Task | Implicit | "Launch `plugin-name:agent-name` agent" (NOT "Use Task tool") |
+| Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" |
+| AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" |
+| TodoWrite | **Explicit** | "**Use TodoWrite tool** to track progress" |
+
+**Qualified names**: Plugin components MUST use `plugin-name:component-name` format. Claude Code built-in components use their own names directly.
+
+**Anti-patterns**: "Use Glob tool to find files", "Use Bash tool to run commands", "Ask user about..." (missing tool reference), "Launch my-agent" (missing plugin prefix).
+
+See `references/tool-invocations.md` for complete patterns and examples.
+
 ## plugin.json Declaration
 
 | Config | User invocable | Claude invocable | Declare in |
@@ -62,6 +81,7 @@ Templates are centralized for reuse across components. See `${CLAUDE_PLUGIN_ROOT
 - Component names use kebab-case.
 - Scripts are executable with shebangs and `${CLAUDE_PLUGIN_ROOT}` paths.
 - Tool invocations avoid explicit tool-call phrasing (see `references/tool-invocations.md`).
+- User interaction uses explicit format: "Use `AskUserQuestion` tool to [action]".
 - Skill references use qualified names (`plugin-name:skill-name`).
 - Component paths are relative and start with `./`.
 - Components live at plugin root, not inside `.claude-plugin/`.
