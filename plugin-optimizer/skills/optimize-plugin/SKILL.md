@@ -12,9 +12,24 @@ Execute plugin validation and optimization workflow through specialized agent.
 
 **Target plugin:** $ARGUMENTS
 
+## Background Knowledge
+
+Follow these tool invocation patterns when writing or reviewing plugin content:
+
+| Tool | Style | Correct Format | Wrong Format |
+|------|-------|----------------|--------------|
+| Read, Write, Glob, Grep, Edit | Implicit | "Find files matching...", "Read each file..." | "Use Glob tool to find..." |
+| Bash | Implicit | "Run `git status`" | "Use Bash tool to run..." |
+| Task | Implicit | "Launch `plugin-name:agent-name` agent" | "Use Task tool to launch...", "Launch my-agent" |
+| Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" | "Load X skill", "Load my-skill" |
+| AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" | "Ask user about...", "Confirm with user..." |
+| TodoWrite | **Explicit** | "**Use TodoWrite tool** to track" | "Track progress" |
+
+**Qualified names**: Plugin components MUST use `plugin-name:component-name` format. Claude Code built-in components use their own names.
+
 ---
 
-## Phase 0: Initialization
+## Initialization
 
 **Goal**: Set up task tracking for the optimization workflow.
 
@@ -39,14 +54,27 @@ Execute plugin validation and optimization workflow through specialized agent.
    - Find component directories: `commands/`, `agents/`, `skills/`, `hooks/`
    - Verify auto-discovery configuration
    - Report missing directories or files (MUST NOT create them)
-4. **Skill Type Classification & Manifest Validation**:
-   - For each SKILL.md file, classify it using the checklist below (Instruction-type vs Knowledge-type)
-   - Validate plugin.json declarations match skill types
-   - Report mismatches as CRITICAL issues
-   - Record classification results for Phase 2 agent
+4. **Component Template Validation** (CRITICAL - Read Full File Before Validation):
+   - For each agent file (`./agents/*.md`), validate against Agent Template (see below)
+   - For each skill file (`./skills/**/SKILL.md`):
+     a. **Read complete file** (frontmatter + full body content)
+     b. **Classify type**: Instruction-type (user-invocable: true) vs Knowledge-type (user-invocable: false)
+     c. **Validate frontmatter** against template requirements
+     d. **Validate writing style** (imperative vs declarative)
+     e. **Validate structure** (CRITICAL - Must be thorough):
+        - For Instruction-type: Use validation checklist to verify Phase-based structure
+          * REQUIRED: Check for `## Phase 1:` section (exact format required)
+          * REQUIRED: Verify all execution sections use `## Phase N:` format
+          * REQUIRED: Confirm each Phase has `**Goal**:` subsection
+          * REQUIRED: Confirm each Phase has `**Actions**:` subsection
+          * FORBIDDEN: Any execution section not matching `## Phase N:` pattern (flag as CRITICAL violations)
+        - For Knowledge-type: Verify topic-based sections (not Phase-based)
+     f. **Cross-check plugin.json** declarations match component types
+   - Report ALL template violations as CRITICAL issues with specific line references
+   - Record all validation results for Phase 2 agent
 5. **Modern Architecture Assessment**:
    - If `commands/` directory exists with `.md` files:
-     - Ask user about migrating to skills structure
+     - Use `AskUserQuestion` tool to ask user about migrating to skills structure
      - Record user decision for Phase 2
 6. **Execute Validation Suite** - Run all scripts:
    - **Structure**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"`
@@ -58,51 +86,139 @@ Execute plugin validation and optimization workflow through specialized agent.
    - Warnings (SHOULD fix)
    - Info (MAY improve)
 
-### Skill Type Classification
+### Component Template Validation
 
-Classify each `./skills/**/SKILL.md` as Instruction-type vs Knowledge-type, then verify the `plugin.json` declaration matches.
+Validate that all components conform to their respective templates from `${CLAUDE_PLUGIN_ROOT}/examples/`.
 
-1. Read the complete file (frontmatter + body) so you can compare metadata vs writing style
+#### Agent Template Validation
+
+For each file in `./agents/*.md`, verify:
+
+**Frontmatter Requirements**:
+- `name`: Present and matches filename
+- `description`: Present (MAY include 2-4 `<example>` blocks for routing - optional)
+- `color`: Present (valid values: blue, cyan, green, yellow, magenta, red)
+- `allowed-tools`: Present (array of tool names)
+
+**System Prompt Requirements**:
+- Uses second person: "You are...", "You analyze...", "You perform..."
+- Descriptive voice focusing on capabilities (NOT directive: avoid "Load...", "Execute...")
+
+**Structure Requirements**:
+- **Knowledge Base** section: Documents loaded skills and resources
+- **Core Responsibilities** section: Numbered list of agent duties
+- **Approach** section: Working principles and methodology
+
+**Template Violations** (flag as CRITICAL):
+```text
+agents/[agent-name].md uses imperative "Execute..." instead of descriptive "You execute..."
+agents/[agent-name].md missing "## Core Responsibilities" section
+```
+
+#### Instruction-Type Skill Template Validation
+
+For each skill with `user-invocable: true` in frontmatter:
+
+**Frontmatter Requirements**:
+- `name`: Present
+- `description`: Present (when to invoke skill)
+- `user-invocable: true`: Must be explicitly set
+- `allowed-tools`: Present (array of tool names)
+
+**Writing Style Requirements**:
+- Imperative voice: "Load...", "Create...", "Execute...", "Analyze..."
+- NO declarative descriptions: avoid "is", "are", "provides"
+
+**Structure Requirements (CRITICAL - Must Follow Exact Format)**:
+
+**MANDATORY Phase Format:**
+- MUST use exact format: `## Phase N: [Phase Name]` where N is a number (1, 2, 3, ...)
+- All execution sections MUST follow this pattern (any deviation is CRITICAL violation)
+- Each phase MUST have both subsections:
+  - `**Goal**:` - What this phase accomplishes (single sentence)
+  - `**Actions**:` - Numbered list of steps (1., 2., 3., ...)
+- Linear process flow from start to completion
+
+**Validation Checklist (All Must Pass)**:
+1. REQUIRED: At least one `## Phase 1:` section exists
+2. REQUIRED: All execution sections use `## Phase N:` format (where N = 1, 2, 3...)
+3. REQUIRED: Each Phase section has `**Goal**:` subsection
+4. REQUIRED: Each Phase section has `**Actions**:` subsection
+5. REQUIRED: Actions use numbered lists (1., 2., 3., ...)
+6. FORBIDDEN: Any execution section that does not match `## Phase N:` format pattern
+
+**Optional Sections (Allowed Before Phase 1)**:
+- `## Background Knowledge` - Domain knowledge, format specs, rules
+- `## Initialization` - Setup steps before main workflow
+- `## Context` - Environmental information
+
+**Template Violations** (flag as CRITICAL):
+```text
+skills/[skill-name]/SKILL.md has user-invocable:true but uses declarative voice instead of imperative
+skills/[skill-name]/SKILL.md execution sections do not match "## Phase N:" format (CRITICAL structure violation)
+skills/[skill-name]/SKILL.md has Phase sections but missing **Goal** and **Actions** subsections
+skills/[skill-name]/SKILL.md missing Phase-based structure entirely
+```
+
+#### Knowledge-Type Skill Template Validation
+
+For each skill with `user-invocable: false` or missing field:
+
+**Frontmatter Requirements**:
+- `name`: Present
+- `description`: Present (domain/topic covered)
+- `user-invocable: false`: Should be explicitly set or omitted
+
+**Writing Style Requirements**:
+- Declarative voice: "is", "are", "provides", "defines", "describes"
+- NO imperative instructions: avoid "Load...", "Execute...", "Analyze..."
+
+**Structure Requirements**:
+- Topic-based sections: "## Core Concepts", "## Best Practices", "## Patterns"
+- Reference content: definitions, tables, examples (NOT execution sequences)
+- Teaching tone: "Skills are...", "Use when...", "Components MUST..."
+
+**Template Violations** (flag as CRITICAL):
+```text
+skills/[skill-name]/SKILL.md uses imperative "Execute..." instead of declarative style
+skills/[skill-name]/SKILL.md has Phase structure (should use topic-based sections)
+```
+
+#### Skill Type Classification & Manifest Validation
+
+Classify each `./skills/**/SKILL.md` as Instruction-type vs Knowledge-type:
+
+1. Read the complete file (frontmatter + body)
 2. Check frontmatter `user-invocable`:
    - `user-invocable: true` -> Instruction-type (preliminary)
    - `user-invocable: false` -> Knowledge-type (preliminary)
    - Missing -> Continue with content analysis
-3. Determine the natural writing style (pick the best match):
-
-Imperative indicators (Instruction-type):
-- Imperative verbs: "Load", "Create", "Execute", "Analyze", "Generate", "Launch"
-- Phase/step structure: "## Phase 1", "## Step 1", "**Actions**:"
-- Workflow sequences: numbered action lists, linear process flow
-- Direct constraints: "MUST NOT apply fixes", "Wait for agent"
-
-Declarative indicators (Knowledge-type):
-- Declarative verbs: "is", "are", "provides", "defines", "describes"
-- Topic-based structure: "## Core Concepts", "## Best Practices", "## Patterns"
-- Reference content: definitions, tables, examples without an execution sequence
-- Teaching tone: "Skills are...", "Use when...", "Components MUST..."
-
+3. Determine writing style using indicators above
 4. Flag CRITICAL mismatches:
    - Frontmatter vs content conflict -> CRITICAL
-   - Content style implies Instruction-type but missing phase structure -> CRITICAL template violation
+   - Template structure violations -> CRITICAL
 5. Validate `plugin.json` declaration:
    - Instruction-type MUST be in `commands`
    - Knowledge-type MUST be in `skills`
 6. Record results for Phase 2 agent:
-   - Skill path, detected type, `user-invocable` value, manifest location, style indicators, recommended fix
+   - Component path, detected type, frontmatter values, template violations, recommended fix
 
 Mismatch examples:
 ```text
-Skill `./skills/foo/SKILL.md` has `user-invocable: true` but uses declarative style (suggests Knowledge-type)
-Instruction-type skill `./skills/bar/` declared in `skills`, MUST move to `commands`
-Skill `./skills/baz/` uses imperative voice but missing phase structure (should follow Instruction-type template)
+Skill `./skills/[skill-name]/SKILL.md` has `user-invocable: true` but uses declarative voice (violates Instruction-type template)
+Skill `./skills/[skill-name]/SKILL.md` has `user-invocable: true` but execution sections do not match "## Phase N:" format (CRITICAL structure violation)
+Skill `./skills/[skill-name]/SKILL.md` has sections resembling phases but missing exact format and **Goal**/**Actions** subsections
+Instruction-type skill `./skills/[skill-name]/` declared in `skills`, MUST move to `commands`
+Agent `./agents/[agent-name].md` uses imperative voice instead of descriptive (violates Agent template)
 ```
 
 Quick reference:
 
-| Type | user-invocable | Voice | Structure | Declared in |
-|------|----------------|-------|-----------|-------------|
-| Instruction | `true` | Imperative | Phase-based | `commands` |
-| Knowledge | `false` | Declarative | Topic-based | `skills` |
+| Component Type | user-invocable | Voice | Structure | Declared in |
+|----------------|----------------|-------|-----------|-------------|
+| Agent | N/A | Descriptive (You are...) | Knowledge Base + Core Responsibilities + Approach | `agents` |
+| Instruction Skill | `true` | Imperative (Load...) | Phase-based (Goal + Actions) | `commands` |
+| Knowledge Skill | `false` | Declarative (is/are...) | Topic-based (concepts/patterns) | `skills` |
 
 ---
 
@@ -115,6 +231,7 @@ Quick reference:
 2. Provide context:
    - Target plugin absolute path
    - Validation issues from Phase 1 (organized by severity)
+   - Template validation results (component violations and recommended fixes)
    - User decisions (migration choice if applicable)
    - Current workflow phase: "optimization and quality analysis"
    - **Path reference validation rules**:
@@ -122,16 +239,27 @@ Quick reference:
      - Files outside skill/agent directory: MUST use `${CLAUDE_PLUGIN_ROOT}` paths
      - Verify all file references follow correct path pattern
    - **Component templates**: See `${CLAUDE_PLUGIN_ROOT}/examples/` for complete templates and validation checklist
+   - **Template fix requirements**:
+     - Before applying any template fixes, agent MUST use `AskUserQuestion` tool to present violations and get user approval
+     - Present all detected template violations with specific examples from target plugin
+     - Provide clear explanation of what changes will be made to conform to templates
+     - **For structure violations**, show before/after comparison:
+       * Example: Converting non-Phase sections to `## Phase N: [Name]` format
+       * Example: Adding `**Goal**:` and `**Actions**:` subsections to sections lacking them
+       * Example: Reorganizing knowledge content to optional sections (Background Knowledge, Initialization, Context)
+     - Only proceed with fixes after user explicitly approves
+     - **Structure refactoring priority**: Fix CRITICAL violations first (Phase format, Goal/Actions subsections)
    - **Redundancy analysis requirements**:
      - Identify true duplication (verbatim repetition without purpose)
      - **Allow strategic repetition** of critical content: core validation rules, MUST/SHOULD requirements, safety constraints, key workflow steps that must not be missed, critical decision points or constraints, templates, and examples
      - Distinguish progressive disclosure (summary → detail) from redundancy
 3. Agent performs optimization workflow:
    - Apply all fixes based on Phase 1 issues
+   - **For template violations**: Use `AskUserQuestion` tool BEFORE applying fixes to get user confirmation
    - Perform redundancy analysis and quality review
-   - Ask for user confirmation before applying redundancy fixes
+   - Use `AskUserQuestion` tool to ask for user confirmation before applying redundancy fixes
 4. Wait for agent to complete all optimization tasks
-5. Receive comprehensive list of applied fixes from agent (including redundancy and quality improvements)
+5. Receive comprehensive list of applied fixes from agent (including template conformance, redundancy, and quality improvements)
 6. **Update Plugin Documentation**:
    - Update README.md with current plugin structure, components, and usage
    - Ensure README reflects any migrations or structural changes
@@ -206,6 +334,19 @@ Version: [old] -> [new]
 
 #### Component Fixes
 - [Fix description]
+
+#### Template Conformance
+- **Agents**: [Count] validated, [count] fixed
+  - [Specific agent template fixes applied]
+  - Structure: [count] with proper Knowledge Base/Core Responsibilities/Approach sections
+- **Instruction-type Skills**: [Count] validated, [count] fixed
+  - [Specific instruction skill template fixes applied]
+  - Structure: [count] with Phase-based format (## Phase N: structure)
+  - Goal/Actions: [count] with proper **Goal**/**Actions** subsections
+  - Format violations fixed: [list files converted from ## Your Task to Phase format]
+- **Knowledge-type Skills**: [Count] validated, [count] fixed
+  - [Specific knowledge skill template fixes applied]
+  - Structure: [count] with topic-based sections (not Phase-based)
 
 #### Migration Performed
 - [Details if commands migrated to skills]
