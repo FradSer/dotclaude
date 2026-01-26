@@ -8,73 +8,29 @@ model: haiku
 version: 0.1.0
 ---
 
-## Conventional Commits Format
+## Conventional Commits Quick Reference
 
+Format: `<type>[scope]: <description>` + mandatory bullet-point body + optional footers
+
+**Title**: ALL LOWERCASE, <50 chars, imperative mood, no period. Add ! for breaking changes.
+
+**Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
+
+**Body** (REQUIRED): Blank line after title, then bullet points with imperative verbs. May include context before or explanation after bullets. ≤72 chars/line.
+
+**Footer** (Optional): `Closes #123`, `BREAKING CHANGE: ...`, `Co-Authored-By: ...`
+
+**Example**:
 ```
-<type>[optional scope]: <description>
+<type>(<scope>): <description>
 
-[optional body]
-
-[optional footer(s)]
-```
-
-## Title Rules
-
-- ALL LOWERCASE (no capitalization in description)
-- <50 characters
-- Imperative mood (e.g., "add" not "added")
-- No period at end
-- Add "!" before ":" for breaking changes (e.g., `feat!:`, `feat(api)!:`)
-
-**Common Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
-
-## Body Rules (Mandatory)
-
-- **Body is required** - all commits must include bullet points
-- Blank line after title
-- ≤72 chars/line
-- **Bullet points**: use `- ` prefix, start with imperative verb (Add, Remove, Update, Fix)
-- **Optional paragraphs**: context before bullets, explanation after bullets
-
-**Valid formats**:
-```
-# Simple
-- Add feature X
-- Update component Y
-
-# With explanation
-- Add feature X
-- Update component Y
-
-This improves performance by 50%.
-
-# With context
-Previous implementation caused memory leaks.
-
-- Refactor memory management
-- Add cleanup handlers
-
-Resolves memory issues in production.
-```
-
-## Footer (Optional)
-
-Blank line after body, then optionally add footers:
-
-- Issue references: `Closes #123`, `Fixes #456`
-- Breaking changes: `BREAKING CHANGE: <description>`
-- Co-authorship attribution: `Co-Authored-By: Name <email>`
-
-**Example commit message:**
-```
-feat(auth): add oauth login flow
-
-- Add Google OAuth 2.0 integration
-- Implement callback endpoint handler
-- Update session management
+- <Action> <component> <detail>
+- <Action> <component> <detail>
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
+
+See `references/format-rules.md` for complete specification and examples.
 
 ## Phase 1: Configuration Verification
 
@@ -102,7 +58,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 **Goal**: Identify coherent logical units of work and infer commit scopes
 
 **Actions**:
-1. Run `git diff --cached` (for staged changes) and `git diff` (for unstaged changes) to get the actual code differences
+1. Run `git diff --cached` (for staged changes) and `git diff` (for unstaged changes) to get the actual code differences - MUST NOT traverse files directly
 2. Analyze the diff output to identify coherent logical units of work
 3. Infer the needed commit scope(s) for each logical unit based on the file paths and code changes shown in the diff
 4. If any inferred scope is not listed in `.claude/git.local.md`, invoke `/config-git` to update the configuration before proceeding
@@ -117,10 +73,10 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 For each logical unit:
 
-1. Draft the commit message following the Conventional Commits format above
-2. **Validate the message** against the Title Rules and Body Rules:
+1. Draft the commit message following the Conventional Commits quick reference above (see `references/format-rules.md` for detailed rules)
+2. **Validate the message** against format requirements:
    - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-   - Body: Required; must include at least one `- ` bullet (imperative verb). May include context before bullets and summary/explanation after bullets. Blank line after title; ≤72 chars/line
+   - Body: Required; must include at least one `- ` bullet (imperative verb). Blank line after title; ≤72 chars/line
    - Footer: MUST include Co-Authored-By with the current model
 3. Stage the relevant files
 4. Create the commit with the validated message (including Co-Authored-By footer)

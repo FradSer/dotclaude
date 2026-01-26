@@ -25,7 +25,7 @@ version: 0.1.0
 
 **Actions**:
 1. Detect operating systems and technologies from context
-2. Combine detected platforms with `$ARGUMENTS` into the generator request (e.g. `macos,node,docker`)
+2. Combine detected platforms with `$ARGUMENTS` into the generator request (e.g. `<os>,<language>,<tool>`)
 
 ---
 

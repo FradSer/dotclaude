@@ -2,13 +2,13 @@
 enabled: true
 # Commit Message Conventions
 scopes:
-  - api
-  - ui
-  - auth
-  - db
-  - config
-  - deps
-  - ci
+  - scope1
+  - scope2
+  - scope3
+  - config      # Configuration
+  - deps        # Dependencies
+  - ci          # CI/CD
+  - docs        # Documentation
 types:
   - feat
   - fix
@@ -28,9 +28,9 @@ branch_prefixes:
 # .gitignore Generation Defaults
 gitignore:
   os: [macos, linux, windows]
-  languages: [node, python, go]
-  frameworks: [react, vue, nextjs]
-  tools: [vscode, docker, terraform]
+  languages: [<language1>, <language2>]
+  frameworks: []  # Add project-specific frameworks
+  tools: [<tool1>, <tool2>]
 ---
 
 # Project-Specific Git Settings

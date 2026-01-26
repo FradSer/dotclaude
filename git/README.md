@@ -2,6 +2,8 @@
 
 Conventional Git automation and advanced repository management.
 
+**Version**: 0.4.1
+
 ## Installation
 
 ```bash
@@ -25,6 +27,7 @@ Creates atomic conventional commits following Commitizen style.
 - Validates against conventional commits specification v1.0.0
 - Enforces lowercase descriptions and imperative mood
 - Requires bullet-point body format
+- Detailed format rules in `skills/commit/references/format-rules.md`
 
 ### `/commit-and-push`
 Creates atomic commits and pushes to remote repository.
