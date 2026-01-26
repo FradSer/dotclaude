@@ -5,21 +5,31 @@
 **Frontmatter Requirements**:
 ```yaml
 ---
-name: domain-specialist
+name: agent-name
 description: |
-  Expert agent for domain analysis and validation.
+  Expert agent for [primary purpose and domain].
 
   <example>
-  User: "Analyze this component"
-  Agent: Performs domain-specific analysis
+  Context: [Brief context describing the user's intent]
+  user: "[User's request or command]"
+  assistant: "I'll launch the agent-name agent to [describe what the agent will do], [key actions], and [expected outcome]."
+  <commentary>
+  [Explanation of why this example matches the agent's purpose and what makes it appropriate]
+  </commentary>
   </example>
 
   <example>
-  User: "Validate domain standards"
-  Agent: Checks compliance with domain rules
+  Context: [Alternative context showing different use case]
+  user: "[Different user request]"
+  assistant: "I'll launch the agent-name agent to [describe actions], [key steps], and [expected result]."
+  <commentary>
+  [Explanation of this alternative scenario and how it demonstrates agent capabilities]
+  </commentary>
   </example>
-color: blue
-allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion"]
+  
+  Note: Examples are completely optional and can be omitted if not needed.
+color: [blue|green|purple|orange|red]
+allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion", ...]
 ---
 ```
 
@@ -37,43 +47,53 @@ allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion"]
 **Complete Template**:
 ```markdown
 ---
-name: domain-specialist
+name: agent-name
 description: |
-  Expert agent for domain analysis and validation.
+  Expert agent for [primary purpose and domain].
 
   <example>
-  User: "Analyze this component"
-  Agent: Performs domain-specific analysis
+  Context: [Brief context describing the user's intent]
+  user: "[User's request or command]"
+  assistant: "I'll launch the agent-name agent to [describe what the agent will do], [key actions], and [expected outcome]."
+  <commentary>
+  [Explanation of why this example matches the agent's purpose and what makes it appropriate]
+  </commentary>
   </example>
 
   <example>
-  User: "Validate domain standards"
-  Agent: Checks compliance with domain rules
+  Context: [Alternative context showing different use case]
+  user: "[Different user request]"
+  assistant: "I'll launch the agent-name agent to [describe actions], [key steps], and [expected result]."
+  <commentary>
+  [Explanation of this alternative scenario and how it demonstrates agent capabilities]
+  </commentary>
   </example>
-color: blue
-allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion"]
+  
+  Note: Examples are completely optional and can be omitted if not needed.
+color: [blue|green|purple|orange|red]
+allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion", ...]
 ---
 
-You are an expert domain specialist for component analysis.
+You are an expert [specialist role] for [primary domain or task].
 
 ## Knowledge Base
 
-The loaded `plugin-name:domain-standards` skill provides:
-- Validation rules and quality criteria
-- Best practices and common patterns
-- Reference examples and templates
+The loaded `plugin-name:skill-name` skill provides:
+- [Knowledge area 1]
+- [Knowledge area 2]
+- [Knowledge area 3]
 
 ## Core Responsibilities
 
-1. **Analyze components** to understand structure and intent
-2. **Validate compliance** against domain standards
-3. **Generate recommendations** for improvements
-4. **Consult user** for subjective decisions via AskUserQuestion
+1. **[Primary responsibility]** to [purpose]
+2. **[Secondary responsibility]** to [purpose]
+3. **[Tertiary responsibility]** to [purpose]
+4. **[Additional responsibility]** to [purpose]
 
 ## Approach
 
-- **Autonomous**: Make technical decisions based on expertise
-- **Thorough**: Check all validation criteria systematically
-- **Collaborative**: Ask user for preferences on subjective matters
-- **Comprehensive**: Track all findings and applied fixes
+- **[Principle 1]**: [Description of how this principle guides the agent]
+- **[Principle 2]**: [Description of working style or methodology]
+- **[Principle 3]**: [Description of interaction pattern or decision-making approach]
+- **[Principle 4]**: [Description of quality or completeness standard]
 ```

@@ -5,10 +5,10 @@
 **Frontmatter Requirements**:
 ```yaml
 ---
-name: example-workflow
-description: Execute this when user requests workflow automation
+name: skill-name
+description: Execute this when user requests [workflow/task description]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Bash(git:*)", "Task"]
+allowed-tools: ["Read", "Glob", "Bash(git:*)", "Task", ...]
 ---
 ```
 
@@ -25,31 +25,54 @@ allowed-tools: ["Read", "Glob", "Bash(git:*)", "Task"]
 **Complete Template**:
 ```markdown
 ---
-name: example-workflow
-description: Execute this when user requests workflow automation
+name: skill-name
+description: Execute this when user requests [workflow/task description]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Bash(git:*)", "Task"]
+allowed-tools: ["Read", "Glob", "Bash(git:*)", "Task", ...]
 ---
 
-# Workflow Execution
+# [Workflow/Task Title]
 
 Execute automated workflow for $ARGUMENTS.
 
-## Phase 1: Preparation
-**Goal**: Gather inputs and validate preconditions.
+## Initialization (Optional)
+
+[Environment setup, prerequisites, or configuration steps needed before workflow execution.]
 
 **Actions**:
-1. Load required knowledge skills using Skill tool
-2. Gather user input and context
-3. Validate all prerequisites are met
-4. Proceed to execution phase
+1. [Setup step 1]
+2. [Setup step 2]
 
-## Phase 2: Execution
-**Goal**: Process inputs and generate outputs.
+## Background Knowledge (Optional)
+
+[Domain knowledge, context, or reference information required to execute this workflow effectively.]
+
+- **[Knowledge Item 1]**: [Brief explanation]
+- **[Knowledge Item 2]**: [Brief explanation]
+
+## Phase 1: [Phase Name]
+**Goal**: [What this phase accomplishes].
 
 **Actions**:
-1. Process gathered inputs according to workflow logic
-2. Apply transformations or execute operations
-3. Handle errors and edge cases
-4. Collect results for final reporting
+1. [Action step 1]
+2. [Action step 2]
+3. [Action step 3]
+4. [Action step 4]
+
+## Phase 2: [Phase Name]
+**Goal**: [What this phase accomplishes].
+
+**Actions**:
+1. [Action step 1]
+2. [Action step 2]
+3. [Action step 3]
+4. [Action step 4]
+
+## Phase N: [Final Phase Name]
+**Goal**: [What this phase accomplishes].
+
+**Actions**:
+1. [Action step 1]
+2. [Action step 2]
+3. [Action step 3]
 ```

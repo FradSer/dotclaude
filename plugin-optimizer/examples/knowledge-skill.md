@@ -5,8 +5,8 @@
 **Frontmatter Requirements**:
 ```yaml
 ---
-name: domain-standards
-description: Provides validation rules and best practices for domain
+name: skill-name
+description: Provides [knowledge type] for [domain/purpose]
 user-invocable: false
 ---
 ```
@@ -24,38 +24,42 @@ user-invocable: false
 **Complete Template**:
 ```markdown
 ---
-name: domain-standards
-description: Provides validation rules and best practices for domain
+name: skill-name
+description: Provides [knowledge type] for [domain/purpose]
 user-invocable: false
 ---
 
-# Domain Standards
+# [Knowledge Domain Title]
 
-Standards and validation rules for domain components.
+[Brief overview of what this knowledge covers].
 
 ## Core Concepts
 
-Components are modular units that extend functionality.
+[Concept name] are [definition and purpose].
 
-**Component Types**:
-- Type A — Purpose and characteristics
-- Type B — Purpose and characteristics
+**[Category Name]**:
+- [Item 1] — [Purpose and characteristics]
+- [Item 2] — [Purpose and characteristics]
 
-## Validation Rules
+## [Rules/Guidelines Section]
 
-Components MUST follow these requirements:
-- Rule 1: Specific requirement with rationale
-- Rule 2: Specific requirement with rationale
+[Entity type] MUST follow these requirements:
+- [Rule 1]: [Specific requirement with rationale]
+- [Rule 2]: [Specific requirement with rationale]
 
-Components SHOULD apply these best practices:
-- Practice 1: Recommendation with benefit
-- Practice 2: Recommendation with benefit
+[Entity type] SHOULD apply these best practices:
+- [Practice 1]: [Recommendation with benefit]
+- [Practice 2]: [Recommendation with benefit]
 
 ## Usage Patterns
 
-Use Type A components when:
-- Scenario 1 with example
-- Scenario 2 with example
+Use [Pattern/Type] when:
+- [Scenario 1] with [example]
+- [Scenario 2] with [example]
+
+## [Additional Section]
+
+[Additional knowledge content organized by topic]
 ```
 
 ## Validation Checklist for Skills
