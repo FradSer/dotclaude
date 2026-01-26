@@ -93,6 +93,14 @@ Use a two-level approach:
 - Scripts MUST be executable with shebang and `${CLAUDE_PLUGIN_ROOT}` paths
 - Reference supporting files from SKILL.md so Claude knows what they contain
 
+### Instruction-Type Skill Structure
+- MAY include pre-phase sections before "Phase 1":
+  - **"## Initialization"**: Environment setup, prerequisites, configuration steps
+  - **"## Background Knowledge"**: Domain knowledge, context, reference information
+- These sections provide foundational setup and context before entering the main workflow phases
+- Use "## Initialization" when the workflow requires specific environment preparation
+- Use "## Background Knowledge" when execution requires understanding of domain-specific concepts
+
 ### Should Do
 - Reference external documentation files rather than embedding all details
 - Use `user-invocable: false` for agent-only skills and `context: fork` for complex analysis

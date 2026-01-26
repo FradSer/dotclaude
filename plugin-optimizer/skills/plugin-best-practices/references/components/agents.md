@@ -98,7 +98,7 @@ Note: `Stop` hooks in frontmatter are automatically converted to `SubagentStop` 
 ## Best practices
 
 - **`description`** SHOULD say *when to use* (routing triggers).
-- **Include one example**: Put a single `<example>` block inside `description` (as shown in plugin agent files) to make routing unambiguous.
+- **MAY include example(s)**: You MAY put `<example>` block(s) inside `description` (as shown in plugin agent files) to make routing unambiguous. Examples are optional.
 - **Minimize `tools`**; add `Write/Edit` only when required.
 - **Keep prompts short** and define a stable output format.
 - **Document conventions** if you use `color` or tool selectors.
