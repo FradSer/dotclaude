@@ -72,7 +72,11 @@ Current branch: !`git branch --show-current`
 Modified files: !`git diff --name-only`
 ```
 
-Format: `!`command`` (exclamation + backtick + command + backtick)
+Format: 
+
+```bash
+`!`command`` (exclamation + backtick + command + backtick)
+```
 
 ## Anti-Patterns to Avoid
 

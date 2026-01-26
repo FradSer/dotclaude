@@ -17,31 +17,31 @@ errors=0
 warnings=0
 
 echo "Validating file patterns and structure in: $PLUGIN_DIR"
-echo
+echo ""
 
 # Check manifest location
 echo "Checking manifest location..."
 if [ ! -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ]; then
-  echo "✗ CRITICAL: plugin.json must be in .claude-plugin/ directory"
+  echo "  Error: plugin.json must be in .claude-plugin/ directory"
   ((errors++))
 else
-  echo "✓ plugin.json in correct location"
+  echo "  OK plugin.json in correct location"
 fi
 
 # Check for misplaced components (inside .claude-plugin/)
-echo
+echo ""
 echo "Checking for misplaced components..."
 if [ -d "$PLUGIN_DIR/.claude-plugin/commands" ] || \
    [ -d "$PLUGIN_DIR/.claude-plugin/agents" ] || \
    [ -d "$PLUGIN_DIR/.claude-plugin/skills" ]; then
-  echo "✗ CRITICAL: Components (commands/agents/skills) must be at plugin root, not inside .claude-plugin/"
+  echo "  Error: Components (commands/agents/skills) must be at plugin root, not inside .claude-plugin/"
   ((errors++))
 else
-  echo "✓ No components inside .claude-plugin/"
+  echo "  OK No components inside .claude-plugin/"
 fi
 
 # Check kebab-case naming for component files
-echo
+echo ""
 echo "Checking file naming conventions (kebab-case)..."
 
 # Check commands
@@ -49,7 +49,7 @@ if [ -d "$PLUGIN_DIR/commands" ]; then
   while IFS= read -r file; do
     filename=$(basename "$file" .md)
     if ! [[ "$filename" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-      echo "⚠ WARNING: Command file not kebab-case: $file"
+      echo "  Warning: Command file not kebab-case: $file"
       ((warnings++))
     fi
   done < <(find "$PLUGIN_DIR/commands" -name "*.md" -type f 2>/dev/null)
@@ -60,7 +60,7 @@ if [ -d "$PLUGIN_DIR/agents" ]; then
   while IFS= read -r file; do
     filename=$(basename "$file" .md)
     if ! [[ "$filename" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-      echo "⚠ WARNING: Agent file not kebab-case: $file"
+      echo "  Warning: Agent file not kebab-case: $file"
       ((warnings++))
     fi
   done < <(find "$PLUGIN_DIR/agents" -name "*.md" -type f 2>/dev/null)
@@ -72,24 +72,24 @@ if [ -d "$PLUGIN_DIR/skills" ]; then
   while IFS= read -r dir; do
     dirname=$(basename "$dir")
     if ! [[ "$dirname" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-      echo "⚠ WARNING: Skill directory not kebab-case: $dir"
+      echo "  Warning: Skill directory not kebab-case: $dir"
       ((warnings++))
     fi
 
     # Check for SKILL.md in subdirectory
     if [ ! -f "$dir/SKILL.md" ]; then
-      echo "✗ CRITICAL: Missing SKILL.md in skill directory: $dir"
+      echo "  Error: Missing SKILL.md in skill directory: $dir"
       ((errors++))
     fi
   done < <(find "$PLUGIN_DIR/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 fi
 
 if [ $warnings -eq 0 ] && [ $errors -eq 0 ]; then
-  echo "✓ All file names follow kebab-case convention"
+  echo "  OK All file names follow kebab-case convention"
 fi
 
 # Check for ${CLAUDE_PLUGIN_ROOT} usage in scripts and configs
-echo
+echo ""
 echo "Checking for portable path references..."
 
 hardcoded_paths=0
@@ -97,8 +97,8 @@ hardcoded_paths=0
 # Check hooks.json
 if [ -f "$PLUGIN_DIR/hooks/hooks.json" ]; then
   if grep -E '"/[^$].*\.(sh|py|js)"' "$PLUGIN_DIR/hooks/hooks.json" >/dev/null 2>&1; then
-    echo "⚠ WARNING: hooks.json may contain hardcoded absolute paths"
-    echo "  Use \${CLAUDE_PLUGIN_ROOT} instead"
+    echo "  Warning: hooks.json may contain hardcoded absolute paths"
+    echo "    Use \${CLAUDE_PLUGIN_ROOT} instead"
     ((warnings++))
     ((hardcoded_paths++))
   fi
@@ -107,19 +107,19 @@ fi
 # Check .mcp.json
 if [ -f "$PLUGIN_DIR/.mcp.json" ]; then
   if grep -E '"/[^$].*\.(sh|py|js)"' "$PLUGIN_DIR/.mcp.json" >/dev/null 2>&1; then
-    echo "⚠ WARNING: .mcp.json may contain hardcoded absolute paths"
-    echo "  Use \${CLAUDE_PLUGIN_ROOT} instead"
+    echo "  Warning: .mcp.json may contain hardcoded absolute paths"
+    echo "    Use \${CLAUDE_PLUGIN_ROOT} instead"
     ((warnings++))
     ((hardcoded_paths++))
   fi
 fi
 
 if [ $hardcoded_paths -eq 0 ]; then
-  echo "✓ No hardcoded absolute paths detected"
+  echo "  OK No hardcoded absolute paths detected"
 fi
 
 # Check skill structure
-echo
+echo ""
 echo "Checking skill directory structure..."
 
 if [ -d "$PLUGIN_DIR/skills" ]; then
@@ -130,7 +130,7 @@ if [ -d "$PLUGIN_DIR/skills" ]; then
 
     # Check for SKILL.md
     if [ ! -f "$skill_dir/SKILL.md" ]; then
-      echo "✗ CRITICAL: Missing SKILL.md in $skill_name/"
+      echo "  Error: Missing SKILL.md in $skill_name/"
       ((errors++))
     fi
 
@@ -138,8 +138,8 @@ if [ -d "$PLUGIN_DIR/skills" ]; then
     if [ -f "$skill_dir/SKILL.md" ]; then
       size=$(wc -c < "$skill_dir/SKILL.md")
       if [ "$size" -gt 30000 ]; then
-        echo "⚠ WARNING: SKILL.md in $skill_name/ is large (>30KB)"
-        echo "  Consider using progressive disclosure (move details to references/)"
+        echo "  Warning: SKILL.md in $skill_name/ is large (>30KB)"
+        echo "    Consider using progressive disclosure (move details to references/)"
         ((warnings++))
       fi
     fi
@@ -148,61 +148,86 @@ if [ -d "$PLUGIN_DIR/skills" ]; then
     if [ ! -d "$skill_dir/references" ] && [ -f "$skill_dir/SKILL.md" ]; then
       size=$(wc -c < "$skill_dir/SKILL.md")
       if [ "$size" -gt 15000 ]; then
-        echo "⚠ INFO: $skill_name/ has large SKILL.md but no references/ directory"
-        echo "  Consider creating references/ for detailed content"
+        echo "  Info: $skill_name/ has large SKILL.md but no references/ directory"
+        echo "    Consider creating references/ for detailed content"
       fi
     fi
   done < <(find "$PLUGIN_DIR/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
 
   if [ $skill_count -eq 0 ]; then
-    echo "⚠ INFO: skills/ directory exists but is empty"
+    echo "  Info: skills/ directory exists but is empty"
   else
-    echo "✓ Checked $skill_count skill(s)"
+    echo "  OK Checked $skill_count skill(s)"
   fi
 fi
 
 # Check directory structure best practices
-echo
+echo ""
 echo "Checking directory structure best practices..."
 
 # Warn about generic directory names
 for generic_name in "utils" "misc" "temp" "helpers"; do
   if [ -d "$PLUGIN_DIR/$generic_name" ]; then
-    echo "⚠ WARNING: Avoid generic directory name: $generic_name/"
-    echo "  Use descriptive names instead"
+    echo "  Warning: Avoid generic directory name: $generic_name/"
+    echo "    Use descriptive names instead"
     ((warnings++))
   fi
 done
 
 # Check for README
 if [ ! -f "$PLUGIN_DIR/README.md" ]; then
-  echo "⚠ INFO: Missing README.md in plugin root"
-  echo "  Recommended for plugin documentation"
+  echo "  Info: Missing README.md in plugin root"
+  echo "    Recommended for plugin documentation"
 else
-  echo "✓ README.md present"
+  echo "  OK README.md present"
 fi
 
 # Component count summary
-echo
-echo "Component summary:"
+echo ""
+echo "Components Found:"
 cmd_count=$(find "$PLUGIN_DIR/commands" -name "*.md" -type f 2>/dev/null | wc -l || echo "0")
 agent_count=$(find "$PLUGIN_DIR/agents" -name "*.md" -type f 2>/dev/null | wc -l || echo "0")
 skill_count=$(find "$PLUGIN_DIR/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l || echo "0")
 
-echo "  Commands: $cmd_count"
-echo "  Agents: $agent_count"
-echo "  Skills: $skill_count"
+echo "  - Commands: $cmd_count"
+echo "  - Agents: $agent_count"
+echo "  - Skills: $skill_count"
 
 # Summary
-echo
+echo ""
+echo "=========================================="
+echo "File Pattern Validation Summary"
 echo "=========================================="
 if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
-  echo "✓ Validation passed - no issues found"
+  echo "Result: Passed - All checks successful"
+  echo ""
+  echo "All file patterns, naming conventions, and directory structure"
+  echo "follow Claude Code plugin best practices."
+  echo ""
+  echo "Next Steps:"
+  echo "  - Continue with manifest validation"
+  echo "  - Run: bash scripts/validate-plugin-json.sh ."
   exit 0
 elif [ $errors -eq 0 ]; then
-  echo "⚠ Validation passed with $warnings warning(s)"
+  echo "Result: Passed with $warnings warning(s)"
+  echo ""
+  echo "File structure is valid but some optional improvements detected."
+  echo "Review warnings above for recommendations."
+  echo ""
+  echo "Next Steps:"
+  echo "  - Address warnings for better practices (optional)"
+  echo "  - Continue with: bash scripts/validate-plugin-json.sh ."
   exit 0
 else
-  echo "✗ Validation failed: $errors error(s), $warnings warning(s)"
+  echo "Result: Failed - $errors error(s), $warnings warning(s)"
+  echo ""
+  echo "Critical file structure issues detected that must be fixed."
+  echo ""
+  echo "Required Actions:"
+  echo "  1. Review Error items above (look for 'Error:' markers)"
+  echo "  2. Fix missing required files or incorrect locations"
+  echo "  3. Ensure plugin.json is in .claude-plugin/ directory"
+  echo "  4. Components must be at plugin root, not inside .claude-plugin/"
+  echo "  5. Re-run validation after fixes"
   exit 1
 fi

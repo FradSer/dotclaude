@@ -44,7 +44,7 @@ Use this structure when documenting phased execution logic. See `${CLAUDE_PLUGIN
 
 ### Should Do
 - **Use `allowed-tools`**: Restrict tool access (principle of least privilege) via `allowed-tools` frontmatter.
-- **Dynamic Context**: Use inline bash backticks (e.g., `` `!git status` ``) to inject dynamic context into prompts.
+- **Dynamic Context**: Use inline bash backticks to inject dynamic context into prompts.
 
 ### Must Do
 - **Write Instructions FOR Claude**: Write prompts as directives _to_ the agent (e.g., "Review this code...") rather than descriptions _to_ the user.

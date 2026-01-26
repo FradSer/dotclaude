@@ -33,7 +33,7 @@ validate_single_file() {
     elif [[ "$FILE_PATH" == */skills/* ]]; then
       TYPE="skill"
     else
-      echo "⚠ WARNING: Cannot auto-detect type from path"
+      echo "  Warning: Cannot auto-detect type from path"
       TYPE="unknown"
     fi
   fi
@@ -45,7 +45,7 @@ validate_single_file() {
   local FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$FILE_PATH" | sed '1d;$d')
 
   if [ -z "$FRONTMATTER" ]; then
-    echo "✗ CRITICAL: No YAML frontmatter found"
+    echo "  Error: No YAML frontmatter found"
     return 1
   fi
 
@@ -54,20 +54,20 @@ validate_single_file() {
 
   # Check for tabs (YAML doesn't allow tabs for indentation)
   if echo "$FRONTMATTER" | grep -q $'\t'; then
-    echo "✗ CRITICAL: YAML cannot use tabs for indentation"
+    echo "  Error: YAML cannot use tabs for indentation"
     is_yaml_valid=false
   fi
 
   # Check for unbalanced quotes
   local quote_count=$(echo "$FRONTMATTER" | grep -o '"' | wc -l | tr -d ' ')
   if [ $((quote_count % 2)) -ne 0 ]; then
-    echo "✗ CRITICAL: Unbalanced double quotes in YAML"
+    echo "  Error: Unbalanced double quotes in YAML"
     is_yaml_valid=false
   fi
 
   # Check for basic structure (key: value pattern)
   if ! echo "$FRONTMATTER" | grep -q '^[a-zA-Z_-]\+:'; then
-    echo "✗ CRITICAL: No valid YAML key-value pairs found"
+    echo "  Error: No valid YAML key-value pairs found"
     is_yaml_valid=false
   fi
 
@@ -75,7 +75,7 @@ validate_single_file() {
     return 1
   fi
 
-  echo "✓ Valid YAML syntax"
+  echo "  OK Valid YAML syntax"
   echo
 
   # Type-specific validation
@@ -85,28 +85,28 @@ validate_single_file() {
 
       # Required: description
       if ! echo "$FRONTMATTER" | grep -q "^description:"; then
-        echo "✗ CRITICAL: Missing required field 'description'"
+        echo "  Error: Missing required field 'description'"
         ((errors++))
       else
-        echo "✓ description present"
+        echo "  OK description present"
       fi
 
       # Recommended: argument-hint (optional for commands that accept arguments)
       if ! echo "$FRONTMATTER" | grep -q "^argument-hint:"; then
-        echo "⚠ INFO: Missing optional 'argument-hint' field"
-        echo "  Note: Only needed if command accepts arguments (helps with autocomplete)"
+        echo "  Info: Missing optional 'argument-hint' field"
+        echo "    Note: Only needed if command accepts arguments (helps with autocomplete)"
       else
-        echo "✓ argument-hint present"
+        echo "  OK argument-hint present"
       fi
 
       # Check allowed-tools format
       if echo "$FRONTMATTER" | grep -q "^allowed-tools:"; then
         # Check for unrestricted Bash
         if echo "$FRONTMATTER" | grep -E "allowed-tools:.*\bBash\b" | grep -v "Bash(" >/dev/null 2>&1; then
-          echo "✗ CRITICAL: Unrestricted 'Bash' in allowed-tools - must use filters like Bash(git:*)"
+          echo "  Error: Unrestricted 'Bash' in allowed-tools - must use filters like Bash(git:*)"
           ((errors++))
         else
-          echo "✓ allowed-tools properly restricted"
+          echo "  OK allowed-tools properly restricted"
         fi
       fi
       ;;
@@ -116,52 +116,52 @@ validate_single_file() {
 
       # Required: name
       if ! echo "$FRONTMATTER" | grep -q "^name:"; then
-        echo "✗ CRITICAL: Missing required field 'name'"
+        echo "  Error: Missing required field 'name'"
         ((errors++))
       else
         local NAME=$(echo "$FRONTMATTER" | grep "^name:" | sed 's/name: *//' | tr -d '"' | tr -d "'")
         # Check kebab-case and length
         if ! [[ "$NAME" =~ ^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$ ]]; then
-          echo "✗ CRITICAL: Name '$NAME' must be 3-50 chars, kebab-case, no leading/trailing hyphens"
+          echo "  Error: Name '$NAME' must be 3-50 chars, kebab-case, no leading/trailing hyphens"
           ((errors++))
         else
-          echo "✓ name: $NAME"
+          echo "  OK name: $NAME"
         fi
       fi
 
       # Required: description
       if ! echo "$FRONTMATTER" | grep -q "^description:"; then
-        echo "✗ CRITICAL: Missing required field 'description'"
+        echo "  Error: Missing required field 'description'"
         ((errors++))
       else
-        echo "✓ description present"
+        echo "  OK description present"
       fi
 
       # Required: model
       if ! echo "$FRONTMATTER" | grep -q "^model:"; then
-        echo "✗ CRITICAL: Missing required field 'model'"
+        echo "  Error: Missing required field 'model'"
         ((errors++))
       else
         local MODEL=$(echo "$FRONTMATTER" | grep "^model:" | sed 's/model: *//' | tr -d '"' | tr -d "'")
         if ! [[ "$MODEL" =~ ^(inherit|sonnet|opus|haiku)$ ]]; then
-          echo "✗ CRITICAL: Model '$MODEL' must be: inherit, sonnet, opus, or haiku"
+          echo "  Error: Model '$MODEL' must be: inherit, sonnet, opus, or haiku"
           ((errors++))
         else
-          echo "✓ model: $MODEL"
+          echo "  OK model: $MODEL"
         fi
       fi
 
       # Required: color
       if ! echo "$FRONTMATTER" | grep -q "^color:"; then
-        echo "✗ CRITICAL: Missing required field 'color'"
+        echo "  Error: Missing required field 'color'"
         ((errors++))
       else
         local COLOR=$(echo "$FRONTMATTER" | grep "^color:" | sed 's/color: *//' | tr -d '"' | tr -d "'")
         if ! [[ "$COLOR" =~ ^(blue|cyan|green|yellow|magenta|red)$ ]]; then
-          echo "✗ CRITICAL: Color '$COLOR' must be: blue, cyan, green, yellow, magenta, or red"
+          echo "  Error: Color '$COLOR' must be: blue, cyan, green, yellow, magenta, or red"
           ((errors++))
         else
-          echo "✓ color: $COLOR"
+          echo "  OK color: $COLOR"
         fi
       fi
       ;;
@@ -171,15 +171,15 @@ validate_single_file() {
 
       # Required: name
       if ! echo "$FRONTMATTER" | grep -q "^name:"; then
-        echo "✗ CRITICAL: Missing required field 'name'"
+        echo "  Error: Missing required field 'name'"
         ((errors++))
       else
-        echo "✓ name present"
+        echo "  OK name present"
       fi
 
       # Required: description
       if ! echo "$FRONTMATTER" | grep -q "^description:"; then
-        echo "✗ CRITICAL: Missing required field 'description'"
+        echo "  Error: Missing required field 'description'"
         ((errors++))
       else
         local DESC=$(echo "$FRONTMATTER" | grep "^description:" | sed 's/description: *//')
@@ -187,10 +187,10 @@ validate_single_file() {
         # Check if description is empty or too short
         local DESC_LENGTH=$(echo "$DESC" | tr -d ' ' | wc -c | tr -d ' ')
         if [ $DESC_LENGTH -lt 10 ]; then
-          echo "⚠ WARNING: Description is too short (minimum 10 characters recommended)"
+          echo "  Warning: Description is too short (minimum 10 characters recommended)"
           ((warnings++))
         else
-          echo "✓ description present"
+          echo "  OK description present"
         fi
 
         # Note: Both formats are acceptable:
@@ -200,10 +200,10 @@ validate_single_file() {
 
       # Recommended: argument-hint (optional for skills that accept arguments)
       if ! echo "$FRONTMATTER" | grep -q "^argument-hint:"; then
-        echo "⚠ INFO: Missing optional 'argument-hint' field"
-        echo "  Note: Only needed if skill accepts arguments (helps with autocomplete)"
+        echo "  Info: Missing optional 'argument-hint' field"
+        echo "    Note: Only needed if skill accepts arguments (helps with autocomplete)"
       else
-        echo "✓ argument-hint present"
+        echo "  OK argument-hint present"
       fi
       ;;
 
@@ -220,22 +220,23 @@ validate_single_file() {
     local BODY=$(sed -n '/^---$/,/^---$/!p' "$FILE_PATH" | sed '1,/^---$/d')
 
     if echo "$BODY" | grep -E "You should|You must|You can|You need to" >/dev/null 2>&1; then
-      echo "⚠ WARNING: Skill body should use imperative form, not second person ('You should...')"
+      echo "  Warning: Skill body should use imperative form, not second person ('You should...')"
       ((warnings++))
     else
-      echo "✓ Body uses imperative form"
+      echo "  OK Body uses imperative form"
     fi
   fi
 
   # Return error count
+  echo
   if [ $errors -gt 0 ]; then
-    echo "✗ Validation failed: $errors error(s), $warnings warning(s)"
+    echo "Error: Validation failed with $errors error(s) and $warnings warning(s)"
     return 1
   elif [ $warnings -gt 0 ]; then
-    echo "⚠ Validation passed with $warnings warning(s)"
+    echo "Warning: Validation passed with $warnings warning(s)"
     return 0
   else
-    echo "✓ Validation passed - no issues found"
+    echo "OK Validation passed with no issues"
     return 0
   fi
 }
@@ -256,14 +257,14 @@ if [ -d "${1}" ]; then
   FILES=$(echo "$AGENT_FILES"$'\n'"$COMMAND_FILES"$'\n'"$SKILL_FILES" | grep -v '^$')
   
   if [ -z "$FILES" ]; then
-    echo "⚠ No component files found in $PLUGIN_DIR"
+    echo "Warning: No component files found in $PLUGIN_DIR"
     exit 0
   fi
 else
   # Multiple files or single file mode
   FILES="$@"
   if [ -z "$FILES" ]; then
-    echo "✗ No files specified"
+    echo "Error: No files specified"
     exit 1
   fi
 fi
@@ -276,7 +277,7 @@ files_failed=0
 # Process each file
 for FILE_PATH in $FILES; do
   if [ ! -f "$FILE_PATH" ]; then
-    echo "⚠ Skipping: File not found: $FILE_PATH"
+    echo "Warning: Skipping file not found: $FILE_PATH"
     continue
   fi
   
@@ -295,11 +296,35 @@ done
 
 # Final summary
 echo "=========================================="
-echo "Summary: Processed $files_processed file(s)"
+echo "Frontmatter Validation Summary"
+echo "=========================================="
+echo "Processed: $files_processed file(s)"
+echo "Passed: $((files_processed - files_failed))"
+echo "Failed: $files_failed"
+echo
 if [ $files_failed -eq 0 ]; then
-  echo "✓ All validations passed"
+  echo "Result: Passed - All frontmatter valid"
+  echo
+  echo "All component files have valid YAML frontmatter with required fields"
+  echo "properly defined. Syntax checks passed and type-specific requirements"
+  echo "are met."
+  echo
+  echo "Next Steps:"
+  echo "  - Continue with tool invocation validation"
+  echo "  - Run: bash scripts/check-tool-invocations.sh ."
   exit 0
 else
-  echo "✗ $files_failed file(s) failed validation"
+  echo "Result: Failed - $files_failed file(s) with errors"
+  echo
+  echo "Component frontmatter issues detected that must be fixed before"
+  echo "proceeding. Review errors above to identify missing fields, YAML"
+  echo "syntax problems, or invalid field values."
+  echo
+  echo "Next Steps:"
+  echo "  - Review error messages for each failed file above"
+  echo "  - Fix YAML syntax issues (no tabs, balanced quotes)"
+  echo "  - Add missing required fields (name, description, model, color)"
+  echo "  - Ensure field values meet requirements (kebab-case names, valid enums)"
+  echo "  - Re-run: bash scripts/validate-frontmatter.sh ."
   exit 1
 fi

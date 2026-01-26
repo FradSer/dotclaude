@@ -22,7 +22,7 @@ echo
 
 # Check if manifest exists
 if [ ! -f "$MANIFEST_PATH" ]; then
-  echo "✗ CRITICAL: plugin.json not found at $MANIFEST_PATH"
+  echo "Error: plugin.json not found at $MANIFEST_PATH"
   exit 1
 fi
 
@@ -32,7 +32,7 @@ CONTENT=$(cat "$MANIFEST_PATH")
 
 # Check if starts with { and ends with }
 if [[ ! "$CONTENT" =~ ^\{.*\}$ ]]; then
-  echo "✗ CRITICAL: Invalid JSON - must start with { and end with }"
+  echo "Error: Invalid JSON - must start with { and end with }"
   exit 1
 fi
 
@@ -40,7 +40,7 @@ fi
 open_braces=$(echo "$CONTENT" | grep -o '{' | wc -l | tr -d ' ')
 close_braces=$(echo "$CONTENT" | grep -o '}' | wc -l | tr -d ' ')
 if [ "$open_braces" != "$close_braces" ]; then
-  echo "✗ CRITICAL: Unbalanced braces in JSON"
+  echo "Error: Unbalanced braces in JSON"
   exit 1
 fi
 
@@ -62,42 +62,42 @@ has_json_field() {
 echo "Checking required fields..."
 
 if ! has_json_field "$MANIFEST_PATH" "name"; then
-  echo "✗ CRITICAL: Missing required field 'name'"
+  echo "Error: Missing required field 'name'"
   ((errors++))
 else
   NAME=$(get_json_field "$MANIFEST_PATH" "name")
   # Check kebab-case
   if ! [[ "$NAME" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-    echo "⚠ WARNING: Name '$NAME' should use kebab-case (lowercase with hyphens)"
+    echo "Warning: Name '$NAME' should use kebab-case (lowercase with hyphens)"
     ((warnings++))
   else
-    echo "✓ name: $NAME"
+    echo "OK name: $NAME"
   fi
 fi
 
 if ! has_json_field "$MANIFEST_PATH" "description"; then
-  echo "⚠ WARNING: Missing recommended field 'description'"
+  echo "Warning: Missing recommended field 'description'"
   ((warnings++))
 else
-  echo "✓ description present"
+  echo "OK description present"
 fi
 
 # Check for author.name (nested field)
 if ! grep -q '"author"[[:space:]]*:[[:space:]]*{' "$MANIFEST_PATH"; then
-  echo "✗ CRITICAL: Missing required field 'author'"
+  echo "Error: Missing required field 'author'"
   ((errors++))
 else
   if ! grep -q '"name"[[:space:]]*:' "$MANIFEST_PATH" | grep -A5 '"author"' "$MANIFEST_PATH" | grep -q '"name"'; then
     # More robust check: look for "name" within reasonable distance of "author"
     author_section=$(sed -n '/"author"/,/}/p' "$MANIFEST_PATH")
     if ! echo "$author_section" | grep -q '"name"'; then
-      echo "✗ CRITICAL: Missing required field 'author.name'"
+      echo "Error: Missing required field 'author.name'"
       ((errors++))
     else
-      echo "✓ author.name present"
+      echo "OK author.name present"
     fi
   else
-    echo "✓ author.name present"
+    echo "OK author.name present"
   fi
 fi
 
@@ -106,22 +106,22 @@ echo
 echo "Checking optional fields..."
 
 if ! has_json_field "$MANIFEST_PATH" "version"; then
-  echo "⚠ INFO: Missing optional field 'version' (recommended)"
+  echo "Info: Missing optional field 'version' (recommended)"
 else
   VERSION=$(get_json_field "$MANIFEST_PATH" "version")
   # Check semver format
   if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "⚠ WARNING: Version '$VERSION' should follow semver (X.Y.Z)"
+    echo "Warning: Version '$VERSION' should follow semver (X.Y.Z)"
     ((warnings++))
   else
-    echo "✓ version: $VERSION (semver)"
+    echo "OK version: $VERSION (semver)"
   fi
 fi
 
 if ! grep -q '"keywords"[[:space:]]*:[[:space:]]*\[' "$MANIFEST_PATH"; then
-  echo "⚠ INFO: Missing optional field 'keywords' (helps discoverability)"
+  echo "Info: Missing optional field 'keywords' (helps discoverability)"
 else
-  echo "✓ keywords present"
+  echo "OK keywords present"
 fi
 
 # Check for best practices
@@ -135,7 +135,7 @@ if has_json_field "$MANIFEST_PATH" "commands"; then
   all_paths=$(cat "$MANIFEST_PATH" | tr -d '\n' | grep -o '"commands"[[:space:]]*:[[:space:]]*\[[^]]*\]' | sed 's/.*\[//; s/\].*//' | grep -o '"[^"]*"' | tr -d '"')
 
   if [ -z "$all_paths" ]; then
-    echo "✗ CRITICAL: 'commands' array is empty"
+    echo "Error: 'commands' array is empty"
     ((errors++))
   else
     echo "Declared command paths in plugin.json:"
@@ -147,7 +147,7 @@ if has_json_field "$MANIFEST_PATH" "commands"; then
 
       # Check path format: must start with ./ and end with /
       if [[ ! "$cmd_path" =~ ^\./.*\/$ ]]; then
-        echo "    ✗ CRITICAL: Invalid format - must be './relative/path/' format"
+        echo "    Error: Invalid format - must be './relative/path/' format"
         echo "    Suggestion: \"./skills/${cmd_path%/}/\" or \"./skills/${cmd_path}/\""
         ((errors++))
         continue  # Skip further validation for this invalid path
@@ -159,17 +159,17 @@ if has_json_field "$MANIFEST_PATH" "commands"; then
 
       # Check if directory exists
       if [ ! -d "$full_path" ]; then
-        echo "    ✗ ERROR: Directory does not exist at $full_path"
+        echo "    Error: Directory does not exist at $full_path"
         ((errors++))
       else
-        echo "    ✓ Directory exists"
+        echo "    OK Directory exists"
 
         # Check if SKILL.md exists
         if [ ! -f "$full_path/SKILL.md" ]; then
-          echo "    ✗ ERROR: SKILL.md not found in $full_path"
+          echo "    Error: SKILL.md not found in $full_path"
           ((errors++))
         else
-          echo "    ✓ SKILL.md found"
+          echo "    OK SKILL.md found"
         fi
       fi
     done <<< "$all_paths"
@@ -198,7 +198,7 @@ if has_json_field "$MANIFEST_PATH" "commands"; then
             if [ -n "$user_invocable" ]; then
               # user-invocable: true but not in commands - this is an ERROR
               if [ $undeclared_found -eq 0 ]; then
-                echo "✗ ERROR: Found user-invocable skills not declared in 'commands' field:"
+                echo "Error: Found user-invocable skills not declared in 'commands' field:"
                 undeclared_found=1
               fi
               echo "  - $skill_path (user-invocable: true but not in plugin.json)"
@@ -210,12 +210,12 @@ if has_json_field "$MANIFEST_PATH" "commands"; then
       done
 
       if [ $undeclared_found -eq 0 ]; then
-        echo "✓ All user-invocable skills are properly declared"
+        echo "OK All user-invocable skills are properly declared"
       fi
     fi
   fi
 else
-  echo "⚠ INFO: No 'commands' field found"
+  echo "Info: No 'commands' field found"
   echo "  Modern best practice: Explicitly declare skill paths for better maintainability"
   echo "  Example: \"commands\": [\"./skills/optimize/\", \"./skills/deploy/\"]"
 fi
@@ -223,13 +223,38 @@ fi
 # Summary
 echo
 echo "=========================================="
+echo "Manifest Validation Summary"
+echo "=========================================="
 if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
-  echo "✓ Validation passed - no issues found"
+  echo "Result: Passed - plugin.json valid"
+  echo
+  echo "All required fields are present and properly formatted."
+  echo "Component paths verified and files exist."
+  echo
+  echo "Next Steps:"
+  echo "  - Continue with frontmatter validation"
+  echo "  - Run: bash scripts/validate-frontmatter.sh ."
   exit 0
 elif [ $errors -eq 0 ]; then
-  echo "⚠ Validation passed with $warnings warning(s)"
+  echo "Result: Passed with $warnings warning(s)"
+  echo
+  echo "Manifest is functional but some optional fields are missing."
+  echo "Consider adding them for better discoverability."
+  echo
+  echo "Next Steps:"
+  echo "  - Review warnings for optional improvements"
+  echo "  - Continue with: bash scripts/validate-frontmatter.sh ."
   exit 0
 else
-  echo "✗ Validation failed: $errors error(s), $warnings warning(s)"
+  echo "Result: Failed - $errors error(s), $warnings warning(s)"
+  echo
+  echo "Critical manifest issues detected that must be fixed."
+  echo
+  echo "Required Actions:"
+  echo "  1. Fix Error items above (look for 'Error:' markers)"
+  echo "  2. Ensure all required fields are present"
+  echo "  3. Verify component paths are correct and files exist"
+  echo "  4. Check JSON syntax (balanced braces, proper quotes)"
+  echo "  5. Re-run validation after fixes"
   exit 1
 fi

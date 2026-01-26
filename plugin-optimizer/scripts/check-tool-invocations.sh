@@ -29,16 +29,16 @@ TASK_TOOL_PATTERN="(Use|Call) (the )?Task tool to launch [a-z-]+"
 FILES=$(find "$PLUGIN_DIR" -type f \( -path "*/commands/*.md" -o -path "*/agents/*.md" -o -path "*/skills/*/SKILL.md" \) ! -name "README.md" 2>/dev/null)
 
 if [ -z "$FILES" ]; then
-  echo "⚠ No component files found to check"
+  echo "Info: No component files found to check"
   exit 0
 fi
 
 echo "Checking explicit core tool invocation anti-patterns (Read, Write, Glob, Grep, Edit)..."
 while IFS= read -r file; do
   if grep -E "$CORE_TOOLS_PATTERN" "$file" >/dev/null 2>&1; then
-    echo "⚠ WARNING: Explicit core tool call found in $file"
+    echo "  Warning: Explicit core tool call found in $file"
     grep -n -E "$CORE_TOOLS_PATTERN" "$file" | while IFS=: read -r line_num match; do
-      echo "  Line $line_num: $(echo "$match" | xargs)"
+      echo "    Line $line_num: $(echo "$match" | xargs)"
     done
     ((issues++))
   fi
@@ -51,9 +51,9 @@ while IFS= read -r file; do
   # - Inline execution: pattern !`command` (exclamation mark + backtick + command + backtick)
   # - allowed-tools config: Bash(git:*)
   if grep -E "$BASH_TOOL_PATTERN" "$file" | grep -v "Bash(" | grep -v '!`' >/dev/null 2>&1; then
-    echo "⚠ WARNING: Explicit Bash tool call found in $file"
+    echo "  Warning: Explicit Bash tool call found in $file"
     grep -n -E "$BASH_TOOL_PATTERN" "$file" | grep -v "Bash(" | grep -v '!`' | while IFS=: read -r line_num match; do
-      echo "  Line $line_num: $(echo "$match" | xargs)"
+      echo "    Line $line_num: $(echo "$match" | xargs)"
     done
     ((issues++))
   fi
@@ -65,10 +65,10 @@ while IFS= read -r file; do
   # Find "Use Task tool to launch specific-agent" patterns
   # Allow: "Use Task tool" with JSON structure (general-purpose agents)
   if grep -E "$TASK_TOOL_PATTERN" "$file" >/dev/null 2>&1; then
-    echo "⚠ WARNING: Unnecessary Task tool mention found in $file"
+    echo "  Warning: Unnecessary Task tool mention found in $file"
     grep -n -E "$TASK_TOOL_PATTERN" "$file" | while IFS=: read -r line_num match; do
-      echo "  Line $line_num: $(echo "$match" | xargs)"
-      echo "  Suggestion: Use descriptive style instead: 'Launch [agent-name] agent'"
+      echo "    Line $line_num: $(echo "$match" | xargs)"
+      echo "    Suggestion: Use descriptive style instead: 'Launch [agent-name] agent'"
     done
     ((issues++))
   fi
@@ -81,9 +81,9 @@ echo "Checking for other tool invocation anti-patterns..."
 # Check for "Use the X tool" patterns
 while IFS= read -r file; do
   if grep -E "Use the (Read|Write|Glob|Grep|Edit|Bash) tool" "$file" >/dev/null 2>&1; then
-    echo "⚠ WARNING: Verbose tool invocation in $file"
+    echo "  Warning: Verbose tool invocation in $file"
     grep -n -E "Use the (Read|Write|Glob|Grep|Edit|Bash) tool" "$file" | while IFS=: read -r line_num match; do
-      echo "  Line $line_num: $(echo "$match" | xargs)"
+      echo "    Line $line_num: $(echo "$match" | xargs)"
     done
     ((issues++))
   fi
@@ -99,8 +99,8 @@ while IFS= read -r file; do
   if echo "$FRONTMATTER" | grep -q "allowed-tools:"; then
     # Check for unrestricted Bash (not Bash(filter:*))
     if echo "$FRONTMATTER" | grep -E "allowed-tools:.*\bBash\b" | grep -v "Bash(" >/dev/null 2>&1; then
-      echo "✗ CRITICAL: Unrestricted Bash in allowed-tools in $file"
-      echo "  Suggestion: Use filters like Bash(git:*), Bash(npm:*), etc."
+      echo "  Error: Unrestricted Bash in allowed-tools in $file"
+      echo "    Suggestion: Use filters like Bash(git:*), Bash(npm:*), etc."
       ((issues++))
     fi
   fi
@@ -111,28 +111,45 @@ echo
 echo "=========================================="
 echo "Common anti-patterns and fixes:"
 echo
-echo "❌ \"Use Read tool to read the file\""
-echo "✅ \"Read the file and extract...\""
+echo "Bad: \"Use Read tool to read the file\""
+echo "Good: \"Read the file and extract...\""
 echo
-echo "❌ \"Use Bash tool to run git status\""
-echo "✅ \"Run \`git status\` to check...\""
+echo "Bad: \"Use Bash tool to run git status\""
+echo "Good: \"Run \`git status\` to check...\""
 echo
-echo "❌ \"Use Task tool to launch code-reviewer agent\""
-echo "✅ \"Launch the code-reviewer agent to...\""
+echo "Bad: \"Use Task tool to launch code-reviewer agent\""
+echo "Good: \"Launch the code-reviewer agent to...\""
 echo
-echo "❌ \"allowed-tools: [Bash]\""
-echo "✅ \"allowed-tools: [Bash(git:*)]\""
+echo "Bad: \"allowed-tools: [Bash]\""
+echo "Good: \"allowed-tools: [Bash(git:*)]\""
 echo
 
 # Summary
 echo "=========================================="
+echo "Tool Invocation Validation Summary"
+echo "=========================================="
 if [ $issues -eq 0 ]; then
-  echo "✓ No tool invocation anti-patterns found"
+  echo "Result: Passed - No anti-patterns detected"
+  echo
+  echo "All tool invocations follow best practices."
+  echo "Component content uses proper implicit/explicit patterns."
+  echo
+  echo "Next Steps:"
+  echo "  - Continue with token budget validation"
+  echo "  - Run: python3 scripts/count-tokens.py . --all"
   exit 0
 else
-  echo "⚠ Found $issues issue(s) with tool invocations"
+  echo "Result: Warning - $issues pattern issue(s) found"
   echo
-  echo "These are not critical errors but should be fixed to follow best practices."
-  echo "See references/tool-invocations.md for detailed guidance."
+  echo "Tool invocation anti-patterns detected. These don't break"
+  echo "functionality but should be fixed for consistency."
+  echo
+  echo "Recommended Actions:"
+  echo "  1. Review items above marked with 'Warning:'"
+  echo "  2. Replace explicit tool mentions with descriptive actions"
+  echo "  3. Ensure allowed-tools use proper filters (not bare 'Bash')"
+  echo "  4. See references/tool-invocations.md for guidance"
+  echo
+  echo "Plugin is functional - these are style improvements."
   exit 1
 fi
