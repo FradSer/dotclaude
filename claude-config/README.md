@@ -11,7 +11,7 @@ claude plugin install claude-config@frad-dotclaude
 ## Features
 
 - **AI-Driven Environment Detection**: Automatically detects installed languages and tools (Node.js, Python, Rust, Go, Java, Docker, etc.)
-- **TDD Flexibility**: Choose whether to include mandatory Test-Driven Development requirements
+- **TDD Flexibility**: Choose whether to include mandatory Test-Driven Development requirements (dynamically assembled via script)
 - **Best Practices Research**: Optionally search for latest 2026 best practices and append summaries to your configuration
 - **Length Validation**: Ensures generated configuration meets optimal word count (1,500-3,000 words) for context efficiency
 - **Multi-file Sync**: Sync configurations to GEMINI.md and AGENTS.md with template-priority merge strategy
@@ -45,15 +45,17 @@ For detailed workflow steps, run `/init-config` and follow the interactive promp
 ```
 claude-config/
 ├── .claude-plugin/
-│   └── plugin.json           # Plugin manifest
+│   └── plugin.json                  # Plugin manifest
 ├── skills/
 │   └── init-config/
-│       └── SKILL.md          # User-invocable skill with 9-phase workflow
+│       └── SKILL.md                 # User-invocable skill with 9-phase workflow
 ├── assets/
-│   ├── claude-template.md    # Base template with TDD
-│   └── claude-template-no-tdd.md  # Base template without TDD
+│   ├── claude-template-no-tdd.md   # Base template (TDD added dynamically)
+│   ├── claude-template-tdd-core-principle.md  # TDD core principle fragment
+│   └── claude-template-tdd-testing-strategy.md  # TDD testing strategy fragment
 ├── scripts/
-│   └── validate-length.sh    # Length validation utility
+│   ├── assemble-template.sh         # Template assembly script (combines base + TDD fragments)
+│   └── validate-length.sh           # Length validation utility
 └── README.md
 ```
 
@@ -138,6 +140,11 @@ chmod +x scripts/validate-length.sh
 ```
 
 ## Version History
+
+### 1.2.1
+- Applied instruction-type skill template formatting (Goal + Actions structure)
+- Improved phase organization and clarity
+- Optimized README structure alignment
 
 ### 1.1.1
 - Added keywords for better plugin discoverability

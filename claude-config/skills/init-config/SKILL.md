@@ -15,22 +15,24 @@ allowed-tools:
   - Bash(*)
 ---
 
-You are an expert DevOps engineer tasked with generating personalized configuration files for AI development assistants.
-
 ## Initialization
 1. **Track Progress**
    - Use the **TodoWrite** tool to create a task list for all phases of this workflow.
    - Update the status of tasks as you complete each phase.
 
 ## Phase 1: Environment Discovery
-Understand the user's technology stack by detecting installed languages, tools, and package managers.
+**Goal**: Understand the user's technology stack by detecting installed languages, tools, and package managers.
 
+**Actions**:
 1. **Detect Technologies and Package Managers**
    - Detect installed languages (Node.js, Python, Rust, Go, Java, Docker, etc.)
    - For languages with multiple package managers, detect all available options
    - Store detected information for later selection
 
 ## Phase 2: Developer Profile
+**Goal**: Collect developer name and email for personalized configuration.
+
+**Actions**:
 Ask for developer name and email using **AskUserQuestion** with 2 questions:
 
 - **Question 1**: "What is your name?"
@@ -46,6 +48,9 @@ Ask for developer name and email using **AskUserQuestion** with 2 questions:
 Important: Only provide the "Skip" option. The "Other" option is automatically provided for direct text input.
 
 ## Phase 3: TDD Preference
+**Goal**: Determine if Test-Driven Development requirements should be included in the configuration.
+
+**Actions**:
 Ask if TDD should be included using **AskUserQuestion**:
 
 - Header: "TDD Mode"
@@ -54,11 +59,12 @@ Ask if TDD should be included using **AskUserQuestion**:
   - `{"label": "Include TDD (Recommended)", "description": "Add mandatory TDD workflow"}`
   - `{"label": "Exclude TDD", "description": "Generate without TDD requirements"}`
 
-Select template based on answer:
-- Include TDD: `${CLAUDE_PLUGIN_ROOT}/assets/claude-template.md`
-- Exclude TDD: `${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md`
+Store the user's choice (true/false) for use in Phase 7.
 
 ## Phase 4: Technology Stack & Package Manager Selection
+**Goal**: Select technology stacks and preferred package managers for each language.
+
+**Actions**:
 1. **Select Technology Stacks**
    - Use **AskUserQuestion** with `multiSelect: true`
    - Header: "Tech Stack"
@@ -73,6 +79,9 @@ Select template based on answer:
    - Only show detected package managers
 
 ## Phase 5: Best Practices Research
+**Goal**: Optionally search for and append latest 2026 best practices for selected technologies.
+
+**Actions**:
 Ask if web search should be performed using **AskUserQuestion**:
 
 - Header: "Research"
@@ -88,6 +97,9 @@ If enabled, search and extract 2-3 key sentences for each technology:
 - Format as simple, readable paragraphs or bullet points
 
 ## Phase 6: Style Preference
+**Goal**: Determine emoji usage preference for the generated configuration.
+
+**Actions**:
 Ask emoji preference using **AskUserQuestion**:
 
 - Header: "Style"
@@ -97,7 +109,13 @@ Ask emoji preference using **AskUserQuestion**:
   - `{"label": "Use Emojis", "description": "Add visual indicators using emojis"}`
 
 ## Phase 7: Assembly & Generation
-1. **Read selected template** from Phase 3
+**Goal**: Assemble final configuration content from template fragments, developer profile, and technology sections.
+
+**Actions**:
+1. **Assemble template using script**:
+   - Run: `${CLAUDE_PLUGIN_ROOT}/scripts/assemble-template.sh "${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md" "<tdd_choice>" "<temp_output_file>" "${CLAUDE_PLUGIN_ROOT}"`
+   - Where `<tdd_choice>` is "true" if TDD was selected in Phase 3, "false" otherwise
+   - Use a temporary file for the assembled template
 
 2. **Prepare Developer Profile Section**
    ```markdown
@@ -113,9 +131,13 @@ Ask emoji preference using **AskUserQuestion**:
    - Append web search summaries if enabled
 
 4. **Assemble Final Content**
-   - Combine: header + developer profile + base template + tech stack sections
+   - Read the assembled template from step 1
+   - Combine: header + developer profile + assembled template + tech stack sections
 
 ## Phase 8: Length Validation
+**Goal**: Validate that the generated configuration meets optimal length requirements (1,500-3,000 words).
+
+**Actions**:
 1. **Validate content length**
    - Write assembled content to a temporary file
    - Run validation script: `${CLAUDE_PLUGIN_ROOT}/scripts/validate-length.sh`
@@ -129,6 +151,9 @@ Ask emoji preference using **AskUserQuestion**:
    - TOO_SHORT: Show info and proceed
 
 ## Phase 9: Write CLAUDE.md
+**Goal**: Write the final configuration to the user's home directory with comprehensive summary reporting.
+
+**Actions**:
 1. **Write final file to `$HOME/.claude/CLAUDE.md`**
    - Check if `$HOME/.claude/CLAUDE.md` exists
    - Backup to `$HOME/.claude/CLAUDE.md.bak` if needed
