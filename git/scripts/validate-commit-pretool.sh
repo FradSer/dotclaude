@@ -93,8 +93,8 @@ if [[ "$tool_name" != "Bash" ]]; then
   exit 0
 fi
 
-# Only validate git commit commands (must start with "git commit")
-if [[ -z "$command" ]] || ! [[ "$command" =~ ^git[[:space:]]+commit ]]; then
+# Only validate git commit commands (must contain "git commit")
+if [[ -z "$command" ]] || ! [[ "$command" =~ git[[:space:]]+commit ]]; then
   exit 0
 fi
 
