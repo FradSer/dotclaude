@@ -15,7 +15,8 @@
     "email": "fradser@gmail.com"
   },
   "commands": [
-    "./skills/patent-architect/"
+    "./skills/patent-architect/",
+    "./skills/create-feishu-doc/"
   ],
   "skills": [
     "./skills/agent-browser/"
