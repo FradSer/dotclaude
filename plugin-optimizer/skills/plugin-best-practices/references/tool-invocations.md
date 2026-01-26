@@ -13,7 +13,7 @@ Best practices for referencing tools in plugin components.
 **Core File Operations:**
 - Read, Write, Glob, Grep, Edit
 - Bash (describe commands: "Run `git status`")
-- Task (describe agent launch: "Launch code-reviewer agent")
+- Task (describe agent launch: "Launch `plugin-name:agent-name` agent")
 
 ```markdown
 # Good Examples
@@ -21,21 +21,28 @@ Find all plugin files matching `**/*.md`
 Read each file and extract frontmatter
 Search for "TODO" patterns in the codebase
 Run `git status` to check changes
-Launch the validator agent to check compliance
+Launch `plugin-optimizer:plugin-optimizer` agent to validate structure
+Launch the Explore agent to analyze codebase
 ```
+
+**Qualified Names for Task/Skill**:
+- Plugin components: Use `plugin-name:component-name` format
+- Claude Code built-ins: Use component name directly (e.g., "Explore agent", "Plan agent")
 
 ### Explicit (State Tool Name)
 
 **Workflow & External Tools:**
-- Skill: "**Load X skill** using the Skill tool"
-- AskUserQuestion: "Use AskUserQuestion tool to confirm"
+- Skill: "**Load `plugin-name:skill-name` skill** using the Skill tool"
+- AskUserQuestion: "Use `AskUserQuestion` tool to [action]"
 - TodoWrite: "**Use TodoWrite tool** to track progress"
 - WebFetch, WebSearch: "Use WebFetch tool to read docs"
 
 ```markdown
 # Good Examples
-**Load the hookify:writing-rules skill** using the Skill tool
-Use AskUserQuestion tool to let user select options
+**Load `plugin-optimizer:plugin-best-practices` skill** using the Skill tool
+**Load `git:conventional-commits` skill** using the Skill tool
+Use `AskUserQuestion` tool to ask user about migration options
+Use `AskUserQuestion` tool to get user confirmation before applying fixes
 **Use TodoWrite tool** to track validation progress
 Use WebFetch tool to read official documentation
 ```
@@ -89,8 +96,8 @@ Launch the validator agent
 |------|-------|---------|
 | Read, Write, Edit, Glob, Grep | Implicit | "Find files matching...", "Read the file..." |
 | Bash | Implicit | "Run `git status`", "Check with `npm test`" |
-| Task | Implicit | "Launch X agent", "Use a Haiku agent to..." |
-| Skill | **Explicit** | "**Load X skill** using the Skill tool" |
+| Task | Implicit | "Launch `plugin-name:agent-name` agent", "Launch Explore agent" |
+| Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" |
 | TodoWrite | **Explicit** | "**Use TodoWrite tool** to track progress" |
-| AskUserQuestion | Explicit | "Use AskUserQuestion tool to confirm" |
-| WebFetch/WebSearch | Explicit | "Use WebFetch tool to read docs" |
+| AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" |
+| WebFetch/WebSearch | **Explicit** | "Use WebFetch tool to read docs" |
