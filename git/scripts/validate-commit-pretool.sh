@@ -191,10 +191,13 @@ body_trimmed=$(echo "$body" | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
 if [[ -z "$body_trimmed" ]]; then
   errors+=("Commit body is REQUIRED and MUST contain bullet-point summary.")
   errors+=("Format: Body MUST have bullet points with imperative verbs.")
-  errors+=("        Body MAY include context before bullets or explanation after bullets.")
+  errors+=("        Body MUST have explanation paragraph after bullets.")
+  errors+=("        Body MAY include context before bullets.")
   errors+=("Example:")
   errors+=("  - Add user authentication endpoint")
   errors+=("  - Update middleware to validate tokens")
+  errors+=("  ")
+  errors+=("  Improves security by implementing OAuth 2.0 standard.")
 else
   # Body exists, now validate it has bullet points
   # Look for lines starting with "- " (bullet points)
@@ -204,11 +207,13 @@ else
     errors+=("Body MUST contain bullet-point summary (lines starting with '- ')")
     errors+=("Current body format is invalid. Body structure:")
     errors+=("  REQUIRED: Bullet-point summary with imperative verbs")
+    errors+=("  REQUIRED: Explanation paragraph after bullets")
     errors+=("  OPTIONAL: Context paragraph before bullets")
-    errors+=("  OPTIONAL: Explanation paragraph after bullets")
     errors+=("Example:")
     errors+=("  - Add OAuth 2.0 configuration")
     errors+=("  - Implement callback endpoint")
+    errors+=("  ")
+    errors+=("  Improves security and user experience.")
   else
     # Validate bullet points start with common verbs (soft check with warning)
     # Common imperative verbs for commits
@@ -231,6 +236,25 @@ else
       done
       warnings+=("Expected format: '- <Verb> <description>' (Add, Remove, Update, Fix, etc.)")
     fi
+
+    # Validate explanation paragraph after bullets (REQUIRED)
+    # Find the last bullet line number
+    last_bullet_line=$(echo "$body" | grep -n -E '^[[:space:]]*-[[:space:]]+' | tail -1 | cut -d: -f1)
+
+    if [[ -n "$last_bullet_line" ]]; then
+      # Get content after the last bullet (excluding Co-Authored-By footer)
+      content_after_bullets=$(echo "$body" | tail -n +$((last_bullet_line + 1)) | grep -v '^Co-Authored-By:' | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
+
+      if [[ -z "$content_after_bullets" ]]; then
+        errors+=("Body MUST contain explanation paragraph after bullet points")
+        errors+=("The explanation should describe WHY these changes were made")
+        errors+=("Example:")
+        errors+=("  - Add OAuth 2.0 configuration")
+        errors+=("  - Implement callback endpoint")
+        errors+=("  ")
+        errors+=("  Improves security by implementing industry-standard authentication.")
+      fi
+    fi
   fi
 fi
 
@@ -252,7 +276,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n[Optional explanation paragraph]\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
+    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
   }' >&2
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then

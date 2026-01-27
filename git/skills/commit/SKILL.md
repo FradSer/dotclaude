@@ -16,7 +16,7 @@ Format: `<type>[scope]: <description>` + mandatory bullet-point body + optional 
 
 **Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
 
-**Body** (REQUIRED): Blank line after title. MUST have bullet-point summary with imperative verbs. MAY include context before bullets or explanation after bullets. ≤72 chars/line.
+**Body** (REQUIRED): Blank line after title. MUST have bullet-point summary with imperative verbs. MUST have explanation paragraph after bullets. MAY include context before bullets. ≤72 chars/line.
 
 **Footer** (Optional): `Closes #123`, `BREAKING CHANGE: ...`, `Co-Authored-By: ...`
 
@@ -26,6 +26,8 @@ Format: `<type>[scope]: <description>` + mandatory bullet-point body + optional 
 
 - <Action> <component> <detail>
 - <Action> <component> <detail>
+
+<Explanation paragraph describing why these changes were made>
 
 Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
@@ -77,7 +79,7 @@ For each logical unit:
 1. Draft the commit message following the Conventional Commits quick reference above (see `references/format-rules.md` for detailed rules)
 2. **Validate the message** against format requirements:
    - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-   - Body: Required; MUST include at least one `- ` bullet (imperative verb) as summary. MAY include context before bullets or explanation after bullets. Blank line after title; ≤72 chars/line
+   - Body: Required; MUST include at least one `- ` bullet (imperative verb) as summary. MUST include explanation paragraph after bullets. MAY include context before bullets. Blank line after title; ≤72 chars/line
    - Footer: MUST include Co-Authored-By with the current model
 3. Stage the relevant files
 4. Create the commit with the validated message (including Co-Authored-By footer)
