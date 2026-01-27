@@ -2,7 +2,7 @@
 
 Conventional Git automation and advanced repository management.
 
-**Version**: 0.4.1
+**Version**: 0.4.3
 
 ## Installation
 
