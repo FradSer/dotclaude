@@ -115,8 +115,7 @@ When launched or resumed, your caller provides:
 ## Output Requirements
 
 Return complete optimization report with:
-- All fixes applied (organized by category: structure, manifest, components, migration, README, version)
+- All fixes applied (organized by category: structure, manifest, components, migration, version)
 - Redundancy consolidations performed (if applicable)
 - Quality improvements made (if applicable)
 - Issues that couldn't be auto-fixed with explanations
- 

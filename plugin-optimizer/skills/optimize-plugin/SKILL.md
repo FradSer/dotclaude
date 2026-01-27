@@ -37,7 +37,7 @@ Execute plugin validation and optimization workflow. **Target:** $ARGUMENTS
 **Actions**:
 1. Launch `plugin-optimizer:plugin-optimizer` agent with: target path, validation issues, template results, user decisions
 2. Agent applies fixes autonomously (MUST use AskUserQuestion tool for template fix approvals)
-3. Update README.md and increment version (patch: fixes/optimizations, minor: new components, major: breaking changes)
+3. Increment version in `.claude-plugin/plugin.json` (patch: fixes/optimizations, minor: new components, major: breaking changes)
 
 ## Phase 3: Final Verification
 **Goal**: Re-run validation to verify fixes.
@@ -48,10 +48,11 @@ Execute plugin validation and optimization workflow. **Target:** $ARGUMENTS
 3. If critical issues remain: resume agent with remaining issues
 4. Document outcome (fixed vs remaining with rationale)
 
-## Phase 4: Summary Report
-**Goal**: Generate final report with issues detected, fixes applied, verification results, component inventory, and overall PASS/FAIL assessment.
+## Phase 4: Final Deliverables
+**Goal**: Deliver comprehensive optimization report and updated documentation to user.
 
 **Actions**:
-1. Compile all findings and fixes from validation phases
-2. Generate component inventory summary
-3. See `./references/workflow-phases.md` for detailed steps and `./references/report-template.md` for format
+1. Generate complete validation report with all findings, fixes, and verification results
+2. Produce component inventory summary showing plugin structure
+3. Update README.md to accurately reflect current plugin state
+4. See `./references/workflow-phases.md` for detailed steps and `./references/report-template.md` for format

@@ -1,6 +1,6 @@
 # Validation Report Template
 
-Use this template for Phase 4 summary reporting.
+Use this template for Phase 4 final deliverables reporting.
 
 ```markdown
 ## Plugin Validation Report

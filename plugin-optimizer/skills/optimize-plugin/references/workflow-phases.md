@@ -68,8 +68,7 @@ Launch `plugin-optimizer:plugin-optimizer` agent with:
 ### Post-Agent Actions
 1. Wait for agent to complete optimization tasks
 2. Receive fix report from agent
-3. Update README.md with current structure
-4. Update plugin version in `.claude-plugin/plugin.json`:
+3. Update plugin version in `.claude-plugin/plugin.json`:
    - Patch (x.y.Z+1): Bug fixes
    - Minor (x.Y+1.0): New components
    - Major (X+1.0.0): Breaking changes
@@ -99,11 +98,19 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/count-tokens.py "$TARGET" --all
 
 ---
 
-## Phase 4: Summary Report
+## Phase 4: Final Deliverables
 
-### Report Requirements
-1. Synthesize all phase results into final report
-2. Include: issues detected, fixes applied, verification results, component inventory
-3. Provide overall assessment (PASS/FAIL) with reasoning
+### Comprehensive Report Generation
+1. Synthesize results from all validation and optimization phases
+2. Include: issues detected, fixes applied, verification outcomes, component inventory
+3. Provide overall assessment (PASS/FAIL) with clear reasoning
+4. See `./report-template.md` for complete report format
 
-See `./report-template.md` for complete report format.
+### README Documentation Update
+1. Read current README.md structure
+2. Generate updated content reflecting current plugin state:
+   - Plugin metadata from `plugin.json` (name, version, description)
+   - Accurate directory structure and component inventory
+   - Installation instructions and usage examples
+3. Replace existing README.md with current documentation
+4. Ensure no version history is appended (users reference git log for history)
