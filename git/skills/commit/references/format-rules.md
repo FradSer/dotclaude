@@ -106,7 +106,7 @@ BREAKING CHANGE: <description>
 Co-Authored-By: Name <email>
 ```
 - **REQUIRED** for all Claude Code commits
-- Standard attribution: `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>`
+- Standard attribution: `Co-Authored-By: <Model Name> <noreply@anthropic.com>`
 
 ## Complete Examples
 
@@ -118,7 +118,7 @@ feat(<scope>): <description of new feature>
 - <Action> <component> <detail>
 - <Action> <component> <detail>
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
 
 ### Bug Fix with Context
@@ -134,7 +134,7 @@ fix(<scope>): <description of fix>
 <Explanation of what this resolves>.
 
 Fixes #<issue-number>
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
 
 ### Breaking Change
@@ -150,7 +150,7 @@ BREAKING CHANGE: <Description of what changed>.
 <Migration instructions or guidance>.
 See <reference to migration documentation>.
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
 
 ### Refactoring
@@ -163,7 +163,7 @@ refactor(<scope>): <description of refactoring>
 
 <Explanation of improvements and benefits>.
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
 
 ## Validation Checklist

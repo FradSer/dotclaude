@@ -189,8 +189,9 @@ body=$(echo "$commit_msg" | tail -n +2)
 body_trimmed=$(echo "$body" | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
 
 if [[ -z "$body_trimmed" ]]; then
-  errors+=("Commit body is required. Body must contain bullet points describing changes.")
-  errors+=("Format: Use '- <verb> <description>' for each change")
+  errors+=("Commit body is REQUIRED and MUST contain bullet-point summary.")
+  errors+=("Format: Body MUST have bullet points with imperative verbs.")
+  errors+=("        Body MAY include context before bullets or explanation after bullets.")
   errors+=("Example:")
   errors+=("  - Add user authentication endpoint")
   errors+=("  - Update middleware to validate tokens")
@@ -200,10 +201,14 @@ else
   bullet_lines=$(echo "$body" | grep -E '^[[:space:]]*-[[:space:]]+' || true)
 
   if [[ -z "$bullet_lines" ]]; then
-    errors+=("Body must contain bullet points (lines starting with '- ')")
-    errors+=("Current body format is invalid. Each change should be listed as:")
-    errors+=("  - <verb> <description>")
-    errors+=("Bullet points can be preceded by context paragraph and followed by explanation")
+    errors+=("Body MUST contain bullet-point summary (lines starting with '- ')")
+    errors+=("Current body format is invalid. Body structure:")
+    errors+=("  REQUIRED: Bullet-point summary with imperative verbs")
+    errors+=("  OPTIONAL: Context paragraph before bullets")
+    errors+=("  OPTIONAL: Explanation paragraph after bullets")
+    errors+=("Example:")
+    errors+=("  - Add OAuth 2.0 configuration")
+    errors+=("  - Implement callback endpoint")
   else
     # Validate bullet points start with common verbs (soft check with warning)
     # Common imperative verbs for commits
@@ -233,11 +238,9 @@ fi
 # Check if footer contains Co-Authored-By (required for AI-assisted commits)
 if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
   errors+=("Co-Authored-By footer is required for AI-assisted commits")
-  errors+=("Format: Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
-  errors+=("Examples:")
-  errors+=("  Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
-  errors+=("  Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>")
-  errors+=("  Co-Authored-By: Claude Haiku 4 <noreply@anthropic.com>")
+  errors+=("Format: Co-Authored-By: <Model Name> <noreply@anthropic.com>")
+  errors+=("Example:")
+  errors+=("  Co-Authored-By: <Model Name> <noreply@anthropic.com>")
 fi
 
 # Output results and block execution if errors found
@@ -249,7 +252,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n- <Verb> <change description>\n- <Verb> <change description>\n\n[Optional explanation paragraph]\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>")
+    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n[Optional explanation paragraph]\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
   }' >&2
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then

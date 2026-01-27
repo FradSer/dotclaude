@@ -16,7 +16,7 @@ Format: `<type>[scope]: <description>` + mandatory bullet-point body + optional 
 
 **Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
 
-**Body** (REQUIRED): Blank line after title, then bullet points with imperative verbs. May include context before or explanation after bullets. ≤72 chars/line.
+**Body** (REQUIRED): Blank line after title. MUST have bullet-point summary with imperative verbs. MAY include context before bullets or explanation after bullets. ≤72 chars/line.
 
 **Footer** (Optional): `Closes #123`, `BREAKING CHANGE: ...`, `Co-Authored-By: ...`
 
@@ -27,18 +27,19 @@ Format: `<type>[scope]: <description>` + mandatory bullet-point body + optional 
 - <Action> <component> <detail>
 - <Action> <component> <detail>
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
 
 See `references/format-rules.md` for complete specification and examples.
 
 ## Phase 1: Configuration Verification
 
-**Goal**: Ensure project-specific git configuration exists
+**Goal**: Ensure project-specific git configuration exists and load valid scopes
 
 **Actions**:
 1. Check if `.claude/git.local.md` exists
-2. If NOT found, invoke `/config-git` to set up project-specific settings
+2. If NOT found, invoke `/config-git` skill using the Skill tool to set up project-specific settings
+3. If found, read the file and extract valid scopes from the YAML frontmatter `scopes:` section
 
 ---
 
@@ -76,7 +77,7 @@ For each logical unit:
 1. Draft the commit message following the Conventional Commits quick reference above (see `references/format-rules.md` for detailed rules)
 2. **Validate the message** against format requirements:
    - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-   - Body: Required; must include at least one `- ` bullet (imperative verb). Blank line after title; ≤72 chars/line
+   - Body: Required; MUST include at least one `- ` bullet (imperative verb) as summary. MAY include context before bullets or explanation after bullets. Blank line after title; ≤72 chars/line
    - Footer: MUST include Co-Authored-By with the current model
 3. Stage the relevant files
 4. Create the commit with the validated message (including Co-Authored-By footer)
