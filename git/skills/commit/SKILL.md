@@ -1,86 +1,66 @@
 ---
 name: commit
-description: Create atomic conventional git commit following the Commitizen (cz) style and v1.0.0 specification
+description: This skill should be used when the user requests "commit", "git commit", "create commit", or wants to commit staged/unstaged changes following conventional commits format
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill"]
 argument-hint: "[no arguments needed]"
 model: haiku
-version: 0.1.0
+version: 0.2.0
 ---
 
-## Conventional Commits Quick Reference
+## Background Knowledge
 
-Format: `<type>[scope]: <description>` + mandatory bullet-point body + optional footers
+**Format**: `<type>[scope]: <description>` + mandatory body + optional footers
 
-**Title**: ALL LOWERCASE, <50 chars, imperative mood, no period. Add ! for breaking changes.
-
-**Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
-
-**Body** (REQUIRED): Blank line after title. MUST have bullet-point summary with imperative verbs. MUST have explanation paragraph after bullets. MAY include context before bullets. ≤72 chars/line.
-
-**Footer** (Optional): `Closes #123`, `BREAKING CHANGE: ...`, `Co-Authored-By: ...`
-
-**Example**:
-```
-<type>(<scope>): <description>
-
-- <Action> <component> <detail>
-- <Action> <component> <detail>
-
-<Explanation paragraph describing why these changes were made>
-
-Co-Authored-By: <Model Name> <noreply@anthropic.com>
-```
+- **Title**: ALL LOWERCASE, <50 chars, imperative mood, no period. Add `!` for breaking changes
+- **Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
+- **Body** (REQUIRED): Bullet summary (`- ` prefix, imperative verbs) + explanation paragraph. ≤72 chars/line
+- **Footer**: `Co-Authored-By` REQUIRED; optional `Closes #123`, `BREAKING CHANGE: ...`
 
 See `references/format-rules.md` for complete specification and examples.
 
 ## Phase 1: Configuration Verification
 
-**Goal**: Ensure project-specific git configuration exists and load valid scopes
+**Goal**: Load project-specific git configuration and valid scopes.
 
 **Actions**:
 1. Check if `.claude/git.local.md` exists
-2. If NOT found, invoke `/config-git` skill using the Skill tool to set up project-specific settings
-3. If found, read the file and extract valid scopes from the YAML frontmatter `scopes:` section
-
----
+2. If NOT found, **load `git:config-git` skill** using the Skill tool
+3. If found, read and extract valid scopes from `scopes:` in YAML frontmatter
 
 ## Phase 2: Safety Validation
 
-**Goal**: Perform safety checks on pending changes before committing
+**Goal**: Perform safety checks before committing.
 
 **Actions**:
 1. Detect sensitive files (credentials, secrets, .env files)
 2. Warn about large files (>1MB) and large commits (>500 lines)
-3. Request user confirmation if issues found
-
----
+3. Use `AskUserQuestion` tool for confirmation if issues found
 
 ## Phase 3: Change Analysis
 
-**Goal**: Identify coherent logical units of work and infer commit scopes
+**Goal**: Identify logical units of work and infer commit scopes.
 
 **Actions**:
-1. Run `git diff --cached` (for staged changes) and `git diff` (for unstaged changes) to get the actual code differences - MUST NOT traverse files directly
-2. Analyze the diff output to identify coherent logical units of work
-3. Infer the needed commit scope(s) for each logical unit based on the file paths and code changes shown in the diff
-4. If any inferred scope is not listed in `.claude/git.local.md`, invoke `/config-git` to update the configuration before proceeding
+1. Run `git diff --cached` and `git diff` to get code differences (MUST NOT traverse files directly)
+2. Analyze diff to identify coherent logical units
+3. Infer scope(s) from file paths and changes
+4. If scope not in `.claude/git.local.md`, **load `git:config-git` skill** using the Skill tool
 
----
+## Phase 4: AI Code Quality Check
 
-## Phase 4: Commit Creation
-
-**Goal**: Create atomic commits following Conventional Commits format
+**Goal**: Remove AI-generated slop before committing.
 
 **Actions**:
+1. Run `git diff main...HEAD` to compare against main branch
+2. Remove AI patterns: extra comments, unnecessary defensive checks, `any` casts, inconsistent style
+3. Ensure changes follow project's established patterns
 
-For each logical unit:
+## Phase 5: Commit Creation
 
-1. Draft the commit message following the Conventional Commits quick reference above (see `references/format-rules.md` for detailed rules)
-2. **Validate the message** against format requirements:
-   - Title: ALL LOWERCASE, <50 characters, imperative mood, no period at end
-   - Body: Required; MUST include at least one `- ` bullet (imperative verb) as summary. MUST include explanation paragraph after bullets. MAY include context before bullets. Blank line after title; ≤72 chars/line
-   - Footer: MUST include Co-Authored-By with the current model
-3. Stage the relevant files
-4. Create the commit with the validated message (including Co-Authored-By footer)
-5. **Repeat** until every change is committed
+**Goal**: Create atomic commits following Conventional Commits format.
+
+**Actions** (repeat for each logical unit):
+1. Draft commit message per `references/format-rules.md`
+2. Validate: title <50 chars lowercase imperative; body has bullets + explanation paragraph; footer has `Co-Authored-By`
+3. Stage relevant files and create commit
