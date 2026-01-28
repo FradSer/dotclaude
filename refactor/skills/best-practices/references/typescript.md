@@ -1,7 +1,5 @@
 # TypeScript / JavaScript Code Standards
 
-Language-specific guidelines for TypeScript, JavaScript, and React projects. Always apply [universal.md](universal.md) principles in addition to these language-specific rules.
-
 ## Module System
 
 ### ES Modules
@@ -81,6 +79,8 @@ const double = (n: number) => n * 2
 - Avoid overly complex generic constraints
 
 ## React Patterns
+
+For comprehensive performance and best practice rules, see [`react.md`](react/react.md).
 
 ### Component Props
 - Always define explicit Props types

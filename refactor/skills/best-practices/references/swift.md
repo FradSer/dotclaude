@@ -1,7 +1,5 @@
 # Swift Code Standards
 
-Language-specific guidelines for Swift and SwiftUI projects. Always apply [universal.md](universal.md) principles in addition to these language-specific rules.
-
 ## Code Style
 
 ### Naming Conventions

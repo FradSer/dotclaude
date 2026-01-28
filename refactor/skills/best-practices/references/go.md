@@ -1,7 +1,5 @@
 # Go Code Standards
 
-Language-specific guidelines for Go projects following Go idioms and best practices. Always apply [universal.md](universal.md) principles in addition to these language-specific rules.
-
 ## Code Style
 
 ### Formatting

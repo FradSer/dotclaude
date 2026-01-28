@@ -30,10 +30,10 @@ For details, see [agents/code-simplifier.md](agents/code-simplifier.md).
 
 ### `best-practices`
 
-Comprehensive refactoring workflow with language-specific best practices and Next.js performance patterns. Internal skill automatically loaded by `code-simplifier` agent.
+Comprehensive refactoring workflow with language-specific best practices and React/Next.js performance patterns. Internal skill automatically loaded by `code-simplifier` agent.
 
 **Language Support:** TypeScript, Python, Go, Swift, JavaScript
-**Framework Support:** Next.js (47 performance patterns), React
+**Framework Support:** React (47 performance patterns), Next.js
 
 For details and workflow, see [skills/best-practices/SKILL.md](skills/best-practices/SKILL.md).
 

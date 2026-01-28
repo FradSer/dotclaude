@@ -22,8 +22,9 @@ Launch the `code-simplifier` agent for execution. Pass the target scope and any 
 
 Based on file extension, load the appropriate reference:
 
-- `.ts`, `.tsx`, `.js`, `.jsx` → See `references/typescript.md`
-- `.py` → See `references/python.md` (and `references/google-python-style.md`)
+- `.ts`, `.js` → See `references/typescript.md`
+- `.tsx`, `.jsx` → See `references/typescript.md` AND `references/react/react.md`
+- `.py` → See `references/python.md` and `references/python/INDEX.md`
 - `.go` → See `references/go.md`
 - `.swift` → See `references/swift.md`
 
@@ -35,13 +36,13 @@ Use the Next.js reference set when the target includes Next.js code (typically `
 
 Reference directory:
 
-- `references/nextjs/`
+- `references/react/`
 
 Recommended entry points:
 
-1. Read `references/nextjs/INDEX.md` for complete pattern index organized by impact level and category.
-2. Read `references/nextjs/_sections.md` to understand priorities and categories.
-3. Read the specific rule file(s) that match the pattern observed (for example, `async-defer-await.md`, `bundle-dynamic-imports.md`).
+1. Read `references/react/rules/INDEX.md` for complete pattern index organized by impact level and category.
+2. Read `references/react/rules/_sections.md` to understand priorities and categories.
+3. Read the specific rule file(s) that match the pattern observed (for example, `async-defer-await.md`, `bundle-dynamic-imports.md` inside `references/react/rules/`).
 
 ## Rule Application Guidance
 

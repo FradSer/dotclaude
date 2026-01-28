@@ -1,6 +1,6 @@
 {
   "name": "refactor",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
   "keywords": ["refactor", "code-quality", "best-practices", "simplification", "maintainability"],
   "author": {
