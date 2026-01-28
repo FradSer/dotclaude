@@ -26,63 +26,57 @@ user-invocable: true
   - Identify recently modified files from the current session.
   - If no recent changes are found, inform user to provide specific file/directory paths.
 
-## Step 1: Determine Target Scope
+## Phase 1: Determine Target Scope
+
+**Goal**: Identify and validate the files or directories to refactor based on arguments or session context.
+
+**Actions**:
 
 ### If Arguments Provided
 
-1. **Check if arguments are file/directory paths**:
-   - Verify if paths exist in the repository
-   - If paths exist, use them directly as target scope
-
-2. **If paths don't exist or arguments are semantic descriptions**:
-   - Search the codebase for code matching the semantic description
-   - **Automatically include ALL matching files** in the refactoring scope
-   - No user confirmation needed - trust the search results
+1. Check if arguments are file/directory paths by verifying if paths exist in the repository
+2. If paths exist, use them directly as target scope
+3. If paths don't exist or arguments are semantic descriptions, search the codebase for code matching the semantic description
+4. Automatically include ALL matching files in the refactoring scope without user confirmation
 
 ### If No Arguments Provided (Default: Session Context)
 
-1. **Identify recently modified files**:
-   - Find files that have been recently changed in the repository
-   - Filter to focus on code files (exclude configuration, documentation, lock files unless needed)
+1. Identify recently modified files that have been changed in the repository
+2. Filter to focus on code files (exclude configuration, documentation, lock files unless needed)
+3. If no recent changes found, inform user that no recent changes were detected and suggest providing specific file/directory paths or semantic descriptions as arguments, then exit without refactoring
+4. Automatically proceed using all identified files as refactoring scope, displaying the file list for transparency
 
-2. **If no recent changes found**:
-   - Inform user that no recent changes were detected
-   - Suggest providing specific file/directory paths or semantic descriptions as arguments
-   - Exit without refactoring
+## Phase 2: Launch Refactoring Agent
 
-3. **Automatically proceed**:
-   - Use all identified files as refactoring scope
-   - Display the file list for transparency, but proceed immediately without asking
+**Goal**: Execute the code-simplifier agent on the determined scope with aggressive refactoring enabled.
 
-## Step 2: Launch Refactoring Agent
-
-Immediately launch the refactoring agent:
+**Actions**:
 
 1. Use Task tool with subagent_type="refactor:code-simplifier"
-2. Pass:
-   - Target scope (file paths, semantic search results, or session context)
-   - Context about how scope was determined (paths, semantic query, or session context)
-   - **Aggressive mode flag**: Apply thorough refactoring, remove legacy code, no compatibility shims
-3. The agent will automatically:
+2. Pass target scope (file paths, semantic search results, or session context)
+3. Pass context about how scope was determined (paths, semantic query, or session context)
+4. Pass aggressive mode flag to apply thorough refactoring, remove legacy code, no compatibility shims
+5. The agent will automatically:
    - Load the refactor:best-practices skill
    - Analyze the code and detect languages/frameworks
    - Discover and apply relevant best practices from skill references
-   - **Aggressively refactor**: Remove backwards-compatibility hacks, unused code, rename properly
+   - Aggressively refactor: remove backwards-compatibility hacks, unused code, rename properly
    - Preserve functionality while improving clarity, consistency, and maintainability
    - Apply Code Quality Standards as defined in the refactor:best-practices skill
 
-## Step 3: Summary
+## Phase 3: Summary
 
-After completion:
+**Goal**: Provide comprehensive summary of all changes made during refactoring.
 
-1. **Summarize Changes**:
-   - Total files refactored
-   - What changed and why (categorized by improvement type)
-   - Best practices applied (which categories/patterns)
-   - Quality standards enforced
-   - Legacy code removed
-   - Suggested tests to run
-   - Git rollback command if needed: `git checkout -- <files>`
+**Actions**:
+
+1. Report total files refactored
+2. Describe what changed and why, categorized by improvement type
+3. List best practices applied (which categories/patterns)
+4. Document quality standards enforced
+5. Identify legacy code removed
+6. Suggest tests to run
+7. Provide git rollback command if needed: `git checkout -- <files>`
 
 ## Requirements
 

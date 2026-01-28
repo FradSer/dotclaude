@@ -22,59 +22,59 @@ user-invocable: true
 - This command executes immediately without preview or confirmation.
 - Use git to revert if any issues arise.
 
-## Step 1: Analyze Project Scope
+## Phase 1: Analyze Project Scope
 
-Perform a quick analysis to determine the refactoring scope:
+**Goal**: Perform a quick analysis to determine the full project refactoring scope.
 
-1. **Count code files**:
-   - Use Glob to find all code files in the project
-   - Filter to focus on source code (exclude node_modules, build outputs, etc.)
-   - Group by file type/language
+**Actions**:
 
-2. **Identify main directories**:
-   - List primary source code directories
-   - Show project structure overview
-
-3. **Display scope summary** (informational only, no confirmation needed):
+1. Use Glob to find all code files in the project
+2. Filter to focus on source code (exclude node_modules, build outputs, etc.)
+3. Group files by type/language
+4. List primary source code directories
+5. Show project structure overview
+6. Display scope summary (informational only, no confirmation needed):
    - Total number of files to be refactored
    - Languages/file types detected
    - Main directories involved
    - Note: "Proceeding with project-wide refactoring automatically"
 
-## Step 2: Launch Refactoring Agent
+## Phase 2: Launch Refactoring Agent
 
-Immediately launch the refactoring agent:
+**Goal**: Execute the code-simplifier agent on the entire project with cross-file optimization focus.
+
+**Actions**:
 
 1. Use Task tool with subagent_type="refactor:code-simplifier"
-2. Pass:
-   - "project-wide scope" indication
-   - Emphasis on cross-file duplication reduction and consistent patterns
-   - **Aggressive mode flag**: Apply thorough refactoring, remove legacy code
-3. The agent will automatically:
+2. Pass "project-wide scope" indication
+3. Pass emphasis on cross-file duplication reduction and consistent patterns
+4. Pass aggressive mode flag to apply thorough refactoring, remove legacy code
+5. The agent will automatically:
    - Load the refactor:best-practices skill
    - Analyze the entire codebase
    - Detect frameworks, libraries, and languages
    - Discover and apply relevant best practices from skill references
    - Emphasize cross-file duplication and consistent patterns
-   - **Aggressively refactor**: Remove backwards-compatibility hacks, unused code, rename properly
+   - Aggressively refactor: remove backwards-compatibility hacks, unused code, rename properly
    - Preserve functionality while improving clarity, consistency, and maintainability
    - Apply Code Quality Standards as defined in the refactor:best-practices skill
 
-## Step 3: Summary
+## Phase 3: Summary
 
-After completion:
+**Goal**: Provide comprehensive summary of all project-wide changes made during refactoring.
 
-1. **Summarize Changes**:
-   - Total files refactored (count and percentage of project)
-   - What changed and why (categorized by improvement type)
-   - Files touched (total count)
-   - Best practices applied (which categories/patterns)
-   - Cross-file improvements made (deduplication, consistency)
-   - Quality standards enforced
-   - Legacy code removed
-   - Suggested tests to run
-   - Recommendation to review changes in logical groups
-   - Git rollback command if needed: `git reset --hard HEAD`
+**Actions**:
+
+1. Report total files refactored (count and percentage of project)
+2. Describe what changed and why, categorized by improvement type
+3. Report files touched (total count)
+4. List best practices applied (which categories/patterns)
+5. Document cross-file improvements made (deduplication, consistency)
+6. Document quality standards enforced
+7. Identify legacy code removed
+8. Suggest tests to run
+9. Recommend reviewing changes in logical groups
+10. Provide git rollback command if needed: `git reset --hard HEAD`
 
 ## Requirements
 
