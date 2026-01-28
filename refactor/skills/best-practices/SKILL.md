@@ -23,7 +23,7 @@ Launch the `code-simplifier` agent for execution. Pass the target scope and any 
 Based on file extension, load the appropriate reference:
 
 - `.ts`, `.tsx`, `.js`, `.jsx` → See `references/typescript.md`
-- `.py` → See `references/python.md`
+- `.py` → See `references/python.md` (and `references/google-python-style.md`)
 - `.go` → See `references/go.md`
 - `.swift` → See `references/swift.md`
 
