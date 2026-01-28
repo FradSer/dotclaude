@@ -1,8 +1,6 @@
 # Python Code Standards
 
-**Recommended Reference**: For comprehensive style rules, also consult the [Google Python Style Guide](google-python-style.md).
-
-Language-specific guidelines for Python projects following PEP standards. Always apply [universal.md](universal.md) principles in addition to these language-specific rules.
+For comprehensive style rules organized by category and impact level, see [`python/INDEX.md`](python/INDEX.md).
 
 ## Code Style (PEP 8)
 
