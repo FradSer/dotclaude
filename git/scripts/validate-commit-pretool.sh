@@ -193,6 +193,7 @@ if [[ -z "$body_trimmed" ]]; then
   errors+=("Format: Body MUST have bullet points with imperative verbs.")
   errors+=("        Body MUST have explanation paragraph after bullets.")
   errors+=("        Body MAY include context before bullets.")
+  errors+=("        Line length: All body lines must be ≤72 characters.")
   errors+=("Example:")
   errors+=("  - Add user authentication endpoint")
   errors+=("  - Update middleware to validate tokens")
@@ -209,6 +210,7 @@ else
     errors+=("  REQUIRED: Bullet-point summary with imperative verbs")
     errors+=("  REQUIRED: Explanation paragraph after bullets")
     errors+=("  OPTIONAL: Context paragraph before bullets")
+    errors+=("  Line length: All body lines must be ≤72 characters")
     errors+=("Example:")
     errors+=("  - Add OAuth 2.0 configuration")
     errors+=("  - Implement callback endpoint")
@@ -228,6 +230,22 @@ else
         invalid_bullets+=("$line")
       fi
     done <<< "$bullet_lines"
+
+    # Validate line lengths (≤72 characters per line in body)
+    line_too_long=()
+    while IFS= read -r line; do
+      if [[ ${#line} -gt 72 ]]; then
+        line_too_long+=("$line")
+      fi
+    done <<< "$(echo "$body" | grep -v '^Co-Authored-By:' || true)"
+
+    if [[ ${#line_too_long[@]} -gt 0 ]]; then
+      errors+=("Body lines must be ≤72 characters (some lines exceed limit)")
+      errors+=("Found $((${#line_too_long[@]})) line(s) that are too long:")
+      for long_line in "${line_too_long[@]}"; do
+        errors+=("  Line (${#long_line} chars): $(echo "$long_line" | cut -c1-50)...")
+      done
+    fi
 
     if [[ ${#invalid_bullets[@]} -gt 0 ]]; then
       warnings+=("Some bullet points may not start with imperative verbs:")
@@ -276,7 +294,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
+    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nLine length: All body lines must be ≤72 characters\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
   }' >&2
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then
