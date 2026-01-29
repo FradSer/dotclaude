@@ -34,6 +34,8 @@ Execute plugin validation and optimization workflow. **Target:** $ARGUMENTS
 ## Phase 2: Agent-Based Optimization
 **Goal**: Launch agent to apply ALL fixes. Orchestrator does NOT make fixes directly.
 
+**Condition**: Skip this phase if Phase 1 found no issues (proceed directly to Phase 4).
+
 **Actions**:
 1. Launch `plugin-optimizer:plugin-optimizer` agent with: target path, validation issues, template results, user decisions
 2. Agent applies fixes autonomously (MUST use AskUserQuestion tool for template fix approvals)
@@ -41,6 +43,8 @@ Execute plugin validation and optimization workflow. **Target:** $ARGUMENTS
 
 ## Phase 3: Final Verification
 **Goal**: Re-run validation to verify fixes.
+
+**Condition**: Only execute if Phase 2 applied fixes.
 
 **Actions**:
 1. Re-run all validation scripts from Phase 1
