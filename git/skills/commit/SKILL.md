@@ -24,9 +24,10 @@ See `references/format-rules.md` for complete specification and examples.
 **Goal**: Load project-specific git configuration and valid scopes.
 
 **Actions**:
-1. Check if `.claude/git.local.md` exists
-2. If NOT found, **load `git:config-git` skill** using the Skill tool
-3. If found, read and extract valid scopes from `scopes:` in YAML frontmatter
+1. **FIRST**: Read `.claude/git.local.md` to load project configuration
+2. If file not found, **load `git:config-git` skill** using the Skill tool to create it
+3. Extract valid scopes from `scopes:` list in YAML frontmatter
+4. Store these scopes for validation in Phase 3 and Phase 5
 
 ## Phase 2: Safety Validation
 
@@ -44,8 +45,8 @@ See `references/format-rules.md` for complete specification and examples.
 **Actions**:
 1. Run `git diff --cached` and `git diff` to get code differences (MUST NOT traverse files directly)
 2. Analyze diff to identify coherent logical units
-3. Infer scope(s) from file paths and changes
-4. If scope not in `.claude/git.local.md`, **load `git:config-git` skill** using the Skill tool
+3. Infer scope(s) from file paths and changes using the valid scopes loaded in Phase 1
+4. If inferred scope not in the valid scopes list, **load `git:config-git` skill** using the Skill tool to update configuration
 
 ## Phase 4: AI Code Quality Check
 
