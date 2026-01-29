@@ -2,6 +2,8 @@
 
 Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
+**Version:** 1.4.4
+
 ## Installation
 
 ```bash
@@ -11,6 +13,32 @@ claude plugin install refactor@frad-dotclaude
 ## Overview
 
 Provides specialized tools for code simplification and refactoring. Includes an expert code simplifier agent and skills for targeted and project-wide refactoring. All refactoring operations preserve functionality while improving clarity, consistency, and maintainability.
+
+## Directory Structure
+
+```
+refactor/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin manifest
+├── agents/
+│   └── code-simplifier.md   # Expert refactoring agent
+├── skills/
+│   ├── best-practices/      # Knowledge skill (internal)
+│   │   ├── SKILL.md
+│   │   └── references/      # 111 reference files
+│   │       ├── typescript.md
+│   │       ├── python.md (+ python/ subdir)
+│   │       ├── go.md
+│   │       ├── swift.md
+│   │       ├── universal.md
+│   │       ├── framework-detection.md
+│   │       └── react/rules/ # 47 Next.js/React patterns
+│   ├── refactor/            # Instruction skill (user-invocable)
+│   │   └── SKILL.md
+│   └── refactor-project/    # Instruction skill (user-invocable)
+│       └── SKILL.md
+└── README.md
+```
 
 ## Agent
 
@@ -28,14 +56,14 @@ For details, see [agents/code-simplifier.md](agents/code-simplifier.md).
 
 ## Skills
 
-### `best-practices`
+### `best-practices` (Internal)
 
-Comprehensive refactoring workflow with language-specific best practices and React/Next.js performance patterns. Internal skill automatically loaded by `code-simplifier` agent.
+Provides language-specific best practices, code quality standards, and framework detection for refactoring workflows. Automatically loaded by `code-simplifier` agent.
 
 **Language Support:** TypeScript, Python, Go, Swift, JavaScript
 **Framework Support:** React (47 performance patterns), Next.js
 
-For details and workflow, see [skills/best-practices/SKILL.md](skills/best-practices/SKILL.md).
+For details, see [skills/best-practices/SKILL.md](skills/best-practices/SKILL.md).
 
 ### `/refactor`
 
@@ -51,8 +79,6 @@ Quick refactoring for recently modified or specified code.
 ```
 
 Launches `code-simplifier` agent with targeted scope. For details, see [skills/refactor/SKILL.md](skills/refactor/SKILL.md).
-
----
 
 ### `/refactor-project`
 
