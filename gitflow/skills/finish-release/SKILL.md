@@ -1,70 +1,50 @@
 ---
 name: finish-release
-allowed-tools: Bash(git:*), Bash(gh:*), Read, Write, Skill
+allowed-tools: Bash(git:*), Bash(gh:*), Read, Write
 description: Complete and merge release branch
 model: haiku
 argument-hint: [version]
 user-invocable: true
 ---
 
-## Initialization
+## Phase 1: Identify Version
 
-Load the `gitflow:gitflow-workflow` skill using the Skill tool to access GitFlow workflow capabilities.
-
-## Phase 1: Context Validation
-
-**Goal**: Gather and validate current release branch state before merging.
+**Goal**: Determine release version from current branch or argument.
 
 **Actions**:
-1. Run `git status` to check working tree status
-2. Run `git log --oneline -20` to review recent commits
-3. Identify version files in the repository
-4. Validate current branch follows `release/*` convention and working tree is clean
+1. If `$ARGUMENTS` provided, use it as version
+2. Otherwise, extract from current branch: `git branch --show-current` (strip `release/` prefix)
 
-## Phase 2: Testing
+## Phase 2: Pre-finish Checks
 
-**Goal**: Run automated tests to ensure release quality before merge.
+**Goal**: Run tests before finishing.
 
 **Actions**:
-1. Identify test commands available in the repository (check for test scripts in package.json, Makefile, etc.)
-2. Run tests if available
-3. If tests fail, report the failures and exit without merging; the user must fix issues first
+1. Identify test commands (check package.json, Makefile, etc.)
+2. Run tests if available; exit if tests fail
 
-## Phase 3: Version and Changelog Update
+## Phase 3: Update Changelog
 
-**Goal**: Normalize version and update CHANGELOG with release details.
-
-**Actions**:
-1. Normalize the provided version from `$ARGUMENTS` to `$RELEASE_VERSION` (accept `v1.2.3`, `1.2.3`, or `release/1.2.3`, normalize to `1.2.3`)
-2. Identify previous version tag using `git tag --sort=-v:refname`
-3. Collect commits since previous tag following the user-facing principle defined in the `gitflow-workflow` skill (include feat, fix, refactor, docs, perf, deprecate, remove, security; exclude chore, build, ci, test, merge commits)
-4. Update `CHANGELOG.md` (create if missing) with the new version and date, following the format in `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-5. If `CHANGELOG.md` was manually updated during start-release, merge or reconcile entries while preserving manual curation
-6. Commit the updated `CHANGELOG.md` to the current release branch using conventional commit format (e.g., `chore: update changelog for v$RELEASE_VERSION`) and MUST include the `Co-Authored-By` footer
-
-## Phase 4: Branch Merge and Tagging
-
-**Goal**: Merge release to main and create version tag.
+**Goal**: Generate changelog from commits.
 
 **Actions**:
-1. Merge the release branch into `main` (often with `--no-ff`)
-2. Create version tag `v$RELEASE_VERSION` on main
-3. Push main branch and tags
+1. Get previous tag: `git tag --sort=-v:refname | head -1`
+2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
+3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
+4. Commit: `chore: update changelog for v$VERSION` with `Co-Authored-By` footer
 
-## Phase 5: Propagation
+## Phase 4: Finish Release
 
-**Goal**: Propagate release changes back to develop branch.
-
-**Actions**:
-1. Merge `main` back to `develop` to propagate release changes
-2. Push develop branch
-3. Delete release branch locally and remotely (skip deletion if the branch is shared or the user requests to keep it)
-
-## Phase 6: Release Publishing
-
-**Goal**: Create GitHub release with changelog content.
+**Goal**: Complete release using git-flow-next CLI.
 
 **Actions**:
-1. Extract changelog content for `v$RELEASE_VERSION` from `CHANGELOG.md`
-2. Use the `gh` CLI to create the release: `gh release create v$RELEASE_VERSION --title "Release v$RELEASE_VERSION" --notes "<content from CHANGELOG for this version>"`
-3. Verify the release was published successfully
+1. Run `git flow release finish $VERSION -m "Release v$VERSION"`
+2. Push all: `git push origin main develop --tags`
+
+## Phase 5: GitHub Release
+
+**Goal**: Create GitHub release.
+
+**Actions**:
+1. Extract changelog for this version from CHANGELOG.md
+2. Run `gh release create v$VERSION --title "v$VERSION" --notes "<changelog>"`
