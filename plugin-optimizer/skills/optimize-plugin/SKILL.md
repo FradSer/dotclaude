@@ -37,9 +37,13 @@ Execute plugin validation and optimization workflow. **Target:** $ARGUMENTS
 **Condition**: Skip this phase if Phase 1 found no issues (proceed directly to Phase 4).
 
 **Actions**:
-1. Launch `plugin-optimizer:plugin-optimizer` agent with: target path, validation issues, template results, user decisions
-2. Agent applies fixes autonomously (MUST use AskUserQuestion tool for template fix approvals)
-3. Increment version in `.claude-plugin/plugin.json` (patch: fixes/optimizations, minor: new components, major: breaking changes)
+1. Launch `plugin-optimizer:plugin-optimizer` agent with the following prompt content:
+   - Target plugin path (absolute path from Phase 1)
+   - Complete list of validation issues with severity levels
+   - Template compliance results from Phase 1
+   - Any user decisions from architecture assessment
+2. Agent autonomously applies fixes (uses AskUserQuestion for template fix approvals)
+3. Agent increments version in `.claude-plugin/plugin.json` after fixes (patch: fixes/optimizations, minor: new components, major: breaking changes)
 
 ## Phase 3: Final Verification
 **Goal**: Re-run validation to verify fixes.

@@ -32,12 +32,13 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from dataclasses import dataclass, field
+from typing import Optional
 
-# Token budget thresholds
-METADATA_BUDGET = 50
+# Token budget thresholds (based on plugin-best-practices skill)
+METADATA_BUDGET = 50      # ~50 tokens for description
 METADATA_WARNING = 100
-SKILL_BUDGET = 500
+SKILL_BUDGET = 500        # ~500 tokens target for SKILL.md body
 SKILL_WARNING = 800
 SKILL_CRITICAL = 2500
 
@@ -54,18 +55,17 @@ except ImportError:
     TOKEN_METHOD = "approximation"
 
 
-# Severity Levels
-# MUST/MUST NOT → Critical violations that block proceeding (exit code 1/2)
-# SHOULD/SHOULD NOT → Recommended fixes for quality (warnings)
-# MAY → Optional improvements (info)
-# OK → Passing checks (verbose confirmations, not counted as issues)
-
-class Issue(NamedTuple):
-    severity: str  # "must", "should", "may", "ok"
-    check: str     # Which validator found this
-    message: str
-    file: str = ""
-    line: int = 0
+@dataclass
+class Issue:
+    """Structured issue with location and source context."""
+    severity: str           # "must", "should", "may", "ok"
+    check: str              # Which validator found this
+    message: str            # Brief issue description
+    file: str = ""          # File path
+    line: int = 0           # Line number (1-indexed)
+    source: str = ""        # Original source text that caused issue
+    suggestion: str = ""    # How to fix
+    details: dict = field(default_factory=dict)  # Additional structured data
 
 
 class ValidationResult:
@@ -74,54 +74,61 @@ class ValidationResult:
         self.issues: list[Issue] = []
         self.passed = True
 
-    def must(self, msg: str, file: str = "", line: int = 0):
-        """MUST violation - absolute requirement not met."""
-        self.issues.append(Issue("must", self.check, msg, file, line))
-        self.passed = False
+    def add(self, severity: str, message: str, file: str = "", line: int = 0,
+            source: str = "", suggestion: str = "", **details):
+        """Add an issue with full context."""
+        issue = Issue(
+            severity=severity,
+            check=self.check,
+            message=message,
+            file=file,
+            line=line,
+            source=source,
+            suggestion=suggestion,
+            details=details
+        )
+        self.issues.append(issue)
+        if severity == "must":
+            self.passed = False
 
-    def should(self, msg: str, file: str = "", line: int = 0):
-        """SHOULD violation - recommended practice not followed."""
-        self.issues.append(Issue("should", self.check, msg, file, line))
+    def must(self, message: str, **kwargs):
+        self.add("must", message, **kwargs)
 
-    def may(self, msg: str, file: str = "", line: int = 0):
-        """MAY - optional improvement suggestion."""
-        self.issues.append(Issue("may", self.check, msg, file, line))
+    def should(self, message: str, **kwargs):
+        self.add("should", message, **kwargs)
 
-    def ok(self, msg: str, file: str = "", line: int = 0):
-        """OK - passing check confirmation (verbose only)."""
-        self.issues.append(Issue("ok", self.check, msg, file, line))
+    def may(self, message: str, **kwargs):
+        self.add("may", message, **kwargs)
 
-    # Aliases for backwards compatibility
-    def error(self, msg: str, file: str = "", line: int = 0):
-        self.must(msg, file, line)
-
-    def warning(self, msg: str, file: str = "", line: int = 0):
-        self.should(msg, file, line)
-
-    def info(self, msg: str, file: str = "", line: int = 0):
-        self.may(msg, file, line)
+    def ok(self, message: str, **kwargs):
+        self.add("ok", message, **kwargs)
 
 
-def parse_frontmatter(content: str) -> tuple[dict, str]:
-    """Extract YAML frontmatter and body from markdown content."""
+def parse_frontmatter(content: str) -> tuple[dict, str, int]:
+    """Extract YAML frontmatter, body, and frontmatter end line from markdown.
+
+    Returns:
+        (frontmatter_dict, body_text, frontmatter_end_line)
+    """
     if not content.startswith("---"):
-        return {}, content
+        return {}, content, 0
 
     parts = content.split("---", 2)
     if len(parts) < 3:
-        return {}, content
+        return {}, content, 0
 
     fm_text = parts[1].strip()
     body = parts[2].strip()
+
+    # Calculate line number where frontmatter ends
+    fm_end_line = content.count("\n", 0, content.find("---", 3) + 3) + 1
 
     frontmatter = {}
     current_key = None
     multiline_value = []
 
     for line in fm_text.split("\n"):
-        # Check for new key
         if re.match(r'^[a-zA-Z_-]+:', line):
-            # Save previous multiline value
             if current_key and multiline_value:
                 frontmatter[current_key] = " ".join(multiline_value)
                 multiline_value = []
@@ -138,32 +145,28 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
         elif current_key and (line.startswith("  ") or line.startswith("\t")):
             multiline_value.append(line.strip())
 
-    # Handle final multiline value
     if current_key and multiline_value:
         frontmatter[current_key] = " ".join(multiline_value)
 
-    return frontmatter, body
+    return frontmatter, body, fm_end_line
 
 
 def find_components(plugin_dir: Path) -> dict[str, list[Path]]:
     """Find all component files in a plugin directory."""
     components = {"commands": [], "agents": [], "skills": []}
 
-    # Commands: commands/*.md (maxdepth 1)
     cmd_dir = plugin_dir / "commands"
     if cmd_dir.exists():
         for f in cmd_dir.iterdir():
             if f.is_file() and f.suffix == ".md" and f.name != "README.md":
                 components["commands"].append(f)
 
-    # Agents: agents/*.md (maxdepth 1)
     agent_dir = plugin_dir / "agents"
     if agent_dir.exists():
         for f in agent_dir.iterdir():
             if f.is_file() and f.suffix == ".md" and f.name != "README.md":
                 components["agents"].append(f)
 
-    # Skills: skills/*/SKILL.md (mindepth 2, maxdepth 2)
     skills_dir = plugin_dir / "skills"
     if skills_dir.exists():
         for skill_dir in skills_dir.iterdir():
@@ -175,74 +178,98 @@ def find_components(plugin_dir: Path) -> dict[str, list[Path]]:
     return components
 
 
+def get_relative_path(file_path: Path, plugin_dir: Path) -> str:
+    """Get relative path from plugin directory."""
+    try:
+        return str(file_path.relative_to(plugin_dir))
+    except ValueError:
+        return str(file_path)
+
+
 # =============================================================================
-# Check: Structure (from validate-file-patterns.sh)
+# Check: Structure
 # =============================================================================
 
 def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     """Validate file patterns and directory structure."""
     result = ValidationResult("structure")
 
-    # Check manifest location
     manifest = plugin_dir / ".claude-plugin" / "plugin.json"
     if not manifest.exists():
-        result.must("plugin.json not in .claude-plugin/ directory")
+        result.must(
+            "plugin.json not found in .claude-plugin/",
+            suggestion="Create .claude-plugin/plugin.json with required fields"
+        )
     elif verbose:
-        result.ok("plugin.json in correct location")
+        result.ok("plugin.json location correct", file=str(manifest))
 
     # Check for misplaced components
     claude_plugin = plugin_dir / ".claude-plugin"
     for name in ("commands", "agents", "skills"):
-        if (claude_plugin / name).exists():
-            result.must(f"{name}/ inside .claude-plugin/ (move to plugin root)")
+        misplaced = claude_plugin / name
+        if misplaced.exists():
+            result.must(
+                f"{name}/ inside .claude-plugin/",
+                file=str(misplaced),
+                suggestion=f"Move to plugin root: {plugin_dir / name}"
+            )
 
     # Check kebab-case naming
     components = find_components(plugin_dir)
-
     for comp_type, files in components.items():
         for f in files:
-            if comp_type == "skills":
-                name = f.parent.name
-            else:
-                name = f.stem
+            name = f.parent.name if comp_type == "skills" else f.stem
             if not re.match(r'^[a-z0-9]+(-[a-z0-9]+)*$', name):
-                result.should(f"{comp_type.rstrip('s')} name not kebab-case: {name}", str(f))
+                result.should(
+                    f"{comp_type.rstrip('s')} name not kebab-case",
+                    file=get_relative_path(f, plugin_dir),
+                    source=name,
+                    suggestion="Use lowercase letters, numbers, hyphens only"
+                )
 
     # Check skills have SKILL.md
     skills_dir = plugin_dir / "skills"
     if skills_dir.exists():
         for skill_dir in skills_dir.iterdir():
             if skill_dir.is_dir() and not (skill_dir / "SKILL.md").exists():
-                result.must(f"Missing SKILL.md in skills/{skill_dir.name}/")
+                result.must(
+                    "Missing SKILL.md",
+                    file=f"skills/{skill_dir.name}/",
+                    suggestion="Create SKILL.md with frontmatter and content"
+                )
 
-    # Check for portable paths in hooks.json and .mcp.json
+    # Check for hardcoded paths in config files
     for config_file in ["hooks/hooks.json", ".mcp.json"]:
         config_path = plugin_dir / config_file
         if config_path.exists():
             content = config_path.read_text()
-            if re.search(r'"/[^$].*\.(sh|py|js)"', content):
-                result.should(f"Hardcoded paths in {config_file} (use ${{CLAUDE_PLUGIN_ROOT}})")
-
-    # Check for large SKILL.md files
-    for skill_md in components["skills"]:
-        size = skill_md.stat().st_size
-        if size > 30000:
-            result.should("SKILL.md >30KB (use references/ for progressive disclosure)", str(skill_md))
+            lines = content.split("\n")
+            for i, line in enumerate(lines, 1):
+                if re.search(r'"/[^$].*\.(sh|py|js)"', line):
+                    result.should(
+                        "Hardcoded absolute path",
+                        file=config_file,
+                        line=i,
+                        source=line.strip(),
+                        suggestion="Use ${CLAUDE_PLUGIN_ROOT}/path/to/script"
+                    )
 
     # Warn about generic directory names
     for generic in ("utils", "misc", "temp", "helpers"):
         if (plugin_dir / generic).exists():
-            result.should(f"Generic directory name: {generic}/")
+            result.should(
+                f"Generic directory name: {generic}/",
+                suggestion="Use descriptive names like 'scripts/', 'references/'"
+            )
 
-    # Info about README
     if not (plugin_dir / "README.md").exists():
-        result.may("Add README.md for documentation")
+        result.may("No README.md", suggestion="Add README.md for documentation")
 
     return result
 
 
 # =============================================================================
-# Check: Manifest (from validate-plugin-json.sh)
+# Check: Manifest
 # =============================================================================
 
 def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
@@ -251,77 +278,148 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
     manifest_path = plugin_dir / ".claude-plugin" / "plugin.json"
     if not manifest_path.exists():
-        result.must(f"plugin.json not found")
+        result.must("plugin.json not found")
         return result
 
     try:
         content = manifest_path.read_text()
         manifest = json.loads(content)
     except json.JSONDecodeError as e:
-        result.must(f"Invalid JSON: {e}")
+        result.must(
+            "Invalid JSON syntax",
+            file=".claude-plugin/plugin.json",
+            line=e.lineno if hasattr(e, 'lineno') else 0,
+            source=str(e),
+            suggestion="Fix JSON syntax error"
+        )
         return result
+
+    lines = content.split("\n")
+
+    def find_key_line(key: str) -> int:
+        for i, line in enumerate(lines, 1):
+            if f'"{key}"' in line:
+                return i
+        return 0
 
     # Required: name
     if "name" not in manifest:
-        result.must("Missing 'name' field")
+        result.must(
+            "Missing 'name' field",
+            file=".claude-plugin/plugin.json",
+            suggestion='Add "name": "plugin-name"'
+        )
     else:
         name = manifest["name"]
+        line_num = find_key_line("name")
         if not re.match(r'^[a-z0-9]+(-[a-z0-9]+)*$', name):
-            result.should(f"Name '{name}' not kebab-case")
+            result.should(
+                "Plugin name not kebab-case",
+                file=".claude-plugin/plugin.json",
+                line=line_num,
+                source=f'"name": "{name}"',
+                suggestion="Use lowercase letters, numbers, hyphens only"
+            )
         elif verbose:
-            result.ok(f"name: {name}")
+            result.ok(f"name: {name}", file=".claude-plugin/plugin.json", line=line_num)
 
     # Required: description
     if "description" not in manifest:
-        result.should("Missing 'description' field")
+        result.should(
+            "Missing 'description' field",
+            file=".claude-plugin/plugin.json",
+            suggestion='Add "description": "Brief plugin description"'
+        )
     elif verbose:
-        result.ok("description present")
+        result.ok("description present", file=".claude-plugin/plugin.json")
 
     # Required: author.name
     if "author" not in manifest:
-        result.must("Missing 'author' field")
+        result.must(
+            "Missing 'author' field",
+            file=".claude-plugin/plugin.json",
+            suggestion='Add "author": {"name": "Your Name", "email": "email@example.com"}'
+        )
     elif not isinstance(manifest["author"], dict) or "name" not in manifest["author"]:
-        result.must("Missing 'author.name' field")
+        line_num = find_key_line("author")
+        result.must(
+            "Missing 'author.name' field",
+            file=".claude-plugin/plugin.json",
+            line=line_num,
+            source=f'"author": {json.dumps(manifest.get("author"))}',
+            suggestion='Use "author": {"name": "Your Name"}'
+        )
     elif verbose:
-        result.ok("author.name present")
+        result.ok("author.name present", file=".claude-plugin/plugin.json")
 
     # Optional: version (semver)
     if "version" in manifest:
         version = manifest["version"]
+        line_num = find_key_line("version")
         if not re.match(r'^\d+\.\d+\.\d+$', version):
-            result.should(f"Version '{version}' not semver (X.Y.Z)")
+            result.should(
+                "Version not semver format",
+                file=".claude-plugin/plugin.json",
+                line=line_num,
+                source=f'"version": "{version}"',
+                suggestion="Use X.Y.Z format (e.g., 1.0.0)"
+            )
         elif verbose:
-            result.ok(f"version: {version}")
+            result.ok(f"version: {version}", file=".claude-plugin/plugin.json", line=line_num)
     else:
-        result.may("Add 'version' field for release tracking")
+        result.may(
+            "No 'version' field",
+            file=".claude-plugin/plugin.json",
+            suggestion='Add "version": "1.0.0" for release tracking'
+        )
 
     # Optional: keywords
     if "keywords" not in manifest:
-        result.may("Add 'keywords' for discoverability")
+        result.may(
+            "No 'keywords' field",
+            file=".claude-plugin/plugin.json",
+            suggestion='Add "keywords": ["keyword1", "keyword2"] for discoverability'
+        )
     elif verbose:
-        result.ok("keywords present")
+        result.ok("keywords present", file=".claude-plugin/plugin.json")
 
     # Validate commands field
     if "commands" in manifest:
         commands = manifest["commands"]
         if not commands:
-            result.must("'commands' array is empty")
+            result.must(
+                "'commands' array is empty",
+                file=".claude-plugin/plugin.json",
+                suggestion="Add command paths or remove empty array"
+            )
         else:
             for cmd_path in commands:
-                # Check format: must start with ./ and end with /
                 if not re.match(r'^\./.*/$', cmd_path):
-                    result.must(f"Invalid path format: {cmd_path} (use './path/')")
+                    result.must(
+                        f"Invalid path format: {cmd_path}",
+                        file=".claude-plugin/plugin.json",
+                        source=f'"commands": [..., "{cmd_path}", ...]',
+                        suggestion="Use './path/' format with trailing slash"
+                    )
                     continue
 
-                # Check directory exists
                 clean_path = cmd_path.rstrip("/")
                 full_path = plugin_dir / clean_path
                 if not full_path.is_dir():
-                    result.must(f"Path not found: {cmd_path}")
+                    result.must(
+                        f"Command path not found",
+                        file=".claude-plugin/plugin.json",
+                        source=f'"{cmd_path}"',
+                        suggestion=f"Create directory {cmd_path}"
+                    )
                 elif not (full_path / "SKILL.md").exists():
-                    result.must(f"Missing SKILL.md in {cmd_path}")
+                    result.must(
+                        f"Missing SKILL.md in command",
+                        file=cmd_path,
+                        suggestion="Create SKILL.md with frontmatter"
+                    )
                 elif verbose:
-                    result.ok(f"Verified: {cmd_path}")
+                    result.ok(f"Verified: {cmd_path}", file=".claude-plugin/plugin.json")
 
             # Check for undeclared user-invocable skills
             skills_dir = plugin_dir / "skills"
@@ -331,17 +429,21 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
                     if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
                         skill_path = f"./skills/{skill_dir.name}/"
                         if skill_path not in declared:
-                            # Check if user-invocable
                             content = (skill_dir / "SKILL.md").read_text()
-                            fm, _ = parse_frontmatter(content)
+                            fm, _, _ = parse_frontmatter(content)
                             if fm.get("user-invocable", "").lower() == "true":
-                                result.must(f"Undeclared user-invocable skill: {skill_path}")
+                                result.must(
+                                    "Undeclared user-invocable skill",
+                                    file=f"skills/{skill_dir.name}/SKILL.md",
+                                    source=f'user-invocable: true',
+                                    suggestion=f'Add "{skill_path}" to "commands" array in plugin.json'
+                                )
 
     return result
 
 
 # =============================================================================
-# Check: Frontmatter (from validate-frontmatter.sh)
+# Check: Frontmatter
 # =============================================================================
 
 def check_frontmatter(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
@@ -352,184 +454,192 @@ def check_frontmatter(plugin_dir: Path, verbose: bool = False) -> ValidationResu
 
     for comp_type, files in components.items():
         for file_path in files:
-            _validate_single_frontmatter(file_path, comp_type.rstrip("s"), result, verbose)
+            _validate_single_frontmatter(file_path, comp_type.rstrip("s"), result, plugin_dir, verbose)
 
     return result
 
 
-def _validate_single_frontmatter(file_path: Path, comp_type: str, result: ValidationResult, verbose: bool):
+def _validate_single_frontmatter(file_path: Path, comp_type: str, result: ValidationResult,
+                                  plugin_dir: Path, verbose: bool):
     """Validate frontmatter for a single file."""
     content = file_path.read_text()
     lines = content.split("\n")
-    fm, body = parse_frontmatter(content)
+    rel_path = get_relative_path(file_path, plugin_dir)
+    fm, body, fm_end_line = parse_frontmatter(content)
 
     if not fm:
         result.must(
-            f"No YAML frontmatter found\n"
-            f"    Issue: Component file MUST have YAML frontmatter (--- delimited block at start)\n"
-            f"    Suggestion: Add frontmatter with required fields",
-            str(file_path)
+            "No YAML frontmatter found",
+            file=rel_path,
+            line=1,
+            suggestion="Add frontmatter block: ---\\nname: ...\\ndescription: ...\\n---"
         )
         return
 
     # Check for tabs in frontmatter
-    if "---" in content:
-        fm_section = content.split("---")[1] if len(content.split("---")) > 1 else ""
-        if "\t" in fm_section:
-            # Find line with tab
-            for i, line in enumerate(lines, 1):
-                if "\t" in line and i < lines.index("---", 1) + 1 if "---" in lines[1:] else 999:
-                    result.must(
-                        f"Line {i}: \"{line}\"\n"
-                        f"    Issue: YAML MUST NOT use tabs for indentation\n"
-                        f"    Suggestion: Replace tabs with spaces",
-                        str(file_path), i
-                    )
-                    break
+    for i, line in enumerate(lines, 1):
+        if i <= fm_end_line and "\t" in line:
+            result.must(
+                "Tab character in YAML frontmatter",
+                file=rel_path,
+                line=i,
+                source=line,
+                suggestion="Replace tabs with spaces"
+            )
+            break
+
+    def find_fm_key_line(key: str) -> int:
+        for i, line in enumerate(lines, 1):
+            if i <= fm_end_line and line.startswith(f"{key}:"):
+                return i
+        return 0
 
     # Type-specific validation
     if comp_type == "command":
         if "description" not in fm:
             result.must(
-                f"Missing 'description' field in frontmatter\n"
-                f"    Issue: Command MUST have 'description' field\n"
-                f"    Suggestion: Add description: \"Short description of what this command does\"",
-                str(file_path)
+                "Missing 'description' in frontmatter",
+                file=rel_path,
+                suggestion='Add description: "Short description"'
             )
         elif verbose:
-            result.ok(f"description: \"{fm['description']}\"", str(file_path))
+            result.ok(
+                f'description: "{fm["description"]}"',
+                file=rel_path,
+                line=find_fm_key_line("description")
+            )
 
-        # Check allowed-tools for unrestricted Bash
         if "allowed-tools" in fm:
             allowed = fm["allowed-tools"]
+            line_num = find_fm_key_line("allowed-tools")
             if "Bash" in allowed and "Bash(" not in allowed:
                 result.must(
-                    f"allowed-tools contains unrestricted Bash: \"{allowed}\"\n"
-                    f"    Issue: MUST NOT use bare 'Bash' in allowed-tools\n"
-                    f"    Suggestion: Use filtered Bash like Bash(git:*), Bash(npm:*)",
-                    str(file_path)
+                    "Unrestricted Bash in allowed-tools",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'allowed-tools: {allowed}',
+                    suggestion="Use filtered Bash: Bash(git:*), Bash(npm:*)"
                 )
 
     elif comp_type == "agent":
         # Required: name
         if "name" not in fm:
             result.must(
-                f"Missing 'name' field in frontmatter\n"
-                f"    Issue: Agent MUST have 'name' field\n"
-                f"    Suggestion: Add name: agent-name (kebab-case, 3-50 chars)",
-                str(file_path)
+                "Missing 'name' in frontmatter",
+                file=rel_path,
+                suggestion="Add name: agent-name (kebab-case, 3-50 chars)"
             )
         else:
             name = fm["name"]
+            line_num = find_fm_key_line("name")
             if not re.match(r'^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$', name):
                 result.must(
-                    f"Invalid name: \"{name}\"\n"
-                    f"    Issue: Agent name MUST be 3-50 chars, kebab-case, no leading/trailing hyphens\n"
-                    f"    Suggestion: Use lowercase letters, numbers, and hyphens only",
-                    str(file_path)
+                    "Invalid agent name format",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'name: {name}',
+                    suggestion="Use 3-50 chars, kebab-case, no leading/trailing hyphens"
                 )
             elif verbose:
-                result.ok(f"name: \"{name}\"", str(file_path))
+                result.ok(f'name: "{name}"', file=rel_path, line=line_num)
 
-        # Required: description
         if "description" not in fm:
             result.must(
-                f"Missing 'description' field in frontmatter\n"
-                f"    Issue: Agent MUST have 'description' field\n"
-                f"    Suggestion: Add description with trigger conditions and examples",
-                str(file_path)
+                "Missing 'description' in frontmatter",
+                file=rel_path,
+                suggestion="Add description with trigger conditions and <example> blocks"
             )
 
         # Required: model
         if "model" not in fm:
             result.must(
-                f"Missing 'model' field in frontmatter\n"
-                f"    Issue: Agent MUST have 'model' field\n"
-                f"    Suggestion: Add model: inherit (or sonnet|opus|haiku)",
-                str(file_path)
+                "Missing 'model' in frontmatter",
+                file=rel_path,
+                suggestion="Add model: inherit (or sonnet|opus|haiku)"
             )
         else:
             model = fm["model"]
+            line_num = find_fm_key_line("model")
             if model not in ("inherit", "sonnet", "opus", "haiku"):
                 result.must(
-                    f"Invalid model: \"{model}\"\n"
-                    f"    Issue: Model MUST be one of: inherit, sonnet, opus, haiku\n"
-                    f"    Suggestion: Use 'inherit' to use parent model, or specify explicitly",
-                    str(file_path)
+                    "Invalid model value",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'model: {model}',
+                    suggestion="Use: inherit, sonnet, opus, or haiku"
                 )
             elif verbose:
-                result.ok(f"model: \"{model}\"", str(file_path))
+                result.ok(f'model: "{model}"', file=rel_path, line=line_num)
 
         # Required: color
         if "color" not in fm:
             result.must(
-                f"Missing 'color' field in frontmatter\n"
-                f"    Issue: Agent MUST have 'color' field\n"
-                f"    Suggestion: Add color: blue (or cyan|green|yellow|magenta|red)",
-                str(file_path)
+                "Missing 'color' in frontmatter",
+                file=rel_path,
+                suggestion="Add color: blue (or cyan|green|yellow|magenta|red)"
             )
         else:
             color = fm["color"]
-            if color not in ("blue", "cyan", "green", "yellow", "magenta", "red"):
+            line_num = find_fm_key_line("color")
+            valid_colors = ("blue", "cyan", "green", "yellow", "magenta", "red")
+            if color not in valid_colors:
                 result.must(
-                    f"Invalid color: \"{color}\"\n"
-                    f"    Issue: Color MUST be one of: blue, cyan, green, yellow, magenta, red\n"
-                    f"    Suggestion: Choose a color that reflects the agent's purpose",
-                    str(file_path)
+                    "Invalid color value",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'color: {color}',
+                    suggestion=f"Use: {', '.join(valid_colors)}"
                 )
             elif verbose:
-                result.ok(f"color: \"{color}\"", str(file_path))
+                result.ok(f'color: "{color}"', file=rel_path, line=line_num)
 
     elif comp_type == "skill":
-        # Required: name
         if "name" not in fm:
             result.must(
-                f"Missing 'name' field in frontmatter\n"
-                f"    Issue: Skill MUST have 'name' field\n"
-                f"    Suggestion: Add name: skill-name (kebab-case)",
-                str(file_path)
+                "Missing 'name' in frontmatter",
+                file=rel_path,
+                suggestion="Add name: skill-name (kebab-case)"
             )
         elif verbose:
-            result.ok(f"name: \"{fm['name']}\"", str(file_path))
+            result.ok(f'name: "{fm["name"]}"', file=rel_path, line=find_fm_key_line("name"))
 
-        # Required: description
         if "description" not in fm:
             result.must(
-                f"Missing 'description' field in frontmatter\n"
-                f"    Issue: Skill MUST have 'description' field\n"
-                f"    Suggestion: Add description with trigger phrases",
-                str(file_path)
+                "Missing 'description' in frontmatter",
+                file=rel_path,
+                suggestion="Add description with trigger phrases"
             )
         else:
             desc = fm["description"]
             if len(desc.replace(" ", "")) < 10:
                 result.should(
-                    f"Description too short: \"{desc}\"\n"
-                    f"    Issue: Description SHOULD be at least 10 characters\n"
-                    f"    Suggestion: Add more detail about when this skill should be used",
-                    str(file_path)
+                    "Description too short",
+                    file=rel_path,
+                    line=find_fm_key_line("description"),
+                    source=f'description: {desc}',
+                    suggestion="Add more detail about when this skill should be used"
                 )
             elif verbose:
-                result.ok(f"description: \"{desc[:50]}...\"" if len(desc) > 50 else f"description: \"{desc}\"", str(file_path))
+                preview = desc[:50] + "..." if len(desc) > 50 else desc
+                result.ok(f'description: "{preview}"', file=rel_path)
 
         # Check body for second-person patterns
         body_lines = body.split("\n")
         second_person_pattern = re.compile(r'\bYou (should|must|can|need to)\b')
         for i, line in enumerate(body_lines, 1):
             if second_person_pattern.search(line):
-                # Calculate actual line number in file (after frontmatter)
-                fm_end_line = content.count("\n", 0, content.find("---", 3) + 3) + 1 if "---" in content[3:] else 0
                 actual_line = fm_end_line + i
                 result.should(
-                    f"Line {actual_line}: \"{line.strip()}\"\n"
-                    f"    Issue: Skill body SHOULD use imperative form, not second person\n"
-                    f"    Suggestion: Change 'You should...' to direct imperative like 'Parse the file...'",
-                    str(file_path), actual_line
+                    "Second-person voice in skill body",
+                    file=rel_path,
+                    line=actual_line,
+                    source=line.strip(),
+                    suggestion="Use imperative form: 'Parse the file...' instead of 'You should...'"
                 )
 
 
 # =============================================================================
-# Check: Tool Invocations (from check-tool-invocations.sh)
+# Check: Tool Invocations
 # =============================================================================
 
 def check_tool_invocations(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
@@ -547,56 +657,57 @@ def check_tool_invocations(plugin_dir: Path, verbose: bool = False) -> Validatio
     for file_path in all_files:
         content = file_path.read_text()
         lines = content.split("\n")
+        rel_path = get_relative_path(file_path, plugin_dir)
 
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
             if not stripped:
                 continue
 
-            # Core tools
             if core_tools.search(line):
                 result.should(
-                    f"Line {i}: \"{stripped}\"\n"
-                    f"    Issue: SHOULD NOT explicitly mention core tools (Read/Write/Glob/Grep/Edit)\n"
-                    f"    Suggestion: Describe the action directly without mentioning tool names",
-                    str(file_path), i
+                    "Explicit core tool reference",
+                    file=rel_path,
+                    line=i,
+                    source=stripped,
+                    suggestion="Describe action directly: 'Find files...' not 'Use Glob tool...'"
                 )
 
-            # Bash tool (exclude allowed patterns)
             if bash_tool.search(line) and "Bash(" not in line and "!`" not in line:
                 result.should(
-                    f"Line {i}: \"{stripped}\"\n"
-                    f"    Issue: SHOULD NOT explicitly mention Bash tool\n"
-                    f"    Suggestion: Use inline execution `command` or describe the command directly",
-                    str(file_path), i
+                    "Explicit Bash tool reference",
+                    file=rel_path,
+                    line=i,
+                    source=stripped,
+                    suggestion="Use: Run `command` or describe command directly"
                 )
 
-            # Task tool specific pattern
             if task_tool.search(line):
                 result.should(
-                    f"Line {i}: \"{stripped}\"\n"
-                    f"    Issue: SHOULD NOT use 'Use Task tool to launch'\n"
-                    f"    Suggestion: Use 'Launch [agent-name] agent' instead",
-                    str(file_path), i
+                    "Explicit Task tool reference",
+                    file=rel_path,
+                    line=i,
+                    source=stripped,
+                    suggestion="Use: Launch `agent-name` agent"
                 )
 
         # Check frontmatter for unrestricted Bash
-        fm, _ = parse_frontmatter(content)
+        fm, _, _ = parse_frontmatter(content)
         if "allowed-tools" in fm:
             allowed = fm["allowed-tools"]
             if isinstance(allowed, str) and "Bash" in allowed and "Bash(" not in allowed:
                 result.must(
-                    f"Unrestricted Bash in allowed-tools: \"{allowed}\"\n"
-                    f"    Issue: MUST NOT use bare 'Bash' in allowed-tools\n"
-                    f"    Suggestion: Use filtered Bash like Bash(git:*), Bash(npm:*)",
-                    str(file_path)
+                    "Unrestricted Bash in allowed-tools",
+                    file=rel_path,
+                    source=f'allowed-tools: {allowed}',
+                    suggestion="Use filtered: Bash(git:*), Bash(npm:*)"
                 )
 
     return result
 
 
 # =============================================================================
-# Check: Tokens (from count-tokens.py)
+# Check: Tokens
 # =============================================================================
 
 def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
@@ -617,94 +728,85 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
         result.may("No skills found")
         return result
 
-    critical_count = 0
-    warning_count = 0
-
     for skill_dir in sorted(skills):
-        skill_result = _analyze_skill_tokens(skill_dir, verbose)
+        skill_result = _analyze_skill_tokens(skill_dir)
+        rel_path = f"skills/{skill_dir.name}/SKILL.md"
+
+        meta = skill_result["metadata_tokens"]
+        body = skill_result["skill_tokens"]
+        refs = skill_result["reference_tokens"]
+        excess = body - SKILL_BUDGET
+
+        # Build details dict for structured output
+        details = {
+            "frontmatter": meta,
+            "body": body,
+            "refs": refs,
+            "files": skill_result["files"]
+        }
 
         if skill_result["status"] == "CRITICAL":
-            critical_count += 1
             result.must(
-                f"{skill_dir.name}: {skill_result['skill_tokens']} tokens (limit: {SKILL_CRITICAL}, refactor to references/)",
-                str(skill_dir / "SKILL.md")
+                f"Token budget exceeded: {body} tokens",
+                file=rel_path,
+                suggestion=f"MUST move {excess}+ tokens to references/",
+                **details
             )
         elif skill_result["status"] == "WARNING":
-            warning_count += 1
             result.should(
-                f"{skill_dir.name}: {skill_result['skill_tokens']} tokens (threshold: {SKILL_WARNING})",
-                str(skill_dir / "SKILL.md")
+                f"Token count high: {body} tokens",
+                file=rel_path,
+                suggestion=f"Move {excess}+ tokens to references/",
+                **details
+            )
+        elif body > SKILL_BUDGET:
+            result.may(
+                f"Token count above target: {body} tokens",
+                file=rel_path,
+                suggestion=f"Consider moving {excess} tokens to references/",
+                **details
+            )
+        elif verbose:
+            result.ok(
+                f"Token count OK: {body} tokens",
+                file=rel_path,
+                **details
             )
 
-        # Show detailed breakdown in verbose mode
+        # Additional verbose output for file breakdown
         if verbose:
-            meta = skill_result["metadata_tokens"]
-            body = skill_result["skill_tokens"]
-            refs = skill_result["reference_tokens"]
-            scripts = skill_result.get("script_tokens", 0)
-            total = skill_result["total_tokens"]
-
-            # Count files by type
             ref_files = [f for f in skill_result.get("files", []) if f["type"] == "reference"]
             script_files = [f for f in skill_result.get("files", []) if f["type"] == "script"]
 
-            # Determine status message
-            if body > SKILL_CRITICAL:
-                status_msg = f"MUST refactor: body {body} tokens exceeds {SKILL_CRITICAL} limit"
-            elif body > SKILL_WARNING:
-                status_msg = f"SHOULD optimize: body {body} tokens exceeds {SKILL_WARNING} threshold"
-            elif body > SKILL_BUDGET:
-                status_msg = f"MAY optimize: body {body} tokens exceeds ~{SKILL_BUDGET} target"
-            else:
-                status_msg = f"OK: body {body} tokens within ~{SKILL_BUDGET} target"
-
-            result.ok(f"Skill: {skill_dir.name}")
-            result.ok(f"  Metadata (description): {meta} tokens")
-            result.ok(f"  Body (SKILL.md excluding frontmatter): {body} tokens")
+            result.ok(f"  Frontmatter: {meta} tokens (target: ~{METADATA_BUDGET})")
+            result.ok(f"  Body: {body} tokens (target: ~{SKILL_BUDGET})")
             result.ok(f"  References: {refs} tokens ({len(ref_files)} files)")
             for f in ref_files:
                 result.ok(f"    - {f['file']}: {f['tokens']} tokens")
-            result.ok(f"  Scripts: {scripts} tokens ({len(script_files)} files)")
-            for f in script_files:
-                result.ok(f"    - {f['file']}: {f['tokens']} tokens")
-            result.ok(f"  Total: {total} tokens")
-            result.ok(f"  Status: {status_msg}")
-
-        # Info for above-target skills (non-verbose)
-        if not verbose and skill_result["status"] == "OK":
-            for w in skill_result.get("warnings", []):
-                if "above" in w.lower() and "target" in w.lower():
-                    result.may(
-                        f"{skill_dir.name}: {skill_result['skill_tokens']} tokens (target: ~500)",
-                        str(skill_dir / "SKILL.md")
-                    )
-                    break
-
-    if critical_count > 0:
-        result.passed = False
+            if script_files:
+                scripts = skill_result.get("script_tokens", 0)
+                result.ok(f"  Scripts: {scripts} tokens ({len(script_files)} files)")
+                for f in script_files:
+                    result.ok(f"    - {f['file']}: {f['tokens']} tokens")
+            result.ok(f"  Total: {skill_result['total_tokens']} tokens")
 
     return result
 
 
-def _analyze_skill_tokens(skill_dir: Path, verbose: bool) -> dict:
+def _analyze_skill_tokens(skill_dir: Path) -> dict:
     """Analyze token usage for a single skill."""
     skill_md = skill_dir / "SKILL.md"
     content = skill_md.read_text()
-    fm, body = parse_frontmatter(content)
+    fm, body, _ = parse_frontmatter(content)
 
-    # Metadata (description field)
     description = fm.get("description", "")
     metadata_tokens = count_tokens(description)
-
-    # SKILL.md body
     skill_tokens = count_tokens(body)
 
-    # Reference files
     reference_tokens = 0
     files = [{"file": "SKILL.md", "tokens": skill_tokens, "type": "skill"}]
     seen_files = set()
 
-    # Count references/*.md
     ref_dir = skill_dir / "references"
     if ref_dir.exists():
         for f in ref_dir.glob("**/*.md"):
@@ -719,7 +821,6 @@ def _analyze_skill_tokens(skill_dir: Path, verbose: bool) -> dict:
                     "type": "reference"
                 })
 
-    # Count *.md in skill root (except SKILL.md)
     for f in skill_dir.glob("*.md"):
         if f.name != "SKILL.md":
             abs_path = f.resolve()
@@ -727,13 +828,8 @@ def _analyze_skill_tokens(skill_dir: Path, verbose: bool) -> dict:
                 seen_files.add(abs_path)
                 tokens = count_tokens(f.read_text())
                 reference_tokens += tokens
-                files.append({
-                    "file": f.name,
-                    "tokens": tokens,
-                    "type": "reference"
-                })
+                files.append({"file": f.name, "tokens": tokens, "type": "reference"})
 
-    # Count script files in scripts/
     script_tokens = 0
     scripts_dir = skill_dir / "scripts"
     if scripts_dir.exists():
@@ -749,21 +845,11 @@ def _analyze_skill_tokens(skill_dir: Path, verbose: bool) -> dict:
 
     total_tokens = metadata_tokens + skill_tokens + reference_tokens + script_tokens
 
-    # Determine status
     status = "OK"
-    warnings = []
-
     if skill_tokens > SKILL_CRITICAL:
         status = "CRITICAL"
-        warnings.append(f"SKILL.md body: {skill_tokens} tokens critically exceeds {SKILL_CRITICAL} limit, must refactor content to references/")
     elif skill_tokens > SKILL_WARNING:
         status = "WARNING"
-        warnings.append(f"SKILL.md body: {skill_tokens} tokens exceeds {SKILL_WARNING} warning threshold, consider moving content to references/")
-    elif skill_tokens > SKILL_BUDGET:
-        warnings.append(f"SKILL.md body: {skill_tokens} tokens above {SKILL_BUDGET} target")
-
-    if metadata_tokens > METADATA_WARNING:
-        warnings.append(f"Metadata description: {metadata_tokens} tokens exceeds ~{METADATA_BUDGET} recommended budget")
 
     return {
         "status": status,
@@ -773,12 +859,11 @@ def _analyze_skill_tokens(skill_dir: Path, verbose: bool) -> dict:
         "script_tokens": script_tokens,
         "total_tokens": total_tokens,
         "files": files,
-        "warnings": warnings,
     }
 
 
 # =============================================================================
-# Main orchestrator
+# Output Formatting
 # =============================================================================
 
 CHECKS = {
@@ -797,169 +882,158 @@ def run_all_checks(plugin_dir: Path, checks: list[str], verbose: bool = False) -
     results = []
     for check_name in CHECK_ORDER:
         if check_name in checks:
-            check_fn = CHECKS[check_name]
-            result = check_fn(plugin_dir, verbose)
+            result = CHECKS[check_name](plugin_dir, verbose)
             results.append(result)
     return results
 
 
 def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bool = False):
-    """Print validation results with MUST/SHOULD/MAY severity levels."""
-    total_must = 0
-    total_should = 0
-    total_may = 0
-
-    # Group all issues by severity for phase-aligned output
-    all_must = []
-    all_should = []
-    all_may = []
-    all_ok = []
+    """Print validation results with structured formatting."""
+    all_issues = {"must": [], "should": [], "may": [], "ok": []}
 
     for result in results:
         for issue in result.issues:
-            if issue.severity == "must":
-                all_must.append(issue)
-                total_must += 1
-            elif issue.severity == "should":
-                all_should.append(issue)
-                total_should += 1
-            elif issue.severity == "may":
-                all_may.append(issue)
-                total_may += 1
-            elif issue.severity == "ok":
-                all_ok.append(issue)
+            all_issues[issue.severity].append(issue)
 
-    # Phase 1 Output: Discovery & Validation Results
-    print("\n" + "=" * 60)
-    print("Phase 1: Discovery & Validation")
-    print("=" * 60)
-    print(f"Target: {plugin_dir}")
-    print(f"Checks: {', '.join(r.check for r in results)}")
+    # Header
+    print("\n" + "=" * 70)
+    print("PLUGIN VALIDATION REPORT")
+    print("=" * 70)
+    print(f"Target:  {plugin_dir}")
+    print(f"Checks:  {', '.join(r.check for r in results)}")
 
-    # Component inventory
     components = find_components(plugin_dir)
-    print(f"\nComponents Found:")
+    print(f"\nComponents:")
     print(f"  Commands: {len(components['commands'])}")
     print(f"  Agents:   {len(components['agents'])}")
     print(f"  Skills:   {len(components['skills'])}")
 
-    # MUST violations (Critical - blocks proceeding)
-    if all_must:
-        print(f"\n[MUST] Critical Issues ({len(all_must)})")
-        print("-" * 40)
-        for issue in all_must:
-            loc = _format_location(issue)
-            print(f"  {issue.message}{loc}")
-        print("\n  These issues MUST be fixed before proceeding to Phase 2.")
+    # Issues by severity
+    def print_issue(issue: Issue, indent: str = ""):
+        """Print a single issue with structured format."""
+        # Location line
+        loc = f"{issue.file}" if issue.file else "(no file)"
+        if issue.line:
+            loc += f":{issue.line}"
+        print(f"{indent}┌─ {loc}")
 
-    # SHOULD violations (Recommended fixes)
-    if all_should:
-        print(f"\n[SHOULD] Recommended Fixes ({len(all_should)})")
-        print("-" * 40)
-        for issue in all_should:
-            loc = _format_location(issue)
-            print(f"  {issue.message}{loc}")
-        print("\n  These issues SHOULD be addressed for quality.")
+        # Message
+        print(f"{indent}│  Issue: {issue.message}")
 
-    # MAY items (Optional improvements - always show if present)
-    if all_may:
-        print(f"\n[MAY] Optional Improvements ({len(all_may)})")
-        print("-" * 40)
-        for issue in all_may:
-            loc = _format_location(issue)
-            print(f"  {issue.message}{loc}")
+        # Source text (if available)
+        if issue.source:
+            src = issue.source[:80] + "..." if len(issue.source) > 80 else issue.source
+            print(f"{indent}│  Source: {src}")
 
-    # OK items (Verbose confirmations only)
-    if verbose and all_ok:
-        print(f"\n[OK] Passing Checks ({len(all_ok)})")
-        print("-" * 40)
-        for issue in all_ok:
-            loc = _format_location(issue)
-            print(f"  {issue.message}{loc}")
+        # Token details (if available)
+        if issue.details.get("frontmatter") is not None:
+            fm = issue.details["frontmatter"]
+            body = issue.details["body"]
+            refs = issue.details["refs"]
+            print(f"{indent}│  Tokens: frontmatter={fm}, body={body}, refs={refs}")
+            print(f"{indent}│  Target: frontmatter≈{METADATA_BUDGET}, body≈{SKILL_BUDGET}, refs≥2000")
 
-    # Summary aligned with SKILL.md workflow
-    print("\n" + "=" * 60)
-    print("Validation Summary")
-    print("=" * 60)
-    print(f"  MUST violations:   {total_must}")
-    print(f"  SHOULD violations: {total_should}")
-    print(f"  MAY improvements:  {total_may}")
+        # Suggestion
+        if issue.suggestion:
+            print(f"{indent}│  Fix: {issue.suggestion}")
 
-    # Phase transition guidance
-    print("\n" + "-" * 60)
-    if total_must > 0:
+        print(f"{indent}└─")
+
+    # MUST violations
+    if all_issues["must"]:
+        print(f"\n{'─' * 70}")
+        print(f"[MUST] Critical Issues ({len(all_issues['must'])})")
+        print(f"{'─' * 70}")
+        for issue in all_issues["must"]:
+            print_issue(issue, "  ")
+        print("\n  ⚠ These issues MUST be fixed before proceeding.")
+
+    # SHOULD violations
+    if all_issues["should"]:
+        print(f"\n{'─' * 70}")
+        print(f"[SHOULD] Recommended Fixes ({len(all_issues['should'])})")
+        print(f"{'─' * 70}")
+        for issue in all_issues["should"]:
+            print_issue(issue, "  ")
+        print("\n  ℹ These issues SHOULD be addressed for quality.")
+
+    # MAY improvements
+    if all_issues["may"]:
+        print(f"\n{'─' * 70}")
+        print(f"[MAY] Optional Improvements ({len(all_issues['may'])})")
+        print(f"{'─' * 70}")
+        for issue in all_issues["may"]:
+            print_issue(issue, "  ")
+
+    # OK items (verbose only)
+    if verbose and all_issues["ok"]:
+        print(f"\n{'─' * 70}")
+        print(f"[OK] Passing Checks ({len(all_issues['ok'])})")
+        print(f"{'─' * 70}")
+        for issue in all_issues["ok"]:
+            msg = issue.message
+            if issue.file:
+                msg += f" ({issue.file}"
+                if issue.line:
+                    msg += f":{issue.line}"
+                msg += ")"
+            print(f"  ✓ {msg}")
+
+    # Summary
+    print(f"\n{'=' * 70}")
+    print("SUMMARY")
+    print(f"{'=' * 70}")
+    print(f"  MUST violations:   {len(all_issues['must'])}")
+    print(f"  SHOULD violations: {len(all_issues['should'])}")
+    print(f"  MAY improvements:  {len(all_issues['may'])}")
+
+    print(f"\n{'─' * 70}")
+    if all_issues["must"]:
         print("Result: FAILED")
-        print("\nPhase 2 Blocked: MUST violations detected.")
-        print("Required Actions:")
-        print("  1. Fix all MUST violations listed above")
-        print("  2. Re-run validation to verify fixes")
-        print("  3. Proceed to Phase 2 only after MUST count reaches 0")
-    elif total_should > 0:
+        print("\nPhase 2 Blocked: Fix all MUST violations and re-run validation.")
+    elif all_issues["should"]:
         print("Result: PASSED (with recommendations)")
-        print("\nPhase 2 Ready: No MUST violations.")
-        print("Recommendations:")
-        print("  - Address SHOULD items during Phase 2 optimization")
-        print("  - Launch plugin-optimizer agent with issue list")
+        print("\nPhase 2 Ready: Address SHOULD items during optimization.")
     else:
         print("Result: PASSED")
-        print("\nPhase 2 Assessment: No critical issues detected.")
-        if total_may > 0:
-            print(f"  {total_may} optional improvement(s) noted")
-        print("  Plugin structure follows best practices.")
-
-
-def _format_location(issue: Issue) -> str:
-    """Format file location for display."""
-    if not issue.file:
-        return ""
-    loc = f"\n    → {issue.file}"
-    if issue.line:
-        loc += f":{issue.line}"
-    return loc
+        print("\nPlugin follows best practices.")
+        if all_issues["may"]:
+            print(f"  {len(all_issues['may'])} optional improvement(s) noted.")
 
 
 def output_json(results: list[ValidationResult], plugin_dir: Path):
-    """Output results as JSON with severity levels."""
+    """Output results as JSON."""
     output = {
         "plugin": str(plugin_dir),
         "results": [],
-        "summary": {
-            "must": 0,
-            "should": 0,
-            "may": 0,
-            "passed": True,
-            "phase2_ready": True
-        }
+        "summary": {"must": 0, "should": 0, "may": 0, "passed": True}
     }
 
     for result in results:
         check_output = {
             "check": result.check,
             "passed": result.passed,
-            "issues": [
-                {
-                    "severity": i.severity,
-                    "message": i.message,
-                    "file": i.file,
-                    "line": i.line,
-                }
-                for i in result.issues
-                if i.severity != "ok"  # Exclude OK confirmations from JSON
-            ]
+            "issues": []
         }
+        for i in result.issues:
+            if i.severity == "ok":
+                continue
+            check_output["issues"].append({
+                "severity": i.severity,
+                "message": i.message,
+                "file": i.file,
+                "line": i.line,
+                "source": i.source,
+                "suggestion": i.suggestion,
+                "details": i.details if i.details else None
+            })
+            output["summary"][i.severity] = output["summary"].get(i.severity, 0) + 1
+            if i.severity == "must":
+                output["summary"]["passed"] = False
+
         output["results"].append(check_output)
 
-        for i in result.issues:
-            if i.severity == "must":
-                output["summary"]["must"] += 1
-                output["summary"]["passed"] = False
-                output["summary"]["phase2_ready"] = False
-            elif i.severity == "should":
-                output["summary"]["should"] += 1
-            elif i.severity == "may":
-                output["summary"]["may"] += 1
-
-    print(json.dumps(output, indent=2))
+    print(json.dumps(output, indent=2, default=str))
 
 
 def main():
@@ -971,15 +1045,14 @@ def main():
     parser.add_argument("plugin_path", help="Path to plugin directory")
     parser.add_argument(
         "--check",
-        help="Comma-separated list of checks to run (structure,manifest,frontmatter,tools,tokens) or 'all'",
+        help="Comma-separated checks (structure,manifest,frontmatter,tools,tokens) or 'all'",
         default="all"
     )
-    parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
 
-    # Resolve plugin path
     plugin_dir = Path(args.plugin_path).resolve()
     if not plugin_dir.exists():
         print(f"Error: Plugin directory not found: {plugin_dir}")
@@ -988,7 +1061,6 @@ def main():
         print(f"Error: Path is not a directory: {plugin_dir}")
         sys.exit(1)
 
-    # Parse checks
     if args.check == "all":
         checks = CHECK_ORDER
     else:
@@ -996,7 +1068,7 @@ def main():
         invalid = [c for c in checks if c not in CHECKS]
         if invalid:
             print(f"Error: Unknown checks: {', '.join(invalid)}")
-            print(f"Available checks: {', '.join(CHECK_ORDER)}")
+            print(f"Available: {', '.join(CHECK_ORDER)}")
             sys.exit(1)
 
     if not args.json:
@@ -1004,28 +1076,23 @@ def main():
         if "tokens" in checks:
             print(f"Token method: {TOKEN_METHOD}")
 
-    # Run checks
     results = run_all_checks(plugin_dir, checks, args.verbose)
 
-    # Output results
     if args.json:
         output_json(results, plugin_dir)
     else:
         print_results(results, plugin_dir, args.verbose)
 
-    # Determine exit code based on severity
-    has_critical_tokens = any(
-        r.check == "tokens" and not r.passed
-        for r in results
-    )
-    has_must_violations = any(not r.passed for r in results)
+    # Exit codes
+    has_critical = any(r.check == "tokens" and not r.passed for r in results)
+    has_must = any(not r.passed for r in results)
 
-    if has_critical_tokens:
-        sys.exit(2)  # Critical: token budget exceeded (MUST refactor)
-    elif has_must_violations:
-        sys.exit(1)  # Failed: MUST violations detected
+    if has_critical:
+        sys.exit(2)
+    elif has_must:
+        sys.exit(1)
     else:
-        sys.exit(0)  # Passed: ready for Phase 2
+        sys.exit(0)
 
 
 if __name__ == "__main__":
