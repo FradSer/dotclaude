@@ -41,11 +41,12 @@ Load the `gitflow:gitflow-workflow` skill using the Skill tool to access GitFlow
 
 ## Phase 4: Version File Updates
 
-**Goal**: Update version across project files and prepare changelog.
+**Goal**: Update version across project files.
 
 **Actions**:
 1. Identify version files using patterns from the `gitflow-workflow` skill references (package.json, Cargo.toml, VERSION, etc.)
 2. Update version to `$RELEASE_VERSION` in all identified files
 3. Commit changes with message: `chore: bump version to $RELEASE_VERSION` and include `Co-Authored-By` footer
-4. Optionally create `CHANGELOG.md` template if repo maintains changelogs (see `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`), leaving `## [Unreleased]` section for manual curation or automated generation during finish-release
-5. Push the branch to origin if newly created
+4. Push the branch to origin if newly created
+
+**Note**: CHANGELOG.md is NOT updated during start-release. The `## [Unreleased]` section will be processed during finish-release when commits are analyzed and changelog entries are generated.

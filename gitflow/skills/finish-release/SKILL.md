@@ -30,17 +30,30 @@ Load the `gitflow:gitflow-workflow` skill using the Skill tool to access GitFlow
 2. Run tests if available
 3. If tests fail, report the failures and exit without merging; the user must fix issues first
 
-## Phase 3: Version and Changelog Update
+## Phase 3: Changelog Generation
 
-**Goal**: Normalize version and update CHANGELOG with release details.
+**Goal**: Generate changelog from commits and merge with manual entries.
 
 **Actions**:
 1. Normalize the provided version from `$ARGUMENTS` to `$RELEASE_VERSION` (accept `v1.2.3`, `1.2.3`, or `release/1.2.3`, normalize to `1.2.3`)
 2. Identify previous version tag using `git tag --sort=-v:refname`
-3. Collect commits since previous tag following the user-facing principle defined in the `gitflow-workflow` skill (include feat, fix, refactor, docs, perf, deprecate, remove, security; exclude chore, build, ci, test, merge commits)
-4. Update `CHANGELOG.md` (create if missing) with the new version and date, following the format in `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-5. If `CHANGELOG.md` was manually updated during start-release, merge or reconcile entries while preserving manual curation
-6. Commit the updated `CHANGELOG.md` to the current release branch using conventional commit format (e.g., `chore: update changelog for v$RELEASE_VERSION`) and MUST include the `Co-Authored-By` footer
+3. Collect commits since previous tag using `git log --oneline --no-merges <previous-tag>..HEAD`
+4. Parse conventional commits and categorize by type following the mapping rules in `gitflow-workflow` skill references (see `references/changelog-generation.md` for detailed rules):
+   - `feat:` → **Added**
+   - `fix:` → **Fixed**
+   - `perf:` → **Changed** (with performance note)
+   - `refactor:` → **Changed**
+   - `docs:` → **Changed** (documentation-specific)
+   - `BREAKING CHANGE:` or `!` → **Changed** (mark as BREAKING)
+   - Security-related keywords → **Security**
+   - Deprecation keywords → **Deprecated**
+   - Removal keywords → **Removed**
+   - Exclude: `chore:`, `build:`, `ci:`, `test:`, merge commits
+5. Extract any existing `## [Unreleased]` entries from CHANGELOG.md for manual curation
+6. Generate new version section following Keep a Changelog format from `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
+7. Merge manual entries from `[Unreleased]` with generated entries (prioritize manual curation, deduplicate)
+8. Update CHANGELOG.md: replace `## [Unreleased]` section with the new version section, keeping an empty `## [Unreleased]` at the top
+9. Commit the updated `CHANGELOG.md` to the current release branch: `chore: update changelog for v$RELEASE_VERSION` with `Co-Authored-By` footer
 
 ## Phase 4: Branch Merge and Tagging
 
