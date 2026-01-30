@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.6.1] - 2026-01-30
+
+### Changed
+
+- Migrate GitFlow plugin to git-flow-next CLI
+- Restructure GitFlow skill documentation
+- Restructure Refactor plugin documentation with skill references
+- Restructure Git plugin documentation with workflow guidance
+- Enhance Plugin Optimizer workflow and configuration
+
+### Fixed
+
+- Align GitFlow changelog generation with Keep a Changelog standards
+
 ## [v1.6.0] - 2026-01-25
 
 ### Added
@@ -131,7 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix build and release scripts for version detection and TOML prompts
 - Improve sync script compatibility and error handling
 
-[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.5.0...HEAD
+[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.6.1...HEAD
+[v1.6.1]: https://github.com/FradSer/dotclaude/compare/v1.6.0...v1.6.1
+[v1.6.0]: https://github.com/FradSer/dotclaude/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/FradSer/dotclaude/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/FradSer/dotclaude/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/FradSer/dotclaude/compare/v1.2.0...v1.3.0
