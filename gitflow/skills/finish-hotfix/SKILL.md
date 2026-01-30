@@ -1,62 +1,42 @@
 ---
 name: finish-hotfix
-allowed-tools: Bash(git:*), Read, Write, Skill
+allowed-tools: Bash(git:*), Read, Write
 description: Complete and merge hotfix branch
 model: haiku
 argument-hint: [version]
 user-invocable: true
 ---
 
-## Initialization
+## Phase 1: Identify Version
 
-Load the `gitflow:gitflow-workflow` skill using the Skill tool to access GitFlow workflow capabilities.
-
-## Phase 1: Context Validation
-
-**Goal**: Gather and validate current hotfix branch state before merging.
+**Goal**: Determine hotfix version from current branch or argument.
 
 **Actions**:
-1. Run `git status` to check working tree status
-2. Run `git log --oneline -10` to review recent commits
-3. Identify version files in the repository
-4. Validate current branch follows `hotfix/*` convention and working tree is clean
+1. If `$ARGUMENTS` provided, use it as version
+2. Otherwise, extract from current branch: `git branch --show-current` (strip `hotfix/` prefix)
 
-## Phase 2: Testing
+## Phase 2: Pre-finish Checks
 
-**Goal**: Run automated tests to ensure hotfix quality before merge.
+**Goal**: Run tests before finishing.
 
 **Actions**:
-1. Identify test commands available in the repository (check for test scripts in package.json, Makefile, etc.)
-2. Run tests if available
-3. If tests fail, report the failures and exit without merging; the user must fix issues first
+1. Identify test commands (check package.json, Makefile, etc.)
+2. Run tests if available; exit if tests fail
 
-## Phase 3: Version and Changelog Update
+## Phase 3: Update Changelog
 
-**Goal**: Normalize version and update CHANGELOG with hotfix details.
-
-**Actions**:
-1. Normalize the provided version from `$ARGUMENTS` to `$HOTFIX_VERSION` (accept `v1.2.3` or `1.2.3`, normalize to `1.2.3`)
-2. Identify previous version tag using `git tag --sort=-v:refname`
-3. Collect commits since previous tag following the user-facing principle defined in the `gitflow-workflow` skill (include feat, fix, refactor, docs, perf, deprecate, remove, security; exclude chore, build, ci, test, merge commits)
-4. Update `CHANGELOG.md` (or create if missing) with the new version and date, following the format in `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-5. Commit the updated `CHANGELOG.md` to the current hotfix branch using conventional commit format (e.g., `chore: update changelog for v$HOTFIX_VERSION`) and MUST include the `Co-Authored-By` footer
-
-## Phase 4: Branch Merge and Tagging
-
-**Goal**: Merge hotfix to production and create version tag.
+**Goal**: Generate changelog from commits.
 
 **Actions**:
-1. Identify the production branch (often `main` or `production`)
-2. Merge the hotfix branch into the production branch (often with `--no-ff`)
-3. Create version tag `v$HOTFIX_VERSION` on the production branch
-4. Push the production branch and tags
+1. Get previous tag: `git tag --sort=-v:refname | head -1`
+2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
+3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
+4. Commit: `chore: update changelog for v$VERSION` with `Co-Authored-By` footer
 
-## Phase 5: Propagation and Cleanup
+## Phase 4: Finish Hotfix
 
-**Goal**: Propagate hotfix changes to integration branch and clean up.
+**Goal**: Complete hotfix using git-flow-next CLI.
 
 **Actions**:
-1. Identify the integration branch (often `develop` or `main`)
-2. Merge the production branch into the integration branch to propagate hotfix changes
-3. Push the integration branch
-4. Delete the hotfix branch locally and remotely (skip deletion if the branch is shared or the user requests to keep it)
+1. Run `git flow hotfix finish $VERSION -m "Release v$VERSION"`
+2. Push all: `git push origin main develop --tags`

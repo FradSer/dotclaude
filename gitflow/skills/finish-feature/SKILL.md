@@ -1,52 +1,40 @@
 ---
 name: finish-feature
-allowed-tools: Bash(git:*), Read, Skill
+allowed-tools: Bash(git:*), Read, Write
 description: Complete and merge feature branch
 model: haiku
 argument-hint: [feature-name]
 user-invocable: true
 ---
 
-## Initialization
+## Phase 1: Identify Feature
 
-Load the `gitflow:gitflow-workflow` skill using the Skill tool to access GitFlow workflow capabilities.
-
-## Phase 1: Context Validation
-
-**Goal**: Gather and validate current branch state before merging.
+**Goal**: Determine feature name from current branch or argument.
 
 **Actions**:
-1. Run `git status` to check working tree status
-2. Run `git log --oneline -10` to review recent commits
-3. Normalize the provided feature name from `$ARGUMENTS` to `$FEATURE_NAME` (strip `feature/` prefix if present, convert to kebab-case)
-4. Validate current branch follows `feature/*` convention and working tree is clean
+1. If `$ARGUMENTS` provided, use it as feature name
+2. Otherwise, extract from current branch: `git branch --show-current` (strip `feature/` prefix)
 
-## Phase 2: Testing
+## Phase 2: Pre-finish Checks
 
-**Goal**: Run automated tests to ensure code quality before merge.
+**Goal**: Run tests before finishing.
 
 **Actions**:
-1. Identify test commands available in the repository (check for test scripts in package.json, Makefile, etc.)
-2. Run tests if available
-3. If tests fail, report the failures and exit without merging; the user must fix issues first
+1. Identify test commands (check package.json, Makefile, etc.)
+2. Run tests if available; exit if tests fail
 
-## Phase 3: Changelog Update
+## Phase 3: Update Changelog
 
-**Goal**: Document changes in the Unreleased section of CHANGELOG.
-
-**Actions**:
-1. Ensure changes are documented in the `[Unreleased]` section of `CHANGELOG.md` following `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`:
-   - Use standard Keep a Changelog sections (Added, Changed, Deprecated, Removed, Fixed, Security)
-   - Write entries in present/imperative tense using user-facing language
-   - Include sufficient context to understand impact; merge repetitive items
-2. Commit any CHANGELOG updates using conventional commit format and MUST include the `Co-Authored-By` footer
-
-## Phase 4: Branch Merge and Cleanup
-
-**Goal**: Merge feature branch and clean up local and remote branches.
+**Goal**: Document changes in CHANGELOG.md.
 
 **Actions**:
-1. Identify target integration branch for the active workflow (often `develop`)
-2. Merge `feature/$FEATURE_NAME` into the integration branch (often with `--no-ff`)
-3. Push the integration branch with merged changes
-4. Delete `feature/$FEATURE_NAME` locally and remotely (skip deletion if the branch is shared or the user requests to keep it)
+1. Ensure changes are in `[Unreleased]` section per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
+2. Commit CHANGELOG updates with `Co-Authored-By` footer
+
+## Phase 4: Finish Feature
+
+**Goal**: Complete feature using git-flow-next CLI.
+
+**Actions**:
+1. Run `git flow feature finish $FEATURE_NAME`
+2. Push develop: `git push origin develop`
