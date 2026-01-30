@@ -1,6 +1,6 @@
 {
   "name": "gitflow",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "GitFlow workflow automation for feature, hotfix, and release branches",
   "keywords": ["git", "gitflow", "workflow", "branching", "release-management", "version-control"],
   "author": {

@@ -8,81 +8,101 @@ user-invocable: true
 
 # Refactor Project Command
 
-## Core Principles
+Execute fully automated project-wide refactoring using the code-simplifier agent. Apply aggressive improvements across entire codebase with emphasis on cross-file duplication reduction and consistent patterns.
 
-- **Fully automated**: Execute project-wide refactoring immediately without confirmation
-- **Aggressive refactoring**: Apply thorough improvements across entire codebase
-- **Self-discovery**: Agent discovers best practices from skills automatically
-- **Cross-file focus**: Emphasize duplication reduction and consistent patterns
-- **Git safety net**: Trust git to revert if needed, no preview confirmations
+## Workflow
 
-## Context
+### Phase 1: Analyze Project Scope
 
-- This command is for project-wide refactoring across the entire codebase.
-- This command executes immediately without preview or confirmation.
-- Use git to revert if any issues arise.
+Perform quick analysis to determine full project refactoring scope.
 
-## Phase 1: Analyze Project Scope
+#### File Discovery
 
-**Goal**: Perform a quick analysis to determine the full project refactoring scope.
+**Use Glob to find all code files**:
+- Search for common code file patterns: `**/*.{ts,tsx,js,jsx,py,go,swift,java,rb,rs}`
+- Discover all source files in the project
 
-**Actions**:
+**Filter to source code only**:
+- Exclude: `node_modules/`, `.git/`, `dist/`, `build/`, `vendor/`, `.venv/`
+- Exclude: configuration files, lock files, binary files, documentation
+- Focus on actual source code files
 
-1. Use Glob to find all code files in the project
-2. Filter to focus on source code (exclude node_modules, build outputs, etc.)
-3. Group files by type/language
-4. List primary source code directories
-5. Show project structure overview
-6. Display scope summary (informational only, no confirmation needed):
-   - Total number of files to be refactored
-   - Languages/file types detected
-   - Main directories involved
-   - Note: "Proceeding with project-wide refactoring automatically"
+**Group files by type/language**:
+- Categorize by file extensions (`.ts`, `.py`, `.go`, etc.)
+- Identify primary and secondary languages
+- Count files per language
 
-## Phase 2: Launch Refactoring Agent
+**List primary source code directories**:
+- Identify main source trees (`src/`, `lib/`, `app/`, `pkg/`)
+- Note test directories separately (`__tests__/`, `tests/`, `*_test.go`)
 
-**Goal**: Execute the code-simplifier agent on the entire project with cross-file optimization focus.
+**Show project structure overview**:
+- Display directory tree with file counts
+- Highlight main code locations
 
-**Actions**:
+#### Scope Summary Display
 
-1. Use Task tool with subagent_type="refactor:code-simplifier"
-2. Pass "project-wide scope" indication
-3. Pass emphasis on cross-file duplication reduction and consistent patterns
-4. Pass aggressive mode flag to apply thorough refactoring, remove legacy code
-5. The agent will automatically:
-   - Load the refactor:best-practices skill
-   - Analyze the entire codebase
-   - Detect frameworks, libraries, and languages
-   - Discover and apply relevant best practices from skill references
-   - Emphasize cross-file duplication and consistent patterns
-   - Aggressively refactor: remove backwards-compatibility hacks, unused code, rename properly
-   - Preserve functionality while improving clarity, consistency, and maintainability
-   - Apply Code Quality Standards as defined in the refactor:best-practices skill
+Display informational summary before proceeding (no confirmation needed):
 
-## Phase 3: Summary
+```
+Project-wide Refactoring Scope:
+- Total files: <count>
+- Languages: <list of detected languages>
+- Main directories: <list>
 
-**Goal**: Provide comprehensive summary of all project-wide changes made during refactoring.
+Proceeding with project-wide refactoring automatically.
+```
 
-**Actions**:
+See `references/scope-analysis.md` for exclusion patterns and edge cases.
 
-1. Report total files refactored (count and percentage of project)
-2. Describe what changed and why, categorized by improvement type
-3. Report files touched (total count)
-4. List best practices applied (which categories/patterns)
-5. Document cross-file improvements made (deduplication, consistency)
-6. Document quality standards enforced
-7. Identify legacy code removed
-8. Suggest tests to run
-9. Recommend reviewing changes in logical groups
-10. Provide git rollback command if needed: `git reset --hard HEAD`
+### Phase 2: Launch Refactoring Agent
 
-## Requirements
+Launch code-simplifier agent with project-wide scope and cross-file optimization focus.
 
-- **NO user confirmations** - execute immediately after displaying scope
-- **Refactor entire project** - apply improvements across all discovered code files
-- **Aggressive refactoring** - remove legacy compatibility code, unused exports, rename improperly named vars
-- Follow the refactor:best-practices workflow and references in the refactor plugin skills
-- Let the agent self-discover best practices from skills
-- Preserve functionality while improving clarity, consistency, and maintainability
-- Emphasize cross-file duplication reduction and consistent patterns
-- Apply Code Quality Standards as defined in the refactor:best-practices skill
+Use Task tool with:
+```
+subagent_type: "refactor:code-simplifier"
+```
+
+Pass the following context in the prompt:
+- **Project-wide scope**: All discovered code files
+- **Cross-file optimization focus**: "Emphasize duplication reduction across files and consistent patterns project-wide"
+- **Aggressive mode flag**: "Enable aggressive refactoring: remove legacy code, unused exports, backwards-compatibility hacks, and rename improperly named variables"
+
+The agent automatically:
+1. Loads the refactor:best-practices skill
+2. Analyzes the entire codebase
+3. Detects frameworks, libraries, and languages
+4. Applies relevant best practices from skill references
+5. Emphasizes cross-file duplication and consistent patterns
+6. Aggressively refactors while preserving behavior
+7. Removes unused code and backwards-compatibility shims
+8. Renames improperly named variables/functions project-wide
+
+See `references/agent-configuration.md` for detailed Task tool parameters and agent workflow.
+
+### Phase 3: Summary
+
+Provide comprehensive summary of project-wide changes including:
+
+1. **Total files refactored** - Count and percentage of project (e.g., "42 files (68% of project)")
+2. **Changes categorized** - What changed and why, grouped by improvement type
+3. **Files touched** - Total count of modified files
+4. **Best practices applied** - Which language/framework patterns were used
+5. **Cross-file improvements** - Specific deduplication and consistency changes
+6. **Quality standards enforced** - What standards were verified/applied
+7. **Legacy code removed** - Identification of deprecated code eliminated
+8. **Test recommendations** - Suggest comprehensive test suite to run
+9. **Review recommendations** - Suggest reviewing changes in logical groups (e.g., "Review auth changes first, then UI components")
+10. **Rollback command** - Provide: `git reset --hard HEAD`
+
+See `references/output-requirements.md` for detailed summary format specifications.
+
+## Key Requirements
+
+- **Execute immediately** - No user confirmation required after displaying scope
+- **Refactor entire project** - Apply improvements across all discovered code files
+- **Aggressive refactoring** - Remove legacy compatibility code, unused exports, rename improperly named vars
+- **Cross-file focus** - Prioritize duplication reduction and consistent patterns across files
+- **Preserve behavior** - Maintain public APIs and external contracts unchanged
+- **Trust git** - Provide rollback command for safety, entire project scope means git reset

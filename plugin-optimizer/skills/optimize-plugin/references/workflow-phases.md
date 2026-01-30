@@ -25,16 +25,17 @@ If `commands/` directory exists with `.md` files:
 - Use `AskUserQuestion` tool to ask about migrating to skills structure
 - Record user decision for Phase 2
 
-### Validation Scripts
+### Validation Script
 
-Run all validation scripts:
+Run the unified validation script:
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/count-tokens.py "$TARGET" --all
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py "$TARGET"
 ```
+
+Options:
+- `--check=structure,manifest,frontmatter,tools,tokens` — Run specific validators
+- `--json` — Output results as JSON
+- `-v, --verbose` — Detailed output
 
 ### Analysis
 Compile issues by severity (Critical, Warnings, Info)
@@ -79,15 +80,11 @@ Launch `plugin-optimizer:plugin-optimizer` agent with:
 
 ## Phase 3: Final Verification
 
-### Re-run Validation Suite
+### Re-run Validation
 
-Execute all validation scripts again:
+Execute the validation script again:
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-file-patterns.sh "$TARGET"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-json.sh "$TARGET"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-frontmatter.sh "$TARGET"
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/check-tool-invocations.sh "$TARGET"
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/count-tokens.py "$TARGET" --all
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py "$TARGET"
 ```
 
 ### Results Analysis

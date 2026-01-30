@@ -8,83 +8,89 @@ user-invocable: true
 
 # Refactor Command
 
-## Core Principles
+Execute fully automated refactoring using the code-simplifier agent. Apply aggressive improvements, remove legacy code, and trust git as the safety net.
 
-- **Fully automated**: Execute refactoring immediately without user confirmation
-- **Aggressive refactoring**: Apply thorough improvements, remove legacy compatibility code
-- **Self-discovery**: Agent discovers best practices from skills automatically
-- **Git safety net**: Trust git to revert if needed, no preview confirmations
+## Workflow
 
-## Context
+### Phase 1: Determine Target Scope
 
-- **If arguments are provided**:
-  - First, check if they are valid file/directory paths relative to the repo root.
-  - If paths exist, treat them as target paths.
-  - If paths don't exist or arguments contain semantic descriptions (e.g., "authentication logic", "user login components"), search the codebase for code matching that description.
-- **If no arguments are provided**:
-  - Default to refactoring code associated with the current session context.
-  - Identify recently modified files from the current session.
-  - If no recent changes are found, inform user to provide specific file/directory paths.
+Identify files to refactor based on arguments or session context.
 
-## Phase 1: Determine Target Scope
+#### When Arguments Are Provided
 
-**Goal**: Identify and validate the files or directories to refactor based on arguments or session context.
+**Path Validation**:
+- Check if arguments are valid file/directory paths relative to the repo root
+- Use Glob to verify path existence
 
-**Actions**:
+**Path-Based Refactoring**:
+- If paths exist, treat them as target paths
+- Use them directly as the refactoring scope
 
-### If Arguments Provided
+**Semantic Search Fallback**:
+- If paths don't exist or arguments contain semantic descriptions (e.g., "authentication logic", "user login components")
+- Search the codebase using Grep for code matching that description
+- Automatically include ALL matching files in the refactoring scope without user confirmation
 
-1. Check if arguments are file/directory paths by verifying if paths exist in the repository
-2. If paths exist, use them directly as target scope
-3. If paths don't exist or arguments are semantic descriptions, search the codebase for code matching the semantic description
-4. Automatically include ALL matching files in the refactoring scope without user confirmation
+#### When No Arguments Are Provided (Session Context)
 
-### If No Arguments Provided (Default: Session Context)
+**Identify Recent Changes**:
+- Use `git diff --name-only` to identify recently modified files
+- Filter to focus on code files (exclude configuration, documentation, lock files)
 
-1. Identify recently modified files that have been changed in the repository
-2. Filter to focus on code files (exclude configuration, documentation, lock files unless needed)
-3. If no recent changes found, inform user that no recent changes were detected and suggest providing specific file/directory paths or semantic descriptions as arguments, then exit without refactoring
-4. Automatically proceed using all identified files as refactoring scope, displaying the file list for transparency
+**Handle No Changes Scenario**:
+- If no recent changes found, inform user that no recent changes were detected
+- Suggest providing specific file/directory paths or semantic descriptions as arguments
+- Exit without refactoring
 
-## Phase 2: Launch Refactoring Agent
+**Proceed Automatically**:
+- If recent changes exist, automatically proceed using all identified files as refactoring scope
+- Display the file list for transparency
 
-**Goal**: Execute the code-simplifier agent on the determined scope with aggressive refactoring enabled.
+See `references/scope-determination.md` for advanced search strategies and edge cases.
 
-**Actions**:
+### Phase 2: Launch Refactoring Agent
 
-1. Use Task tool with subagent_type="refactor:code-simplifier"
-2. Pass target scope (file paths, semantic search results, or session context)
-3. Pass context about how scope was determined (paths, semantic query, or session context)
-4. Pass aggressive mode flag to apply thorough refactoring, remove legacy code, no compatibility shims
-5. The agent will automatically:
-   - Load the refactor:best-practices skill
-   - Analyze the code and detect languages/frameworks
-   - Discover and apply relevant best practices from skill references
-   - Aggressively refactor: remove backwards-compatibility hacks, unused code, rename properly
-   - Preserve functionality while improving clarity, consistency, and maintainability
-   - Apply Code Quality Standards as defined in the refactor:best-practices skill
+Launch code-simplifier agent with aggressive mode enabled.
 
-## Phase 3: Summary
+Use Task tool with:
+```
+subagent_type: "refactor:code-simplifier"
+```
 
-**Goal**: Provide comprehensive summary of all changes made during refactoring.
+Pass the following context in the prompt:
+- **Target scope**: File paths, semantic search results, or session context
+- **Scope determination method**: How scope was determined (paths, semantic query, or session context)
+- **Aggressive mode flag**: "Enable aggressive refactoring: remove legacy code, unused exports, backwards-compatibility hacks, and rename improperly named variables"
 
-**Actions**:
+The agent automatically:
+1. Loads the refactor:best-practices skill
+2. Detects languages and frameworks
+3. Applies relevant best practices from skill references
+4. Aggressively refactors while preserving behavior
+5. Removes unused code and backwards-compatibility shims
+6. Renames improperly named variables/functions
 
-1. Report total files refactored
-2. Describe what changed and why, categorized by improvement type
-3. List best practices applied (which categories/patterns)
-4. Document quality standards enforced
-5. Identify legacy code removed
-6. Suggest tests to run
-7. Provide git rollback command if needed: `git checkout -- <files>`
+See `references/agent-configuration.md` for detailed Task tool parameters and agent workflow.
 
-## Requirements
+### Phase 3: Summary
 
-- **NO user confirmations** - execute immediately based on scope determination
-- **Refactor ALL matching files** - when semantic search finds multiple results, refactor them all
-- **Aggressive refactoring** - remove legacy compatibility code, unused exports, rename improperly named vars
-- Follow the refactor:best-practices workflow and references in the refactor plugin skills
-- Let the agent self-discover best practices from skills
-- Preserve functionality while improving clarity, consistency, and maintainability
-- Apply Code Quality Standards as defined in the refactor:best-practices skill
-- If the user requests project-wide refactoring, direct them to use `/refactor-project`
+Provide comprehensive summary of changes including:
+
+1. **Total files refactored** - Count of files changed
+2. **Changes categorized** - What changed and why, grouped by improvement type (e.g., "Removed unused imports", "Simplified nested ternaries", "Applied Next.js optimizations")
+3. **Best practices applied** - Which language/framework patterns were used
+4. **Quality standards enforced** - What standards were verified/applied
+5. **Legacy code removed** - Identification of deprecated code eliminated
+6. **Test recommendations** - Suggest specific tests to run for verification
+7. **Rollback command** - Provide: `git checkout -- <files>`
+
+See `references/output-requirements.md` for detailed summary format specifications.
+
+## Key Requirements
+
+- **Execute immediately** - No user confirmation required based on scope determination
+- **Refactor ALL matching files** - When semantic search finds multiple results, refactor them all
+- **Aggressive refactoring** - Remove legacy compatibility code, unused exports, rename improperly named vars
+- **Preserve behavior** - Maintain public APIs and external contracts unchanged
+- **Trust git** - Provide rollback command for safety, don't add compatibility shims
+- **Project-wide scope** - If user requests project-wide refactoring, direct them to use `/refactor-project`

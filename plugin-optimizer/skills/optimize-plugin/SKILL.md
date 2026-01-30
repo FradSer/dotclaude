@@ -28,7 +28,7 @@ Execute plugin validation and optimization workflow. **Target:** $ARGUMENTS
 2. Validate `.claude-plugin/plugin.json` exists
 3. Validate components against `${CLAUDE_PLUGIN_ROOT}/examples/` templates
 4. Assess architecture (ask about command migration if needed)
-5. Run all validation scripts from `${CLAUDE_PLUGIN_ROOT}/scripts/`
+5. Run validation: `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py "$TARGET"`
 6. Compile issues by severity (Critical, Warning, Info)
 
 ## Phase 2: Agent-Based Optimization
