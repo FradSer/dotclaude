@@ -1,5 +1,7 @@
 # Plugin Optimizer
 
+**Version:** 0.11.1
+
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
 
 ## Installation
