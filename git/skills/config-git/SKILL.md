@@ -3,15 +3,14 @@ name: config-git
 description: Interactive git configuration setup
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
-argument-hint: "[no arguments needed]"
-model: haiku
+model: sonnet
 context: fork
 version: 0.1.0
 ---
 
 # Interactive Git Configuration
 
-Set up Git user identity and create project-specific configuration file `.claude/git.local.md` with conventional commit scopes, types, and branch naming conventions.
+Set up Git user identity and create `.claude/git.local.md` with conventional commit scopes, types, and branch naming conventions.
 
 Current Git Config Context:
 !`git config --list --show-origin`

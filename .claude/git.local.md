@@ -19,6 +19,7 @@ types:
   - test
   - chore
   - perf
+  - style
 # Branch Naming Conventions
 branch_prefixes:
   feature: feature/*
@@ -26,27 +27,27 @@ branch_prefixes:
   hotfix: hotfix/*
   refactor: refactor/*
   docs: docs/*
+# .gitignore Generation Defaults
+gitignore:
+  os: [macos, linux, windows]
+  languages: [markdown]
+  frameworks: []
+  tools: [git, node]
 ---
 
 # Project-Specific Git Settings
 
-This file configures the git plugin for this project. The settings above in the YAML frontmatter define valid scopes, types, and branch naming conventions.
-
-## Scopes
-
-- **git**: Git plugin and commit-related changes
-- **gitflow**: GitFlow workflow commands and documentation
-- **refactor**: Code refactoring plugin
-- **office**: Office/patent-architect plugin
-- **po**: Plugin optimizer plugin
-- **cc**: Claude configuration plugin
-- **utils**: Utility modules and helpers
-- **docs**: Documentation files and guides
-- **ci**: CI/CD configuration and GitHub Actions
+This file configures the `@git/` plugin for this project. The settings above in the YAML frontmatter define valid scopes, types, and branch naming conventions that the plugin will enforce.
 
 ## Usage
 
-- When creating a commit with `/git:commit`, choose from the defined scopes
-- Ensure all tests pass before committing
-- Reference issue numbers in commit footers if applicable
-- Use conventional commits format: `type(scope): description`
+- **Scopes**: When creating a commit with `/commit`, choose from the defined `scopes`.
+- **Branching**: When creating a new branch via the `git` skill, use the defined `branch_prefixes`.
+- **Gitignore**: When running `/gitignore` without arguments, the technologies listed above will be used as defaults.
+
+## Additional Guidelines
+
+- Always run tests before committing.
+- Ensure linting passes before pushing.
+- Reference issue numbers in commit footers (e.g., `Closes #123`).
+- Use `BREAKING CHANGE:` prefix in the body for breaking changes.
