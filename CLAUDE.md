@@ -19,9 +19,21 @@ plugin-name/
 └── hooks/hooks.json           # Hook configurations
 ```
 
+## Development Workflow
+
+**Validation:** Run `/plugin-optimizer:optimize-plugin` before committing changes to validate plugin structure and best practices.
+
+**Branch Strategy:** develop → main (merge commits)
+
+**Creating a New Plugin:**
+1. Create directory structure: `mkdir -p plugin-name/{.claude-plugin,skills,agents,commands}`
+2. Add minimal `plugin.json` with name, description, author
+3. Add entry to `.claude-plugin/marketplace.json`
+4. Validate with plugin-optimizer before committing
+
 ## Git Commit Conventions
 
-**Scopes:** git, gitflow, refactor, office, po, cc, utils, docs, ci
+**Scopes:** git, gitflow, github, refactor, review, office, swiftui, po, cc, utils, docs, ci
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 

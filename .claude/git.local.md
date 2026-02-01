@@ -4,8 +4,11 @@ enabled: true
 scopes:
   - git
   - gitflow
+  - github
   - refactor
+  - review
   - office
+  - swiftui
   - po
   - cc
   - utils
