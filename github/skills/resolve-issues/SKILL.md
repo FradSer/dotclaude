@@ -6,6 +6,10 @@ argument-hint: [issue number or description]
 user-invocable: true
 ---
 
+# Resolve GitHub Issues
+
+Execute issue resolution workflow using isolated worktrees, TDD methodology, and agent collaboration.
+
 ## Context
 
 - Current git status: !`git status`
@@ -14,68 +18,45 @@ user-invocable: true
 - Open issues: !`gh issue list --state open --limit 10`
 - GitHub authentication: !`gh auth status`
 
-## Requirements
+## Requirements Summary
 
-- Use isolated worktrees for development and follow the protected PR workflow.
-- Apply a TDD cycle (red → green → refactor) with appropriate sub-agent support.
-- Reference resolved issues in commits and PR descriptions using auto-closing keywords.
-- **Use atomic commits for logical units of work**: Each commit should represent one complete, cohesive change.
-- Title: entirely lowercase, <50 chars, imperative mood (e.g., "add", "fix", "update"), conventional commits format (feat:, fix:, docs:, refactor:, test:, chore:)
-  - Scope (optional): lowercase noun, 1-2 words. Must match existing scopes in git history.
-- Body: blank line after title, ≤72 chars per line, must start with uppercase letter, standard capitalization and punctuation. Describe what changed and why, not how.
-- Footer (optional): Must start with uppercase letter, standard capitalization. Reference issues/PRs (Closes #123, Fixes #456, Linked to PR #789). Use BREAKING CHANGE: prefix for breaking changes.
+Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (red → green → refactor) with agent support. Reference issues in commits using auto-closing keywords. See `references/requirements.md` for protected PR workflow and commit standards.
 
-### Examples
+## Phase 1: Issue Selection and Worktree Setup
 
-```
-feat(auth): add google oauth login flow
+**Goal**: Select target issue and prepare isolated development environment.
 
-- Introduce Google OAuth 2.0 for user sign-in
-- Add backend callback endpoint `/auth/google/callback`
-- Update login UI with Google button and loading state
+**Actions**:
+1. Review open issues from context and select based on priority and `$ARGUMENTS`
+2. Check existing worktrees to determine if reuse is possible
+3. Create new worktree with descriptive branch name (see `references/workflow-details.md` for naming)
+4. Navigate to worktree directory for isolated development
+5. Verify issue acceptance criteria and dependencies
 
-Add a new authentication option improving cross-platform
-sign-in.
+## Phase 2: TDD Implementation
 
-Closes #42. Linked to #38 and PR #45
-```
+**Goal**: Implement fix using test-driven development with agent collaboration.
 
-```
-fix(api): handle null payload in session refresh
+**Actions**:
+1. Plan implementation with @tech-lead-reviewer for architectural assessment
+2. Write failing tests that verify issue is resolved (RED phase)
+3. Implement minimal code to make tests pass (GREEN phase)
+4. Refactor with @code-simplifier while keeping tests green (REFACTOR phase)
+5. Run quality validation commands (see `references/workflow-details.md` for project-specific checks)
 
-- Validate payload before accessing `user.id`
-- Return proper 400 response instead of 500
-- Add regression test for null input
+## Phase 3: PR Creation and Cleanup
 
-Prevents session refresh crash when token expires.
+**Goal**: Create pull request, link issue, and clean up worktree after merge.
 
-Fixes #105
-```
+**Actions**:
+1. Push branch to remote with `git push -u origin <branch-name>`
+2. Create PR using `gh pr create` with auto-closing keywords (e.g., "Closes #456")
+3. Report PR URL and status to user
+4. After successful merge: remove worktree and delete local branch
+5. Document resolution and any follow-up tasks
 
-```
-feat(auth): migrate to oauth 2.0
+## References
 
-- Replace basic auth with OAuth 2.0 flow
-- Update authentication middleware
-- Add token refresh endpoint
-
-BREAKING CHANGE: Authentication API now requires OAuth 2.0 tokens. Basic auth is no longer supported.
-
-Closes #120. Linked to #115 and PR #122
-```
-
-## Your Task
-
-**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
-
-1. Inspect the repository context, select a target issue, and decide whether to create a new worktree or resume an existing one.
-2. Set up the worktree environment, implement the fix using TDD with specialized review agents, and ensure quality checks pass.
-3. Create the pull request, link the issue, and clean up the worktree after merge, documenting all results to the user.
-
-### Recommended Workflow
-
-- **Issue Selection**: Evaluate open issues and prioritize the next actionable item.
-- **Worktree Setup**: Create or reuse an isolated worktree with a descriptive branch name (e.g. `fix/456-auth-redirect`).
-- **TDD Implementation**: Plan with **@tech-lead-reviewer** — architectural impact assessment —, write failing tests, implement fixes, and refactor with **@code-simplifier** — code simplification and optimization — while keeping tests green.
-- **Quality Validation**: Run project-specific lint, test, and build commands before PR creation.
-- **PR Creation & Cleanup**: Push the branch, raise a PR with auto-closing keywords, and remove the worktree after merge.
+- **Requirements**: `references/requirements.md` - Worktree setup, TDD, and commit standards
+- **Workflow Details**: `references/workflow-details.md` - Issue selection, TDD cycle, agent collaboration
+- **Examples**: `references/examples.md` - Commit message examples

@@ -2,6 +2,8 @@
 
 GitHub project operations with quality gates, TDD workflows, and comprehensive issue management.
 
+**Version**: 0.2.1
+
 ## Installation
 
 ```bash
@@ -17,6 +19,39 @@ claude plugin install github@frad-dotclaude
 ## Overview
 
 The GitHub Plugin automates GitHub operations including pull request creation, issue management, and quality validation. It ensures all PRs meet quality standards before submission and follows TDD principles with atomic commits and conventional commit formats.
+
+**Plugin Architecture**: Optimized with progressive disclosure - core workflows (~500 tokens) in SKILL.md files with detailed references in `references/` subdirectories for efficient context loading.
+
+## Plugin Structure
+
+Each skill follows a phase-based workflow structure with detailed reference materials:
+
+```
+skills/
+├── create-issues/
+│   ├── SKILL.md                    # Core workflow (~534 tokens)
+│   └── references/
+│       ├── requirements.md         # TDD and commit standards
+│       ├── decision-logic.md       # Branch decisions and issue types
+│       ├── issue-structure.md      # Structure requirements
+│       └── examples.md             # Commit message examples
+├── create-pr/
+│   ├── SKILL.md                    # Core workflow (~634 tokens)
+│   └── references/
+│       ├── requirements.md         # Pre-creation checklist
+│       ├── quality-validation.md   # Node.js/Python checks
+│       ├── pr-structure.md         # Title/body templates
+│       ├── failure-resolution.md   # Agent collaboration
+│       └── examples.md             # Commit message examples
+└── resolve-issues/
+    ├── SKILL.md                    # Core workflow (~591 tokens)
+    └── references/
+        ├── requirements.md         # Worktree and TDD workflow
+        ├── workflow-details.md     # Detailed process steps
+        └── examples.md             # Commit message examples
+```
+
+This architecture enables efficient context loading by keeping core workflows concise while providing comprehensive reference materials on demand.
 
 ## Commands
 
