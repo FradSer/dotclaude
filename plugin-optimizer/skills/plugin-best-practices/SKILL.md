@@ -1,7 +1,6 @@
 ---
 name: plugin-best-practices
 description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", "review plugin structure", "find plugin issues", "check best practices", "analyze plugin", or mentions plugin validation, optimization, or quality assurance.
-argument-hint: (no arguments - provides knowledge only)
 user-invocable: false
 version: 0.2.0
 ---
