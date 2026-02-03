@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+pnpm-store/
 
 # Build output
 dist/
@@ -8,26 +9,99 @@ build/
 # Environment
 .env
 .env.local
+.env.*.local
 
 # OS files
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
+*.iml
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-project
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Temp files
 *.tmp
 *.temp
+*.bak
 
 # Research and reference materials
 .research/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+.venv.bak/
+venv.bak/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.uv/
+uv.lock
+
+# IDE - Python specific
+.pytype/
+.pyre/
+
+# Shell
+*.swp
+*.swo
+
+# Git
+.git/
+.gitmodules
+
+# Misc
+.cache/
+.DS_Store
+Thumbs.db
+*.orig
