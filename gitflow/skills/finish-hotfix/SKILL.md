@@ -12,8 +12,9 @@ user-invocable: true
 **Goal**: Determine hotfix version from current branch or argument.
 
 **Actions**:
-1. If `$ARGUMENTS` provided, use it as version
+1. If `$ARGUMENTS` provided, use it as version (strip 'v' prefix if present)
 2. Otherwise, extract from current branch: `git branch --show-current` (strip `hotfix/` prefix)
+3. Store clean version without 'v' prefix (e.g., "1.0.1")
 
 ## Phase 2: Pre-finish Checks
 
@@ -38,5 +39,6 @@ user-invocable: true
 **Goal**: Complete hotfix using git-flow-next CLI.
 
 **Actions**:
-1. Run `git flow hotfix finish $VERSION -m "Release v$VERSION"`
-2. Push all: `git push origin main develop --tags`
+1. Run `git flow hotfix finish $VERSION --tagname "v$VERSION" -m "Release v$VERSION"`
+2. Verify current branch: `git branch --show-current` (should be on develop)
+3. Push all: `git push origin main develop --tags`

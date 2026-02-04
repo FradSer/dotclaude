@@ -12,8 +12,9 @@ user-invocable: true
 **Goal**: Determine release version from current branch or argument.
 
 **Actions**:
-1. If `$ARGUMENTS` provided, use it as version
+1. If `$ARGUMENTS` provided, use it as version (strip 'v' prefix if present)
 2. Otherwise, extract from current branch: `git branch --show-current` (strip `release/` prefix)
+3. Store clean version without 'v' prefix (e.g., "1.0.0")
 
 ## Phase 2: Pre-finish Checks
 
@@ -38,13 +39,14 @@ user-invocable: true
 **Goal**: Complete release using git-flow-next CLI.
 
 **Actions**:
-1. Run `git flow release finish $VERSION -m "Release v$VERSION"`
-2. Push all: `git push origin main develop --tags`
+1. Run `git flow release finish $VERSION --tagname "v$VERSION" -m "Release v$VERSION"`
+2. Verify current branch: `git branch --show-current` (should be on develop)
+3. Push all: `git push origin main develop --tags`
 
 ## Phase 5: GitHub Release
 
-**Goal**: Create GitHub release.
+**Goal**: Create GitHub release from existing tag.
 
 **Actions**:
 1. Extract changelog for this version from CHANGELOG.md
-2. Run `gh release create v$VERSION --title "v$VERSION" --notes "<changelog>"`
+2. Run `gh release create "v$VERSION" --title "v$VERSION" --notes "<changelog>" --verify-tag`

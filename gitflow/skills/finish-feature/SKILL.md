@@ -37,4 +37,5 @@ user-invocable: true
 
 **Actions**:
 1. Run `git flow feature finish $FEATURE_NAME`
-2. Push develop: `git push origin develop`
+2. Verify current branch: `git branch --show-current` (should be on develop)
+3. Push develop: `git push origin develop`
