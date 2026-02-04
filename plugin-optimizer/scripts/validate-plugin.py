@@ -650,18 +650,38 @@ def check_tool_invocations(plugin_dir: Path, verbose: bool = False) -> Validatio
     all_files = components["commands"] + components["agents"] + components["skills"]
 
     # Anti-pattern regex
-    core_tools = re.compile(r'(Use|Call|Using) (the )?(Read|Write|Glob|Grep|Edit) tool', re.IGNORECASE)
+    core_tools = re.compile(r'(Use|Call|Using) (the )?`?(Read|Write|Glob|Grep|Edit)`? tool', re.IGNORECASE)
     bash_tool = re.compile(r'(Use|Call|Using) (the )?Bash tool', re.IGNORECASE)
     task_tool = re.compile(r'(Use|Call) (the )?Task tool to launch [a-z-]+', re.IGNORECASE)
+    fence_start = re.compile(r'^\s*(```+|~~~+)')
 
     for file_path in all_files:
         content = file_path.read_text()
         lines = content.split("\n")
         rel_path = get_relative_path(file_path, plugin_dir)
+        in_fence = False
+        fence_char = ""
+        fence_len = 0
 
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
             if not stripped:
+                continue
+
+            fence_match = fence_start.match(stripped)
+            if fence_match:
+                marker = fence_match.group(1)
+                if not in_fence:
+                    in_fence = True
+                    fence_char = marker[0]
+                    fence_len = len(marker)
+                elif marker[0] == fence_char and len(marker) >= fence_len:
+                    in_fence = False
+                    fence_char = ""
+                    fence_len = 0
+                continue
+
+            if in_fence:
                 continue
 
             if core_tools.search(line):
