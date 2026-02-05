@@ -79,6 +79,56 @@ These principles apply across all programming languages and paradigms. Always fo
 - **Divergent change**: A class changes for multiple reasons
 - **Feature envy**: A method uses more features of another class than its own
 
+## File and Module Organization
+
+### When to Split Files
+
+Split files based on behavior and responsibility, not arbitrary size limits. Use these signals to identify when splitting is necessary:
+
+#### Signals Requiring File Splitting
+- **Multiple Responsibilities**: File handles multiple unrelated concerns or business domains
+- **Shotgun Surgery**: Modifications require changes across multiple sections of the same file
+- **Divergent Change**: File changes for multiple different reasons
+- **Large Class Smell**: Single class or module exceeds cohesion boundaries
+- **Domain Boundaries**: File mixes code from different business domains
+
+#### File Size Guidelines
+
+**Functions**:
+- Target: < 40-50 lines per function
+- Extract methods when logic becomes complex or handles multiple tasks
+- Each function should fit on one screen
+
+**Files**:
+- Apply Single Responsibility Principle
+- File length itself is NOT a primary concern
+- Focus on cohesion, coupling, and single responsibility
+- A 500-line file with one clear responsibility is better than 5 unfocused 100-line files
+
+**Language-Specific Details**: See language-specific references for file structure conventions (TypeScript, Swift, Go, Python)
+
+### File Organization Strategies
+
+#### Domain-Driven Splitting
+For systems spanning multiple business domains:
+- Split along domain boundaries (e.g., Accounts, Orders, Products, Shipping)
+- Group related functionality within domain folders
+- Maintain clear boundaries between domains
+
+#### Incremental Refactoring
+- **Small Steps**: Prefer incremental changes over large rewrites
+- **Test First**: Ensure tests exist before splitting
+- **Track Progress**: Identify and estimate cleanup efforts
+- **Monitor Impact**: Measure performance before and after
+
+### When NOT to Split
+
+Avoid splitting in these cases:
+- **Tight Coupling**: Types/functions are tightly coupled and always used together
+- **Artificial Limits**: Splitting just to meet line count targets
+- **Loss of Cohesion**: Splitting would separate related functionality
+- **Increased Complexity**: More files would make code harder to understand
+
 ## Refactoring Techniques
 
 ### Function Extraction

@@ -43,6 +43,7 @@ For Next.js projects, use `references/react/` directory:
 - **No compat hacks**: Delete unused `_vars`, re-exports of deleted code
 - **Renaming**: Use descriptive names instead of marking unused
 - **Dead code**: Delete completely, never comment out
+- **File Organization**: Apply Single Responsibility at file level; split when multiple concerns exist (see `references/universal.md` for file splitting guidelines)
 
 ## Workflow
 
@@ -50,6 +51,7 @@ For Next.js projects, use `references/react/` directory:
 2. **Detect** frameworks and languages
 3. **Load** language + framework references
 4. **Filter** rules for detected frameworks only
-5. **Analyze** complexity, redundancy, violations
+5. **Analyze** complexity, redundancy, violations, file organization issues
 6. **Execute** behavior-preserving refinements
-7. **Validate** tests pass
+7. **Suggest** file splits when Single Responsibility is violated at file level
+8. **Validate** tests pass
