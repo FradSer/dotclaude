@@ -1,6 +1,6 @@
 #!/bin/bash
 # Validates CLAUDE.md length against best practices
-# Best practice: 1500-3000 words for optimal context usage
+# Best practice: 800-2000 words for optimal context usage
 
 set -euo pipefail
 
@@ -15,10 +15,10 @@ fi
 WORD_COUNT=$(grep -v '^---$' "$FILE" | wc -w | tr -d ' ')
 
 # Best practice ranges
-MIN_WORDS=800
-OPTIMAL_MIN=1500
-OPTIMAL_MAX=3000
-MAX_WORDS=5000
+MIN_WORDS=400
+OPTIMAL_MIN=800
+OPTIMAL_MAX=2000
+MAX_WORDS=3000
 
 echo "Word count: $WORD_COUNT"
 

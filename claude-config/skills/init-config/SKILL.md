@@ -4,172 +4,136 @@ description: Generate $HOME/.claude/CLAUDE.md with AI-driven environment detecti
 argument-hint: []
 user-invocable: true
 allowed-tools:
-  # Core file and interaction tools
   - Read
   - Write
-  - TodoWrite
   - AskUserQuestion
-  - WebSearch
-
-  # Bash: System commands
   - Bash(*)
 ---
 
 ## Initialization
-1. **Track Progress**
-   - Use the **TodoWrite** tool to create a task list for all phases of this workflow.
-   - Update the status of tasks as you complete each phase.
+Run phases in order because later phases depend on saved choices from earlier phases.
 
 ## Phase 1: Environment Discovery
-**Goal**: Understand the user's technology stack by detecting installed languages, tools, and package managers.
+**Goal**: detect installed languages, tools, and package managers.
 
 **Actions**:
-1. **Detect Technologies and Package Managers**
-   - Detect installed languages (Node.js, Python, Rust, Go, Java, Docker, etc.)
-   - For languages with multiple package managers, detect all available options
-   - Store detected information for later selection
+1. Detect installed languages (Node.js, Python, Rust, Go, Java, Docker, and others).
+2. Detect package manager options for selected ecosystems.
+3. Store detection results for Phase 4 option generation.
 
 ## Phase 2: Developer Profile
-**Goal**: Collect developer name and email for personalized configuration.
+**Goal**: detect or collect developer identity for personalization.
 
 **Actions**:
-Ask for developer name and email using **AskUserQuestion** with 2 questions:
-
-- **Question 1**: "What is your name?"
-  - Header: "Developer"
-  - Option: `{"label": "Skip name", "description": "Don't include name in configuration"}`
-  - Note: User inputs custom name via automatic "Other" option (no additional placeholder needed)
-
-- **Question 2**: "What is your email address?"
-  - Header: "Contact"
-  - Option: `{"label": "Skip email", "description": "Don't include email in configuration"}`
-  - Note: User inputs custom email via automatic "Other" option (no additional placeholder needed)
-
-Important: Only provide the "Skip" option. The "Other" option is automatically provided for direct text input.
+1. Run `git config user.name` and `git config user.email` to detect developer info.
+2. If both are detected, store as `developer_name` and `developer_email` for renderer arguments and proceed to Phase 3.
+3. If either is missing, ask the user directly through conversation:
+   - If name is missing: "I couldn't detect your name from git config. What name would you like to use? (or reply 'skip' to omit)"
+   - If email is missing: "I couldn't detect your email from git config. What email would you like to use? (or reply 'skip' to omit)"
+4. Store the user's responses (or empty values if skipped) as `developer_name` and `developer_email` for renderer arguments.
 
 ## Phase 3: TDD Preference
-**Goal**: Determine if Test-Driven Development requirements should be included in the configuration.
+**Goal**: decide whether to include TDD requirements.
 
 **Actions**:
-Ask if TDD should be included using **AskUserQuestion**:
+Ask with header `TDD Mode`:
+- `Include TDD (Recommended)` -> include TDD fragments.
+- `Exclude TDD` -> keep base template.
+Store boolean `include_tdd` for Phase 7 renderer arguments.
 
-- Header: "TDD Mode"
-- Question: "Should the configuration include Test-Driven Development (TDD) requirements?"
-- Options:
-  - `{"label": "Include TDD (Recommended)", "description": "Add mandatory TDD workflow"}`
-  - `{"label": "Exclude TDD", "description": "Generate without TDD requirements"}`
+## Phase 3.5: Memory Management (Optional)
+**Goal**: decide whether to add CLAUDE.md memory instructions.
 
-Store the user's choice (true/false) for use in Phase 7.
+**Actions**:
+Ask with header `Memory`:
+- `Skip (Recommended)`
+- `Include memory rules`
+Store boolean `include_memory` for renderer arguments. Do not append memory text manually.
 
 ## Phase 4: Technology Stack & Package Manager Selection
-**Goal**: Select technology stacks and preferred package managers for each language.
+**Goal**: choose languages and package managers.
 
 **Actions**:
-1. **Select Technology Stacks**
-   - Use **AskUserQuestion** with `multiSelect: true`
-   - Header: "Tech Stack"
-   - Question: "Which technology stacks should be included?"
-   - Dynamically generate options based on detected technologies
-   - Mark detected tools as "Recommended"
+1. Use **AskUserQuestion** (`multiSelect: true`) for technology stacks.
+2. Generate options from detected technologies and mark detected ones as recommended.
+3. For selected languages with multiple managers, ask preference:
+- Node.js: npm, pnpm (Recommended), yarn, bun.
+- Python: pip, uv (Recommended), poetry.
+- Only show managers detected on the machine.
+4. Store ordered stack selections as `language:::package_manager` for renderer arguments.
 
-2. **Select Package Managers** (if multiple detected for selected languages)
-   - For each language with multiple package managers, ask user preference
-   - **Node.js** options: npm, pnpm (Recommended), yarn, bun
-   - **Python** options: pip, uv (Recommended), poetry
-   - Only show detected package managers
-
-## Phase 5: Best Practices Research
-**Goal**: Optionally search for and append latest 2026 best practices for selected technologies.
+## Phase 5: Renderer Input Preparation
+**Goal**: prepare deterministic renderer inputs from local references and user selections.
 
 **Actions**:
-Ask if web search should be performed using **AskUserQuestion**:
-
-- Header: "Research"
-- Question: "Search for latest best practices for selected technologies?"
-- Options:
-  - `{"label": "Search and append (Recommended)", "description": "Find 2026 best practices"}`
-  - `{"label": "Skip search", "description": "Use only base template"}`
-
-If enabled, search and extract 2-3 key sentences for each technology:
-- **Plain text only**: Extract descriptive sentences about best practices
-- **No code snippets**: Exclude bash commands, code examples, or command-line instructions
-- **No URLs**: Remove all links and references to external resources
-- Format as simple, readable paragraphs or bullet points
+1. Read `${CLAUDE_PLUGIN_ROOT}/assets/technology-stack-rules.md`.
+2. Normalize each selected stack into ordered renderer input format `language:::package_manager`.
+- Keep selection order unchanged.
+3. For languages without explicit package manager choice, use `language:::` (empty manager).
+4. Keep language keys exact (`Node.js`, `Python`, `Rust`, `Swift`, `Go`, `Java`) when available; do not invent aliases.
+5. Do not manually generate language rule bullets in this phase; pass structured inputs to the renderer only.
+6. Never call online search in this phase.
 
 ## Phase 6: Style Preference
-**Goal**: Determine emoji usage preference for the generated configuration.
+**Goal**: choose emoji usage policy in generated CLAUDE.md.
 
 **Actions**:
-Ask emoji preference using **AskUserQuestion**:
+Ask with header `Style`:
+- `No Emojis (Recommended)`
+- `Use Emojis`
+Store boolean `use_emojis` for renderer arguments that control emoji policy text in output.
 
-- Header: "Style"
-- Question: "Should emojis be used in the configuration files?"
-- Options:
-  - `{"label": "No Emojis (Recommended)", "description": "Professional, text-only formatting"}`
-  - `{"label": "Use Emojis", "description": "Add visual indicators using emojis"}`
+## Phase 6.5: Validation Enforcement Preference
+**Goal**: decide whether renderer validation should block writes.
+
+**Actions**:
+Ask with header `Validation`:
+- `Warn only (Recommended)` -> render and write even when status is TOO_SHORT/TOO_LONG/EXCESSIVE.
+- `Block on non-zero validation` -> fail write when validation exits non-zero.
+Store boolean `enforce_validation` for renderer arguments.
 
 ## Phase 7: Assembly & Generation
-**Goal**: Assemble final configuration content from template fragments, developer profile, and technology sections.
+**Goal**: generate final content through one renderer script.
 
 **Actions**:
-1. **Assemble template using script**:
-   - Run: `${CLAUDE_PLUGIN_ROOT}/scripts/assemble-template.sh "${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md" "<tdd_choice>" "<temp_output_file>" "${CLAUDE_PLUGIN_ROOT}"`
-   - Where `<tdd_choice>` is "true" if TDD was selected in Phase 3, "false" otherwise
-   - Use a temporary file for the assembled template
-
-2. **Prepare Developer Profile Section**
-   ```markdown
-   ## Developer Profile
-   - **Name**: [User's Name or "Developer"]
-   - **Email**: [User's Email or omit if skipped]
-   ```
-
-3. **Generate Tech Stack Sections**
-   - Generate configuration for each selected technology
-   - Use selected package managers in all examples
-   - Apply emoji preference
-   - Append web search summaries if enabled
-
-4. **Assemble Final Content**
-   - Read the assembled template from step 1
-   - Combine: header + developer profile + assembled template + tech stack sections
+1. Run `${CLAUDE_PLUGIN_ROOT}/scripts/render-claude-config.sh` with:
+- `--base-template ${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md`
+- `--rules-file ${CLAUDE_PLUGIN_ROOT}/assets/technology-stack-rules.md`
+- `--target-file $HOME/.claude/CLAUDE.md`
+- `--include-tdd <true|false>`
+- `--include-memory <true|false>`
+- `--use-emojis <true|false>`
+- `--enforce-validation <true|false>`
+- Optional `--developer-name` and `--developer-email`
+- Repeated `--stack "language:::package_manager"` entries from Phase 5
+2. Let the renderer handle all assembly concerns: template merge, TDD injection, developer profile, technology stack section, optional memory section, length check, backup, and final write.
+3. Do not manually post-edit renderer output; if output shape is wrong, fix inputs or renderer behavior.
 
 ## Phase 8: Length Validation
-**Goal**: Validate that the generated configuration meets optimal length requirements (1,500-3,000 words).
+**Goal**: handle renderer validation outcomes.
 
 **Actions**:
-1. **Validate content length**
-   - Write assembled content to a temporary file
-   - Run validation script: `${CLAUDE_PLUGIN_ROOT}/scripts/validate-length.sh`
-
-2. **Handle results**:
-   - ACCEPTABLE/OPTIMAL: Proceed to Phase 9
-   - TOO_LONG/EXCESSIVE: Ask user via **AskUserQuestion**:
-     - Header: "Length"
-     - Question: "Configuration exceeds best practice length. How to proceed?"
-     - Options: Auto-trim / Keep as-is / Manual review
-   - TOO_SHORT: Show info and proceed
+1. Capture renderer validation output (`Word count`, `STATUS`, `RECOMMENDATION`).
+2. If validation is not enforced and status is TOO_LONG or EXCESSIVE, ask user whether to regenerate with trimming instructions.
+3. If validation is enforced and renderer exits non-zero, ask user whether to retry with adjusted settings.
 
 ## Phase 9: Write CLAUDE.md
-**Goal**: Write the final configuration to the user's home directory with comprehensive summary reporting.
+**Goal**: report write and backup results from renderer.
 
 **Actions**:
-1. **Write final file to `$HOME/.claude/CLAUDE.md`**
-   - Check if `$HOME/.claude/CLAUDE.md` exists
-   - Backup to `$HOME/.claude/CLAUDE.md.bak` if needed
-   - Ensure directory `$HOME/.claude/` exists
-   - Write assembled content to `$HOME/.claude/CLAUDE.md`
-
-2. **Report summary**
-   - File location: `$HOME/.claude/CLAUDE.md`
-   - Backup location (if created)
-   - Developer info
-   - TDD mode
-   - Technology stacks with package managers
-   - Web search status
-   - Word count and validation status
+1. Use renderer output to confirm:
+- Target path written.
+- Backup path created when an existing target file was present.
+- Validation result used for the write decision.
+2. Report:
+- File and backup locations.
+- Developer info and TDD mode.
+- Selected technology stacks and package managers.
+- Renderer rule-application summary: which stacks received local rule lines and which did not.
+- Word count, validation status, and whether validation was enforced.
 
 ## Best Practices
-- Progressive workflow: Each phase builds on previous results
-- User control: Always ask before making significant decisions
-- Safety: Always backup existing files before overwriting
+- Keep workflow progressive and deterministic.
+- Prefer local references over generated prose for stack guidance.
+- Keep generated constraints concise and enforceable.
+- Always back up existing files before overwrite.

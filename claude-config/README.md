@@ -10,10 +10,14 @@ claude plugin install claude-config@frad-dotclaude
 
 ## Features
 
-- **AI-Driven Environment Detection**: Automatically detects installed languages and tools (Node.js, Python, Rust, Go, Java, Docker, etc.)
-- **TDD Flexibility**: Choose whether to include mandatory Test-Driven Development requirements (dynamically assembled via script)
-- **Best Practices Research**: Optionally search for latest 2026 best practices and append summaries to your configuration
-- **Length Validation**: Ensures generated configuration meets optimal word count (1,500-3,000 words) for context efficiency
+- **AI-Driven Environment Detection**: Automatically detects installed languages, tools, and package manager options (Node.js, Python, Rust, Go, Java, Docker, etc.)
+- **Deterministic Full Rendering**: Use one renderer script to assemble template, TDD fragments, developer profile, technology stacks, and optional memory section
+- **Direct Target Write**: Renderer can write directly to the destination file, run length checks, and create backups before overwrite
+- **Emoji Policy Toggle**: Renderer can emit emoji usage policy in generated CLAUDE.md via flag
+- **TDD Flexibility**: Choose whether to include mandatory Test-Driven Development requirements via renderer flags
+- **Local Best-Practices References**: Load stack constraints from local reference files with zero runtime web search
+- **Length Validation**: Ensures generated configuration meets optimal word count (800-2,000 words) for context efficiency
+- **Lean Template**: Focuses on non-obvious constraints and avoids generic knowledge Claude already knows
 - **Multi-file Sync**: Sync configurations to GEMINI.md and AGENTS.md with template-priority merge strategy
 - **Smart Merging**: Preserves unique user content while maintaining consistency across AI configurations
 - **Safe Operations**: Automatic backups before overwriting existing files
@@ -26,17 +30,18 @@ Run the initialization command:
 /init-config
 ```
 
-The command guides you through a 9-phase interactive workflow:
+The command guides you through a 10-phase interactive workflow:
 
-1. **Environment Discovery** - Detects installed languages and tools
+1. **Environment Discovery** - Detects installed languages, tools, and package manager options
 2. **Developer Profile** - Captures name and email
 3. **TDD Preference** - Choose TDD inclusion
+3.5. **Memory Management** - Optional memory update instructions
 4. **Technology Stack Selection** - Select tools and package managers
-5. **Best Practices Research** - Optional web search for 2026 best practices
+5. **Renderer Input Preparation** - Normalize selected stacks into `language:::package_manager`
 6. **Style Preference** - Choose emoji usage
-7. **Assembly & Generation** - Build final configuration
-8. **Length Validation** - Ensure optimal word count (1,500-3,000 words)
-9. **Write CLAUDE.md** - Save with comprehensive report
+7. **Assembly & Generation** - Render and write final configuration through one script
+8. **Length Validation** - Review renderer validation status
+9. **Write Report** - Confirm target write and backup details
 
 For detailed workflow steps, run `/init-config` and follow the interactive prompts.
 
@@ -48,14 +53,18 @@ claude-config/
 │   └── plugin.json                  # Plugin manifest
 ├── skills/
 │   └── init-config/
-│       └── SKILL.md                 # User-invocable skill with 9-phase workflow
+│       └── SKILL.md                 # User-invocable skill workflow
 ├── assets/
 │   ├── claude-template-no-tdd.md   # Base template (TDD added dynamically)
 │   ├── claude-template-tdd-core-principle.md  # TDD core principle fragment
-│   └── claude-template-tdd-testing-strategy.md  # TDD testing strategy fragment
+│   ├── claude-template-tdd-testing-strategy.md  # TDD testing strategy fragment
+│   └── technology-stack-rules.md    # Language -> one enforceable rule line
 ├── scripts/
-│   ├── assemble-template.sh         # Template assembly script (combines base + TDD fragments)
+│   ├── render-claude-config.sh      # Full CLAUDE.md renderer (template + options)
 │   └── validate-length.sh           # Length validation utility
+├── tests/
+│   ├── fixtures/                    # Test fixtures
+│   └── render-claude-config.test.sh # Renderer integration tests
 └── README.md
 ```
 
@@ -64,9 +73,9 @@ claude-config/
 ### Length Validation Ranges
 
 The validation script uses these thresholds:
-- **Minimum**: 800 words
-- **Optimal Range**: 1,500-3,000 words
-- **Maximum**: 5,000 words
+- **Minimum**: 400 words
+- **Optimal Range**: 800-2,000 words
+- **Maximum**: 3,000 words
 
 ## Best Practices
 
@@ -89,25 +98,17 @@ The validation script uses these thresholds:
 
 ## Core Principles
 [TDD requirements if enabled]
-- MANDATORY Clean Architecture
-- Research-driven workflow
+- Clean Architecture with 4-layer inward dependency rule
+- Web search before planning
 
-## Documentation Standards
-...
+## Technology Stack Configuration
 
-## Technology Stack
+### Node.js
+**Package Manager**: pnpm
+- Keep server hot paths non-blocking with async I/O, move CPU-heavy work off the event loop, and treat unhandled promise rejections as production failures.
 
-### Node.js (pnpm)
-[AI-generated configuration]
-
-#### Latest Best Practices (2026)
-[Web search summary if enabled]
-
-### Python (uv)
-[AI-generated configuration]
-
-#### Latest Best Practices (2026)
-[Web search summary if enabled]
+### Go
+- Define small interfaces at the point of use, pass `context.Context` as the first parameter for request-scoped work, and return wrapped errors using `%w` with actionable context.
 ```
 
 ### Template-Priority Merge Example
@@ -130,16 +131,46 @@ User-specific workflow
 
 ### Configuration Too Long
 If you get a "TOO_LONG" warning:
-1. Choose "Auto-trim" to remove web search summaries first
+1. Choose "Auto-trim" to remove non-essential verbosity first
 2. Or choose "Manual review" to select specific sections to remove
 
 ### Validation Script Fails
-Ensure the script is executable:
+Ensure scripts are executable:
 ```bash
+chmod +x scripts/render-claude-config.sh
 chmod +x scripts/validate-length.sh
 ```
 
+### Renderer Direct Write
+You can write output directly and let the renderer handle backup and validation:
+```bash
+bash scripts/render-claude-config.sh \
+  --target-file "$HOME/.claude/CLAUDE.md" \
+  --include-tdd true \
+  --include-memory true \
+  --use-emojis false \
+  --stack "Node.js:::pnpm" \
+  --stack "Python:::uv"
+```
+
 ## Version History
+
+### 1.5.0
+- Replaced the legacy template assembler with `scripts/render-claude-config.sh` as the single rendering entrypoint
+- Moved `/init-config` generation to full script-driven assembly (template, TDD, profile, technology stacks, memory)
+- Added renderer integration tests at `tests/render-claude-config.test.sh`
+- Removed obsolete source-attribution references from plugin docs and workflow outputs
+
+### 1.4.0
+- Replaced runtime web search in `/init-config` with local stack reference loading
+- Added `assets/technology-stack-rules.md` for enforceable one-line constraints
+- Fixed Technology Stack contract: one rule per supported language, package-manager-only fallback for unsupported languages
+
+### 1.3.0
+- Lean template: removed generic knowledge Claude already knows (SOLID, DRY, etc.)
+- Optional memory management phase for proactive CLAUDE.md updates
+- Lowered validation thresholds (optimal: 800-2,000 words) to match leaner template
+- Dropped RFC 2119 keywords for direct imperative style
 
 ### 1.2.1
 - Applied instruction-type skill template formatting (Goal + Actions structure)
