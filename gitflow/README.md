@@ -1,5 +1,7 @@
 # GitFlow Plugin
 
+> **Version**: 1.0.1
+
 GitFlow workflow automation using [git-flow-next](https://git-flow.sh/docs/) CLI.
 
 ## Installation

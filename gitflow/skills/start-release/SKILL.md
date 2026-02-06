@@ -1,11 +1,15 @@
 ---
 name: start-release
 allowed-tools: Bash(git:*), Read, Write
-description: Start new release branch
+description: This skill should be used when the user asks to "start a release", "create release branch", "prepare a release", "git flow release start", or wants to begin a new version release.
 model: haiku
 argument-hint: <version>
 user-invocable: true
 ---
+
+## Pre-operation Checks
+
+Verify working tree is clean per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
 
 ## Phase 1: Start Release
 

@@ -1,11 +1,15 @@
 ---
 name: start-hotfix
 allowed-tools: Bash(git:*), Read, Write
-description: Start new hotfix branch
+description: This skill should be used when the user asks to "start a hotfix", "create hotfix branch", "fix a critical bug", "git flow hotfix start", or wants to begin a hotfix for a production issue.
 model: haiku
 argument-hint: <version>
 user-invocable: true
 ---
+
+## Pre-operation Checks
+
+Verify working tree is clean per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
 
 ## Phase 1: Start Hotfix
 

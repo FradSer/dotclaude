@@ -1,11 +1,15 @@
 ---
 name: finish-release
 allowed-tools: Bash(git:*), Bash(gh:*), Read, Write
-description: Complete and merge release branch
+description: This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release and merge it into main and develop with a tag.
 model: haiku
 argument-hint: [version]
 user-invocable: true
 ---
+
+## Pre-operation Checks
+
+Verify working tree is clean and current branch matches `release/*` per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
 
 ## Phase 1: Identify Version
 

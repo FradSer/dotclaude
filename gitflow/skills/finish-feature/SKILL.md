@@ -1,11 +1,15 @@
 ---
 name: finish-feature
 allowed-tools: Bash(git:*), Read, Write
-description: Complete and merge feature branch
+description: This skill should be used when the user asks to "finish a feature", "merge feature branch", "complete feature", "git flow feature finish", or wants to finalize and merge a feature branch into develop.
 model: haiku
 argument-hint: [feature-name]
 user-invocable: true
 ---
+
+## Pre-operation Checks
+
+Verify working tree is clean and current branch matches `feature/*` per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
 
 ## Phase 1: Identify Feature
 
