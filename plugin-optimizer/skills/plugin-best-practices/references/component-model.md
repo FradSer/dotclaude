@@ -24,13 +24,21 @@ Skills use a three-tier token budget structure:
 
 ## Agents
 
-Agents are autonomous subprocesses with isolated context and their own system prompts.
+Agents are autonomous subprocesses with isolated context.
 
-Key characteristics:
 - Isolated context with a dedicated system prompt in the agent `.md` file
 - Restricted tool allowlists for safety and focus
 - Specialized expertise with judgment over execution details
 - Router-friendly descriptions containing 2–4 `<example>` blocks
+
+### Usage Patterns
+
+Agents can be used in two ways:
+
+1.  **Single Agents**: Default mode. The skill launches a single agent for a specialized task.
+2.  **Agent Teams**: The skill asks Claude to form a team of agents (see `agent-teams.md`).
+    - Use when tasks are **parallelizable** (e.g., refactoring 50 files).
+    - Use when tasks need **multi-perspective analysis** (e.g., UX + Security).
 
 ## Selection Guide
 
