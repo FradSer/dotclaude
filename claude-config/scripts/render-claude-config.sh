@@ -6,8 +6,7 @@
 #     [--target-file <path>] \
 #     --include-tdd <true|false> \
 #     --include-memory <true|false> \
-#     [--enforce-validation <true|false>] \
-#     [--validate-length-script <path>] \
+
 #     [--base-template <path>] \
 #     [--rules-file <path>] \
 #     [--use-emojis <true|false>] \
@@ -31,8 +30,7 @@ TARGET_FILE=""
 INCLUDE_TDD=""
 INCLUDE_MEMORY=""
 USE_EMOJIS="false"
-ENFORCE_VALIDATION="false"
-VALIDATE_LENGTH_SCRIPT="$PLUGIN_ROOT/scripts/validate-length.sh"
+
 DEVELOPER_NAME=""
 DEVELOPER_EMAIL=""
 declare -a STACKS=()
@@ -102,16 +100,7 @@ parse_args() {
         USE_EMOJIS="$(normalize_bool "$2")"
         shift 2
         ;;
-      --enforce-validation)
-        [ "$#" -ge 2 ] || die "missing value for --enforce-validation"
-        ENFORCE_VALIDATION="$(normalize_bool "$2")"
-        shift 2
-        ;;
-      --validate-length-script)
-        [ "$#" -ge 2 ] || die "missing value for --validate-length-script"
-        VALIDATE_LENGTH_SCRIPT="$2"
-        shift 2
-        ;;
+
       --developer-name)
         [ "$#" -ge 2 ] || die "missing value for --developer-name"
         DEVELOPER_NAME="$2"
@@ -146,7 +135,7 @@ parse_args() {
   require_file "$RULES_FILE"
   require_file "$TDD_CORE_PRINCIPLE"
   require_file "$TDD_TESTING_STRATEGY"
-  require_file "$VALIDATE_LENGTH_SCRIPT"
+
 }
 
 guard_rules_urls() {
@@ -410,22 +399,7 @@ compose_final_output() {
   mv "$temp_with_profile.final" "$temp_with_profile"
 }
 
-run_length_validation() {
-  local file="$1"
-  local validate_output
-  local validate_status
 
-  set +e
-  validate_output="$(bash "$VALIDATE_LENGTH_SCRIPT" "$file" 2>&1)"
-  validate_status=$?
-  set -e
-
-  printf '%s\n' "$validate_output"
-
-  if [ "$ENFORCE_VALIDATION" = "true" ] && [ "$validate_status" -ne 0 ]; then
-    die "length validation failed with status $validate_status"
-  fi
-}
 
 write_output() {
   local rendered_file="$1"

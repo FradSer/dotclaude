@@ -16,7 +16,6 @@ claude plugin install claude-config@frad-dotclaude
 - **Emoji Policy Toggle**: Renderer can emit emoji usage policy in generated CLAUDE.md via flag
 - **TDD Flexibility**: Choose whether to include mandatory Test-Driven Development requirements via renderer flags
 - **Local Best-Practices References**: Load stack constraints from local reference files with zero runtime web search
-- **Length Validation**: Ensures generated configuration meets optimal word count (800-2,000 words) for context efficiency
 - **Lean Template**: Focuses on non-obvious constraints and avoids generic knowledge Claude already knows
 - **Multi-file Sync**: Sync configurations to GEMINI.md and AGENTS.md with template-priority merge strategy
 - **Smart Merging**: Preserves unique user content while maintaining consistency across AI configurations
@@ -40,8 +39,7 @@ The command guides you through a 10-phase interactive workflow:
 5. **Renderer Input Preparation** - Normalize selected stacks into `language:::package_manager`
 6. **Style Preference** - Choose emoji usage
 7. **Assembly & Generation** - Render and write final configuration through one script
-8. **Length Validation** - Review renderer validation status
-9. **Write Report** - Confirm target write and backup details
+8. **Write Report** - Confirm target write and backup details
 
 For detailed workflow steps, run `/init-config` and follow the interactive prompts.
 
@@ -61,7 +59,7 @@ claude-config/
 │   └── technology-stack-rules.md    # Language -> one enforceable rule line
 ├── scripts/
 │   ├── render-claude-config.sh      # Full CLAUDE.md renderer (template + options)
-│   └── validate-length.sh           # Length validation utility
+
 ├── tests/
 │   ├── fixtures/                    # Test fixtures
 │   └── render-claude-config.test.sh # Renderer integration tests
@@ -70,19 +68,10 @@ claude-config/
 
 ## Configuration
 
-### Length Validation Ranges
-
-The validation script uses these thresholds:
-- **Minimum**: 400 words
-- **Optimal Range**: 800-2,000 words
-- **Maximum**: 3,000 words
-
-## Best Practices
 
 1. **Progressive Workflow**: Each phase builds on previous results
 2. **User Control**: Always asks before making significant decisions
-3. **Validation**: Checks length before writing to ensure quality
-4. **Safety**: Always backups existing files before overwriting
+3. **Safety**: Always backups existing files before overwriting
 5. **Template-Priority Merge**: Maintains consistency while preserving unique content
 
 ## Examples
@@ -129,17 +118,7 @@ User-specific workflow
 
 ## Troubleshooting
 
-### Configuration Too Long
-If you get a "TOO_LONG" warning:
-1. Choose "Auto-trim" to remove non-essential verbosity first
-2. Or choose "Manual review" to select specific sections to remove
 
-### Validation Script Fails
-Ensure scripts are executable:
-```bash
-chmod +x scripts/render-claude-config.sh
-chmod +x scripts/validate-length.sh
-```
 
 ### Renderer Direct Write
 You can write output directly and let the renderer handle backup and validation:
