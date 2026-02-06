@@ -20,7 +20,8 @@ Validation guidance for Claude Code plugins. Uses RFC 2119 terms: REQUIRED → M
 - **Instruction-type** (`user-invocable: true` → declared in `commands`): imperative voice, Phase-based workflows
 - **Knowledge-type** (`user-invocable: false` → declared in `skills`): declarative voice, topic-based references
 
-**Agents**: Autonomous subprocesses with isolated context, restricted tools, and 2-4 `<example>` blocks in descriptions.
+**Agents**: Autonomous subprocesses with isolated context,estricted tools, and 2-4 `<example>` blocks in descriptions.
+Can be single agents or **Agent Teams** (coordinated groups of sessions, see `references/agent-teams.md`).
 
 See `references/component-model.md` for detailed selection criteria. Templates at `${CLAUDE_PLUGIN_ROOT}/examples/`.
 
@@ -64,4 +65,5 @@ See `references/validation-checklist.md` for complete checklist.
 - `references/tool-invocations.md` - Tool usage patterns
 - `references/directory-structure.md` - Layout and naming
 - `references/manifest-schema.md` - plugin.json schema
+- `references/agent-teams.md` - Agent Teams guide
 
