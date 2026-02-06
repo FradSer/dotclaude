@@ -4,31 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** repository containing a curated collection of plugins. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/`, `hooks/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 10 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+
+**Active plugins:** git, gitflow, github, review, refactor, swiftui, claude-config, office, utils, plugin-optimizer
 
 ## Plugin Structure
 
 ```
 plugin-name/
-├── .claude-plugin/plugin.json  # Minimal manifest (name, description, author)
-├── commands/*.md               # Slash commands
+├── .claude-plugin/plugin.json  # Manifest with commands/agents/skills/hooks
 ├── agents/*.md                 # Agent definitions
 ├── skills/skill-name/          # Skill directories
 │   ├── SKILL.md               # Main skill file (required)
 │   └── references/            # Detailed reference materials
-└── hooks/hooks.json           # Hook configurations
+├── scripts/                    # Utility scripts (bash/python)
+└── examples/                   # Example configurations
 ```
+
+Key architectural pattern: skills registered as commands in `plugin.json` via `"commands": ["./skills/skill-name/"]`, and internal-only skills via `"skills": ["./skills/skill-name/"]`. Hooks can be inline in `plugin.json` (see `git/.claude-plugin/plugin.json` for the `PreToolUse` hook pattern).
 
 ## Development Workflow
 
-**Validation:** Run `/plugin-optimizer:optimize-plugin` before committing changes to validate plugin structure and best practices.
+**Validation:** Run `/plugin-optimizer:optimize-plugin` before committing. Alternatively: `python plugin-optimizer/scripts/validate-plugin.py <plugin-path>`
 
 **Branch Strategy:** develop → main (merge commits)
 
+**Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions.
+
 **Creating a New Plugin:**
-1. Create directory structure: `mkdir -p plugin-name/{.claude-plugin,skills,agents,commands}`
-2. Add minimal `plugin.json` with name, description, author
-3. Add entry to `.claude-plugin/marketplace.json`
+1. `mkdir -p plugin-name/{.claude-plugin,skills,agents}`
+2. Add `plugin.json` with name, description, author, version, keywords
+3. Add entry to `.claude-plugin/marketplace.json` with matching version
 4. Validate with plugin-optimizer before committing
 
 ## Git Commit Conventions
@@ -94,8 +100,6 @@ user-invocable: true  # false for internal-only skills
 | Skill | **Always explicit**: "Load X skill using the Skill tool" |
 | Task | Describe agent launch: "Launch code-reviewer agent" |
 
-## Development References
+## Reference Materials
 
-- Best practices: `docs-claude/PLUGIN_BEST_PRACTICES.md`
-- File patterns: `docs-claude/FILE_PATTERNS.md`
-- Hooks guide: `docs-claude/hooks-guide.md`
+Best practices and file pattern examples live inside `plugin-optimizer/skills/plugin-best-practices/` and `plugin-optimizer/examples/`. The `.research/` directory (gitignored) contains upstream Anthropic plugin references for comparison.

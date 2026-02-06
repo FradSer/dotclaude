@@ -1,6 +1,6 @@
 # Plugin Optimizer
 
-**Version:** 0.11.1
+**Version:** 0.11.2
 
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
 
@@ -30,7 +30,7 @@ The Plugin Optimizer validates Claude Code plugins against official best practic
 - **Multi-level Issue Detection**: Reports critical errors, warnings, and informational suggestions
 - **Best Practices Compliance**: Generates checklist showing which standards are met/violated
 - **Auto-fix Suggestions**: Provides exact Edit tool parameters for quick fixes (not auto-applied)
-- **Automated Scripts**: Includes validation scripts for plugin.json, frontmatter, and file patterns
+- **Unified Validator**: Single Python script covering plugin.json, frontmatter, file patterns, tool invocations, and token budgets
 
 ## Usage
 
@@ -94,29 +94,27 @@ Background knowledge base (non-user-invocable) loaded by the plugin-optimizer ag
 
 Autonomous analysis agent launched by the optimize-plugin workflow. Validates plugins against best practices, applies automated fixes, performs redundancy analysis, and generates quality reports. Preloads the plugin-best-practices skill for comprehensive validation rules.
 
-### Validation Scripts
+### Validation Script
 
-Five automated validators in `scripts/` (all run automatically by `/optimize-plugin`):
-- **Manifest structure**: Validates plugin.json schema and required fields
-- **Component frontmatter**: Validates YAML frontmatter in component files
-- **Tool invocations**: Checks for anti-patterns in tool usage
-- **File patterns**: Validates naming conventions and directory structure
-- **Token counter**: Validates skill token budgets (progressive disclosure)
+A unified Python validator (`scripts/validate-plugin.py`) runs five checks automatically:
 
-#### Token Budget Validation
+- **Structure**: File patterns, naming conventions, directory layout
+- **Manifest**: plugin.json schema and required fields
+- **Frontmatter**: YAML frontmatter in component files
+- **Tool invocations**: Anti-pattern detection in tool usage
+- **Token budgets**: Progressive disclosure compliance
 
 ```bash
-# Analyze a single skill
-python scripts/count-tokens.py ./skills/my-skill
+# Run all validators
+python3 scripts/validate-plugin.py <plugin-path>
 
-# Analyze all skills in a plugin
-python scripts/count-tokens.py ./path/to/plugin --all
+# Run specific checks
+python3 scripts/validate-plugin.py <plugin-path> --check=tokens
+python3 scripts/validate-plugin.py <plugin-path> --check=manifest,frontmatter
 
-# Verbose output with file breakdown
-python scripts/count-tokens.py . --all -v
-
-# JSON output
-python scripts/count-tokens.py . --all --json
+# Verbose or JSON output
+python3 scripts/validate-plugin.py <plugin-path> -v
+python3 scripts/validate-plugin.py <plugin-path> --json
 ```
 
 Token budgets (from "Building agents with Skills"):
@@ -124,9 +122,9 @@ Token budgets (from "Building agents with Skills"):
 - **SKILL.md** (~500 tokens): Core instructions, loaded when invoked
 - **References** (2000+ tokens): Detailed docs, loaded on demand
 
-Install `tiktoken` for accurate counting: `uv run --with tiktoken python scripts/count-tokens.py`
+Install `tiktoken` for accurate counting: `uv run --with tiktoken python3 scripts/validate-plugin.py`
 
-See `skills/plugin-best-practices/SKILL.md` for detailed validation workflow and best practices.
+See `skills/plugin-best-practices/SKILL.md` for detailed validation rules.
 
 ## Structure
 
@@ -137,11 +135,7 @@ plugin-optimizer/
 ├── agents/
 │   └── plugin-optimizer.md      # Autonomous analysis agent
 ├── scripts/                     # Validation utilities
-│   ├── validate-file-patterns.sh
-│   ├── validate-plugin-json.sh
-│   ├── validate-frontmatter.sh
-│   ├── check-tool-invocations.sh
-│   └── count-tokens.py          # Token budget validator
+│   └── validate-plugin.py       # Unified validator (structure, manifest, frontmatter, tools, tokens)
 ├── skills/
 │   ├── optimize-plugin/         # User-invocable skill (registered as command)
 │   │   ├── SKILL.md            # Multi-phase optimization workflow
@@ -163,7 +157,7 @@ plugin-optimizer/
 ## Prerequisites
 
 - Claude Code CLI
-- Bash 4.0+ (for validation scripts)
+- Python 3.8+ (for validation script)
 - Basic understanding of Claude Code plugin structure
 
 ## Contributing
