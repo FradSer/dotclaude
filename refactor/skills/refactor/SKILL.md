@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Refactor code with code-simplifier
+description: This skill should be used when the user asks to refactor specific files or directories, simplify recently changed code, clean up dead code in a limited scope, or invokes `/refactor` with paths or semantic queries.
 argument-hint: [files-or-directories-or-semantic-query]
 allowed-tools: ["Task", "Read", "Bash(git:*)", "Grep", "Glob"]
 user-invocable: true
@@ -9,6 +9,14 @@ user-invocable: true
 # Refactor Command
 
 Execute automated refactoring for $ARGUMENTS using `refactor:code-simplifier` agent.
+
+## Pre-operation Checks
+**Goal**: Ensure scope resolution is deterministic before launching the agent.
+
+**Actions**:
+1. Run `git rev-parse --is-inside-work-tree` and continue even if false when explicit paths are provided
+2. Normalize arguments by trimming whitespace and preserving quoted path segments
+3. Treat an empty argument list as "recent changes" mode
 
 ## Phase 1: Determine Target Scope
 **Goal**: Identify files to refactor based on arguments or session context.
@@ -38,7 +46,7 @@ See `references/agent-configuration.md` for detailed Task parameters.
 **Actions**:
 1. Report total files refactored and changes categorized by improvement type
 2. List best practices applied and legacy code removed
-3. Suggest tests to run and provide rollback command: `git checkout -- <files>`
+3. Suggest tests to run and provide rollback command tailored to actual scope (for example: `git restore --worktree --staged <files>`)
 
 See `references/output-requirements.md` for detailed summary format.
 
@@ -47,3 +55,4 @@ See `references/output-requirements.md` for detailed summary format.
 - Execute immediately without user confirmation
 - Refactor ALL matching files when semantic search returns multiple results
 - Direct users to `/refactor-project` for project-wide scope
+- Preserve behavior and public interfaces unless user explicitly requests a behavior change

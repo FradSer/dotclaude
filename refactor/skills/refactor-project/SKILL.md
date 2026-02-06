@@ -1,6 +1,6 @@
 ---
 name: refactor-project
-description: Run project-wide refactoring with code-simplifier
+description: This skill should be used when the user asks for project-wide refactoring, cross-file simplification, consistency standardization across the codebase, duplication reduction, or invokes `/refactor-project`.
 argument-hint: (no arguments needed)
 allowed-tools: ["Task", "Read", "Bash(git:*)", "Grep", "Glob"]
 user-invocable: true
@@ -9,6 +9,14 @@ user-invocable: true
 # Refactor Project Command
 
 Execute automated project-wide refactoring using `refactor:code-simplifier` agent with cross-file optimization focus.
+
+## Pre-operation Checks
+**Goal**: Ensure project-wide execution is explicit and reproducible.
+
+**Actions**:
+1. Run `git rev-parse --is-inside-work-tree`; if false, inform user that project-wide mode requires a git workspace
+2. Record current revision with `git rev-parse --short HEAD` and include it in final summary for rollback context
+3. Ignore command arguments and proceed with full-project discovery
 
 ## Phase 1: Analyze Project Scope
 **Goal**: Discover all code files and display scope summary.
@@ -40,7 +48,7 @@ See `references/agent-configuration.md` for detailed Task parameters.
 2. List changes categorized by improvement type and cross-file improvements made
 3. List best practices applied and legacy code removed
 4. Suggest test suite to run and recommend reviewing changes in logical groups
-5. Provide rollback command: `git reset --hard HEAD`
+5. Provide safer rollback command tied to recorded baseline (for example: `git restore --worktree --staged .`)
 
 See `references/output-requirements.md` for detailed summary format.
 
@@ -49,3 +57,4 @@ See `references/output-requirements.md` for detailed summary format.
 - Execute immediately after displaying scope (no confirmation needed)
 - Refactor entire project across all discovered code files
 - Prioritize cross-file duplication reduction and consistent patterns
+- Preserve behavior and public interfaces unless user explicitly requests a behavior change

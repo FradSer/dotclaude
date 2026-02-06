@@ -2,7 +2,7 @@
 
 Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
-**Version:** 1.5.2
+**Version:** 1.5.3
 
 ## Installation
 
@@ -25,13 +25,12 @@ refactor/
 ├── skills/
 │   ├── best-practices/      # Knowledge skill (internal)
 │   │   ├── SKILL.md
-│   │   └── references/      # 111 reference files
+│   │   └── references/      # 110 reference files
 │   │       ├── typescript.md
 │   │       ├── python.md (+ python/ subdir)
 │   │       ├── go.md
 │   │       ├── swift.md
 │   │       ├── universal.md
-│   │       ├── framework-detection.md
 │   │       └── react/rules/ # 47 Next.js/React patterns
 │   ├── refactor/            # Instruction skill (user-invocable)
 │   │   └── SKILL.md

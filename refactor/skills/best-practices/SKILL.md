@@ -9,49 +9,38 @@ version: 1.3.0
 
 ## Language References
 
-Based on file extension, load the appropriate reference:
+Each file extension maps to a specific reference:
 
-- `.ts`, `.js` → `references/typescript.md`
-- `.tsx`, `.jsx` → `references/typescript.md` + `references/react/react.md`
-- `.py` → `references/python.md` + `references/python/INDEX.md`
-- `.go` → `references/go.md`
-- `.swift` → `references/swift.md`
+- `.ts`, `.js` — `references/typescript.md`
+- `.tsx`, `.jsx` — `references/typescript.md` + `references/react/react.md`
+- `.py` — `references/python.md` + `references/python/INDEX.md`
+- `.go` — `references/go.md`
+- `.swift` — `references/swift.md`
 
-Universal principles: `references/universal.md`
+Universal principles are in `references/universal.md`.
 
 ## Next.js/React References
 
-For Next.js projects, use `references/react/` directory:
+For Next.js projects, the `references/react/` directory provides:
 
-1. `references/react/rules/INDEX.md` - pattern index by impact level
-2. `references/react/rules/_sections.md` - priorities and categories
+1. `references/react/rules/INDEX.md` — pattern index by impact level
+2. `references/react/rules/_sections.md` — priorities and categories
 3. Specific rule files matching observed patterns
 
 ## Rule Application
 
-- Auto-detect frameworks; only apply Next.js rules if Next.js is detected
-- Prefer **CRITICAL** rules first (waterfalls, bundle size, hydration)
-- Preserve behavior and public interfaces
+- Framework-specific rules (e.g., Next.js) apply only when that framework is detected
+- **CRITICAL** rules have highest priority: waterfalls, bundle size, hydration
+- All refactoring MUST preserve behavior and public interfaces
 
 ## Code Quality Standards
 
-- **Comments**: Only for complex business logic; remove code-restating comments
+- **Comments**: Only for complex business logic; code-restating comments are unnecessary
 - **Error Handling**: Try-catch only where recoverable; no defensive checks in trusted paths
-- **Type Safety**: No `any`; use proper types or `unknown` with guards
-- **Style**: Match existing code style; check CLAUDE.md
-- **Cleanup**: Remove all unused imports, variables, functions, types
-- **No compat hacks**: Delete unused `_vars`, re-exports of deleted code
-- **Renaming**: Use descriptive names instead of marking unused
-- **Dead code**: Delete completely, never comment out
-- **File Organization**: Apply Single Responsibility at file level; split when multiple concerns exist (see `references/universal.md` for file splitting guidelines)
-
-## Workflow
-
-1. **Identify** target scope
-2. **Detect** frameworks and languages
-3. **Load** language + framework references
-4. **Filter** rules for detected frameworks only
-5. **Analyze** complexity, redundancy, violations, file organization issues
-6. **Execute** behavior-preserving refinements
-7. **Suggest** file splits when Single Responsibility is violated at file level
-8. **Validate** tests pass
+- **Type Safety**: No `any`; proper types or `unknown` with guards are required
+- **Style**: Existing code style and CLAUDE.md conventions take precedence
+- **Cleanup**: Unused imports, variables, functions, and types are removed
+- **No compat hacks**: Unused `_vars` and re-exports of deleted code are deleted
+- **Renaming**: Descriptive names are preferred over marking as unused
+- **Dead code**: Dead code is deleted, never commented out
+- **File Organization**: Single Responsibility applies at file level; files with multiple concerns are candidates for splitting (see `references/universal.md`)
