@@ -83,14 +83,7 @@ Ask with header `Style`:
 - `Use Emojis`
 Store boolean `use_emojis` for renderer arguments that control emoji policy text in output.
 
-## Phase 6.5: Validation Enforcement Preference
-**Goal**: decide whether renderer validation should block writes.
 
-**Actions**:
-Ask with header `Validation`:
-- `Warn only (Recommended)` -> render and write even when status is TOO_SHORT/TOO_LONG/EXCESSIVE.
-- `Block on non-zero validation` -> fail write when validation exits non-zero.
-Store boolean `enforce_validation` for renderer arguments.
 
 ## Phase 7: Assembly & Generation
 **Goal**: generate final content through one renderer script.
@@ -103,34 +96,25 @@ Store boolean `enforce_validation` for renderer arguments.
 - `--include-tdd <true|false>`
 - `--include-memory <true|false>`
 - `--use-emojis <true|false>`
-- `--enforce-validation <true|false>`
 - Optional `--developer-name` and `--developer-email`
 - Repeated `--stack "language:::package_manager"` entries from Phase 5
 2. Let the renderer handle all assembly concerns: template merge, TDD injection, developer profile, technology stack section, optional memory section, length check, backup, and final write.
 3. Do not manually post-edit renderer output; if output shape is wrong, fix inputs or renderer behavior.
 
-## Phase 8: Length Validation
-**Goal**: handle renderer validation outcomes.
 
-**Actions**:
-1. Capture renderer validation output (`Word count`, `STATUS`, `RECOMMENDATION`).
-2. If validation is not enforced and status is TOO_LONG or EXCESSIVE, ask user whether to regenerate with trimming instructions.
-3. If validation is enforced and renderer exits non-zero, ask user whether to retry with adjusted settings.
 
-## Phase 9: Write CLAUDE.md
+## Phase 8: Write CLAUDE.md
 **Goal**: report write and backup results from renderer.
 
 **Actions**:
 1. Use renderer output to confirm:
 - Target path written.
 - Backup path created when an existing target file was present.
-- Validation result used for the write decision.
 2. Report:
 - File and backup locations.
 - Developer info and TDD mode.
 - Selected technology stacks and package managers.
 - Renderer rule-application summary: which stacks received local rule lines and which did not.
-- Word count, validation status, and whether validation was enforced.
 
 ## Best Practices
 - Keep workflow progressive and deterministic.
