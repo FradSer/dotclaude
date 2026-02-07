@@ -21,13 +21,33 @@ plugin-name/
 └── examples/                   # Example configurations
 ```
 
-Key architectural pattern: skills registered as commands in `plugin.json` via `"commands": ["./skills/skill-name/"]`, and internal-only skills via `"skills": ["./skills/skill-name/"]`. Hooks can be inline in `plugin.json` (see `git/.claude-plugin/plugin.json` for the `PreToolUse` hook pattern).
+**Skill registration determines visibility.** A skill registered under `"commands"` in plugin.json becomes a user-invocable slash command (e.g., `/git:commit`). A skill registered under `"skills"` is internal-only, loaded automatically when Claude needs domain knowledge but never shown in `/help`. Example from `refactor/`:
+- `"commands": ["./skills/refactor/"]` -- user runs `/refactor:refactor`
+- `"skills": ["./skills/best-practices/"]` -- loaded automatically during refactoring
+
+**Hooks** can be inline in `plugin.json`. See `git/.claude-plugin/plugin.json` for the `PreToolUse` hook pattern (runs a shell script to validate Bash tool calls before execution).
 
 ## Development Workflow
 
-**Validation:** Run `/plugin-optimizer:optimize-plugin` before committing. Alternatively: `python plugin-optimizer/scripts/validate-plugin.py <plugin-path>`
+**Validation:** Run `/plugin-optimizer:optimize-plugin` before committing. Alternatively:
 
-**Branch Strategy:** develop → main (merge commits)
+```bash
+# All checks (structure, manifest, frontmatter, tools, tokens)
+python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path>
+
+# Specific checks only
+python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> --check=manifest,frontmatter
+
+# JSON output for scripting
+python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> --json
+
+# Verbose (shows passing checks too)
+python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> -v
+```
+
+Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
+
+**Branch Strategy:** develop -> main (merge commits)
 
 **Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions.
 
