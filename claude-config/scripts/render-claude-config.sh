@@ -22,6 +22,7 @@ DEFAULT_BASE_TEMPLATE="$PLUGIN_ROOT/assets/claude-template-no-tdd.md"
 DEFAULT_RULES_FILE="$PLUGIN_ROOT/assets/technology-stack-rules.md"
 TDD_CORE_PRINCIPLE="$PLUGIN_ROOT/assets/claude-template-tdd-core-principle.md"
 TDD_TESTING_STRATEGY="$PLUGIN_ROOT/assets/claude-template-tdd-testing-strategy.md"
+STYLE_PREFERENCES="$PLUGIN_ROOT/assets/style-preferences.md"
 
 BASE_TEMPLATE="$DEFAULT_BASE_TEMPLATE"
 RULES_FILE="$DEFAULT_RULES_FILE"
@@ -135,6 +136,7 @@ parse_args() {
   require_file "$RULES_FILE"
   require_file "$TDD_CORE_PRINCIPLE"
   require_file "$TDD_TESTING_STRATEGY"
+  require_file "$STYLE_PREFERENCES"
 
 }
 
@@ -286,14 +288,14 @@ render_technology_section() {
   : > "$output_file"
 
   {
-    echo "## Technology Stack Configuration"
+    echo "## Technology Stack"
     echo ""
 
     if [ "${#STACKS[@]}" -gt 0 ]; then
       for stack_entry in "${STACKS[@]}"; do
         parsed_stack="$(parse_stack_entry "$stack_entry")"
         language="${parsed_stack%%$'\t'*}"
-        package_manager="${parsed_stack#*$'\t'}"
+        package_manager="${parsed_stack#*$'\t'}"/
 
         rule="$(lookup_rule "$language")"
         [ -n "$rule" ] || die "language '$language' not found in rules file"
@@ -339,11 +341,8 @@ apply_emoji_style() {
     return 0
   fi
 
-  {
-    printf '## Style Preferences\n\n'
-    printf '%s\n' 'MUST NOT use emojis in generated content unless explicitly requested.'
-    printf '%s\n' 'SHOULD NOT use emojis in code blocks, commands, file paths, or error messages.'
-  } >> "$file"
+  cat "$STYLE_PREFERENCES" >> "$file"
+  printf '\n' >> "$file"
 }
 
 insert_profile_after_title() {

@@ -1,6 +1,6 @@
 # Technology Stack Rules
 
-Use these lines as the single language best-practice bullet for each language in `## Technology Stack Configuration`.
+Use these lines as the single language best-practice bullet for each language in `## Technology Stack`.
 Rules in this file must focus on language-level engineering practices, not package-manager choices.
 Do not add URLs to generated `CLAUDE.md` technology sections.
 

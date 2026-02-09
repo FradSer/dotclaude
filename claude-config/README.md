@@ -90,7 +90,7 @@ claude-config/
 - Clean Architecture with 4-layer inward dependency rule
 - Web search before planning
 
-## Technology Stack Configuration
+## Technology Stack
 
 ### Node.js
 **Package Manager**: pnpm
