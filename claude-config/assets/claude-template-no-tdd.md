@@ -4,6 +4,7 @@
 
 - Follow Clean Architecture with a 4-layer structure; source code dependencies only point inwards
 - Web search for latest best practices before planning and implementing
+- Use Mermaid for all diagrams
 
 ## Code Quality
 
