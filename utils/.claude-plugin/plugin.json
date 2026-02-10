@@ -1,9 +1,11 @@
 {
   "name": "utils",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Utility commands for day-to-day automation.",
   "author": {
         "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  }
+  },
+  "license": "MIT",
+  "keywords": ["utilities", "automation", "commands", "productivity", "workflow"]
 }

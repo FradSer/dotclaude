@@ -1,9 +1,10 @@
 {
   "name": "swiftui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SwiftUI Clean Architecture reviewer.",
   "author": {
         "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  }
+  },
+  "keywords": ["swiftui", "ios", "macos", "clean-architecture", "mvvm", "swift"]
 }
