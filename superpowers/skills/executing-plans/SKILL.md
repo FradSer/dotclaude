@@ -1,14 +1,14 @@
 ---
 name: executing-plans
-description: This skill should be used when the user has a completed implementation plan (plan.md) and is ready to execute the tasks defined therein. For each task, enters Plan Mode, then executes using Agent Teams or subagents following BDD/TDD principles.
+description: This skill should be used when the user has a completed implementation plan (plan.md) and is ready to execute the tasks defined therein. Actively uses Agent Teams or subagents to execute batches of independent tasks in parallel, following BDD/TDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Executing Plans
 
-Execute written implementation plans task by task. For each task, enters Plan Mode, then executes using Agent Teams or subagents following BDD/TDD principles.
+Execute written implementation plans efficiently. Actively use Agent Teams or subagents to execute batches of independent tasks in parallel, following BDD/TDD principles.
 
 ## Initialization
 
@@ -43,24 +43,45 @@ Read plan, understand the project and requirements.
    - `subject`: Brief title in imperative form (e.g., "Implement login handler")
    - `description`: Detailed task description from plan, including files, verification steps, and BDD scenario reference
    - `activeForm`: Present continuous form for progress display (e.g., "Implementing login handler")
-2. **Scope Batches**: Identify batch boundaries and verify prerequisites.
+2. **Scope Batches**: **MANDATORY** - Identify batch boundaries and verify prerequisites.
+   - Group independent tasks that can be executed in parallel
+   - Identify task dependencies and blockers
+   - Create batches: each batch should contain 3-6 independent tasks
 
-## Phase 3: Task Execution Loop
+## Phase 3: Batch Execution Loop
 
-Execute tasks one by one using Plan Mode for each.
+Execute tasks in batches. Actively use parallel execution for independent tasks.
 
-**REQUIRED**: Load both skills before executing any task:
+**REQUIRED**: Load both skills before executing any batch:
 - `superpowers:agent-team-driven-development` - Provides team coordination guidance
 - `superpowers:behavior-driven-development` - Provides BDD/TDD workflow guidance
 
-**For Each Task**:
-1. **Enter Plan Mode**: Use `EnterPlanMode` to plan the implementation of this specific task
-2. **Exit Plan Mode**: Use `ExitPlanMode` to get user approval on the task plan
-3. **Execute**: After plan approval, execute using:
-   - **Serial**: Single session/subagent following `behavior-driven-development` principles
-   - **Parallel**: Agent Team following `agent-team-driven-development` guidance
-4. **Verify**: Run verification commands from the task definition
-5. **Mark Complete**: Update task tracker and proceed to next task
+**For Each Batch**:
+
+1. **Identify Execution Mode**:
+   - **Parallel Batch**: Tasks are independent (no file conflicts, no dependencies) -> Use Agent Team
+   - **Serial Batch**: Tasks have dependencies or file conflicts -> Execute one by one
+
+2. **Parallel Execution (Preferred when possible)**:
+   - Use `EnterPlanMode` to plan the batch execution strategy
+   - Use `ExitPlanMode` to get approval on the batch plan
+   - Create Agent Team with teammates for parallel execution
+   - Assign tasks to teammates with clear file ownership boundaries
+   - Wait for teammates to complete all tasks
+   - Verify all tasks in the batch
+   - Mark tasks complete
+
+3. **Serial Execution (When necessary)**:
+   - For each task in the batch:
+     - Use `EnterPlanMode` to plan the implementation
+     - Use `ExitPlanMode` to get approval on the task plan
+     - Execute using subagent following `behavior-driven-development` principles
+     - Verify the task
+     - Mark task complete
+
+4. **Between Batches**:
+   - Report progress and verification results
+   - Get user confirmation before proceeding to next batch
 
 See `./references/batch-execution-playbook.md`.
 

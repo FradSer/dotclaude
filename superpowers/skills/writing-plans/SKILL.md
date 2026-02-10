@@ -3,7 +3,7 @@ name: writing-plans
 description: This skill should be used when the user has a design (from brainstorming) and needs to break it down into a detailed, step-by-step implementation plan with verification steps for each task.
 argument-hint: [design-folder-path]
 user-invocable: true
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Writing Plans
@@ -58,12 +58,36 @@ Verify completeness, confirm with user, and save.
 2. **Confirm**: Get user approval on the plan.
 3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
    - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with references to all task files
-   - Example: `- [Phase 1: Setup](./tasks-phase1-setup.md)`
-4. **Commit**: Commit the plan to git.
+   - Example: `- [Task 001: Setup](./task-001-setup.md)`
 
-## Output
+## Git Commit
 
-- Returns: The absolute path to the created plan folder.
+Commit the plan folder to git with proper message format.
+
+**Commit**:
+```bash
+git add docs/plans/YYYY-MM-DD-<topic>-plan/
+git commit -m "docs: add implementation plan for <topic>
+
+<Context>
+
+- <Specific action taken>
+- <Specific action taken>
+
+<Summary>
+
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
+```
+
+**Requirements**:
+- Prefix: `docs:` (lowercase)
+- Subject: Under 50 characters, lowercase
+- Body: Context, specific actions, plan summary
+- Footer: Co-Authored-By with model name
+
+**Verify**: Run `git log -1` to confirm commit.
+
+See `./references/git-commit.md` for detailed patterns and requirements.
 
 ## Phase 4: Transition to Execution
 
@@ -81,3 +105,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 
 - `./references/plan-structure-template.md` - Template for plan structure
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
+- `./references/git-commit.md` - Git commit patterns and requirements
