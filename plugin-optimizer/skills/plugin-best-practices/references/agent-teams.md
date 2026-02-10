@@ -28,7 +28,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 ## Starting a Team
 
-You can start a team by explicitly asking Claude:
+Start a team by explicitly asking Claude:
 
 > "Create an agent team to refactor the database layer. One teammate for schema changes, one for migration scripts."
 

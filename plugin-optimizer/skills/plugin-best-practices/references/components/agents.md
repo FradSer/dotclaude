@@ -1,17 +1,17 @@
 # Designing Agents
 
-Agents are the autonomous workers of your plugin. They combine a **Persona** (System Prompt) with **Capabilities** (Tools/Skills) to solve problems.
+Agents are autonomous subprocesses with isolated context. Combine a **Persona** (System Prompt) with **Capabilities** (Tools/Skills) to solve problems.
 
 ## Anatomy of a Robust Agent
 
-### 1. The Persona (System Prompt)
-The system prompt is the agent's "operating system." It must be engineered for reliability.
+### Persona (System Prompt)
+Engineer the system prompt for reliability.
 
-*   **Role Definition:** "You are a [Role]. Your goal is [Goal]."
-*   **Tone & Style:** "Be concise." "Show your work." "Ask for confirmation before destructive actions."
-*   **Constraints:** "Never edit files outside `/src`." "Always run tests after changes."
+*   **Role Definition**: State "You are a [Role]. Your goal is [Goal]."
+*   **Tone & Style**: Specify "Be concise." "Show your work." "Ask for confirmation before destructive actions."
+*   **Constraints**: Define "Never edit files outside `/src`." "Always run tests after changes."
 
-**Best Practice (CO-STAR Framework):**
+**CO-STAR Framework**:
 *   **C**ontext: Background info.
 *   **O**bjective: What to achieve.
 *   **S**tyle: Tone/Format.
@@ -19,17 +19,17 @@ The system prompt is the agent's "operating system." It must be engineered for r
 *   **A**udience: Who is this for?
 *   **R**esponse: Format of output.
 
-### 2. Tool Selection (Capabilities)
+### Tool Selection (Capabilities)
 Adhere to the **Principle of Least Privilege**.
 *   Give an agent *only* the tools it needs.
-*   **Why?**
-    *   **Safety:** A "Reader" agent shouldn't have `rm`.
-    *   **Focus:** Fewer tools = less confusion for the model.
-    *   **Performance:** Smaller system prompt.
+*   **Rationale**:
+    *   **Safety**: A "Reader" agent shouldn't have `rm`.
+    *   **Focus**: Fewer tools = less confusion.
+    *   **Performance**: Smaller system prompt.
 
-### 3. Cognitive Load Management
-*   **Scratchpads:** Encourage the agent to "think out loud" inside `<thinking>` blocks.
-*   **Checklists:** Give the agent a checklist in its prompt to track progress.
+### Cognitive Load Management
+*   **Scratchpads**: Encourage the agent to "think out loud" inside `<thinking>` blocks.
+*   **Checklists**: Give the agent a checklist in its prompt to track progress.
 
 ## Agent Types in Plugins
 
@@ -42,6 +42,6 @@ Adhere to the **Principle of Least Privilege**.
 
 ## Best Practices
 
-1.  **Examples are Key:** Include 2-4 `<example>` blocks in your agent description. This is "Few-Shot Prompting" for the router. It teaches Claude *exactly* when to pick this agent.
-2.  **Fail Fast:** Instruct agents to stop and report if prerequisites aren't met.
-3.  **Hooks for Safety:** Use `PreToolUse` hooks to validate commands (e.g., preventing `git push --force` in a junior-dev agent).
+1.  **Examples are Key**: Include 2-4 `<example>` blocks in the agent description. This is "Few-Shot Prompting" for the router. It teaches Claude *exactly* when to pick this agent.
+2.  **Fail Fast**: Instruct agents to stop and report if prerequisites aren't met.
+3.  **Hooks for Safety**: Use `PreToolUse` hooks to validate commands (e.g., preventing `git push --force` in a junior-dev agent). See `./references/components/hooks.md` for configuration.

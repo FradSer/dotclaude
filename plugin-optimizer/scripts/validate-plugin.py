@@ -9,6 +9,11 @@ Combines 5 validation checks into a single entry point:
 - Tool invocation validation (anti-pattern detection)
 - Token budget validation (progressive disclosure)
 
+Token Budgets (Official Best Practices):
+- Level 1 (Metadata): ~100 tokens for name + description - Always loaded at startup
+- Level 2 (Instructions): Under 5k tokens for SKILL.md body - Loaded when Skill triggered
+- Level 3 (Resources): Effectively unlimited - Loaded as needed via bash
+
 Severity Levels:
 - MUST: Absolute requirements - plugin will not function correctly
 - SHOULD: Recommended practices - affects quality and maintainability
@@ -35,12 +40,17 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
 
-# Token budget thresholds (based on plugin-best-practices skill)
-METADATA_BUDGET = 50      # ~50 tokens for description
-METADATA_WARNING = 100
-SKILL_BUDGET = 500        # ~500 tokens target for SKILL.md body
-SKILL_WARNING = 800
-SKILL_CRITICAL = 2500
+# Token budget thresholds (based on official Claude Code Skill authoring best practices)
+# Level 1: Metadata - Always loaded (~100 tokens for name + description)
+# Level 2: Instructions - When Skill triggered (Under 5k tokens for SKILL.md body)
+# Level 3+: Resources - As needed (Effectively unlimited)
+METADATA_TARGET = 100      # ~100 tokens for name + description
+METADATA_WARNING = 200
+SKILL_LINE_TARGET = 500    # Under 500 lines for SKILL.md body
+SKILL_LINE_WARNING = 600
+SKILL_LINE_CRITICAL = 800
+SKILL_BODY_WARNING = 4500  # Warning when approaching 5k limit
+SKILL_BODY_MAX = 5000      # Under 5k tokens hard limit (SKILL.md body)
 
 # Try tiktoken for accurate counting
 try:
@@ -594,30 +604,99 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                 result.ok(f'color: "{color}"', file=rel_path, line=line_num)
 
     elif comp_type == "skill":
+        # Allowed fields for skills (name, description are required for official best practices)
+        # Additional fields like user-invocable, allowed-tools, argument-hint are supported
+        # and provide value for command-type skills registered under "commands" in plugin.json
         if "name" not in fm:
             result.must(
                 "Missing 'name' in frontmatter",
                 file=rel_path,
-                suggestion="Add name: skill-name (kebab-case)"
+                suggestion="Add name: skill-name (kebab-case, max 64 chars)"
             )
-        elif verbose:
-            result.ok(f'name: "{fm["name"]}"', file=rel_path, line=find_fm_key_line("name"))
+        else:
+            name = fm["name"]
+            line_num = find_fm_key_line("name")
+            if len(name) > 64:
+                result.must(
+                    "Name exceeds 64 character limit",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'name: {name}',
+                    suggestion="Use max 64 characters for name"
+                )
+            elif not re.match(r'^[a-z0-9-]+$', name):
+                result.should(
+                    "Name contains invalid characters",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'name: {name}',
+                    suggestion="Use only lowercase letters, numbers, and hyphens"
+                )
+            elif verbose:
+                result.ok(f'name: "{name}"', file=rel_path, line=line_num)
 
         if "description" not in fm:
             result.must(
                 "Missing 'description' in frontmatter",
                 file=rel_path,
-                suggestion="Add description with trigger phrases"
+                suggestion="Add description with trigger phrases (what it does AND when to use it)"
             )
         else:
             desc = fm["description"]
+            line_num = find_fm_key_line("description")
+
+            # Check for third-person voice (official requirement)
+            first_person_patterns = [
+                (r'\bI can\b', "first person 'I can'"),
+                (r'\bI will\b', "first person 'I will'"),
+                (r'\bYou can\b', "second person 'You can'"),
+                (r'\bYou should\b', "second person 'You should'"),
+            ]
+            for pattern, pattern_name in first_person_patterns:
+                if re.search(pattern, desc, re.IGNORECASE):
+                    result.should(
+                        f"Description uses {pattern_name}",
+                        file=rel_path,
+                        line=line_num,
+                        source=f'description: {desc[:50]}...',
+                        suggestion="Use third person: 'Validates...' or 'Processes...' not 'I can...' or 'You can...'"
+                    )
+                    break
+
+            # Check for trigger phrases (official requirement: describe when to use it)
+            trigger_phrases = [
+                r'\bUse when\b',
+                r'\bUse for\b',
+                r'\bwhen the user\b',
+                r'\btriggers?\b',
+                r'\bactivat(e|ion)\b',
+            ]
+            has_trigger = any(re.search(pattern, desc, re.IGNORECASE) for pattern in trigger_phrases)
+
+            if not has_trigger:
+                result.should(
+                    "Description missing trigger phrases (when to use this skill)",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'description: {desc[:50]}...',
+                    suggestion="Include both what the skill does AND when to use it. Example: 'Validates plugins. Use when validating plugin structure...'"
+                )
+
             if len(desc.replace(" ", "")) < 10:
                 result.should(
                     "Description too short",
                     file=rel_path,
-                    line=find_fm_key_line("description"),
+                    line=line_num,
                     source=f'description: {desc}',
                     suggestion="Add more detail about when this skill should be used"
+                )
+            elif len(desc) > 1024:
+                result.must(
+                    "Description exceeds 1024 character limit",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'description: {desc[:50]}... ({len(desc)} chars)',
+                    suggestion="Use max 1024 characters for description"
                 )
             elif verbose:
                 preview = desc[:50] + "..." if len(desc) > 50 else desc
@@ -635,6 +714,19 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                     line=actual_line,
                     source=line.strip(),
                     suggestion="Use imperative form: 'Parse the file...' instead of 'You should...'"
+                )
+
+        # Check argument-hint for placeholder text (official requirement)
+        if "argument-hint" in fm:
+            hint = fm["argument-hint"]
+            line_num = find_fm_key_line("argument-hint")
+            if hint and re.search(r'\(no arg|provides reference|placeholder\b', hint, re.IGNORECASE):
+                result.should(
+                    "argument-hint contains placeholder text",
+                    file=rel_path,
+                    line=line_num,
+                    source=f'argument-hint: {hint}',
+                    suggestion="Use empty string or omit argument-hint if skill takes no arguments"
                 )
 
 
@@ -754,36 +846,53 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
         meta = skill_result["metadata_tokens"]
         body = skill_result["skill_tokens"]
+        body_lines = skill_result["body_lines"]
         refs = skill_result["reference_tokens"]
-        excess = body - SKILL_BUDGET
 
         # Build details dict for structured output
         details = {
             "frontmatter": meta,
             "body": body,
+            "body_lines": body_lines,
             "refs": refs,
             "files": skill_result["files"]
         }
 
-        if skill_result["status"] == "CRITICAL":
+        # Check line count (official requirement: under 500 lines)
+        if body_lines >= SKILL_LINE_CRITICAL:
             result.must(
-                f"Token budget exceeded: {body} tokens",
+                f"SKILL.md body too long: {body_lines} lines (max recommended: {SKILL_LINE_TARGET})",
                 file=rel_path,
-                suggestion=f"MUST move {excess}+ tokens to references/",
+                suggestion=f"MUST move content to references/ - exceed {SKILL_LINE_CRITICAL} lines",
                 **details
             )
-        elif skill_result["status"] == "WARNING":
+        elif body_lines >= SKILL_LINE_WARNING:
             result.should(
-                f"Token count high: {body} tokens",
+                f"SKILL.md body approaching limit: {body_lines} lines (recommended: {SKILL_LINE_TARGET})",
                 file=rel_path,
-                suggestion=f"Move {excess}+ tokens to references/",
+                suggestion=f"Consider moving content to references/",
                 **details
             )
-        elif body > SKILL_BUDGET:
-            result.may(
-                f"Token count above target: {body} tokens",
+        elif body_lines > SKILL_LINE_TARGET and verbose:
+            result.ok(
+                f"SKILL.md body: {body_lines} lines (slightly above {SKILL_LINE_TARGET} target)",
                 file=rel_path,
-                suggestion=f"Consider moving {excess} tokens to references/",
+                **details
+            )
+
+        # Check token count (official: Under 5k tokens for SKILL.md body)
+        if body >= SKILL_BODY_MAX:
+            result.must(
+                f"Token budget exceeded: {body} tokens (max: {SKILL_BODY_MAX})",
+                file=rel_path,
+                suggestion=f"MUST move content to references/ - exceed {SKILL_BODY_MAX} tokens",
+                **details
+            )
+        elif body >= SKILL_BODY_WARNING:
+            result.should(
+                f"Token count approaching limit: {body} tokens (max: {SKILL_BODY_MAX})",
+                file=rel_path,
+                suggestion=f"Consider moving content to references/ before reaching {SKILL_BODY_MAX} tokens",
                 **details
             )
         elif verbose:
@@ -798,17 +907,31 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
             ref_files = [f for f in skill_result.get("files", []) if f["type"] == "reference"]
             script_files = [f for f in skill_result.get("files", []) if f["type"] == "script"]
 
-            result.ok(f"  Frontmatter: {meta} tokens (target: ~{METADATA_BUDGET})")
-            result.ok(f"  Body: {body} tokens (target: ~{SKILL_BUDGET})")
-            result.ok(f"  References: {refs} tokens ({len(ref_files)} files)")
+            # Level 1: Metadata
+            result.ok(f"  Level 1 (Metadata): {meta} tokens (always loaded at startup)")
+            result.ok(f"    - name + description from YAML frontmatter")
+
+            # Level 2: Instructions
+            result.ok(f"  Level 2 (Instructions): {body} tokens ({body_lines} lines, loaded when triggered)")
+            result.ok(f"    - SKILL.md body with instructions and guidance")
+            if skill_result.get('status') == "CRITICAL":
+                result.ok(f"    - Status: EXCEEDS 5k token limit (MUST refactor)")
+            elif skill_result.get('status') == "WARNING":
+                result.ok(f"    - Status: Approaching 5k token limit (SHOULD consider refactoring)")
+            elif body_lines > SKILL_LINE_TARGET:
+                result.ok(f"    - Status: Above {SKILL_LINE_TARGET} lines target (MAY consider refactoring)")
+
+            # Level 3: Resources
+            result.ok(f"  Level 3 (Resources): {refs} tokens (loaded as needed)")
+            result.ok(f"    - Bundled files: {len(ref_files)} reference files")
             for f in ref_files:
-                result.ok(f"    - {f['file']}: {f['tokens']} tokens")
+                result.ok(f"      - {f['file']}: {f['tokens']} tokens")
             if script_files:
                 scripts = skill_result.get("script_tokens", 0)
-                result.ok(f"  Scripts: {scripts} tokens ({len(script_files)} files)")
+                result.ok(f"    - Scripts: {scripts} tokens ({len(script_files)} files)")
                 for f in script_files:
-                    result.ok(f"    - {f['file']}: {f['tokens']} tokens")
-            result.ok(f"  Total: {skill_result['total_tokens']} tokens")
+                    result.ok(f"      - {f['file']}: {f['tokens']} tokens")
+            result.ok(f"  Total effective: {skill_result['total_tokens']} tokens")
 
     return result
 
@@ -820,8 +943,15 @@ def _analyze_skill_tokens(skill_dir: Path) -> dict:
     fm, body, _ = parse_frontmatter(content)
 
     description = fm.get("description", "")
-    metadata_tokens = count_tokens(description)
+    name = fm.get("name", "")
+
+    # Official: name + description for metadata tokens
+    metadata_text = f"{name} {description}"
+    metadata_tokens = count_tokens(metadata_text)
     skill_tokens = count_tokens(body)
+
+    # Count body lines (exclude frontmatter)
+    body_lines = len([l for l in body.split("\n") if l.strip()])
 
     reference_tokens = 0
     files = [{"file": "SKILL.md", "tokens": skill_tokens, "type": "skill"}]
@@ -866,15 +996,18 @@ def _analyze_skill_tokens(skill_dir: Path) -> dict:
     total_tokens = metadata_tokens + skill_tokens + reference_tokens + script_tokens
 
     status = "OK"
-    if skill_tokens > SKILL_CRITICAL:
+    if skill_tokens >= SKILL_BODY_MAX:
         status = "CRITICAL"
-    elif skill_tokens > SKILL_WARNING:
+    elif skill_tokens >= SKILL_BODY_WARNING:
         status = "WARNING"
+    elif body_lines > SKILL_LINE_TARGET:
+        status = "LINE_HIGH"
 
     return {
         "status": status,
         "metadata_tokens": metadata_tokens,
         "skill_tokens": skill_tokens,
+        "body_lines": body_lines,
         "reference_tokens": reference_tokens,
         "script_tokens": script_tokens,
         "total_tokens": total_tokens,
@@ -950,8 +1083,9 @@ def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bo
             fm = issue.details["frontmatter"]
             body = issue.details["body"]
             refs = issue.details["refs"]
-            print(f"{indent}│  Tokens: frontmatter={fm}, body={body}, refs={refs}")
-            print(f"{indent}│  Target: frontmatter≈{METADATA_BUDGET}, body≈{SKILL_BUDGET}, refs≥2000")
+            body_lines = issue.details.get("body_lines", 0)
+            print(f"{indent}│  Tokens: Level1={fm} (metadata), Level2={body} ({body_lines} lines), Level3={refs} (resources)")
+            print(f"{indent}│  Budget: Level1≈{METADATA_TARGET} (always), Level2<5k (triggered), Level3 unlimited (as needed)")
 
         # Suggestion
         if issue.suggestion:
@@ -990,6 +1124,7 @@ def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bo
         print(f"\n{'─' * 70}")
         print(f"[OK] Passing Checks ({len(all_issues['ok'])})")
         print(f"{'─' * 70}")
+        current_file = None
         for issue in all_issues["ok"]:
             msg = issue.message
             if issue.file:
@@ -997,6 +1132,10 @@ def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bo
                 if issue.line:
                     msg += f":{issue.line}"
                 msg += ")"
+                # Add spacing between different agent/skill files
+                if current_file is not None and issue.file != current_file:
+                    print()
+                current_file = issue.file
             print(f"  ✓ {msg}")
 
     # Summary

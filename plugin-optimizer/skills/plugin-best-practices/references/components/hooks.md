@@ -1,6 +1,6 @@
 # Hooks Component Reference
 
-Plugins can provide event handlers that respond to Claude Code events automatically.
+Plugins provide event handlers that respond to Claude Code events automatically.
 
 **Location**: `hooks/hooks.json` in plugin root, or inline in plugin.json
 
@@ -52,7 +52,7 @@ Plugins can provide event handlers that respond to Claude Code events automatica
 ### Must Do
 - **Validate Inputs**: In bash hooks, strictly validate all JSON inputs and sanitize variables to prevent injection.
 - **Quote Variables**: Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`) to handle spaces in paths.
-- **Return Valid JSON**: Ensure your hooks output valid JSON structures for decisions (`allow`/`deny`) and messages.
+- **Return Valid JSON**: Ensure hooks output valid JSON structures for decisions (`allow`/`deny`) and messages.
 
 ### Avoid
 - **Blocking Errors**: Avoid returning exit code `2` (Blocking Error) unless the operation is critical and MUST be stopped. Use `1` (Non-blocking) or `0` (Success) otherwise.

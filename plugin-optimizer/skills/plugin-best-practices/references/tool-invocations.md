@@ -10,7 +10,7 @@ Best practices for referencing tools in plugin components.
 
 ### Implicit (Describe Action Directly)
 
-**Core File Operations:**
+**Core File Operations**:
 - Read, Write, Glob, Grep, Edit
 - Bash (describe commands: "Run `git status`")
 - Task (describe agent launch: "Launch `plugin-name:agent-name` agent")
@@ -31,7 +31,7 @@ Launch the Explore agent to analyze codebase
 
 ### Explicit (State Tool Name)
 
-**Workflow & External Tools:**
+**Workflow & External Tools**:
 - Skill: "**Load `plugin-name:skill-name` skill** using the Skill tool"
 - AskUserQuestion: "Use `AskUserQuestion` tool to [action]"
 - TaskCreate: "**Use TaskCreate tool** to track progress"
@@ -72,7 +72,7 @@ Current branch: !`git branch --show-current`
 Modified files: !`git diff --name-only`
 ```
 
-Format: 
+Format:
 
 ```bash
 `!`command`` (exclamation + backtick + command + backtick)

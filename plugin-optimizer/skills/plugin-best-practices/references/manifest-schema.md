@@ -48,7 +48,7 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 
 ## Component path fields
 
-> **Best Practice**: Explicitly declare `commands` and `skills` fields in `plugin.json` even when using default directories. This improves clarity, maintainability, and serves as documentation for your plugin's capabilities.
+> **Best Practice**: See `./references/component-model.md` for component types and selection criteria.
 
 | Field          | Type           | Description                                                                                                                                              | Example                                |
 | :------------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- |

@@ -1,8 +1,6 @@
 # Commands Component Reference
 
-> **Modern Approach**: For new plugins, prefer using **Skills** over Commands. Skills provide better modularity, are self-contained, and support progressive disclosure patterns. Commands are primarily for backward compatibility and simple user-invoked operations. See the Skills component reference for the recommended approach.
->
-> Use this template when migrating a command to a modern instruction-type skill. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for the modern instruction-skill template.
+> **Modern Approach**: For new plugins, prefer using **Skills** over Commands. Skills provide better modularity, are self-contained, and support progressive disclosure patterns. Commands are primarily for backward compatibility and simple user-invoked operations. See `./references/components/skills.md` for the recommended approach.
 
 Plugins add custom slash commands that integrate seamlessly with Claude Code's command system.
 
@@ -16,21 +14,21 @@ Plugins add custom slash commands that integrate seamlessly with Claude Code's c
 
 ### Frontmatter (YAML)
 
-Use this template when converting command-style logic into a phase-based instruction skill. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for the modern instruction template.
+Use phase-based instruction skill structure for command-style logic.
 
 **Required Fields**:
 - `description`: Short description shown in command list
 - `argument-hint`: Usage pattern for arguments (use `<>` for required, `[]` for optional). MUST be empty or omitted if command takes no arguments (do not use placeholder text like `(no arguments - provides reference guidance)`).
 
 **Optional Fields**:
-- `allowed-tools`: Array of tools Claude can use (see tool-invocations.md for syntax)
+- `allowed-tools`: Array of tools Claude can use (see `./references/tool-invocations.md` for syntax)
 - `disable-model-invocation`: Set `true` for commands that only execute scripts without LLM
 
 ### Body (Markdown)
 
 Write **directives FOR Claude** (instructions), not descriptions to users.
 
-Use this structure when documenting phased execution logic. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` for a full phase-based structure pattern.
+Use phase-based structure for execution logic.
 
 ## Integration Points
 

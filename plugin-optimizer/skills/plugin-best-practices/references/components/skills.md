@@ -1,8 +1,8 @@
 # Skills Component Reference
 
-Plugins can provide Agent Skills that extend Claude's capabilities. Skills are model-invoked—Claude autonomously decides when to use them based on the task context.
+Plugins provide Agent Skills that extend Claude's capabilities. Skills are model-invoked—Claude autonomously decides when to use them based on task context.
 
-Skills package domain expertise in a format agents can access and apply—turning general-purpose agents into knowledgeable specialists. The key insight: agents have intelligence and capabilities, but not always the expertise to effectively tackle real work. Skills bridge this gap.
+Skills package domain expertise in a format agents can access and apply—turning general-purpose agents into knowledgeable specialists.
 
 **Location**: `skills/` directory in plugin root
 
@@ -22,22 +22,20 @@ skills/
 
 ## Frontmatter fields
 
-All fields are optional. Only `description` is recommended so Claude knows when to use the skill.
-
-Use these templates to align skill structure and voice with the correct type. See `${CLAUDE_PLUGIN_ROOT}/examples/instruction-skill.md` and `${CLAUDE_PLUGIN_ROOT}/examples/knowledge-skill.md` for complete templates.
+Only `name` and `description` are allowed for official best practices compliance. Additional fields are supported but may affect progressive disclosure alignment.
 
 | Field                    | Required    | Description                                                                                                                              |
 | ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | name                     | No          | Display name for the skill. If omitted, uses the directory name. Lowercase letters, numbers, and hyphens only (max 64 characters).      |
-| description              | Recommended | What the skill does and when to use it. Claude uses this to decide when to apply the skill.                                            |
+| description              | Recommended | What the skill does and when to use it. Third-person voice with trigger phrases. Claude uses this to decide when to apply the skill.    |
 | argument-hint | No  | Hint shown during autocomplete to indicate expected arguments. Example: `[issue-number]` or `[filename] [format]`. MUST be empty or omitted if skill takes no arguments (do not use placeholder text like `(no arguments - provides reference guidance)`). |
-| disable-model-invocation | No          | Set to `true` to prevent Claude from automatically loading this skill. Use for workflows you want to trigger manually. Default: `false`. |
+| disable-model-invocation | No          | Set to `true` to prevent Claude from automatically loading this skill. Use for workflows triggered manually. Default: `false`. |
 | user-invocable           | No          | Set to `false` to hide from the / menu. Use for background knowledge users shouldn't invoke directly. Default: `true`.                  |
-| allowed-tools            | No          | Tools Claude can use without asking permission when this skill is active.                                                                |
+| allowed-tools            | No          | Tools Claude can use without asking permission when this skill is active. See `./references/tool-invocations.md` for syntax.        |
 | model                    | No          | Model to use when this skill is active: `sonnet`, `opus`, `haiku`, or `inherit`.                                                        |
 | context                  | No          | Set to `fork` to run in a forked subagent context.                                                                                       |
 | agent                    | No          | Which subagent type to use when `context: fork` is set: `Explore`, `Plan`, `general-purpose`, or custom agent name.                      |
-| hooks                    | No          | Hooks scoped to this skill's lifecycle. See Hooks documentation for configuration format.                                               |
+| hooks                    | No          | Hooks scoped to this skill's lifecycle. See `./references/components/hooks.md` for configuration format.                                               |
 
 ## String substitutions
 
@@ -54,8 +52,6 @@ Skills support string substitution for dynamic values:
 * Claude autonomously invokes Skills based on matching task context
 * Skills can include supporting files alongside SKILL.md
 * Reference supporting files from SKILL.md so Claude knows what each file contains and when to load it
-
-**Note**: There is a known limitation where plugin skills may not appear in the slash command menu, even though project-level skills do. See [GitHub issue #17271](https://github.com/anthropics/claude-code/issues/17271#issuecomment-3785693359) for details.
 
 ## Declaring in plugin.json
 
@@ -75,7 +71,7 @@ Keep `SKILL.md` around 500 tokens (roughly 50-100 lines of typical content). Mov
 
 ### Progressive Disclosure Strategy
 
-Skills use progressive disclosure to protect the context window and enable composability. At runtime, only metadata is shown initially—full content loads on demand.
+Skills use progressive disclosure to protect the context window and enable composability.
 
 **Three-Tier Token Budget**:
 
@@ -84,8 +80,6 @@ Skills use progressive disclosure to protect the context window and enable compo
 | Metadata | Name + description (frontmatter) | ~50 tokens | Always (skill discovery) |
 | SKILL.md | Core instructions and navigation | ~500 tokens | When skill is invoked |
 | References | Detailed documentation, examples | 2000+ tokens | MUST only access when specifically needed |
-
-This approach means you can equip an agent with hundreds of skills without overwhelming its context window.
 
 **Three-Level Implementation**:
 - **Level 1 (Metadata)**: Tell the agent "when to use me"
@@ -100,7 +94,6 @@ This approach means you can equip an agent with hundreds of skills without overw
 - **Level 3 (Detailed Documentation)**: Reference external files for complex logic
   - Reference supporting files from SKILL.md: `For complete API details, see reference.md`
   - Use code interpreter scripts for complex operations
-  - Don't make the LLM "read" thousands of lines of rules
   - MUST only access when specifically needed
 
 ### Must Do
@@ -116,9 +109,6 @@ This approach means you can equip an agent with hundreds of skills without overw
 - MAY include pre-phase sections before "Phase 1":
   - **"## Initialization"**: Environment setup, prerequisites, configuration steps
   - **"## Background Knowledge"**: Domain knowledge, context, reference information
-- These sections provide foundational setup and context before entering the main workflow phases
-- Use "## Initialization" when the workflow requires specific environment preparation
-- Use "## Background Knowledge" when execution requires understanding of domain-specific concepts
 
 ### Should Do
 - Reference external documentation files rather than embedding all details
@@ -132,10 +122,7 @@ This approach means you can equip an agent with hundreds of skills without overw
 
 ### Scripts as Tools
 
-Skills can include scripts that act as self-documenting, modifiable tools. Code is preferable to traditional tool definitions because:
-- Code is self-documenting through its logic and comments
-- The model can read, understand, and extend scripts as needed
-- Scripts don't bloat the context window when not in use
+Skills can include scripts that act as self-documenting, modifiable tools.
 
 **Script Design Pattern**:
 ```python
@@ -159,15 +146,7 @@ if len(sys.argv) != 2:
 Use the `./scripts/process_data.py` script to process files in-place.
 ```
 
-**Benefits**:
-- Self-contained logic that can be tested independently
-- Clear interface through argument handling
-- Modifiable by the agent when workflows evolve
-- Zero context cost until invoked
-
 ## Skill Complexity Levels
-
-Skills range from simple documentation to sophisticated multi-step workflows. Design complexity appropriately:
 
 | Level | Tokens | Characteristics | Example |
 |-------|--------|-----------------|---------|
@@ -175,16 +154,9 @@ Skills range from simple documentation to sophisticated multi-step workflows. De
 | Intermediate | ~500–800 | Data retrieval, file processing, multi-tool coordination | Financial model builder |
 | Complex | 1000–2500 | Multi-step pipelines, external tool orchestration | Bioinformatics analysis pipeline |
 
-**Complexity Indicators**:
-- **Simple**: Single file type, templating focus, minimal logic
-- **Intermediate**: Multiple file operations, Python/script coordination, conditional logic
-- **Complex**: External tool orchestration, multi-stage pipelines, extensive reference documentation
-
-When complexity exceeds intermediate, consider splitting into multiple focused skills that compose together.
+When complexity exceeds intermediate, consider splitting into multiple focused skills.
 
 ## Skills in the Agent Architecture
-
-Skills fit into a complete agent architecture alongside other extension mechanisms:
 
 | Layer | Purpose | Examples |
 |-------|---------|----------|
@@ -193,12 +165,8 @@ Skills fit into a complete agent architecture alongside other extension mechanis
 | MCP servers | External tool and data connections | Database access, API integrations |
 | Skills library | Domain expertise and workflows | Coding standards, deployment procedures |
 
-Each layer has a clear purpose: the loop reasons, the runtime executes, MCP connects, and skills guide.
-
 **Skills + MCP Integration**: Skills and MCP servers work together naturally. A skill might coordinate:
 - Web search for current information
 - Internal databases via MCP
 - Slack/Notion for team context
 - File operations for output generation
-
-The skill provides the domain expertise for *how* to use these capabilities effectively.
