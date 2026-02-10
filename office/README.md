@@ -36,13 +36,13 @@ The skill will:
 
 ## Skills
 
-### `/patent-architect` (Command)
+### `/office:patent-architect` (Command)
 
 Generate Chinese patent application forms (专利申请表) from technical ideas.
 
 **Usage:**
 ```bash
-/patent-architect "INVENTION_DESCRIPTION"
+/office:patent-architect "INVENTION_DESCRIPTION"
 ```
 
 **Workflow:**
@@ -56,6 +56,44 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Chinese patent application form generation
 - Patent terminology compliance
 - Multiple embodiment generation (3+)
+
+### `/office:create-feishu-doc` (Command)
+
+Automate the process of creating new documents in Feishu (Lark) workspace using browser automation.
+
+**Usage:**
+```bash
+/office:create-feishu-doc
+```
+
+**Features:**
+- Browser automation for Feishu UI navigation
+- Auto-creation of blank documents
+- Title and content entry
+- Supports multiple Feishu workspaces
+
+**Prerequisites:**
+- Access to Feishu workspace
+- Browser automation capability via agent-browser
+
+### `/office:create-prd` (Command)
+
+Generate comprehensive Chinese Product Requirements Documents (PRD) following 2026 best practices.
+
+**Usage:**
+```bash
+/office:create-prd
+```
+
+**Features:**
+- Two PRD types: full version and brief version
+- Interactive information collection via AskUserQuestion
+- SMART goal validation
+- Data-driven problem statements
+- Professional Chinese PRD generation
+
+**Prerequisites:**
+- None (interactive workflow)
 
 ### `agent-browser` (Reference Skill)
 
