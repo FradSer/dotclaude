@@ -101,7 +101,7 @@ See `./references/rfc-2119.md` for complete RFC 2119 specification.
 
 **allowed-tools**: NEVER use bare `Bash` - always use filters like `Bash(git:*)`.
 
-**Inline Bash**: Use ``!`command` `` (exclamation + backtick + command + backtick) for dynamic context.
+**Inline Bash**: Use inline syntax (exclamation + backtick + command + backtick) for dynamic context.
 
 See `./references/tool-invocations.md` for complete patterns and anti-patterns.
 
