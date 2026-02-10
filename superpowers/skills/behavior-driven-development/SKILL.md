@@ -1,7 +1,7 @@
 ---
 name: behavior-driven-development
-description: Apply BDD principles: specific requirements (Gherkin), Red-Green-Refactor cycle, and best practices for reliable software delivery.
-user-invocable: true
+description: Apply BDD principles including Gherkin scenarios and the Red-Green-Refactor cycle. Use when implementing features, fixing bugs, or refactoring to ensure test-driven development and shared understanding of requirements.
+user-invocable: false
 version: 3.0.0
 ---
 
