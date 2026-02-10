@@ -1,6 +1,6 @@
 # Plugin Optimizer
 
-**Version:** 0.11.2
+**Version:** 0.11.3
 
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
 
@@ -138,12 +138,7 @@ plugin-optimizer/
 │   └── validate-plugin.py       # Unified validator (structure, manifest, frontmatter, tools, tokens)
 ├── skills/
 │   ├── optimize-plugin/         # User-invocable skill (registered as command)
-│   │   ├── SKILL.md            # Multi-phase optimization workflow
-│   │   └── references/          # Workflow details (4 files)
-│   │       ├── template-validation.md
-│   │       ├── tool-patterns.md
-│   │       ├── workflow-phases.md
-│   │       └── report-template.md
+│   │   └── SKILL.md            # Multi-phase optimization workflow
 │   └── plugin-best-practices/   # Knowledge-type skill (agent-only)
 │       ├── SKILL.md            # Core validation rules
 │       └── references/          # Detailed documentation (17 files)
