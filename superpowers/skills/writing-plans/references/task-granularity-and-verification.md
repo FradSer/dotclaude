@@ -14,6 +14,15 @@ If using a single task, the steps MUST be strictly ordered:
 
 Do not group multiple scenarios into one task unless they are trivial variations.
 
+## File Structure (MANDATORY)
+
+**ONE TASK PER FILE**
+
+- Each task must be in its own `.md` file
+- File naming pattern: `task-<NNN>-<short-description>.md`
+- Example: `task-001-implement-login-test.md`, `task-002-implement-login-logic.md`
+- The `_index.md` file contains overview and references to all task files
+
 ## Verification Strategy
 
 **Verification is strictly tied to the BDD Scenario.**

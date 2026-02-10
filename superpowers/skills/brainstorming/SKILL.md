@@ -2,7 +2,7 @@
 name: brainstorming
 description: This skill should be used when the user has a new idea, feature request, or ambiguous requirement. It clarifies needs, explores options, and produces a solid design document and BDD specs before implementation starts.
 user-invocable: true
-version: 2.0.0
+version: 2.1.0
 ---
 
 # Brainstorming Ideas Into Designs
@@ -87,12 +87,22 @@ Launch additional specialized sub-agents for distinct, research-intensive aspect
 
 ```
 docs/plans/YYYY-MM-DD-<topic>-design/
-├── _index.md              # Context, Requirements, Rationale, Detailed Design
+├── _index.md              # Context, Requirements, Rationale, Detailed Design, Design Documents section (MANDATORY)
 ├── bdd-specs.md           # BDD specifications (MANDATORY)
 ├── architecture.md        # Architecture details (MANDATORY)
 ├── best-practices.md      # Best practices and considerations (MANDATORY)
 ├── decisions/             # ADRs (optional)
 └── diagrams/              # Visual artifacts (optional)
+```
+
+**CRITICAL: _index.md MUST include Design Documents section with references:**
+
+```markdown
+## Design Documents
+
+- [BDD Specifications](./bdd-specs.md) - Behavior scenarios and testing strategy
+- [Architecture](./architecture.md) - System architecture and component details
+- [Best Practices](./best-practices.md) - Security, performance, and code quality guidelines
 ```
 
 **Output**: Design folder created with all files saved.

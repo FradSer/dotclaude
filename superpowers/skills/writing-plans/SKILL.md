@@ -3,7 +3,7 @@ name: writing-plans
 description: This skill should be used when the user has a design (from brainstorming) and needs to break it down into a detailed, step-by-step implementation plan with verification steps for each task.
 argument-hint: [design-folder-path]
 user-invocable: true
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Writing Plans
@@ -23,11 +23,14 @@ Create executable implementation plans that reduce ambiguity for whoever execute
 
 ## Background Knowledge
 
-**Core Concept**: Explicit over implicit, granular tasks, verification-driven, context independence.
+**Core Concept**: Explicit over implicit, granular tasks, verification-driven, context independence. **PROHIBITED**: Do not generate actual code - focus on what to do, not implementation details.
 
 - **MANDATORY**: Tasks must be driven by BDD scenarios (Given/When/Then).
 - **MANDATORY**: Test-First (Red-Green) workflow. Verification tasks must precede implementation tasks.
 - **MANDATORY**: When plans include unit tests, require external dependency isolation with test doubles (DB/network/third-party APIs).
+- **PROHIBITED**: Do not generate actual code - describe what to implement, not the implementation itself.
+- **MANDATORY**: One task per file. Each task gets its own `.md` file.
+- **MANDATORY**: _index.md contains overview and references to all task files.
 
 ## Phase 1: Plan Structure
 
@@ -44,6 +47,8 @@ Break into small tasks mapped to specific BDD scenarios.
 2. **Define Verification**: **CRITICAL**: Verification steps must run the BDD specs (e.g., `npm test tests/login.spec.ts`).
 3. **Enforce Ordering**: Task N (Test/Red) -> Task N+1 (Implementation/Green).
 4. **Ensure Compatibility**: Ensure tasks are compatible with `superpowers:behavior-driven-development`.
+5. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<short-description>.md`.
+6. **Describe What, Not How**: **PROHIBITED**: Do not generate actual code. Describe what to implement (e.g., "Create a function that validates user credentials"), not the implementation (e.g., "def validate_credentials(username, password): ...").
 
 ## Phase 3: Validation & Documentation
 
@@ -51,7 +56,9 @@ Verify completeness, confirm with user, and save.
 
 1. **Verify**: Check for valid commit boundaries and no vague tasks.
 2. **Confirm**: Get user approval on the plan.
-3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder (must include `_index.md` and linked task files).
+3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
+   - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with references to all task files
+   - Example: `- [Phase 1: Setup](./tasks-phase1-setup.md)`
 4. **Commit**: Commit the plan to git.
 
 ## Output

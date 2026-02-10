@@ -8,7 +8,7 @@ This file preserves the previously detailed SKILL.md guidance for deeper referen
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. BDD. Frequent commits.
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. BDD. Frequent commits.
 For unit-test tasks, explicitly require test doubles to isolate external dependencies (databases, networks, third-party services).
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
@@ -21,9 +21,9 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 ## Folder Structure
 
-The plan must be split into multiple files:
+The plan must be split into multiple files: **ONE TASK PER FILE**
 
-### 1. `_index.md` (Plan Overview)
+### 1. `_index.md` (Plan Overview) - MANDATORY
 
 ```markdown
 # [Feature Name] Implementation Plan
@@ -41,8 +41,9 @@ The plan must be split into multiple files:
 - [Architecture](../YYYY-MM-DD-<topic>-design/architecture.md)
 
 **Execution Plan:**
-- [Phase 1: Setup](tasks-phase1-setup.md)
-- [Phase 2: Core Logic](tasks-phase2-core.md)
+- [Task 001: Setup project structure](./task-001-setup-project-structure.md)
+- [Task 002: Create base authentication handler](./task-002-create-base-auth-handler.md)
+- [Task 003: Implement login test](./task-003-implement-login-test.md)
 - ...
 
 ---
@@ -58,46 +59,72 @@ The plan must be split into multiple files:
 **3. BDD-Focused Execution** - Use Skill tool load `superpowers:behavior-driven-development` skill for specific scenarios.
 ```
 
-### 2. Task Files (e.g., `tasks-phase1.md`)
+**CRITICAL**: The Execution Plan section with task file references is MANDATORY in `_index.md`
+
+### 2. Task Files - MANDATORY: One task per file
+
+**File Naming Pattern**: `task-<NNN>-<short-description>.md`
+
+Example: `task-001-setup-project-structure.md`
+
+**Task File Template**:
 
 ```markdown
-# Phase 1 Execution Tasks
+# Task <NNN>: [Task Title]
 
-## Task Structure
+## Description
 
-### Task N: [Scenario Name]
+[What needs to be done - describe what, not how]
 
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
-- Spec: `docs/plans/.../bdd-specs.md` (Scenario: [Scenario Name])
+## BDD Scenario Reference
 
-**Step 1: Verify Scenario**
-- Ensure `[Scenario Name]` exists in `bdd-specs.md`.
+**Spec**: `../YYYY-MM-DD-<topic>-design/bdd-specs.md`
+**Scenario**: [Scenario Name]
 
-**Step 2: Implement Test Case**
+## Files to Modify/Create
 
-- File: `tests/exact/path/to/test.py`
-- Action: Create/Update test function `test_scenario_name`
-- Logic:
-  - **Given**: Initialize [State/Context]
-  - **When**: Trigger [Action]
-  - **Then**: Assert [Expected Result]
+- Create: `path/to/new/file.ext`
+- Modify: `path/to/existing/file.ext:line-range` (optional)
 
-**Step 3: Run test (Red)**
+## Steps
 
-Run: `pytest tests/path/test.py::test_scenario_name -v`
-Expected: FAIL
+### Step 1: Verify Scenario
+- Ensure `[Scenario Name]` exists in the BDD specs
 
-**Step 4: Implement Logic (Green)**
+### Step 2: Implement Test (Red)
+- Create test file: `tests/path/to/test_file.ext`
+- Test name: `test_scenario_name`
+- Test should verify the expected behavior
+- **Verification**: Run test command and verify it FAILS
 
-- File: `exact/path/to/file.py`
-- Action: Implement method/function to satisfy the test
-- Details: [Brief description of logic if needed]
+### Step 3: Implement Logic (Green)
+- Implement the required functionality in: `src/path/to/file.ext`
+- Follow the test requirements from Step 2
+- **Verification**: Run test command and verify it PASSES
 
-**Step 5: Verify & Refactor**
+### Step 4: Verify & Refactor
+- Run full test suite to ensure no regressions
+- Refactor code if needed while keeping tests passing
 
-Run: `pytest tests/path/test.py::test_scenario_name -v`
-Expected: PASS
+## Verification Commands
+
+```bash
+# Run specific test
+<test command>
+
+# Run all tests
+<test command>
 ```
+
+## Success Criteria
+
+- Test passes after implementation
+- No test failures in the suite
+- Code follows project conventions
+```
+
+**CRITICAL RULES FOR TASK FILES**:
+- **PROHIBITED**: Do not generate actual code in task files
+- Describe **what** to implement, not **how**
+- Focus on actions: "Create a function that X", "Modify Y to do Z"
+- One task = One file

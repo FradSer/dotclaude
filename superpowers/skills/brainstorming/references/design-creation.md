@@ -94,6 +94,12 @@ Why this design was chosen.
 ## Detailed Design
 
 Component breakdown, interfaces, and implementation approach.
+
+## Design Documents
+
+- [BDD Specifications](./bdd-specs.md) - Behavior scenarios and testing strategy
+- [Architecture](./architecture.md) - System architecture and component details
+- [Best Practices](./best-practices.md) - Security, performance, and code quality guidelines
 ```
 
 **`architecture.md` Content Structure**:
