@@ -1,6 +1,6 @@
 ---
 name: config-git
-description: Interactive git configuration setup
+description: Interactive git configuration setup for user identity and project conventions. Use when setting up Git for a new project, configuring commit scopes/types, or creating project-specific Git settings.
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
 model: sonnet

@@ -1,6 +1,6 @@
 ---
 name: update-gitignore
-description: Create or update .gitignore file
+description: Create or update .gitignore file using Toptal's gitignore API with OS and language detection. Use when initializing a new project, adding new technologies to an existing project, or updating ignore rules for OS-specific files.
 user-invocable: true
 allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob"]
 model: haiku
