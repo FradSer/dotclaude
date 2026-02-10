@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "name": "superpowers",
+  "version": "1.0.0",
+  "description": "Advanced development superpowers for orchestrating complex workflows",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "keywords": ["planning", "brainstorming", "bdd", "teams", "execution"],
+  "commands": [
+    "./skills/brainstorming/",
+    "./skills/writing-plans/",
+    "./skills/executing-plans/"
+  ],
+  "skills": [
+    "./skills/agent-team-driven-development/",
+    "./skills/behavior-driven-development/"
+  ]
+}
