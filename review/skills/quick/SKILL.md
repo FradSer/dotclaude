@@ -1,7 +1,7 @@
 ---
 name: quick
 user-invocable: true
-description: Streamlined code review for rapid assessment and targeted feedback
+description: Streamlined code review for rapid assessment and targeted feedback. Use when reviewing small PRs, simple changes, or when you need a quick triage to determine if deeper review is required.
 argument-hint: [files-or-directories]
 allowed-tools: Task
 ---
@@ -22,7 +22,7 @@ allowed-tools: Task
 - Use **@tech-lead-reviewer** — architectural impact assessment — to scope the review and decide which specialized agents are required.
 - Launch only the necessary specialized reviews to minimize turnaround time.
 - Summarize results by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
-- Offer optional implementation support and ensure resulting commits follow Git commit conventions (详见 `skills/references/git-commit-conventions.md`).
+- Offer optional implementation support and ensure resulting commits follow Git commit conventions (See `${CLAUDE_PLUGIN_ROOT}/references/git-commit-conventions.md` for details).
 
 ## Your Task
 

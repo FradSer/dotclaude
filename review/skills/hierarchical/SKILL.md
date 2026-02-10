@@ -1,7 +1,7 @@
 ---
 name: hierarchical
 user-invocable: true
-description: Comprehensive multi-stage code review using specialized subagents
+description: Comprehensive multi-stage code review using specialized subagents. Use when reviewing PRs with complex architectural impact, security concerns, or when thorough multi-perspective analysis is needed.
 argument-hint: [files-or-directories]
 allowed-tools: Task
 ---
@@ -25,7 +25,7 @@ allowed-tools: Task
   - **@security-reviewer** — authentication, data protection, validation.
   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
 - Consolidate findings by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
-- Offer optional implementation support and ensure commits follow Git conventions (详见 `skills/references/git-commit-conventions.md`).
+- Offer optional implementation support and ensure commits follow Git conventions (See `${CLAUDE_PLUGIN_ROOT}/references/git-commit-conventions.md` for details).
 
 ## Your Task
 
