@@ -1,109 +1,47 @@
-# Agents Component Reference
+# Designing Agents
 
-Plugins can provide specialized subagents for specific tasks that Claude can invoke automatically when appropriate.
+Agents are the autonomous workers of your plugin. They combine a **Persona** (System Prompt) with **Capabilities** (Tools/Skills) to solve problems.
 
-- **Location**: `agents/` (plugin root)
-- **Format**: YAML frontmatter + Markdown body (system prompt)
+## Anatomy of a Robust Agent
 
-## Recommended agent structure (matches plugin agents)
+### 1. The Persona (System Prompt)
+The system prompt is the agent's "operating system." It must be engineered for reliability.
 
-Use this template when you need the canonical agent frontmatter and system prompt structure. See `${CLAUDE_PLUGIN_ROOT}/examples/agent.md` for the complete agent template.
+*   **Role Definition:** "You are a [Role]. Your goal is [Goal]."
+*   **Tone & Style:** "Be concise." "Show your work." "Ask for confirmation before destructive actions."
+*   **Constraints:** "Never edit files outside `/src`." "Always run tests after changes."
 
-## Frontmatter
+**Best Practice (CO-STAR Framework):**
+*   **C**ontext: Background info.
+*   **O**bjective: What to achieve.
+*   **S**tyle: Tone/Format.
+*   **T**one: Attitude.
+*   **A**udience: Who is this for?
+*   **R**esponse: Format of output.
 
-### Official subagent fields
+### 2. Tool Selection (Capabilities)
+Adhere to the **Principle of Least Privilege**.
+*   Give an agent *only* the tools it needs.
+*   **Why?**
+    *   **Safety:** A "Reader" agent shouldn't have `rm`.
+    *   **Focus:** Fewer tools = less confusion for the model.
+    *   **Performance:** Smaller system prompt.
 
-- **Required**: `name`, `description`
-- **Optional**: `tools`, `disallowedTools`, `model`, `permissionMode`, `skills`, `hooks`
+### 3. Cognitive Load Management
+*   **Scratchpads:** Encourage the agent to "think out loud" inside `<thinking>` blocks.
+*   **Checklists:** Give the agent a checklist in its prompt to track progress.
 
-### Plugin conventions (best-practice extensions)
+## Agent Types in Plugins
 
-- **`color`**: UI hint for agent category.
-- **Tool selectors / matchers (example: `Bash(test:*)`)**: Some setups allow constrained tool usage encoded in `tools`. If unsupported, enforce the constraint via `hooks`.
+| Type | Purpose | Tools | Example |
+|------|---------|-------|---------|
+| **Router** | Triage and redirect | None (or Task) | "Help Desk" |
+| **Executor** | Do the work | Edit, Bash, Write | "Code Refactorer" |
+| **Researcher** | Find info | Read, Search, Glob | "Log Analyzer" |
+| **Verifier** | Quality Assurance | Bash (test), Read | "PR Reviewer" |
 
-### Color Coding
+## Best Practices
 
-- `blue`: Analysis/review
-- `green`: Validation/testing
-- `cyan`: Information gathering
-- `yellow`: Warnings/checks
-- `magenta`: Generation/creation
-- `red`: Critical operations
-
-## Hooks (define hooks for subagents)
-
-Two ways to configure hooks:
-
-- **Frontmatter hooks**: active only while that subagent runs.
-- **`settings.json` hooks**: run in the main session on subagent start/stop.
-
-### Hooks in subagent frontmatter
-
-| Event | Matcher input | When it fires |
-| --- | --- | --- |
-| `PreToolUse` | Tool name | Before the subagent uses a tool |
-| `PostToolUse` | Tool name | After the subagent uses a tool |
-| `Stop` | (none) | When the subagent finishes |
-
-```markdown
----
-name: code-reviewer
-description: Review code changes with automatic linting.
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: "./scripts/validate-command.sh $TOOL_INPUT"
-  PostToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: command
-          command: "./scripts/run-linter.sh"
----
-```
-
-Note: `Stop` hooks in frontmatter are automatically converted to `SubagentStop` events.
-
-### Project-level hooks (`settings.json`)
-
-| Event | Matcher input | When it fires |
-| --- | --- | --- |
-| `SubagentStart` | Agent type name | When a subagent begins execution |
-| `SubagentStop` | Agent type name | When a subagent completes |
-
-```json
-{
-  "hooks": {
-    "SubagentStart": [
-      {
-        "matcher": "db-agent",
-        "hooks": [
-          { "type": "command", "command": "./scripts/setup-db-connection.sh" }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "matcher": "db-agent",
-        "hooks": [
-          { "type": "command", "command": "./scripts/cleanup-db-connection.sh" }
-        ]
-      }
-    ]
-  }
-}
-```
-
-## Best practices
-
-- **`description`** SHOULD say *when to use* (routing triggers).
-- **MAY include example(s)**: You MAY put `<example>` block(s) inside `description` (as shown in plugin agent files) to make routing unambiguous. Examples are optional.
-- **Minimize `tools`**; add `Write/Edit` only when required.
-- **Keep prompts short** and define a stable output format.
-- **Document conventions** if you use `color` or tool selectors.
-
-## Notes (plugin scope)
-
-- Plugin agents show up in `/agents`.
-- If the same `name` exists in multiple scopes, higher-priority scopes override plugin scope.
+1.  **Examples are Key:** Include 2-4 `<example>` blocks in your agent description. This is "Few-Shot Prompting" for the router. It teaches Claude *exactly* when to pick this agent.
+2.  **Fail Fast:** Instruct agents to stop and report if prerequisites aren't met.
+3.  **Hooks for Safety:** Use `PreToolUse` hooks to validate commands (e.g., preventing `git push --force` in a junior-dev agent).

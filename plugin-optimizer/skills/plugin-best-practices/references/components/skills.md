@@ -30,7 +30,7 @@ Use these templates to align skill structure and voice with the correct type. Se
 | ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | name                     | No          | Display name for the skill. If omitted, uses the directory name. Lowercase letters, numbers, and hyphens only (max 64 characters).      |
 | description              | Recommended | What the skill does and when to use it. Claude uses this to decide when to apply the skill.                                            |
-| argument-hint | No  | Hint shown during autocomplete to indicate expected arguments. Example: `[issue-number]` or `[filename] [format]`. MUST be empty or omitted if skill takes no arguments. |
+| argument-hint | No  | Hint shown during autocomplete to indicate expected arguments. Example: `[issue-number]` or `[filename] [format]`. MUST be empty or omitted if skill takes no arguments (do not use placeholder text like `(no arguments - provides reference guidance)`). |
 | disable-model-invocation | No          | Set to `true` to prevent Claude from automatically loading this skill. Use for workflows you want to trigger manually. Default: `false`. |
 | user-invocable           | No          | Set to `false` to hide from the / menu. Use for background knowledge users shouldn't invoke directly. Default: `true`.                  |
 | allowed-tools            | No          | Tools Claude can use without asking permission when this skill is active.                                                                |

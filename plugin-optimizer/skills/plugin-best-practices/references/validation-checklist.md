@@ -40,6 +40,7 @@ Complete checklist for plugin quality assurance.
 - Skill type matches manifest and writing style:
   - Instruction-type uses imperative voice
   - Knowledge-type uses declarative voice
+- `argument-hint` MUST be omitted or empty if no arguments (remove placeholders like "(no arguments)")
 
 ## Prompt Repetition Guidelines
 

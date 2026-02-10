@@ -1,13 +1,13 @@
 ---
 name: plugin-best-practices
-description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", "review plugin structure", "find plugin issues", "check best practices", "analyze plugin", or mentions plugin validation, optimization, or quality assurance.
+description: Use this skill to validate, optimize, and review Claude Code plugins against architectural best practices (Agents, Skills, MCP, Progressive Disclosure).
 user-invocable: false
-version: 0.2.0
+version: 1.0.0
 ---
 
-# Plugin Best Practices
+# Plugin Best Practices & Architecture
 
-Validation guidance for Claude Code plugins. Uses RFC 2119 terms: REQUIRED → MUST, RECOMMENDED → SHOULD, OPTIONAL → MAY.
+This skill provides the definitive standards for building robust, scalable, and "agentic" plugins for the Claude Code ecosystem.
 
 ## Core Principles
 
@@ -53,6 +53,7 @@ See `references/tool-invocations.md` for complete patterns and anti-patterns.
 - Tool invocations avoid explicit phrasing (except Skill, AskUserQuestion, TaskCreate)
 - Skills/commands declared in `plugin.json`
 - Skill type matches declaration: instruction-type in `commands`, knowledge-type in `skills`
+- `argument-hint` MUST be omitted if no arguments (do not use placeholder text)
 
 See `references/validation-checklist.md` for complete checklist.
 
@@ -65,4 +66,3 @@ See `references/validation-checklist.md` for complete checklist.
 - `references/directory-structure.md` - Layout and naming
 - `references/manifest-schema.md` - plugin.json schema
 - `references/agent-teams.md` - Agent Teams guide
-

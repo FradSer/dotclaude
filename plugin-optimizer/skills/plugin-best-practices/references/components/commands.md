@@ -20,7 +20,7 @@ Use this template when converting command-style logic into a phase-based instruc
 
 **Required Fields**:
 - `description`: Short description shown in command list
-- `argument-hint`: Usage pattern for arguments (use `<>` for required, `[]` for optional). MUST be empty or omitted if command takes no arguments
+- `argument-hint`: Usage pattern for arguments (use `<>` for required, `[]` for optional). MUST be empty or omitted if command takes no arguments (do not use placeholder text like `(no arguments - provides reference guidance)`).
 
 **Optional Fields**:
 - `allowed-tools`: Array of tools Claude can use (see tool-invocations.md for syntax)
