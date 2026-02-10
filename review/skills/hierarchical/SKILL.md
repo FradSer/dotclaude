@@ -25,7 +25,7 @@ allowed-tools: Task
   - **@security-reviewer** — authentication, data protection, validation.
   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
 - Consolidate findings by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
-- Offer optional implementation support and ensure commits follow Git conventions (See `${CLAUDE_PLUGIN_ROOT}/references/git-commit-conventions.md` for details).
+- Offer optional implementation support and ensure commits follow Git conventions (See `${CLAUDE_PLUGIN_ROOT}/skills/references/git-commit-conventions.md` for details).
 
 ## Your Task
 
