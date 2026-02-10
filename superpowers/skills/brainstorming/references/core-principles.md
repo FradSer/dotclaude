@@ -8,15 +8,17 @@ Follow the structured progression:
 1. Clarify constraints through exploration and questions
 2. Compare options with trade-offs
 3. Choose intentionally with user approval
-4. Create design document with BDD specifications
-5. Commit design before implementation
+4. Create design document using parallel sub-agents with BDD specifications
+5. Commit design to git
+6. Transition to implementation planning
 
 ## Incremental Validation
 
 Validate each phase before proceeding:
 - Phase 1: Ensure requirements are clear before analyzing options
 - Phase 2: Get user approval on approach before creating design
-- Phase 3: Complete design with BDD specs before committing
+- Phase 3: Complete design with BDD specs using sub-agents before committing
+- Phase 4: Verify git commit before transitioning to implementation
 
 ## YAGNI Ruthlessly
 
@@ -39,6 +41,8 @@ This ensures the design is testable and implementation-ready.
 
 **Phase 1**: Explore → Ask → Understand
 **Phase 2**: Research → Propose → Get approval
-**Phase 3**: Design with BDD → Save → Commit
+**Phase 3**: Parallel sub-agents (Architecture, Best Practices, Context) → Integrate → Save
+**Phase 4**: Git commit → Verify
+**Phase 5**: Transition to writing-plans
 
-Each phase builds on the previous, creating a complete design document ready for implementation.
+Each phase builds on the previous, creating a complete design document ready for implementation planning.

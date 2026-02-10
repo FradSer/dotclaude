@@ -2,7 +2,7 @@
 name: brainstorming
 description: This skill should be used when the user has a new idea, feature request, or ambiguous requirement. It clarifies needs, explores options, and produces a solid design document and BDD specs before implementation starts.
 user-invocable: true
-version: 1.0.0
+version: 2.0.0
 ---
 
 # Brainstorming Ideas Into Designs
@@ -14,145 +14,144 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 1. **Context Check**: Ensure you have read `CLAUDE.md` and `README.md` to understand project constraints.
 2. **Codebase Index**: Verify you have access to the codebase and can run searches.
 
-## Background Knowledge
+## Core Principles
 
-1. **Converge in Order**: Clarify → Compare → Choose → Design → Commit
+1. **Converge in Order**: Clarify → Compare → Choose → Design → Commit → Transition
 2. **Context First**: Explore codebase before asking questions
-3. **Incremental Validation**: Validate each phase before proceeding to the next
+3. **Incremental Validation**: Validate each phase before proceeding
 4. **YAGNI Ruthlessly**: Only include what's explicitly needed
-5. **Test-First Mindset**: Always include BDD specifications - load `superpowers:behavior-driven-development` skill using Skill tool
-
-See `./references/core-principles.md` for detailed explanations.
+5. **Test-First Mindset**: Always include BDD specifications - load `superpowers:behavior-driven-development` skill
 
 ## Phase 1: Discovery
 
-**Goal**: Understand what you're building by exploring current state and clarifying requirements.
+Explore codebase first, then ask focused questions to clarify requirements.
 
 **Actions**:
 
-1. **Explore codebase first** - Use Read/Grep/Glob to find relevant files and patterns
-2. **Review project context** - Check docs/, README.md, CLAUDE.md, recent commits
+1. **Explore codebase** - Use Read/Grep/Glob to find relevant files and patterns
+2. **Review context** - Check docs/, README.md, CLAUDE.md, recent commits
 3. **Identify gaps** - Determine what's unclear from codebase alone
-4. **Ask focused questions** - Use AskUserQuestion tool with exactly 1 question per call
-   - **Prefer multiple choice** with 2-4 options (A, B, C) to reduce user cognitive load
-   - Ask one at a time, never bundle questions
-   - Base questions on exploration gaps
+4. **Ask questions** - Use AskUserQuestion tool with exactly 1 question per call
+   - Prefer multiple choice (2-4 options)
+   - Ask one at a time, never bundle
+   - Base on exploration gaps
 
-**Output**:
+**Output**: Clear requirements, constraints, success criteria, and relevant patterns.
 
-- Clear requirements and constraints
-- Success criteria defined
-- Relevant existing patterns identified
-
-See `./references/phase1-discovery.md` for exploration patterns and question guidelines.
+See `./references/discovery.md` for detailed patterns and question guidelines.
+See `./references/exit-criteria.md` for Phase 1 validation checklist.
 
 ## Phase 2: Option Analysis
 
-**Goal**: Evaluate different approaches and get user buy-in on the chosen direction.
+Research existing patterns, propose viable options, and get user approval.
 
 **Actions**:
 
-1. **Research existing patterns** - Search for similar implementations in codebase
-2. **Identify viable approaches** - Propose 2-3 options grounded in codebase reality
-   - OK to say "No Alternatives" if the path is obvious/constrained, but must explain why
-3. **Present conversationally** - Write naturally as if explaining to a colleague (**Do NOT use formal tables**)
-   - Lead with recommended option
-   - Explain trade-offs (complexity, maintainability, performance)
-   - Reference specific files from codebase
-4. **Get user approval** - Use AskUserQuestion with exactly 1 question per call
-   - Ask one at a time, never bundle questions
-   - Continue asking single questions until the approach is fully clear and agreed upon
+1. **Research** - Search codebase for similar implementations
+2. **Identify options** - Propose 2-3 grounded in codebase reality, or explain "No Alternatives"
+3. **Present** - Write conversationally, lead with recommended option, explain trade-offs
+4. **Get approval** - Use AskUserQuestion, ask one question at a time until clear
 
-**Output**:
+**Output**: User-approved approach with rationale and trade-offs understood.
 
-- User-approved approach with rationale
-- Alternatives considered (brief summary)
-- Trade-offs and constraints understood
+See `./references/options.md` for comparison and presentation patterns.
+See `./references/exit-criteria.md` for Phase 2 validation checklist.
 
-See `./references/phase2-option-analysis.md` for option comparison and presentation patterns.
+## Phase 3: Design Creation
 
-## Phase 3: Design & Commit
+Launch sub-agents in parallel for specialized research, integrate results, and create design documents.
 
-**Goal**: Create comprehensive design document and commit to git.
+**Core sub-agents (always required)**:
 
-**Actions**:
+**Sub-agent 1: Architecture Research**
+- Focus: Existing patterns, architecture, libraries in codebase
+- Use WebSearch for latest best practices
+- Output: Architecture recommendations with codebase references
 
-1. **Create design document**:
-   - Use `_index.md` as the main filename
-   - Include: Context, Requirements, Rationale, Detailed Design
-   - **MANDATORY**: Include BDD specifications in a separate `bdd-specs.md` file
+**Sub-agent 2: Best Practices Research**
+- Focus: Web search for best practices, security, performance patterns
+- Load `superpowers:behavior-driven-development` skill
+- Output: BDD scenarios, testing strategy, best practices summary
 
-2. **Write BDD Specifications** (in `bdd-specs.md`):
-   - Load `superpowers:behavior-driven-development` skill using Skill tool for guidance
-   - At least 3 scenarios in Given-When-Then format (Gherkin syntax)
-   - Cover happy path, edge cases, and error conditions
-   - Reference specific API endpoints or methods
+**Sub-agent 3: Context & Requirements Synthesis**
+- Focus: Synthesize Phase 1 and Phase 2 results
+- Output: Context summary, requirements list, success criteria
 
-   **Example Gherkin**:
-   ```gherkin
-   Feature: User Login
-     Scenario: Successful login
-       Given a user with email "user@example.com"
-       When the user submits valid credentials
-       Then they should be redirected to the dashboard
-   ```
+**Additional sub-agents (launch as needed based on project complexity)**:
 
-3. **Save to folder structure**:
-   - Folder pattern: `docs/plans/YYYY-MM-DD-<topic>-design/`
-   - Use kebab-case for topic name (lowercase with hyphens)
-   - **Enhanced structure** (recommended):
-     ```
-     docs/plans/YYYY-MM-DD-<topic>-design/
-     ├── _index.md              # Main design document
-     ├── bdd-specs.md           # BDD specifications (MANDATORY)
-     ├── architecture.md        # Architecture details
-     ├── decisions/             # Related ADRs (optional)
-     └── diagrams/              # Visual artifacts (optional)
-     ```
+Launch additional specialized sub-agents for distinct, research-intensive aspects. Each agent should have a single, clear responsibility and receive complete context.
 
-3. **Commit to git**:
-   ```bash
-   git add docs/plans/YYYY-MM-DD-<topic>-design/
-   git commit -m "docs: add design for <topic>
+**Integrate results**: Merge all findings, resolve conflicts, create unified design.
 
-   <User's original request or context>
+**Design document structure**:
 
-   - <Specific action taken>
-   - <Specific action taken>
+```
+docs/plans/YYYY-MM-DD-<topic>-design/
+├── _index.md              # Context, Requirements, Rationale, Detailed Design
+├── bdd-specs.md           # BDD specifications (MANDATORY)
+├── architecture.md        # Architecture details (MANDATORY)
+├── best-practices.md      # Best practices and considerations (MANDATORY)
+├── decisions/             # ADRs (optional)
+└── diagrams/              # Visual artifacts (optional)
+```
 
-   <Brief summary of the design approach>
+**Output**: Design folder created with all files saved.
 
-   Co-Authored-By: <Model Name> <noreply@anthropic.com>"
-   ```
+See `./references/design-creation.md` for sub-agent patterns and integration workflow.
+See `./references/exit-criteria.md` for Phase 3 validation checklist.
 
-**Output**:
+## Git Commit
 
-- Returns: The absolute path to the created design folder.
-- Design folder created and committed.
-- **Ready for `writing-plans`**: `bdd-specs.md` is now the contract for task planning.
+Commit the design folder to git with proper message format.
 
-See `./references/phase3-design-commit.md` for design structure, BDD format, file operations, and git commit patterns.
+**Commit**:
+```bash
+git add docs/plans/YYYY-MM-DD-<topic>-design/
+git commit -m "docs: add design for <topic>
 
-See `./references/exit-criteria.md` for complete checklists and success indicators.
+<Context>
+
+- <Specific action taken>
+- <Specific action taken>
+
+<Summary>
+
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
+```
+
+**Requirements**:
+- Prefix: `docs:` (lowercase)
+- Subject: Under 50 characters, lowercase
+- Body: Context, specific actions, design summary
+- Footer: Co-Authored-By with model name
+
+**Verify**: Run `git log -1` to confirm commit.
+
+See `./references/git-commit.md` for detailed patterns and requirements.
+See `./references/exit-criteria.md` for Phase 4 validation checklist.
 
 ## Phase 4: Transition to Implementation
 
-**Goal**: Prepare the environment and plan for coding.
-
-**Actions**:
-
 1. **Ask**: "Ready to set up for implementation?"
-2. **Invoke `superpowers:writing-plans`** using the Skill tool, passing the design folder path as an argument.
-   - **REQUIRED**: Create a detailed implementation plan.
-   - **PROHIBITED**: Do NOT use platform planning features (e.g., EnterPlanMode, plan mode).
-   - **PROHIBITED**: Do NOT start implementing directly - the writing-plans skill comes first.
+2. **Invoke** `superpowers:writing-plans` using Skill tool, passing design folder path
+   - REQUIRED: Create detailed implementation plan
+   - PROHIBITED: Do NOT use platform planning features
+   - PROHIBITED: Do NOT start implementing directly
+
+## Quality Check
+
+See `./references/exit-criteria.md` for:
+- Complete validation checklists for all phases
+- Success indicators for high-quality brainstorming sessions
+- Common pitfalls to avoid
 
 ## References
 
 Detailed guidance for each phase:
 
 - `./references/core-principles.md` - Core principles guiding the workflow
-- `./references/phase1-discovery.md` - Exploration patterns and question guidelines
-- `./references/phase2-option-analysis.md` - Option comparison and presentation patterns
-- `./references/phase3-design-commit.md` - Design structure, BDD format, file operations, git commit
-- `./references/exit-criteria.md` - Complete checklists and success indicators
+- `./references/discovery.md` - Exploration patterns and question guidelines
+- `./references/options.md` - Option comparison and presentation patterns
+- `./references/design-creation.md` - Sub-agent patterns, integration workflow, design structure
+- `./references/git-commit.md` - Git commit patterns and requirements
+- `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls

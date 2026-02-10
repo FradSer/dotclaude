@@ -2,18 +2,19 @@
 enabled: true
 # Commit Message Conventions
 scopes:
-  - git
-  - gitflow
-  - github
-  - refactor
-  - review
-  - office
-  - swiftui
-  - po
-  - cc
-  - utils
-  - docs
-  - ci
+  - git  # git plugin
+  - gitflow  # gitflow plugin
+  - github  # github plugin
+  - refactor  # refactor plugin
+  - review  # review plugin
+  - office  # office plugin
+  - swiftui  # swiftui plugin
+  - po  # plugin-optimizer
+  - sp  # superpowers (workflow skills)
+  - cc  # claude-code configuration
+  - utils  # utils plugin
+  - docs  # documentation
+  - ci  # continuous integration
 types:
   - feat
   - fix

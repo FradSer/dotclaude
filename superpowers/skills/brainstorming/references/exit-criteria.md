@@ -52,79 +52,69 @@ Before creating design document, verify:
   - User has approved chosen approach
   - Know which files and patterns to reference
 
-## After Phase 3: Design & Commit
-Before marking brainstorming complete, verify design document includes:
+## After Phase 3: Design Creation
+Before proceeding to Phase 4, verify:
 
-- [ ] **Overview and requirements section**
-  - Brief summary of what's being built
-  - Core requirements and constraints
-  - Success criteria
+- [ ] **Core sub-agents completed**
+  - Architecture Research sub-agent completed with recommendations
+  - Best Practices Research sub-agent completed with BDD scenarios
+  - Context & Requirements Synthesis sub-agent completed with requirements
 
-- [ ] **Chosen approach and rationale section**
-  - Detailed description of chosen approach
-  - Explanation of why it fits the requirements
-  - References to existing codebase patterns
+- [ ] **Additional sub-agents completed (if launched)**
+  - Each additional sub-agent completed successfully
+  - All specialized research incorporated into design
 
-- [ ] **Alternative approaches section**
-  - Brief summary of alternatives considered
-  - Key trade-offs that led to rejection
+- [ ] **Results integrated successfully**
+  - Conflicts between sub-agent findings resolved
+  - Consistent unified design document created
+  - All findings incorporated into design
 
-- [ ] **Detailed design section**
-  - Component breakdown with responsibilities
-  - Data structures and interfaces
-  - Integration points with existing code
-  - File structure and organization
+- [ ] **Design document structure created**
+  - Folder pattern: `docs/plans/YYYY-MM-DD-<topic>-design/`
+  - `_index.md` created with Context, Requirements, Rationale, Detailed Design
+  - `bdd-specs.md` created with BDD scenarios
+  - `architecture.md` created with architecture details
+  - `best-practices.md` created with best practices and considerations
 
-- [ ] **BDD specifications section** **MANDATORY**
-  - Load `superpowers:behavior-driven-development` skill using Skill tool for guidance
-  - At least 3 scenarios in Given-When-Then format
-  - Covers happy path, edge cases, and error conditions
-  - References specific API endpoints or methods
-  - Provides clear acceptance criteria for implementation
-  - Follows proper Gherkin syntax
+- [ ] **Design documents include required sections**
+  - Context and discovery results
+  - Finalized requirements and success criteria
+  - Rationale for chosen approach
+  - Detailed component breakdown
+  - BDD specifications with Given-When-Then scenarios
+  - Architecture patterns and integration points
+  - Best practices and considerations
+  - Error handling and edge cases
+  - Testing strategy
 
-- [ ] **Error handling and edge cases section**
-  - Expected error scenarios and handling strategy
-  - Edge cases identified and mitigation
-  - Recovery and rollback strategies
-
-- [ ] **Testing strategy section**
-  - Unit test approach and key test cases
-  - Integration test requirements
-  - References BDD scenarios from above
-  - Manual testing checklist if needed
-
-- [ ] **Open questions or risks section**
-  - Unresolved technical decisions
-  - Known risks and mitigation plans
-  - Dependencies on external systems
-
-- [ ] **Design grounded in existing codebase**
+- [ ] **Design grounded in codebase reality**
   - References specific files and patterns throughout
   - Shows concrete examples and interfaces
   - Aligns with project's architectural style
 
-**And the document has been saved and committed**:
+## After Phase 4: Git Commit
+Before proceeding to Phase 5, verify:
 
-- [ ] **Design folder and main document created**
-  - Created folder `docs/plans/YYYY-MM-DD-<topic>-design/`
-  - Saved main design to `docs/plans/YYYY-MM-DD-<topic>-design/_index.md`
-  - Used correct date format (YYYY-MM-DD)
-  - Ensured `docs/plans/` directory exists
-
-- [ ] **Design folder committed to git**
+- [ ] **Entire folder committed**
   - Used `git add docs/plans/YYYY-MM-DD-<topic>-design/`
-  - Used `git commit` with proper message
-  - Commit message starts with `docs:` prefix
-  - Subject line under 50 characters and lowercase
-  - Mentioned "BDD specifications" in commit body
-  - Included Co-Authored-By line with model name
+  - NOT just individual files
+  - Folder pattern matches requirements
+
+- [ ] **Commit message follows requirements**
+  - Prefix: `docs:` (lowercase)
+  - Subject: Under 50 characters, lowercase
+  - Body: User context, specific actions, design summary
+  - Footer: Co-Authored-By with model name
+
+- [ ] **Commit verified**
+  - Ran `git log -1` to confirm commit
+  - Commit message displays correctly
+  - All files included in commit
 
 - [ ] **User informed**
   - Told user the folder and file location
   - Confirmed git commit completed
-  - Noted that supporting files can be added to folder later
-  - Ready to proceed with implementation following BDD scenarios
+  - Ready to proceed with implementation planning
 
 ## Success Indicators
 
@@ -133,9 +123,11 @@ Before marking brainstorming complete, verify design document includes:
 - Asked focused questions one at a time based on exploration gaps
 - Proposed options grounded in existing patterns
 - Got user buy-in before creating detailed design
-- Design document is comprehensive and actionable
-- **Design includes BDD specifications with Given-When-Then scenarios**
-- Saved design as `_index.md` inside dated folder
+- Launched core sub-agents in parallel for design creation
+- Launched additional sub-agents as needed for specialized research
+- Integrated all sub-agent results successfully
+- Design document is comprehensive and actionable with BDD scenarios
+- Saved design files with proper structure inside dated folder
 - Committed design folder as checkpoint before implementation
 
 **Common Pitfalls to Avoid**:
@@ -144,7 +136,10 @@ Before marking brainstorming complete, verify design document includes:
 - Proposing abstract options not grounded in reality
 - Creating design without user approval of approach
 - Skipping alternatives without clear rationale
-- **Missing BDD specifications section**
-- Saving design to wrong location (should be `docs/plans/YYYY-MM-DD-<topic>-design/_index.md`)
-- Design document missing key sections
+- Launching sub-agents without providing complete context
+- Not integrating sub-agent results before creating documents
+- Launching too many sub-agents for simple features (stay focused)
+- Missing BDD specifications or best practices sections
+- Saving design to wrong location (should be `docs/plans/YYYY-MM-DD-<topic>-design/`)
+- Committing individual files instead of entire folder
 - Jumping to implementation without committing design
