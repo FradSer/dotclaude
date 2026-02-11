@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 10 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 11 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, gitflow, github, review, refactor, swiftui, claude-config, office, utils, plugin-optimizer
+**Active plugins:** git, gitflow, github, review, refactor, swiftui, claude-config, office, utils, plugin-optimizer, superpowers
 
 ## Plugin Structure
 
@@ -59,7 +59,7 @@ Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
 
 ## Git Commit Conventions
 
-**Scopes:** git, gitflow, github, refactor, review, office, swiftui, po, cc, utils, docs, ci
+**Scopes:** git, gitflow, github, refactor, review, office, swiftui, po, cc, utils, sp, docs, ci
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 
