@@ -76,6 +76,15 @@ Example: `task-001-setup-project-structure.md`
 
 [What needs to be done - describe what, not how]
 
+## Execution Context
+
+**Task Number**: <NNN> of <TOTAL>
+**Phase**: [Setup | Foundation | Core Features | Integration | Refinement | Testing | Documentation]
+**Dependencies**:
+- Previous task: `task-<NNN-1>-<description>.md` (if applicable)
+- Blocks: `task-<NNN+X>-<description>.md` (if applicable)
+**Prerequisites**: [Conditions that must be met before starting this task]
+
 ## BDD Scenario Reference
 
 **Spec**: `../YYYY-MM-DD-<topic>-design/bdd-specs.md`
