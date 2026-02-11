@@ -19,7 +19,6 @@ Execute written implementation plans efficiently. Actively use Agent Teams or su
      - If found, confirm with user: "Execute this plan: [path]?"
      - If not found or user declines, ask the user for the plan folder path.
 2. **Plan Check**: Verify the plan file exists and contains actionable tasks.
-3. **Mode Check**: Decide between Serial or Parallel execution based on task independence.
 
 ## Background Knowledge
 
@@ -39,14 +38,16 @@ Read plan, understand the project and requirements.
 
 **REQUIRED**: Create task tracking system before any execution begins.
 
-1. **Create Tasks**: **MANDATORY** - Use `TaskCreate` tool to create tasks from the plan. Each task in the plan must be created as a separate task with:
+1. **Scope Batches**: Build a dependency graph from `depends-on` fields, then **actively restructure** tasks into parallel batches.
+   - Compute dependency tiers: Tier 0 = no dependencies, Tier N = all `depends-on` tasks are in earlier tiers
+   - Within each tier, group tasks by type to maximize parallelism (e.g., all "write test" tasks in one batch, all "implement" tasks in the next)
+   - **MANDATORY**: Every batch must contain ≥2 tasks. If a tier has only 1 task, combine it with adjacent tier tasks that have no file conflicts
+   - A single-task batch is only acceptable if it is the sole remaining task in the entire plan
+   - Each batch should contain 3-6 tasks
+2. **Create Tasks**: Use `TaskCreate` tool to register each task, in batch order. Each task must include:
    - `subject`: Brief title in imperative form (e.g., "Implement login handler")
    - `description`: Detailed task description from plan, including files, verification steps, and BDD scenario reference
    - `activeForm`: Present continuous form for progress display (e.g., "Implementing login handler")
-2. **Scope Batches**: **MANDATORY** - Identify batch boundaries and verify prerequisites.
-   - Group independent tasks that can be executed in parallel
-   - Identify task dependencies and blockers
-   - Create batches: each batch should contain 3-6 independent tasks
 
 ## Phase 3: Batch Execution Loop
 
@@ -54,30 +55,33 @@ Execute tasks in batches. Actively use parallel execution for independent tasks.
 
 **For Each Batch**:
 
-1. **Identify Execution Mode**:
-   - **Parallel Batch**: Tasks are independent (no file conflicts, no dependencies) -> Use Agent Team
-   - **Serial Batch**: Tasks have dependencies or file conflicts -> Execute one by one
+1. **Choose Execution Mode** (strict priority — justify any downgrade explicitly):
+   - **Agent Team** (default): Use unless a specific technical reason prevents it. File conflicts or sequential `depends-on` within a batch are NOT valid reasons to downgrade — resolve by splitting the batch further.
+   - **Subagent Parallel** (downgrade only if): Agent Team overhead is disproportionate (e.g., batch has exactly 2 small tasks). State the reason explicitly.
+   - **Linear** (last resort only if): Tasks within the batch have unavoidable file conflicts that cannot be split, or the batch genuinely contains only 1 task. State the reason explicitly.
 
-2. **Parallel Execution (Preferred when possible)**:
-   - Use `EnterPlanMode` to plan the batch execution strategy
-   - Use `ExitPlanMode` to get approval on the batch plan
+2. **Agent Team Execution**:
    - Create Agent Team with teammates for parallel execution
    - Assign tasks to teammates with clear file ownership boundaries
    - Wait for teammates to complete all tasks
    - Verify all tasks in the batch
    - Mark tasks complete
 
-3. **Serial Execution (When necessary)**:
+3. **Subagent Parallel Execution**:
+   - Spawn subagents concurrently for each independent task
+   - Each subagent loads the `superpowers:behavior-driven-development` skill
+   - Verify all tasks in the batch
+   - Mark tasks complete
+
+4. **Linear Execution**:
    - For each task in the batch:
-     - Use `EnterPlanMode` to plan the implementation
-     - Use `ExitPlanMode` to get approval on the task plan
-     - Execute using subagent following `behavior-driven-development` principles
+     - Execute using subagent loading the `superpowers:behavior-driven-development` skill
      - Verify the task
      - Mark task complete
 
-4. **Between Batches**:
+5. **Between Batches**:
    - Report progress and verification results
-   - Get user confirmation before proceeding to next batch
+   - Proceed to next batch automatically
 
 See `./references/batch-execution-playbook.md`.
 

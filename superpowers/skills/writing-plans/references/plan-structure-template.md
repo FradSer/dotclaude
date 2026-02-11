@@ -72,6 +72,8 @@ Example: `task-001-setup-project-structure.md`
 ```markdown
 # Task <NNN>: [Task Title]
 
+**depends-on**: task-<NNN-1>, task-<NNN-2>  <!-- TRUE technical prerequisites only; omit if independent -->
+
 ## Description
 
 [What needs to be done - describe what, not how]
@@ -80,9 +82,6 @@ Example: `task-001-setup-project-structure.md`
 
 **Task Number**: <NNN> of <TOTAL>
 **Phase**: [Setup | Foundation | Core Features | Integration | Refinement | Testing | Documentation]
-**Dependencies**:
-- Previous task: `task-<NNN-1>-<description>.md` (if applicable)
-- Blocks: `task-<NNN+X>-<description>.md` (if applicable)
 **Prerequisites**: [Conditions that must be met before starting this task]
 
 ## BDD Scenario Reference

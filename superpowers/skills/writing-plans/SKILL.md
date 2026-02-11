@@ -46,9 +46,14 @@ Break into small tasks mapped to specific BDD scenarios.
 1. **Reference Scenarios**: **CRITICAL**: Every task must explicitly reference a BDD Scenario (e.g., "Implement Login (ref: Scenario 1)").
 2. **Define Verification**: **CRITICAL**: Verification steps must run the BDD specs (e.g., `npm test tests/login.spec.ts`).
 3. **Enforce Ordering**: Task N (Test/Red) -> Task N+1 (Implementation/Green).
-4. **Ensure Compatibility**: Ensure tasks are compatible with `superpowers:behavior-driven-development`.
-5. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<short-description>.md`.
-6. **Describe What, Not How**: **PROHIBITED**: Do not generate actual code. Describe what to implement (e.g., "Create a function that validates user credentials"), not the implementation (e.g., "def validate_credentials(username, password): ...").
+4. **Declare Dependencies**: **MANDATORY**: Each task file must include a `**depends-on**` field listing only **true technical prerequisites** — tasks whose output is required before this task can start. Rules:
+   - A test task (Red) for feature X has no dependency on test tasks for other features
+   - An implementation task (Green) depends only on its paired test task (Red), not on other features' implementations
+   - Tasks that touch different files and test different scenarios are independent by default
+   - **PROHIBITED**: Do not chain tasks sequentially just to impose execution order — use `depends-on` only when there is a real technical reason (e.g., "implement auth middleware" must precede "implement protected route test")
+5. **Ensure Compatibility**: Ensure tasks are compatible with `superpowers:behavior-driven-development`.
+6. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<short-description>.md`.
+7. **Describe What, Not How**: **PROHIBITED**: Do not generate actual code. Describe what to implement (e.g., "Create a function that validates user credentials"), not the implementation (e.g., "def validate_credentials(username, password): ...").
 
 ## Phase 3: Validation & Documentation
 
