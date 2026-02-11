@@ -71,3 +71,26 @@ enterprise-plugin/
 ## Script Requirements
 
 Scripts MUST be executable (`chmod +x`), include proper shebang lines (`#!/bin/bash`, `#!/usr/bin/env python3`, etc.), and use `${CLAUDE_PLUGIN_ROOT}` in paths. See `./references/debugging.md` for troubleshooting.
+
+## Path Reference Patterns
+
+Use appropriate path patterns based on context:
+
+| Context | Pattern | Example |
+|---------|---------|---------|
+| Same skill references | Relative: `./` | `./references/design-creation.md` |
+| Cross-skill shared references | Relative: `../../` | `../../skills/references/git-commit.md` |
+| Scripts with absolute paths | Variable: `${CLAUDE_PLUGIN_ROOT}` | `${CLAUDE_PLUGIN_ROOT}/scripts/validate.py` |
+| MCP/LSP environment variables | Variable: `${ENV_VAR}` | `${GITHUB_TOKEN}` |
+
+**Example in SKILL.md**:
+```markdown
+See `./references/design-creation.md` for sub-agent patterns.
+See `../../skills/references/git-commit.md` for commit patterns.
+```
+
+**Example in scripts**:
+```bash
+#!/bin/bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py" "$1"
+```
