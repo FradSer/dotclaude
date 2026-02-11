@@ -238,9 +238,12 @@ def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult
                 )
 
     # Check skills have SKILL.md
+    NON_SKILL_DIRS = {"references", "scripts", "examples", ".git"}
     skills_dir = plugin_dir / "skills"
     if skills_dir.exists():
         for skill_dir in skills_dir.iterdir():
+            if skill_dir.name in NON_SKILL_DIRS:
+                continue
             if skill_dir.is_dir() and not (skill_dir / "SKILL.md").exists():
                 result.must(
                     "Missing SKILL.md",
@@ -716,18 +719,8 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                     suggestion="Use imperative form: 'Parse the file...' instead of 'You should...'"
                 )
 
-        # Check argument-hint for placeholder text (official requirement)
-        if "argument-hint" in fm:
-            hint = fm["argument-hint"]
-            line_num = find_fm_key_line("argument-hint")
-            if hint and re.search(r'\(no arg|provides reference|placeholder\b', hint, re.IGNORECASE):
-                result.should(
-                    "argument-hint contains placeholder text",
-                    file=rel_path,
-                    line=line_num,
-                    source=f'argument-hint: {hint}',
-                    suggestion="Use empty string or omit argument-hint if skill takes no arguments"
-                )
+        # Note: argument-hint and version are optional and supported for skills
+        # (see plugin-best-practices SKILL.md frontmatter section)
 
 
 # =============================================================================

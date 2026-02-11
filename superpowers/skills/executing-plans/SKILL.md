@@ -52,10 +52,6 @@ Read plan, understand the project and requirements.
 
 Execute tasks in batches. Actively use parallel execution for independent tasks.
 
-**REQUIRED**: Load both skills before executing any batch:
-- `superpowers:agent-team-driven-development` - Provides team coordination guidance
-- `superpowers:behavior-driven-development` - Provides BDD/TDD workflow guidance
-
 **For Each Batch**:
 
 1. **Identify Execution Mode**:
