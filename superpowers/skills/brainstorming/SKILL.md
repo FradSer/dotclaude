@@ -114,30 +114,13 @@ See `./references/exit-criteria.md` for Phase 3 validation checklist.
 
 Commit the design folder to git with proper message format.
 
-**Commit**:
-```bash
-git add docs/plans/YYYY-MM-DD-<topic>-design/
-git commit -m "docs: add design for <topic>
+See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
-<Context>
-
-- <Specific action taken>
-- <Specific action taken>
-
-<Summary>
-
-Co-Authored-By: <Model Name> <noreply@anthropic.com>"
-```
-
-**Requirements**:
+**Critical requirements**:
+- Commit the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-design/`
 - Prefix: `docs:` (lowercase)
 - Subject: Under 50 characters, lowercase
-- Body: Context, specific actions, design summary
 - Footer: Co-Authored-By with model name
-
-**Verify**: Run `git log -1` to confirm commit.
-
-See `./references/git-commit.md` for detailed patterns and requirements.
 See `./references/exit-criteria.md` for Phase 4 validation checklist.
 
 ## Phase 4: Transition to Implementation
@@ -163,5 +146,5 @@ Detailed guidance for each phase:
 - `./references/discovery.md` - Exploration patterns and question guidelines
 - `./references/options.md` - Option comparison and presentation patterns
 - `./references/design-creation.md` - Sub-agent patterns, integration workflow, design structure
-- `./references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls

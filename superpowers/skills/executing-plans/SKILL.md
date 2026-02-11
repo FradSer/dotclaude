@@ -85,6 +85,23 @@ Execute tasks in batches. Actively use parallel execution for independent tasks.
 
 See `./references/batch-execution-playbook.md`.
 
+## Git Commit
+
+Commit the implementation changes to git with proper message format.
+
+See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
+
+**Critical requirements**:
+- Commit the implementation changes after all tasks are completed
+- Prefix: `feat(<scope>):` for implementation changes
+- Subject: Under 50 characters, lowercase
+- Footer: Co-Authored-By with model name
+
+**Commit timing**:
+- Commit implementation changes after all tasks in the plan are completed
+- Commit should reflect the completed feature, not individual tasks
+- Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
+
 ## Phase 4: Verification & Feedback
 
 Close the loop.
@@ -102,3 +119,4 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements

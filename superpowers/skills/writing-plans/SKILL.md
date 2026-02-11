@@ -64,30 +64,13 @@ Verify completeness, confirm with user, and save.
 
 Commit the plan folder to git with proper message format.
 
-**Commit**:
-```bash
-git add docs/plans/YYYY-MM-DD-<topic>-plan/
-git commit -m "docs: add implementation plan for <topic>
+See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
-<Context>
-
-- <Specific action taken>
-- <Specific action taken>
-
-<Summary>
-
-Co-Authored-By: <Model Name> <noreply@anthropic.com>"
-```
-
-**Requirements**:
+**Critical requirements**:
+- Commit the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-plan/`
 - Prefix: `docs:` (lowercase)
 - Subject: Under 50 characters, lowercase
-- Body: Context, specific actions, plan summary
 - Footer: Co-Authored-By with model name
-
-**Verify**: Run `git log -1` to confirm commit.
-
-See `./references/git-commit.md` for detailed patterns and requirements.
 
 ## Phase 4: Transition to Execution
 
@@ -105,4 +88,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 
 - `./references/plan-structure-template.md` - Template for plan structure
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
-- `./references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements
