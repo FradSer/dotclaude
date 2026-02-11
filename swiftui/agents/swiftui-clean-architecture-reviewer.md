@@ -1,6 +1,28 @@
 ---
 name: swiftui-clean-architecture-reviewer
-description: Ensure SwiftUI features follow Clean Architecture + MVVM patterns
+description: |
+  Use this agent when reviewing SwiftUI code for Clean Architecture compliance, MVVM pattern adherence, or modern Swift concurrency practices.
+
+  <example>
+  Context: User has a SwiftUI feature module and wants to verify it follows Clean Architecture
+  user: "Review the Settings feature for architecture compliance"
+  assistant: Launches swiftui-clean-architecture-reviewer to analyze layer separation, dependency directions, and pattern compliance
+  commentary: Architecture review requested for specific feature module
+  </example>
+
+  <example>
+  Context: User is refactoring legacy ObservableObject code to modern @Observable
+  user: "Check if my ViewModels are using the right state management pattern"
+  assistant: Launches swiftui-clean-architecture-reviewer to identify legacy ObservableObject usage and recommend @Observable migration
+  commentary: Pattern compliance check for state management modernization
+  </example>
+
+  <example>
+  Context: User wants to verify SwiftData integration follows proper abstraction patterns
+  user: "Audit the SwiftData repositories in my Data layer"
+  assistant: Launches swiftui-clean-architecture-reviewer to check ModelContext MainActor isolation, Sendable violations, and repository abstraction
+  commentary: SwiftData integration review with focus on concurrency safety
+  </example>
 model: opus
 color: red
 ---
