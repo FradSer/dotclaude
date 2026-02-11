@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.7.0] - 2026-02-11
+
+### Added
+
+- Add task batch parallelism to executing-plans skill with dependency-aware restructuring
+- Add example blocks to SwiftUI reviewer
+- Add workflow skills plugin with brainstorming, writing-plans, and executing-plans
+- Add agent team support to plugin optimizer
+- Add unified renderer and lean template to claude-config
+
+### Changed
+
+- Convert executing-plans skill to knowledge-type with dependency-based batch formation
+- Consolidate git commit documentation in superpowers
+- Align plugin structure with skill best practices
+- Rewrite brainstorming skill with enhanced BDD and agent team integration
+- Enhance plugin best practices skill with focused reference structure
+- Split optimize-plugin workflow into modular references
+- Remove length validation script from claude-config
+- Consolidate git commit skill documentation
+
+### Fixed
+
+- Remove invalid schema version field from superpowers
+- Move review references to skills directory
+- Add trigger phrases and fix skill type in superpowers
+- Add trigger phrases to review paths
+- Add trigger phrases to git descriptions
+- Correct phase numbering in init-config workflow
+- Clarify agent and skill workflows in refactor
+- Enhance skill descriptions in gitflow
+- Update plugin optimizer docs for unified validator
+- Fix duplicate tags and branch issues in gitflow
+- Ignore tool references in code fences for validator
+
+### Documentation
+
+- Update plugin list and commit scopes in docs
+- Add path reference patterns to plugin optimizer
+- Add execution context to task template in superpowers
+- Add batch execution and git commit guidance
+- Update office skill command documentation
+- Update plugin skill descriptions in readme
+- Update workflow skills structure in superpowers
+- Improve inline bash description in plugin optimizer
+- Add style preferences to claude-config
+- Add Mermaid requirement to claude-config template
+- Enhance claude.md with plugin patterns
+- Update plugin best practices and component model
+- Sync marketplace versions and add guide
+- Add file organization guide to refactor
+- Remove docs-claude documentation
+- Clarify argument-hint requirements in plugin optimizer
+- Add workflow guidance to claude.md
+- Optimize GitHub skills with disclosure
+- Update git config-git skill and template
+
+### Chores
+
+- Bump plugin versions: claude-config 1.4.0, superpowers 1.2.0, swiftui 0.2.0
+- Add keywords and license to plugins
+- Sync marketplace versions with plugins
+- Update gitignore for Python configuration
+- Bump plugin-optimizer to 0.11.1
+
 ## [v1.6.1] - 2026-01-30
 
 ### Changed
@@ -145,7 +210,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix build and release scripts for version detection and TOML prompts
 - Improve sync script compatibility and error handling
 
-[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.6.1...HEAD
+[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.7.0...HEAD
+[v1.7.0]: https://github.com/FradSer/dotclaude/compare/v1.6.1...v1.7.0
 [v1.6.1]: https://github.com/FradSer/dotclaude/compare/v1.6.0...v1.6.1
 [v1.6.0]: https://github.com/FradSer/dotclaude/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/FradSer/dotclaude/compare/v1.4.0...v1.5.0
