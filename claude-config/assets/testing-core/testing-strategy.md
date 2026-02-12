@@ -1,0 +1,3 @@
+- Do not create temporary test scripts in the project root
+- Place formal tests in appropriate directories (tests/, __tests__, spec/) for TDD
+- Run quick test scripts directly with bash for temporary validation

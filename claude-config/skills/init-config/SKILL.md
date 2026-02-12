@@ -32,14 +32,16 @@ Run phases in order because later phases depend on saved choices from earlier ph
    - If email is missing: "I couldn't detect your email from git config. What email would you like to use? (or reply 'skip' to omit)"
 4. Store the user's responses (or empty values if skipped) as `developer_name` and `developer_email` for renderer arguments.
 
-## Phase 3: TDD Preference
-**Goal**: decide whether to include TDD requirements.
+## Phase 3: Testing Methodology
+**Goal**: choose the testing approach.
 
 **Actions**:
-Ask with header `TDD Mode`:
-- `Include TDD (Recommended)` -> include TDD fragments.
-- `Exclude TDD` -> keep base template.
-Store boolean `include_tdd` for Phase 7 renderer arguments.
+Ask with header `Testing Methodology`:
+- `BDD first, then TDD (Recommended)` -> BDD-driven TDD with Red-Green-Refactor
+- `BDD only` -> Gherkin scenarios without TDD cycle
+- `TDD only` -> Test-driven development without BDD scenarios
+- `None` -> No specific testing methodology
+Store the choice as `testing_mode` (bdd-tdd | bdd | tdd | none) for Phase 7 renderer arguments.
 
 ## Phase 3.5: Memory Management (Optional)
 **Goal**: decide whether to add CLAUDE.md memory instructions.
@@ -63,16 +65,14 @@ Store boolean `include_memory` for renderer arguments. Do not append memory text
 4. Store ordered stack selections as `language:::package_manager` for renderer arguments.
 
 ## Phase 5: Renderer Input Preparation
-**Goal**: prepare deterministic renderer inputs from local references and user selections.
+**Goal**: prepare deterministic renderer inputs from user selections.
 
 **Actions**:
-1. Read `${CLAUDE_PLUGIN_ROOT}/assets/technology-stack-rules.md`.
-2. Normalize each selected stack into ordered renderer input format `language:::package_manager`.
+1. Normalize each selected stack into ordered renderer input format `language:::package_manager`.
 - Keep selection order unchanged.
-3. For languages without explicit package manager choice, use `language:::` (empty manager).
-4. Keep language keys exact (`Node.js`, `Python`, `Rust`, `Swift`, `Go`, `Java`) when available; do not invent aliases.
-5. Do not manually generate language rule bullets in this phase; pass structured inputs to the renderer only.
-6. Never call online search in this phase.
+2. For languages without explicit package manager choice, use `language:::` (empty manager).
+3. Keep language keys exact (`Node.js`, `Python`, `Rust`, `Swift`, `Go`, `Java`) when available; do not invent aliases.
+4. Never call online search in this phase.
 
 ## Phase 6: Style Preference
 **Goal**: choose emoji usage policy in generated CLAUDE.md.
@@ -90,15 +90,13 @@ Store boolean `use_emojis` for renderer arguments that control emoji policy text
 
 **Actions**:
 1. Run `${CLAUDE_PLUGIN_ROOT}/scripts/render-claude-config.sh` with:
-- `--base-template ${CLAUDE_PLUGIN_ROOT}/assets/claude-template-no-tdd.md`
-- `--rules-file ${CLAUDE_PLUGIN_ROOT}/assets/technology-stack-rules.md`
 - `--target-file $HOME/.claude/CLAUDE.md`
-- `--include-tdd <true|false>`
+- `--testing-mode <bdd-tdd|bdd|tdd|none>` (from Phase 3)
 - `--include-memory <true|false>`
 - `--use-emojis <true|false>`
 - Optional `--developer-name` and `--developer-email`
 - Repeated `--stack "language:::package_manager"` entries from Phase 5
-2. Let the renderer handle all assembly concerns: template merge, TDD injection, developer profile, technology stack section, optional memory section, length check, backup, and final write.
+2. Let the renderer handle all assembly concerns: fragment assembly, testing content injection, developer profile, technology stack section, optional memory section, and final write.
 3. Do not manually post-edit renderer output; if output shape is wrong, fix inputs or renderer behavior.
 
 
@@ -112,7 +110,7 @@ Store boolean `use_emojis` for renderer arguments that control emoji policy text
 - Backup path created when an existing target file was present.
 2. Report:
 - File and backup locations.
-- Developer info and TDD mode.
+- Developer info and testing mode.
 - Selected technology stacks and package managers.
 - Renderer rule-application summary: which stacks received local rule lines and which did not.
 

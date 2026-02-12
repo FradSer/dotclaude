@@ -1,0 +1,2 @@
+- Follow Red-Green-Refactor TDD: RED failing test → GREEN minimal code → REFACTOR keep tests green
+- Place tests in appropriate directories (tests/, __tests__, spec/)
