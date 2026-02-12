@@ -59,6 +59,35 @@ Scenario Outline: Eating cucumbers
     |  20   |  5  |  15  |
 ```
 
+## Storage & Structure
+
+### Where to Store Gherkin Scenarios
+
+**Best Practice:** Store scenarios in dedicated `.feature` files, NOT as code comments.
+
+```
+tests/
+├── features/                    # BDD scenarios (business-readable)
+│   ├── user-login.feature      # Given/When/Then specifications
+│   ├── user-registration.feature
+│   └── order-processing.feature
+├── step-definitions/           # Implementation glue code
+│   ├── login-steps.ts         # Map scenarios to code
+│   └── order-steps.ts
+└── unit/                       # Pure unit tests
+```
+
+**Why not as code comments?**
+- Comments are not executable by BDD frameworks (Cucumber, SpecFlow, etc.)
+- Non-technical stakeholders (PO, BA, QA) cannot access or read code comments
+- Violates separation of concerns: WHAT (behavior) vs HOW (implementation)
+- Loses the "Living Documentation" value that makes BDD valuable
+
+**Key Principles:**
+- Feature files serve as executable specifications that both technical and business teams understand
+- Step definitions connect scenarios to implementation code without exposing technical details
+- This separation makes tests resilient to UI changes and implementation refactoring
+
 ## Best Practices Checklist
 
 - [ ] **Golden Rule:** Can a non-technical stakeholder read and understand this?
@@ -66,3 +95,4 @@ Scenario Outline: Eating cucumbers
 - [ ] **Brevity:** Keep scenarios short (3-5 steps is ideal).
 - [ ] **Data Tables:** Use data tables for setup to avoid repetitive "Given" steps.
 - [ ] **Backgrounds:** Use Backgrounds to DRY up repeated setup, but don't hide critical context.
+- [ ] **Separation:** Store scenarios in .feature files, not as code comments.

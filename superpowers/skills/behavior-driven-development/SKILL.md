@@ -32,21 +32,15 @@ Scenarios are your "Executable Specifications".
 *   Keep them declarative (business focus).
 *   Avoid technical jargon and UI details.
 *   One behavior per scenario.
+*   **Store in .feature files, NOT as code comments** - this makes them executable and accessible to non-technical stakeholders.
 
-See [Cucumber Gherkin Guide](./references/gherkin-guide.md) for syntax and tips.
+See [Cucumber Gherkin Guide](./references/gherkin-guide.md) for syntax and storage structure.
 
 ### 3. Red-Green-Refactor (TDD)
 The engine of implementation:
 1.  🔴 **RED:** Write a failing test for the scenario (or a unit thereof).
 2.  🟢 **GREEN:** Write the minimal code to pass the test.
 3.  🔵 **REFACTOR:** Clean up the code while keeping tests passing.
-
-### 4. Avoiding Pitfalls
-*   Don't test mocks; test behavior.
-*   Don't write tests *after* the code.
-*   Don't put logic in your test glue code.
-
-See [Anti-Patterns](./references/anti-patterns.md) for what to avoid.
 
 ## Quick Reference: The Iron Law
 
