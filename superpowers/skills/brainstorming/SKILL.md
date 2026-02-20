@@ -36,6 +36,13 @@ Explore codebase first, then ask focused questions to clarify requirements.
    - Ask one at a time, never bundle
    - Base on exploration gaps
 
+**Open-Ended Problem Context**:
+
+If the problem appears open-ended, ambiguous, or requires challenging assumptions:
+- Consider applying first-principles thinking to identify the fundamental value proposition
+- Question "why" repeatedly to reach core truths
+- Be prepared to **explicitly load `superpowers:build-like-iphone-team` skill** in Phase 2 for radical innovation approaches
+
 **Output**: Clear requirements, constraints, success criteria, and relevant patterns.
 
 See `./references/discovery.md` for detailed patterns and question guidelines.
@@ -51,6 +58,16 @@ Research existing patterns, propose viable options, and get user approval.
 2. **Identify options** - Propose 2-3 grounded in codebase reality, or explain "No Alternatives"
 3. **Present** - Write conversationally, lead with recommended option, explain trade-offs
 4. **Get approval** - Use AskUserQuestion, ask one question at a time until clear
+
+**Radical Innovation Context**:
+
+If the problem involves:
+- Challenging industry conventions or "how things are usually done"
+- Creating a new product category rather than improving existing
+- Questioning fundamental assumptions
+- Open-ended or ambiguous requirements that need disruptive thinking
+
+Then **explicitly load `superpowers:build-like-iphone-team` skill** using the Skill tool to apply iPhone design philosophy (first-principles thinking, breakthrough technology, experience-driven specs, internal competition, Purple Dorm isolation).
 
 **Output**: User-approved approach with rationale and trade-offs understood.
 
