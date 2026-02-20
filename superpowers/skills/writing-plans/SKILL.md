@@ -3,7 +3,6 @@ name: writing-plans
 description: This skill should be used when the user has a design (from brainstorming) and needs to break it down into a detailed, step-by-step implementation plan with verification steps for each task.
 argument-hint: [design-folder-path]
 user-invocable: true
-version: 1.3.0
 ---
 
 # Writing Plans

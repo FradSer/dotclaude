@@ -2,7 +2,6 @@
 name: brainstorming
 description: This skill should be used when the user has a new idea, feature request, or ambiguous requirement. It clarifies needs, explores options, and produces a solid design document and BDD specs before implementation starts.
 user-invocable: true
-version: 2.1.0
 ---
 
 # Brainstorming Ideas Into Designs

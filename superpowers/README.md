@@ -232,14 +232,16 @@ This plugin integrates with Claude Code's native features:
 
 ## Version
 
-Plugin Version: 1.0.0
+Plugin Version: 1.4.0
 
 Individual skill versions:
-- brainstorming: 1.0.0
-- writing-plans: 1.1.0
-- executing-plans: 1.1.0
-- behavior-driven-development: 2.2.0
-- agent-team-driven-development: 2.1.0
+- brainstorming: 2.1.0
+- writing-plans: 1.3.0
+- executing-plans: 1.5.0
+- behavior-driven-development: 3.0.0
+- agent-team-driven-development: 2.3.0
+- systematic-debugging: 1.0.0
+- build-like-iphone-team: 1.0.0
 
 ---
 
