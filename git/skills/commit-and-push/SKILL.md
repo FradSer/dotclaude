@@ -3,9 +3,7 @@ name: commit-and-push
 description: Create atomic conventional git commit and push to remote repository. Use when committing staged changes with conventional commit format and immediately pushing to the remote branch.
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill"]
-argument-hint: "[no arguments needed]"
 model: haiku
-version: 0.1.0
 ---
 
 ## Phase 1: Create Commits

@@ -3,9 +3,7 @@ name: commit
 description: This skill should be used when the user requests "commit", "git commit", "create commit", or wants to commit staged/unstaged changes following conventional commits format
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Skill", "Task"]
-argument-hint: "[no arguments needed]"
 model: haiku
-version: 0.3.0
 ---
 
 ## Background Knowledge

@@ -5,7 +5,6 @@ user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
 model: sonnet
 context: fork
-version: 0.1.0
 ---
 
 # Interactive Git Configuration
