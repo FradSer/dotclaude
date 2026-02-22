@@ -9,7 +9,7 @@ scopes:
   - review  # review plugin
   - office  # office plugin
   - swiftui  # swiftui plugin
-  - devtools  # next-devtools plugin
+  - nd  # next-devtools plugin
   - po  # plugin-optimizer
   - sp  # superpowers (workflow skills)
   - cc  # claude-code configuration
