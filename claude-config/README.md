@@ -134,24 +134,6 @@ bash scripts/render-claude-config.sh \
   --stack "Python:::uv"
 ```
 
-## Version History
-
-### 1.4.0
-- Replaced runtime web search in `/init-config` with local stack reference loading
-- Added `assets/technology-stack-rules.md` for enforceable one-line constraints
-- Fixed Technology Stack contract: one rule per supported language, package-manager-only fallback for unsupported languages
-
-### 1.3.0
-- Lean template: removed generic knowledge Claude already knows (SOLID, DRY, etc.)
-- Optional memory management phase for proactive CLAUDE.md updates
-- Dropped RFC 2119 keywords for direct imperative style
-
-### 1.0.0
-- Added TDD flexibility, web search integration, multi-file sync (GEMINI.md, AGENTS.md), template-priority merge strategy
-
-### 0.1.0
-- Initial release with basic template generation
-
 ## License
 
 MIT
