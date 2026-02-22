@@ -45,7 +45,7 @@
     },
     {
       "name": "github",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -69,7 +69,7 @@
     },
     {
       "name": "swiftui",
-      "version": "0.2.0",
+      "version": "0.1.1",
       "description": "SwiftUI Clean Architecture reviewer.",
       "author": {
         "name": "Frad LEE",
@@ -81,7 +81,7 @@
     },
     {
       "name": "office",
-      "version": "0.3.1",
+      "version": "0.4.2",
       "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
       "author": {
         "name": "Frad LEE",

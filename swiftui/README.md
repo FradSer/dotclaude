@@ -2,6 +2,8 @@
 
 SwiftUI Clean Architecture reviewer for iOS/macOS development.
 
+**Version**: 0.1.1
+
 ## Installation
 
 ```bash
@@ -252,3 +254,7 @@ Document why 4th layer is unnecessary.
 ## Author
 
 Frad LEE (fradser@gmail.com)
+
+## License
+
+MIT

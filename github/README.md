@@ -386,13 +386,17 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 
 ## Key Principles
 
-✅ **TDD-First**: Test → Code → Refactor cycle
-✅ **Quality Gates**: All checks pass before PR
-✅ **Atomic Commits**: One logical change per commit
-✅ **Issue-Driven**: Work from well-defined issues
-✅ **Collaborative**: Multi-agent review and validation
-✅ **Clean Workflow**: Isolated worktrees, automated cleanup
+- **TDD-First**: Test → Code → Refactor cycle
+- **Quality Gates**: All checks pass before PR
+- **Atomic Commits**: One logical change per commit
+- **Issue-Driven**: Work from well-defined issues
+- **Collaborative**: Multi-agent review and validation
+- **Clean Workflow**: Isolated worktrees, automated cleanup
 
 ## Author
 
 Frad LEE (fradser@gmail.com)
+
+## License
+
+MIT
