@@ -47,6 +47,7 @@ Current Git Config Context:
 - Single words: use as-is (e.g., `<word1>`, `<word2>`, `<word3>`)
 - Multi-word names: MUST convert to first letters (e.g., `<multi-word-name>` → `<mwn>`, `<another-example>` → `<ae>`)
 - MUST NOT use full multi-word names like `<multi-word-name>` or `<another-example>` as scopes
+- **MUST NOT use commit types as scopes**: types are defined in the `types:` list and must not be duplicated in `scopes:`
 
 **Actions**:
 1. Propose a list of commit scopes based on analysis
