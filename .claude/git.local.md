@@ -9,6 +9,7 @@ scopes:
   - review  # review plugin
   - office  # office plugin
   - swiftui  # swiftui plugin
+  - devtools  # next-devtools plugin
   - po  # plugin-optimizer
   - sp  # superpowers (workflow skills)
   - cc  # claude-code configuration
@@ -20,8 +21,6 @@ types:
   - refactor
   - test
   - chore
-  - perf
-  - style
 # Branch Naming Conventions
 branch_prefixes:
   feature: feature/*
