@@ -175,8 +175,8 @@ See `./references/mcp-patterns.md` for complete MCP integration patterns.
 - Required: `name` (3-50 chars, kebab-case), `model`, `color`, 2-4 `<example>` blocks
 
 **Command Frontmatter**:
-- Required: `description`, `argument-hint` (MUST be empty/omitted if no arguments)
-- Optional: `allowed-tools`, `disable-model-invocation`
+- Required: `description`
+- Optional: `argument-hint` (omit entirely if command takes no arguments), `allowed-tools`, `disable-model-invocation`
 
 See `./references/components/skills.md`, `./references/components/agents.md`, and `./references/components/commands.md` for complete frontmatter specifications.
 
