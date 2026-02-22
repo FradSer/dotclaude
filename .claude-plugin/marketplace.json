@@ -127,6 +127,18 @@
       "source": "./plugin-optimizer",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/plugin-optimizer"
+    },
+    {
+      "name": "next-devtools",
+      "version": "0.1.0",
+      "description": "Next.js development tools integration via MCP server",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./next-devtools",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/next-devtools"
     }
   ]
 }

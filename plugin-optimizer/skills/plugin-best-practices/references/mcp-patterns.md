@@ -81,14 +81,14 @@ Best for: monitoring, live updates
 
 ## Common Integration Patterns
 
-### GitHub
+### NPM Package
 ```json
 {
-  "github": {
+  "package-server": {
     "type": "stdio",
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-github"],
-    "env": {"GITHUB_TOKEN": "${GITHUB_TOKEN}"}
+    "args": ["-y", "@company/mcp-server"],
+    "env": {"API_KEY": "${API_KEY}"}
   }
 }
 ```
@@ -96,23 +96,22 @@ Best for: monitoring, live updates
 ### Database
 ```json
 {
-  "postgres": {
+  "database": {
     "type": "stdio",
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-postgres"],
-    "env": {"POSTGRES_URL": "${DATABASE_URL}"}
+    "args": ["-y", "@example/db-server"],
+    "env": {"DATABASE_URL": "${DATABASE_URL}"}
   }
 }
 ```
 
-### Kubernetes
+### Local Binary
 ```json
 {
-  "kubectl": {
+  "custom-server": {
     "type": "stdio",
-    "command": "mcp-kubectl-wrapper",
-    "args": ["--namespace", "${K8S_NAMESPACE}"],
-    "env": {"KUBECONFIG": "${KUBECONFIG_PATH}"}
+    "command": "./bin/mcp-server",
+    "args": ["--config", "${CLAUDE_PLUGIN_ROOT}/config.json"]
   }
 }
 ```
@@ -179,3 +178,65 @@ Best for: monitoring, live updates
 | Auth failures | Check env vars set, verify token permissions |
 | Timeouts | Verify URL accessible, check firewall |
 | Invalid config | Validate JSON, ensure required fields present |
+
+## MCP Tool Invocation in Claude Code
+
+### Tool Naming Convention
+
+MCP tools follow the naming pattern `mcp__<server-name>__<tool-name>`:
+
+```
+mcp__my-server__get_data
+mcp__api-client__fetch
+mcp__docs-server__*        // Wildcard for all tools from a server
+```
+
+### Authorization
+
+MCP tools require explicit permission before use. Configure `allowedTools`:
+
+```typescript
+// In Claude Agent SDK or similar
+options: {
+  mcpServers: {
+    "my-server": {
+      command: "npx",
+      args: ["-y", "@company/mcp-server"]
+    }
+  },
+  allowedTools: ["mcp__my-server__*"]  // Allow all tools from server
+}
+```
+
+### Usage Patterns
+
+**Implicit invocation (recommended)**: Describe intent in natural language
+```
+"Retrieve the current data from the server"
+"List items from the API"
+"Query the database for user records"
+```
+
+**Explicit invocation**: Direct tool specification (rare)
+Claude automatically identifies and calls the appropriate MCP tool.
+
+### Debugging MCP Calls
+
+Log MCP tool invocations in agent code:
+
+```typescript
+if (message.type === "assistant") {
+  for (const block of message.content) {
+    if (block.type === "tool_use" && block.name.startsWith("mcp__")) {
+      console.log(`MCP tool called: ${block.name}`);
+    }
+  }
+}
+```
+
+### Summary
+
+- Claude Code automatically loads MCP tool definitions into context
+- Use natural language requests to trigger MCP tool calls
+- Tool naming follows `mcp__server__tool` format
+- Authorize tools via `allowedTools` configuration
