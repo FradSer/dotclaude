@@ -12,7 +12,6 @@ scopes:
   - po  # plugin-optimizer
   - sp  # superpowers (workflow skills)
   - cc  # claude-code configuration
-  - utils  # utils plugin
   - docs  # documentation
   - ci  # continuous integration
 types:

@@ -193,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of the plugin marketplace with Git, GitFlow, GitHub, Review, Refactor, Utils, Office, and SwiftUI plugins
+- Initial release of the plugin marketplace with Git, GitFlow, GitHub, Review, Refactor, Office, and SwiftUI plugins
 - Command system with standardized workflows, TDD, and Clean Architecture requirements
 - Build pipeline for marketplace artifacts and plugin manifests
 - Sync-to-GitHub script and local agent management

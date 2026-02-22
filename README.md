@@ -210,21 +210,6 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ---
 
-### utils - Utility Commands
-
-Utility commands for day-to-day automation and workflow enhancement.
-
-```bash
-claude plugin install utils@frad-dotclaude
-```
-
-**Key Features:**
-- Task continuation
-- Command template generation
-- Daily workflow automation
-
----
-
 ## Overview
 
 This repository contains a comprehensive set of Claude Code plugins organized into development and productivity categories. Each plugin provides specialized functionality through skills and agents to streamline your coding workflow.
@@ -245,7 +230,6 @@ dotclaude/
 ├── claude-config/            # AI configuration generation plugin
 ├── office/                   # Patent architect plugin
 ├── plugin-optimizer/         # Plugin validation and optimization
-├── utils/                    # Utility commands plugin
 └── README.md                 # This file
 ```
 
@@ -485,24 +469,6 @@ Validate and optimize Claude Code plugins against best practices.
 - Token budget analysis (3-tier progressive disclosure)
 - Validation report generation with detailed statistics
 - README.md updates reflecting current state
-
----
-
-#### `utils` - Utility Commands
-Utility commands for day-to-day automation using slash commands.
-
-**Commands:**
-| Command | Description |
-|---------|-------------|
-| `/utils:continue` | Continue previous task or conversation without restating context |
-| `/utils:create-command` | Create custom slash commands following Claude Code specifications |
-
-**Features:**
-- Task continuation with context preservation
-- Command template generation with frontmatter support
-- Project vs Personal command scoping
-- Directory namespacing support
-- Dynamic arguments through `$ARGUMENTS`, `$1`, `$2`
 
 ---
 

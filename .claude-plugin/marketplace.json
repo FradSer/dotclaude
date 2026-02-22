@@ -80,18 +80,6 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/swiftui"
     },
     {
-      "name": "utils",
-      "version": "0.2.0",
-      "description": "Utility commands for day-to-day automation.",
-      "author": {
-        "name": "Frad LEE",
-        "email": "fradser@gmail.com"
-      },
-      "source": "./utils",
-      "category": "productivity",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/utils"
-    },
-    {
       "name": "office",
       "version": "0.3.1",
       "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
