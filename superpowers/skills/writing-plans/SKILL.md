@@ -42,7 +42,19 @@ Define goal, architecture, constraints.
 
 Break into small tasks mapped to specific BDD scenarios.
 
-1. **Reference Scenarios**: **CRITICAL**: Every task must explicitly reference a BDD Scenario (e.g., "Implement Login (ref: Scenario 1)").
+1. **Reference Scenarios**: **CRITICAL**: Every task must explicitly include the full BDD Scenario content in the task file using Gherkin syntax. For example:
+
+   ```gherkin
+   ## BDD Scenario
+
+   Scenario: [concise scenario title]
+     Given [context or precondition]
+     When [action or event occurs]
+     Then [expected outcome]
+     And [additional conditions or outcomes]
+   ```
+
+   The scenario content should be self-contained in the task file, not just a reference to `bdd-specs.md`. This allows the executor to see the complete scenario without switching files.
 2. **Define Verification**: **CRITICAL**: Verification steps must run the BDD specs (e.g., `npm test tests/login.spec.ts`).
 3. **Enforce Ordering**: Task N (Test/Red) -> Task N+1 (Implementation/Green).
 4. **Declare Dependencies**: **MANDATORY**: Each task file must include a `**depends-on**` field listing only **true technical prerequisites** — tasks whose output is required before this task can start. Rules:
