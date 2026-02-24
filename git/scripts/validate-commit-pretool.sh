@@ -4,6 +4,32 @@
 
 set -euo pipefail
 
+# Read and validate input
+input=$(cat)
+if ! echo "$input" | jq -e . >/dev/null 2>&1; then
+  exit 0  # Fail-open on invalid input
+fi
+
+# Single-pass extraction
+read -r tool_name command < <(
+  echo "$input" | jq -r '[.tool_name // "", .tool_input.command // ""] | @tsv'
+)
+
+# Early exit for non-matching tools
+if [[ "$tool_name" != "Bash" ]]; then
+  exit 0
+fi
+
+# Early exit for non-git-commit commands
+if [[ -z "$command" ]] || ! [[ "$command" =~ git[[:space:]]+commit ]]; then
+  exit 0
+fi
+
+# Skip amend, fixup, squash commits
+if [[ "$command" =~ --amend ]] || [[ "$command" =~ --fixup ]] || [[ "$command" =~ --squash ]]; then
+  exit 0
+fi
+
 # Extract heredoc content (full multiline)
 extract_heredoc_content() {
   local cmd="$1"
@@ -81,28 +107,6 @@ extract_m_message() {
   fi
 }
 
-# Read input from stdin
-input=$(cat)
-
-# Extract tool_name and command from tool input
-tool_name=$(echo "$input" | jq -r '.tool_name // empty')
-command=$(echo "$input" | jq -r '.tool_input.command // empty')
-
-# Only process if this is a Bash tool invocation
-if [[ "$tool_name" != "Bash" ]]; then
-  exit 0
-fi
-
-# Only validate git commit commands (must contain "git commit")
-if [[ -z "$command" ]] || ! [[ "$command" =~ git[[:space:]]+commit ]]; then
-  exit 0
-fi
-
-# Skip if this is an amend or other special commit
-if [[ "$command" =~ --amend ]] || [[ "$command" =~ --fixup ]] || [[ "$command" =~ --squash ]]; then
-  exit 0
-fi
-
 # Extract commit message - try all methods
 commit_msg=""
 
@@ -130,7 +134,12 @@ fi
 # Fail-closed: Block if we cannot extract the message
 if [[ -z "$commit_msg" ]]; then
   jq -n '{
-    systemMessage: ("VALIDATION BLOCKED: Cannot extract commit message\n\nThe commit message format is not recognized and cannot be validated.\nThis is a security measure to prevent bypassing conventional commit validation.\n\nSupported formats:\n  - git commit -m \"message\"\n  - git commit -F <file>\n  - git commit --file=<file>\n\nIf you believe this is an error, please check your commit command format.")
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      "permissionDecisionReason": "Cannot extract commit message",
+      additionalContext: "The commit message format is not recognized and cannot be validated.\n\nSupported formats:\n  - git commit -m \"message\"\n  - git commit -F <file>\n  - git commit --file=<file>\n\nIf you believe this is an error, please check your commit command format."
+    }
   }' >&2
   exit 2
 fi
@@ -140,7 +149,6 @@ title_line=$(echo "$commit_msg" | head -1)
 
 # Validation results
 errors=()
-warnings=()
 
 # Valid types (conventional commits standard)
 valid_types="feat|fix|docs|refactor|perf|test|chore|build|ci|style"
@@ -171,17 +179,12 @@ if [[ "$title_line" =~ \.$ ]]; then
   errors+=("Title should not end with a period")
 fi
 
-# 5. Check for imperative mood (warn on common past tense patterns)
-if [[ "$title_line" =~ :[[:space:]]+(added|removed|updated|fixed|changed|created|deleted|modified)[[:space:]] ]]; then
-  warnings+=("Use imperative mood: 'add' not 'added', 'fix' not 'fixed'")
-fi
-
-# 6. Check that description exists and is not empty
+# 5. Check that description exists and is not empty
 if [[ "$title_line" =~ :[[:space:]]*$ ]]; then
   errors+=("Description cannot be empty")
 fi
 
-# 7. Validate commit body format
+# 6. Validate commit body format
 # Extract body (everything after the first line)
 body=$(echo "$commit_msg" | tail -n +2)
 
@@ -248,11 +251,11 @@ else
     fi
 
     if [[ ${#invalid_bullets[@]} -gt 0 ]]; then
-      warnings+=("Some bullet points may not start with imperative verbs:")
+      errors+=("Some bullet points may not start with imperative verbs:")
       for bullet in "${invalid_bullets[@]}"; do
-        warnings+=("  $bullet")
+        errors+=("  $bullet")
       done
-      warnings+=("Expected format: '- <Verb> <description>' (Add, Remove, Update, Fix, etc.)")
+      errors+=("Expected format: '- <Verb> <description>' (Add, Remove, Update, Fix, etc.)")
     fi
 
     # Validate explanation paragraph after bullets (REQUIRED)
@@ -276,7 +279,7 @@ else
   fi
 fi
 
-# 8. Validate Co-Authored-By footer
+# 7. Validate Co-Authored-By footer
 # Check if footer contains Co-Authored-By (required for AI-assisted commits)
 if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
   errors+=("Co-Authored-By footer is required for AI-assisted commits")
@@ -285,25 +288,25 @@ if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]
   errors+=("  Co-Authored-By: <Model Name> <noreply@anthropic.com>")
 fi
 
-# Output results and block execution if errors found
+# Output results with AI-native structured format
 if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
-  warning_list=""
-  if [[ ${#warnings[@]} -gt 0 ]]; then
-    warning_list=$(printf "\n\nWarnings:\n  - %s" "${warnings[@]}")
-  fi
+  additional_context="To fix: 1) Ensure title follows <type>[scope]: lowercase description format, 2) Add body with imperative verb bullets, 3) Include explanation paragraph after bullets, 4) Add Co-Authored-By footer"
 
-  jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nLine length: All body lines must be ≤72 characters\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
-  }' >&2
+  jq -n \
+    --arg title "$title_line" \
+    --arg errors "$error_list" \
+    --arg context "$additional_context" \
+    '{
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: ("Commit validation failed: \"" + $title + "\""),
+        additionalContext: ("Errors:\n" + $errors + "\n" + $context)
+      }
+    }' >&2
   exit 2
-elif [[ ${#warnings[@]} -gt 0 ]]; then
-  warning_list=$(printf "  - %s\n" "${warnings[@]}")
-  jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
-    systemMessage: ("WARNING: Commit message has warnings\n  \"" + $title + "\"\n\nWarnings:\n" + $warnings)
-  }'
-  exit 0
-else
-  # Silent success - no need to clutter output for valid commits
-  exit 0
 fi
+
+# Silent success - no output for valid commits
+exit 0

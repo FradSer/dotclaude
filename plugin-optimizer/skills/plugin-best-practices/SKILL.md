@@ -222,10 +222,18 @@ See `./references/directory-structure.md` for complete layout guidelines.
 **Best Practices**:
 - Validate inputs strictly in bash hooks
 - Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`)
-- Return valid JSON for decisions (`allow`/`deny`) and messages
+- Return structured JSON with `hookSpecificOutput` schema
+- Provide `additionalContext` for LLM remediation guidance
 - Exit codes: 0 (success), 1 (non-blocking), 2 (blocking error)
 
-See `./references/components/hooks.md` for complete hook patterns and templates.
+**AI-Native Patterns**:
+- Use `permissionDecision` field for `allow`/`deny`/`ask`
+- Include `additionalContext` with actionable fix instructions
+- Single-pass JSON extraction (avoid multiple `jq` calls)
+- Early exit for non-matching tools/commands
+- Remove dead code (unused variables, unreachable paths)
+
+See `./references/components/hooks.md` for complete hook patterns including AI-native structured output.
 
 ## Agent Teams vs Subagents
 
@@ -339,7 +347,7 @@ See `./references/parallel-execution.md` for parallel coordination patterns.
 - `./references/components/skills.md` - Skill structure, frontmatter, progressive disclosure
 - `./references/components/agents.md` - Agent design, CO-STAR framework, example blocks
 - `./references/components/commands.md` - Command frontmatter, dynamic context
-- `./references/components/hooks.md` - Hook events, types, bash templates
+- `./references/components/hooks.md` - Hook events, types, AI-native patterns, templates
 - `./references/components/mcp-servers.md` - MCP configuration, stdio/http/sse
 - `./references/components/lsp-servers.md` - LSP setup, binary requirements
 
