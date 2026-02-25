@@ -222,7 +222,7 @@ See `./references/directory-structure.md` for complete layout guidelines.
 **Best Practices**:
 - Validate inputs strictly in bash hooks
 - Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`)
-- Return structured JSON with `systemMessage` containing human-readable Markdown
+- Return structured JSON with human-readable Markdown in `systemMessage`
 - Exit codes: 0 (success), 1 (non-blocking), 2 (blocking error)
 
 **AI-Native Patterns**:

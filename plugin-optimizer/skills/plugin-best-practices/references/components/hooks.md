@@ -89,7 +89,7 @@ AI-native hooks MUST return structured JSON containing a `systemMessage` field w
 | `hookSpecificOutput` | All | *Deprecated*. Legacy complex nested object. |
 | `permissionDecision` | PreToolUse | *Deprecated*. Legacy explicit control. |
 | `permissionDecisionReason` | All | *Deprecated*. Legacy explanation field. |
-| `additionalContext` | All | *Deprecated*. Legacy structured context. |\
+| `additionalContext` | All | *Deprecated*. Legacy structured context. |
 | `updatedInput` | PreToolUse | *Deprecated*. Legacy mutation field. |
 
 ### Output Destination
@@ -102,9 +102,6 @@ AI-native hooks MUST return structured JSON containing a `systemMessage` field w
 ### PreToolUse: Allow
 
 ```bash
-jq -n '{
-  systemMessage: "Operation allowed."
-}'
 exit 0
 ```
 
@@ -120,15 +117,8 @@ exit 2
 ### PreToolUse: Ask User
 
 ```bash
-# This uses the legacy hookSpecificOutput schema.
-# While systemMessage is preferred for most interactions,
-# prompting the user explicitly still requires this structure.
 jq -n '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "ask",
-    permissionDecisionReason: "This operation modifies production files"
-  }
+  systemMessage: "This operation modifies production files. I need to ask the user."
 }'
 exit 0
 ```
@@ -226,9 +216,9 @@ warnings+=("Non-critical issue")
 
 # GOOD: Either use or remove
 # Option 1: Remove entirely
-# Option 2: Integrate into additionalContext
+# Option 2: Integrate into systemMessage
 if [[ ${#warnings[@]} -gt 0 ]]; then
-  additional_context=$(printf "- %s\n" "${warnings[@]}")
+  warnings_text=$(printf "- %s\n" "${warnings[@]}")
 fi
 ```
 
@@ -450,7 +440,7 @@ debug_log "Processing tool: $tool_name"
 
 ## Summary Checklist
 
-- [ ] Structured JSON output with `systemMessage` containing human-readable Markdown
+- [ ] Structured JSON output with human-readable Markdown in `systemMessage`
 - [ ] Single JSON parse with variable capture
 - [ ] Early exit for non-matching conditions
 - [ ] No dead code (unused variables, unreachable paths)
