@@ -3,33 +3,27 @@ name: update-gitignore
 description: Create or update .gitignore file using Toptal's gitignore API with OS and language detection. Use when initializing a new project, adding new technologies to an existing project, or updating ignore rules for OS-specific files.
 user-invocable: true
 argument-hint: [additional-technologies]
-allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob"]
+allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Task"]
 model: haiku
 context: fork
 ---
 
-## Context
+## Workflow Execution
 
-- Project guidelines: @CLAUDE.md
-- Operating system: !`uname -s`
-- Existing .gitignore status: !`test -f .gitignore && echo ".gitignore found" || echo ".gitignore not found"`
-- Project files: Analyze repository structure to detect technologies
-- Available templates: !`curl -sL https://www.toptal.com/developers/gitignore/api/list`
+**Launch a general-purpose agent** that executes all 3 phases in a single task.
 
----
+**Prompt template**:
+```
+Execute the complete update-gitignore workflow (3 phases).
 
 ## Phase 1: Technology Detection
-
 **Goal**: Identify operating systems and technologies to include in .gitignore
 
 **Actions**:
 1. Detect operating systems and technologies from context
-2. Combine detected platforms with `$ARGUMENTS` into the generator request (e.g. `<os>,<language>,<tool>`)
-
----
+2. Combine detected platforms with $ARGUMENTS into the generator request (e.g. `<os>,<language>,<tool>`)
 
 ## Phase 2: Generate or Update .gitignore
-
 **Goal**: Create or update .gitignore file using Toptal API
 
 **Actions**:
@@ -37,12 +31,12 @@ context: fork
 2. Preserve existing custom sections when updating `.gitignore`
 3. Retain all custom rules from existing file
 
----
-
 ## Phase 3: Confirmation
-
 **Goal**: Present changes for user review
 
 **Actions**:
 1. Show the repository changes (diff) to confirm the update
 2. Present the resulting diff for user confirmation
+```
+
+**Execute**: Launch a general-purpose agent using the prompt template above

@@ -2,44 +2,36 @@
 name: config-git
 description: Interactive git configuration setup for user identity and project conventions. Use when setting up Git for a new project, configuring commit scopes/types, or creating project-specific Git settings.
 user-invocable: true
-allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion", "Task"]
 model: sonnet
 context: fork
 ---
 
-# Interactive Git Configuration
+## Workflow Execution
 
-Set up Git user identity and create `.claude/git.local.md` with conventional commit scopes, types, and branch naming conventions.
+**Launch a general-purpose agent** that executes all 5 phases in a single task.
 
-Current Git Config Context:
-!`git config --list --show-origin`
-
----
+**Prompt template**:
+```
+Execute the complete git configuration workflow (5 phases).
 
 ## Phase 1: Verify User Identity
-
 **Goal**: Ensure git user.name and user.email are configured
 
 **Actions**:
-1. Review the "Current Git Config Context" above
+1. Run `git config --list --show-origin` to get current config
 2. Check if `user.name` and `user.email` are set
-3. If EITHER is missing, use `AskUserQuestion` to request the missing information
+3. If EITHER is missing, use AskUserQuestion to request the missing information
 4. Set the values globally (or locally if user specifies) using `git config`
 
----
-
 ## Phase 2: Analyze Project Context
-
 **Goal**: Understand project structure and existing commit patterns
 
 **Actions**:
 1. Run `ls -F` or `find . -maxdepth 2 -not -path '*/.*'` to detect project languages/frameworks
 2. Run `git log --format="%s" -n 50` (if git repo exists) to analyze existing commit message patterns and scopes
 
----
-
 ## Phase 3: Determine Scopes
-
 **Goal**: Generate appropriate commit scopes based on project structure
 
 **CRITICAL - Scope Naming Rules**:
@@ -54,10 +46,7 @@ Current Git Config Context:
 2. Ensure all scopes follow the naming rules above
 3. Request user input ONLY if genuine ambiguity exists
 
----
-
 ## Phase 4: Generate Configuration File
-
 **Goal**: Create `.claude/git.local.md` with complete structure from example template
 
 **CRITICAL - Template Requirements**:
@@ -79,12 +68,12 @@ Current Git Config Context:
 
 **Output**: `.claude/git.local.md` file with project-specific configuration
 
----
-
 ## Phase 5: Confirmation
-
 **Goal**: Inform user of successful configuration
 
 **Actions**:
 1. Confirm configuration is complete
 2. Show the location of the created file
+```
+
+**Execute**: Launch a general-purpose agent using the prompt template above
