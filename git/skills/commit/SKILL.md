@@ -29,39 +29,44 @@ Co-Authored-By: <Model Name> <noreply@anthropic.com>
 - **Body** (REQUIRED): Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
 - **Footer**: `Co-Authored-By` is REQUIRED for all AI commits
 
+## Workflow Execution
+
+**Launch a general-purpose agent** that executes all 4 phases in a single task. This ensures atomic execution and proper context preservation.
+
+**Prompt template**:
+```
+Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
+
 ## Phase 1: Configuration Verification
-
-**Goal**: Load project-specific git configuration and valid scopes.
-
-**Actions**:
-1. **FIRST**: Read `.claude/git.local.md` to load project configuration
+1. Read `.claude/git.local.md` to load project configuration
 2. If file not found, **load `git:config-git` skill** using the Skill tool to create it
-3. Extract valid scopes from `scopes:` list in YAML frontmatter
+3. Extract valid scopes from YAML frontmatter
 
 ## Phase 2: Change Analysis
-
-**Goal**: Identify logical units of work and infer commit scopes.
-
-**Actions**:
-1. Run `git diff --cached` and `git diff` to get code differences (MUST NOT traverse files directly)
-2. Analyze diff to identify coherent logical units
+1. Run `git diff --cached` and `git diff` to get code differences
+2. Analyze diff to identify logical units
 3. Infer scope(s) from file paths and changes using the valid scopes loaded in Phase 1
 4. If inferred scope not in the valid scopes list, **load `git:config-git` skill** using the Skill tool to update configuration
 
 ## Phase 3: AI Code Quality Check
-
-**Goal**: Remove AI-generated slop before committing.
-
-**Actions**:
-1. Launch agent with Task tool (model: sonnet) to review changes
-2. Remove AI patterns: extra comments, unnecessary defensive checks, `any` casts, inconsistent style
-3. Agent runs autonomously without user confirmation
+1. Review changes for AI slop patterns
+2. Remove all AI generated slop introduced in the git diff:
+   - Extra comments that a human wouldn't add or is inconsistent with the rest of the file
+   - Extra defensive checks or try/catch blocks that are abnormal for that area of the codebase (especially if called by trusted/validated codepaths)
+   - Casts to `any` to get around type issues
+   - Any other style that is inconsistent with the file
 
 ## Phase 4: Commit Creation
+1. Draft commit message following Conventional Commits format:
+   - Title: lowercase, <50 chars, imperative, no period
+   - Context paragraph: optional background before bullet points
+   - Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
+   - Explanation paragraph after bullet points (REQUIRED)
+   - Footer: Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+2. Validate message format
+3. Stage files and create commit
 
-**Goal**: Create atomic commits following Conventional Commits format.
+If no changes, report "No changes to commit" and exit.
+```
 
-**Actions** (repeat for each logical unit):
-1. Draft commit message per `Commit Format Rules` above
-2. Validate: title <50 chars lowercase imperative; body has bullets + explanation paragraph; footer has `Co-Authored-By`
-3. Stage relevant files and create commit
+**Execute**: Launch a general-purpose agent using the prompt template above
