@@ -18,7 +18,7 @@ model: haiku
 
 - <Action> <component> <detail>
 
-[explanation paragraph]
+[explanation paragraph - REQUIRED, explains the "why" behind changes]
 
 Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
@@ -27,6 +27,7 @@ Co-Authored-By: <Model Name> <noreply@anthropic.com>
 - **Title**: ALL LOWERCASE, <50 chars, imperative, no period. Add "!" before ":" for breaking changes
 - **Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
 - **Body** (REQUIRED): Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
+- **Explanation paragraph** (REQUIRED): Explains the "why" behind the changes, not just the "what"
 - **Footer**: `Co-Authored-By` is REQUIRED for all AI commits
 
 ## Workflow Execution
@@ -61,7 +62,7 @@ Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
    - Title: lowercase, <50 chars, imperative, no period
    - Context paragraph: optional background before bullet points
    - Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
-   - Explanation paragraph after bullet points (REQUIRED)
+   - Explanation paragraph after bullet points (REQUIRED) - explains the "why"
    - Footer: Co-Authored-By: <Model Name> <noreply@anthropic.com>
 2. Validate message format
 3. Stage files and create commit
