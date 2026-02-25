@@ -62,7 +62,7 @@ Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
    - Context paragraph: optional background before bullet points
    - Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
    - Explanation paragraph after bullet points (REQUIRED)
-   - Footer: Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+   - Footer: Co-Authored-By: <Model Name> <noreply@anthropic.com>
 2. Validate message format
 3. Stage files and create commit
 
