@@ -34,24 +34,34 @@ Read plan, understand the project and requirements.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
 
-## Phase 2: Task Setup (MANDATORY)
+## Phase 2: Task Creation (MANDATORY)
 
-**REQUIRED**: Create task tracking system before any execution begins.
+**CRITICAL**: You MUST use TaskCreate to create ALL tasks BEFORE executing any task. Task creation must complete before dependency analysis or execution begins.
 
-1. **Scope Batches**: Build a dependency graph from `depends-on` fields, then **actively restructure** tasks into parallel batches.
-   - Compute dependency tiers: Tier 0 = no dependencies, Tier N = all `depends-on` tasks are in earlier tiers
-   - Within each tier, group tasks by type to maximize parallelism (e.g., all "write test" tasks in one batch, all "implement" tasks in the next)
-   - **MANDATORY**: Every batch must contain ≥2 tasks. If a tier has only 1 task, combine it with adjacent tier tasks that have no file conflicts
-   - A single-task batch is only acceptable if it is the sole remaining task in the entire plan
-   - Each batch should contain 3-6 tasks
-2. **Create Tasks**: Use `TaskCreate` tool to register each task, in batch order. Each task must include:
+1. **Extract Tasks**: Extract all tasks from the plan file. Parse each task's:
    - `subject`: Brief title in imperative form (e.g., "Implement login handler")
-   - `description`: Detailed task description from plan, including files, verification steps, and BDD scenario reference
-   - `activeForm`: Present continuous form for progress display (e.g., "Implementing login handler")
+   - `description`: Detailed description including files, verification steps, BDD scenario reference
+   - `activeForm`: Present continuous form (e.g., "Implementing login handler")
+   - `depends-on`: Dependencies (if any)
+
+2. **Create Tasks First**: Use TaskCreate tool to register every task
+   - All tasks MUST be created before proceeding to the next phase
+   - Do NOT execute any tasks until all tasks are created
+
+3. **Analyze Dependencies**: After all tasks are created, build the dependency graph
+   - Compute dependency tiers: Tier 0 = no dependencies, Tier N = all depends-on tasks are in earlier tiers
+   - Within each tier, group tasks by type to maximize parallelism (e.g., all "write test" tasks together, all "implement" tasks together)
+   - **Target**: Each batch should contain 3-6 tasks
+   - **Rule**: Every batch must contain ≥2 tasks unless it is the sole remaining batch
+
+4. **Setup Task Dependencies**: Use TaskUpdate to configure dependencies between tasks
+   - `addBlockedBy`: Array of task IDs this task must wait for before starting
+   - `addBlocks`: Array of task IDs that must wait for this task to complete
+   - Example: `TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })` means task #2 waits for task #1
 
 ## Phase 3: Batch Execution Loop
 
-Execute tasks in batches. Actively use parallel execution for independent tasks.
+Execute tasks in batches. Actively use Agent Teams for parallel execution (preferred), with subagents or linear execution as fallbacks.
 
 **For Each Batch**:
 
@@ -60,26 +70,29 @@ Execute tasks in batches. Actively use parallel execution for independent tasks.
    - **Subagent Parallel** (downgrade only if): Agent Team overhead is disproportionate (e.g., batch has exactly 2 small tasks). State the reason explicitly.
    - **Linear** (last resort only if): Tasks within the batch have unavoidable file conflicts that cannot be split, or the batch genuinely contains only 1 task. State the reason explicitly.
 
-2. **Agent Team Execution**:
+2. **Update Task Status**: Before starting work on any task, use TaskUpdate to set status to `in_progress`
+   - This shows a spinner in the task list and signals active work
+
+3. **Agent Team Execution**:
    - Create Agent Team with teammates for parallel execution
    - Assign tasks to teammates with clear file ownership boundaries
    - Wait for teammates to complete all tasks
    - Verify all tasks in the batch
-   - Mark tasks complete
 
-3. **Subagent Parallel Execution**:
+4. **Subagent Parallel Execution**:
    - Spawn subagents concurrently for each independent task
    - Each subagent loads the `superpowers:behavior-driven-development` skill
    - Verify all tasks in the batch
-   - Mark tasks complete
 
-4. **Linear Execution**:
+5. **Linear Execution**:
    - For each task in the batch:
      - Execute using subagent loading the `superpowers:behavior-driven-development` skill
      - Verify the task
-     - Mark task complete
 
-5. **Between Batches**:
+6. **Mark Tasks Complete**: After verification, use TaskUpdate to set status to `completed`
+   - Only mark as completed after full verification passes
+
+7. **Between Batches**:
    - Report progress and verification results
    - Proceed to next batch automatically
 
@@ -108,8 +121,7 @@ Close the loop.
 
 1. **Publish Evidence**: Log outputs and test results.
 2. **Confirm**: Get user confirmation.
-3. **Update Tracker**: Mark tasks complete.
-4. **Loop**: Repeat Phase 3-4 until complete.
+3. **Loop**: Repeat Phase 3-4 until complete.
 
 ## Exit Criteria
 
