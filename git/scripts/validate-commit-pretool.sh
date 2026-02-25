@@ -292,7 +292,7 @@ fi
 if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
   warning_list=""
-  if [[ ${#warnings[@]} -gt 0 ]]; then
+  if [[ -n "${warnings:-}" ]] && [[ ${#warnings[@]} -gt 0 ]]; then
     warning_list=$(printf "\n\nWarnings:\n  - %s" "${warnings[@]}")
   fi
 
@@ -304,7 +304,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
       systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nLine length: All body lines must be ≤72 characters\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
     }' >&2
   exit 2
-elif [[ ${#warnings[@]} -gt 0 ]]; then
+elif [[ -n "${warnings:-}" ]] && [[ ${#warnings[@]} -gt 0 ]]; then
   warning_list=$(printf "  - %s\n" "${warnings[@]}")
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
     systemMessage: ("WARNING: Commit message has warnings\n  \"" + $title + "\"\n\nWarnings:\n" + $warnings)
