@@ -288,24 +288,28 @@ if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]
   errors+=("  Co-Authored-By: <Model Name> <noreply@anthropic.com>")
 fi
 
-# Output results with AI-native structured format
+# Output results with markdown format (similar to previous version)
 if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
-  additional_context="To fix: 1) Ensure title follows <type>[scope]: lowercase description format, 2) Add body with imperative verb bullets, 3) Include explanation paragraph after bullets, 4) Add Co-Authored-By footer"
+  warning_list=""
+  if [[ ${#warnings[@]} -gt 0 ]]; then
+    warning_list=$(printf "\n\nWarnings:\n  - %s" "${warnings[@]}")
+  fi
 
   jq -n \
     --arg title "$title_line" \
     --arg errors "$error_list" \
-    --arg context "$additional_context" \
+    --arg warnings "$warning_list" \
     '{
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason: ("Commit validation failed: \"" + $title + "\""),
-        additionalContext: ("Errors:\n" + $errors + "\n" + $context)
-      }
+      systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nLine length: All body lines must be ≤72 characters\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
     }' >&2
   exit 2
+elif [[ ${#warnings[@]} -gt 0 ]]; then
+  warning_list=$(printf "  - %s\n" "${warnings[@]}")
+  jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
+    systemMessage: ("WARNING: Commit message has warnings\n  \"" + $title + "\"\n\nWarnings:\n" + $warnings)
+  }'
+  exit 0
 fi
 
 # Silent success - no output for valid commits
