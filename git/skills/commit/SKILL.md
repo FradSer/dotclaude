@@ -48,7 +48,7 @@ Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
 3. Infer scope(s) from file paths and changes using the valid scopes loaded in Phase 1
 4. If inferred scope not in the valid scopes list, **load `git:config-git` skill** using the Skill tool to update configuration
 
-## Phase 3: AI Code Quality Check
+## Phase 3: AI Code Quality Check (model: sonnet)
 1. Review changes for AI slop patterns
 2. Remove all AI generated slop introduced in the git diff:
    - Extra comments that a human wouldn't add or is inconsistent with the rest of the file
