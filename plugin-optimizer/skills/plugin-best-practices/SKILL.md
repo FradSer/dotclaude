@@ -222,13 +222,11 @@ See `./references/directory-structure.md` for complete layout guidelines.
 **Best Practices**:
 - Validate inputs strictly in bash hooks
 - Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`)
-- Return structured JSON with `hookSpecificOutput` schema
-- Provide `additionalContext` for LLM remediation guidance
+- Return structured JSON with `systemMessage` containing human-readable Markdown
 - Exit codes: 0 (success), 1 (non-blocking), 2 (blocking error)
 
 **AI-Native Patterns**:
-- Use `permissionDecision` field for `allow`/`deny`/`ask`
-- Include `additionalContext` with actionable fix instructions
+- Treat AI like a human user when returning hook output (use human-readable Markdown in `systemMessage` with clear context and examples)
 - Single-pass JSON extraction (avoid multiple `jq` calls)
 - Early exit for non-matching tools/commands
 - Remove dead code (unused variables, unreachable paths)

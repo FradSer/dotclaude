@@ -18,11 +18,8 @@ Plugins provide event handlers that respond to Claude Code events automatically.
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/format-code.sh"
-          }
         ]
-      }
     ]
-  }
 }
 ```
 
@@ -61,33 +58,26 @@ Plugins provide event handlers that respond to Claude Code events automatically.
 
 - **Validate Inputs**: Strictly validate all JSON inputs and sanitize variables to prevent injection
 - **Quote Variables**: Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`) to handle spaces
-- **Return Structured JSON**: Use `hookSpecificOutput` schema for LLM-parseable responses
 - **Early Exit**: Exit early for non-matching tools/commands to reduce processing
 - **Single JSON Parse**: Extract all needed values in one `jq` call, not multiple
 
 ### Avoid
 
-- **Plain Text Output**: Claude cannot parse plain text; always use JSON
+- **Plain Text Output**: Claude expects a JSON object with a `systemMessage` field; always output JSON even if the *content* is plain text/Markdown.
 - **Dead Code**: Remove unused variables and unreachable code paths
-- **Missing Context**: Always provide `additionalContext` for remediation guidance
+- **Legacy Fields**: Avoid using the deprecated `hookSpecificOutput` schema (including `permissionDecision` and `additionalContext`). Use `systemMessage` instead.
 - **Warning Output Without Action**: If exit 0, output is ignored; either enforce or remove the check
 - **Blocking Errors for Non-Critical Issues**: Reserve exit 2 for security/correctness, not style
 
-## AI-Native Structured Output
+## AI-Native Human-Readable Output
 
-AI-native hooks MUST return structured JSON that Claude can parse and act upon.
+AI-native hooks MUST return structured JSON containing a `systemMessage` field with rich Markdown that Claude can read as if it were a message from a human user. **Treat the AI like a human developer** when providing feedback.
 
 ### Response Schema
 
 ```json
 {
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "allow" | "deny" | "ask",
-    "permissionDecisionReason": "Human-readable explanation",
-    "additionalContext": "LLM-friendly guidance for remediation",
-    "updatedInput": { }
-  }
+  "systemMessage": "# Hook Execution Result\n\nHuman-readable explanation of what happened, with **Markdown** formatting.\n\n## Remediation Guidance\n- Step 1 to fix the issue\n- Step 2 to fix the issue"
 }
 ```
 
@@ -95,11 +85,12 @@ AI-native hooks MUST return structured JSON that Claude can parse and act upon.
 
 | Field | Events | Purpose |
 |-------|--------|---------|
-| `permissionDecision` | PreToolUse, PermissionRequest | `allow`, `deny`, or `ask` (prompt user) |
-| `permissionDecisionReason` | All | Explanation shown to user |
-| `additionalContext` | All | LLM-friendly guidance for remediation |
-| `updatedInput` | PreToolUse | Modified tool parameters before execution |
-| `systemMessage` | All | Legacy field; prefer structured output above |
+| `systemMessage` | All | **Primary field**. Rich Markdown message presented to Claude as if from a user. |
+| `hookSpecificOutput` | All | *Deprecated*. Legacy complex nested object. |
+| `permissionDecision` | PreToolUse | *Deprecated*. Legacy explicit control. |
+| `permissionDecisionReason` | All | *Deprecated*. Legacy explanation field. |
+| `additionalContext` | All | *Deprecated*. Legacy structured context. |\
+| `updatedInput` | PreToolUse | *Deprecated*. Legacy mutation field. |
 
 ### Output Destination
 
@@ -112,10 +103,7 @@ AI-native hooks MUST return structured JSON that Claude can parse and act upon.
 
 ```bash
 jq -n '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "allow"
-  }
+  systemMessage: "Operation allowed."
 }'
 exit 0
 ```
@@ -123,13 +111,8 @@ exit 0
 ### PreToolUse: Deny with Guidance
 
 ```bash
-jq -n --arg reason "Dangerous command blocked" --arg context "Use 'git clean -fd' instead of 'rm -rf'" '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "deny",
-    permissionDecisionReason: $reason,
-    additionalContext: $context
-  }
+jq -n --arg msg "# Operation Blocked\n\nDangerous command blocked.\n\n## Remediation\nUse 'git clean -fd' instead of 'rm -rf'." '{
+  systemMessage: $msg
 }' >&2
 exit 2
 ```
@@ -137,6 +120,9 @@ exit 2
 ### PreToolUse: Ask User
 
 ```bash
+# This uses the legacy hookSpecificOutput schema.
+# While systemMessage is preferred for most interactions,
+# prompting the user explicitly still requires this structure.
 jq -n '{
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
@@ -150,6 +136,7 @@ exit 0
 ### PermissionRequest: Auto-Approve
 
 ```bash
+# This uses the legacy hookSpecificOutput schema for explicit behavior override.
 jq -n '{
   hookSpecificOutput: {
     hookEventName: "PermissionRequest",
@@ -217,21 +204,13 @@ errors+=("Example: feat(auth): add oauth login")
 
 ### Additional Context Pattern
 
-Provide structured remediation guidance for LLM understanding.
+Provide structured remediation guidance for LLM understanding directly inside the Markdown `systemMessage`.
 
 ```bash
 jq -n \
   --arg title "$title_line" \
   --arg errors "$error_list" \
-  --arg context "To fix: 1) Use lowercase description, 2) Add body with bullets, 3) Include Co-Authored-By footer" \
-  '{
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "deny",
-      permissionDecisionReason: ("Commit validation failed: " + $title),
-      additionalContext: ($errors + "\n\n" + $context)
-    }
-  }' >&2
+  '{"systemMessage": ("# Commit Validation Failed\n\nTitle: `" + $title + "`\n\n## Errors\n" + $errors + "\n\n## To Fix\n1. Use lowercase description\n2. Add body with bullets\n3. Include Co-Authored-By footer")}' >&2
 exit 2
 ```
 
@@ -265,11 +244,7 @@ input=$(cat)
 # Validate JSON structure
 if ! echo "$input" | jq -e . >/dev/null 2>&1; then
   jq -n '{
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "allow",
-      permissionDecisionReason: "Invalid JSON input, allowing operation"
-    }
+    systemMessage: "Invalid JSON input, allowing operation"
   }'
   exit 1
 fi
@@ -347,11 +322,7 @@ resolved_path=$(realpath -q "$file_path" 2>/dev/null || echo "$file_path")
 case "$resolved_path" in
   */.git/*|*/.env|*/secrets/*)
     jq -n --arg path "$resolved_path" '{
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason: ("Protected path: " + $path)
-      }
+      systemMessage: ("# Access Denied\nProtected path: " + $path)
     }' >&2
     exit 2
     ;;
@@ -395,17 +366,11 @@ errors=()
 
 # Output based on results
 if [[ ${#errors[@]} -gt 0 ]]; then
-  error_list=$(printf "  - %s\n" "${errors[@]}")
+  error_list=$(printf "- %s\n" "${errors[@]}")
   jq -n \
-    --arg reason "Validation failed" \
     --arg context "$error_list" \
     '{
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason: $reason,
-        additionalContext: $context
-      }
+      "systemMessage": ("# Validation Failed\n\n" + $context)
     }' >&2
   exit 2
 fi
@@ -419,17 +384,13 @@ exit 0
 ### Plain Text Output
 
 ```bash
-# BAD: Plain text, Claude cannot parse
+# BAD: Plain text, Claude expects JSON with systemMessage
 echo "Error: Invalid commit format"
 exit 2
 
-# GOOD: Structured JSON
-jq -n --arg msg "Invalid commit format" '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "deny",
-    permissionDecisionReason: $msg
-  }
+# GOOD: Structured JSON with Markdown systemMessage
+jq -n --arg msg "# Invalid Commit Format\nPlease check your input." '{
+  systemMessage: $msg
 }' >&2
 exit 2
 ```
@@ -440,10 +401,10 @@ exit 2
 # BAD: No guidance for remediation
 errors+=("Format error")
 
-# GOOD: Actionable guidance
-errors+=("Format error: missing type prefix")
-errors+=("Expected: feat|fix|docs|refactor|test|chore")
-errors+=("Example: feat(auth): add login")
+# GOOD: Actionable guidance via Markdown structure
+errors+=("- Format error: missing type prefix")
+errors+=("- Expected: feat|fix|docs|refactor|test|chore")
+errors+=("- Example: feat(auth): add login")
 ```
 
 ### Warnings That Vanish
@@ -489,9 +450,7 @@ debug_log "Processing tool: $tool_name"
 
 ## Summary Checklist
 
-- [ ] Structured JSON output with `hookSpecificOutput`
-- [ ] `permissionDecision` for PreToolUse/PermissionRequest
-- [ ] `additionalContext` for LLM guidance
+- [ ] Structured JSON output with `systemMessage` containing human-readable Markdown
 - [ ] Single JSON parse with variable capture
 - [ ] Early exit for non-matching conditions
 - [ ] No dead code (unused variables, unreachable paths)

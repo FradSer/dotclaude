@@ -134,12 +134,7 @@ fi
 # Fail-closed: Block if we cannot extract the message
 if [[ -z "$commit_msg" ]]; then
   jq -n '{
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "deny",
-      "permissionDecisionReason": "Cannot extract commit message",
-      additionalContext: "The commit message format is not recognized and cannot be validated.\n\nSupported formats:\n  - git commit -m \"message\"\n  - git commit -F <file>\n  - git commit --file=<file>\n\nIf you believe this is an error, please check your commit command format."
-    }
+    systemMessage: "# Validation Blocked\n\nCannot extract commit message. The commit message format is not recognized and cannot be validated.\n\n## Supported formats:\n- `git commit -m \"message\"`\n- `git commit -F <file>`\n- `git commit --file=<file>`\n\nIf you believe this is an error, please check your commit command format."
   }' >&2
   exit 2
 fi
