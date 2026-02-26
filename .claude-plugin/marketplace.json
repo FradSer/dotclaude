@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "git",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "description": "Conventional Git automation for commits and repository management",
       "author": {
         "name": "Frad LEE",
@@ -106,7 +106,7 @@
     },
     {
       "name": "superpowers",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "description": "Advanced development superpowers for orchestrating complex workflows",
       "author": {
         "name": "Frad LEE",
@@ -118,7 +118,7 @@
     },
     {
       "name": "plugin-optimizer",
-      "version": "0.11.3",
+      "version": "0.11.4",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
@@ -130,7 +130,7 @@
     },
     {
       "name": "next-devtools",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Next.js development tools integration via MCP server",
       "author": {
         "name": "Frad LEE",
