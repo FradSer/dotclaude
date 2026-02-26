@@ -6,10 +6,16 @@ Complete checklist for plugin quality assurance.
 
 - Skills SKILL.md target ~500 tokens (recommended, not enforced - warnings issued if exceeded)
 - Progressive disclosure: core instructions in SKILL.md, detailed content in `references/` subdirectory
-- Skill descriptions are concise trigger phrases (~50 tokens for metadata tier)
+- Skill descriptions use **third-person voice** with **specific trigger phrases** (~50 tokens for metadata tier)
 - Component names use kebab-case
 - Components live at plugin root, not inside `.claude-plugin/`
 - Component paths are relative and start with `./`
+
+**Description Requirements**:
+- MUST use third-person ("This skill should be used when...")
+- MUST include trigger phrases ("Use when...", "when user asks to...")
+- MUST be under 1024 characters
+- MUST NOT use first-person ("I can help...") or second-person ("You should...")
 
 **Token Budget Guidelines**:
 - **~50 tokens** (Tier 1 - Metadata): Description in frontmatter, loaded during discovery

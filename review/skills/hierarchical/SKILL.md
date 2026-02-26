@@ -1,7 +1,7 @@
 ---
 name: hierarchical
 user-invocable: true
-description: Comprehensive multi-stage code review using specialized subagents. Use when reviewing PRs with complex architectural impact, security concerns, or when thorough multi-perspective analysis is needed.
+description: Performs comprehensive multi-stage code review using specialized subagents. This skill should be used when the user asks to "review PR deeply", "perform a thorough review", or when analyzing pull requests with complex architectural impact or security concerns.
 argument-hint: [files-or-directories]
 allowed-tools: Task
 ---

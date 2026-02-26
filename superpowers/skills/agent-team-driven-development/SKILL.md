@@ -1,6 +1,6 @@
 ---
 name: agent-team-driven-development
-description: Provides guidance on choosing between Agent Teams and Sub-agents and executing complex plans with parallel coordination. Use when implementing complex features requiring multiple specialized teammates working in parallel.
+description: Provides guidance on coordinating multiple specialized teammates working in parallel. This skill should be used when the user needs to execute complex implementation plans, resolve cross-cutting concerns, or coordinate independent work streams requiring communication.
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: patent-architect
-description: This skill should be used when the user wants to generate Chinese patent application forms (专利申请表), or mentions "patents", "inventions", "专利", "申请表", or wants to protect technical innovations. It automatically searches prior art via SerpAPI before drafting.
+description: Automatically searches prior art via SerpAPI and generates Chinese patent application forms. This skill should be used when the user wants to generate Chinese patent application forms (专利申请表), or mentions "patents", "inventions", "专利", "申请表", or wants to protect technical innovations.
 argument-hint: "INVENTION_DESCRIPTION"
 user-invocable: true
 allowed-tools: Read, Grep, Glob, WebFetch, WebSearch, Write, Edit, Bash(curl, */search-patents.sh), AskUserQuestion

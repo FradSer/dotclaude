@@ -1,6 +1,6 @@
 ---
 name: plugin-best-practices
-description: Validates Claude Code plugins against architectural best practices for Agents, Skills, MCP, and Progressive Disclosure. Use when validating plugin structure, reviewing manifest files, checking frontmatter compliance, or verifying tool invocation patterns.
+description: Validates plugin structure and provides guidance on Claude Code plugin architectural best practices. This skill should be used when the user asks to "validate plugin structure", "review manifest files", "check frontmatter compliance", "verify tool invocation patterns", or needs architectural guidance.
 ---
 
 # Plugin Validation & Best Practices
@@ -109,7 +109,31 @@ See `./references/tool-invocations.md` for complete patterns and anti-patterns.
 
 **Required fields**:
 - `name`: Max 64 chars, lowercase letters/numbers/hyphens only
-- `description`: Max 1024 chars, third-person voice, includes trigger phrases like "Use when..."
+- `description`: Max 1024 chars. MUST use third-person voice with specific trigger phrases.
+
+**Description Best Practices**:
+
+| Requirement | Description |
+|-------------|-------------|
+| **Person** | Third-person only ("This skill should be used when...") |
+| **Structure** | [What it does]. Use when [scenario 1], [scenario 2], or [user phrases]. |
+| **Purpose** | Skill discovery - Claude uses this to select from 100+ skills |
+| **Trigger phrases** | Include specific user phrases like "validate plugin", "check frontmatter" |
+
+**Examples**:
+```yaml
+# Correct - third person with trigger phrases
+description: This skill should be used when the user asks to "validate plugin structure", "review manifest files", or needs guidance on plugin best practices.
+
+# Correct - concise with scenarios
+description: Reviews code for best practices and potential issues. Use when reviewing code, checking PRs, or analyzing code quality.
+
+# Wrong - first person
+description: I can help you validate plugins...
+
+# Wrong - second person
+description: You should use this when you want to validate...
+```
 
 **Additional fields** are supported but affect progressive disclosure alignment.
 

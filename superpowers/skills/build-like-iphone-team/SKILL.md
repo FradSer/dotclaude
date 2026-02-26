@@ -1,6 +1,6 @@
 ---
 name: build-like-iphone-team
-description: This skill provides knowledge about Apple's Project Purple (2004-2007) and the five iPhone design principles, first-principles thinking, breakthrough technology, experience-driven specs, internal competition, and Purple Dorm isolation. Use when challenging industry conventions, approaching radical innovation, or when brainstorming skills encounter open-ended problems requiring disruptive thinking.
+description: Applies Apple's Project Purple design philosophy for radical innovation. This skill should be used when the user wants to challenge industry conventions, approach open-ended problems requiring disruptive thinking, or when standard brainstorming needs a breakthrough approach.
 user-invocable: false
 ---
 

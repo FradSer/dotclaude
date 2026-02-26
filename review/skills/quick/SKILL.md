@@ -1,7 +1,7 @@
 ---
 name: quick
 user-invocable: true
-description: Streamlined code review for rapid assessment and targeted feedback. Use when reviewing small PRs, simple changes, or when you need a quick triage to determine if deeper review is required.
+description: Streamlines code review for rapid assessment and targeted feedback. This skill should be used when the user asks for a "quick review", "triage PR", or when evaluating small, simple changes that may not require deep architectural analysis.
 argument-hint: [files-or-directories]
 allowed-tools: Task
 ---

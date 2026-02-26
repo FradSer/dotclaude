@@ -1,6 +1,6 @@
 ---
 name: init-config
-description: Generate $HOME/.claude/CLAUDE.md with AI-driven environment detection and advanced configuration options
+description: Generates a CLAUDE.md file with AI-driven environment detection and advanced configuration options. This skill should be used when the user asks to "initialize config", "setup claude config", "create CLAUDE.md", or needs help configuring project instructions.
 argument-hint: []
 user-invocable: true
 allowed-tools:

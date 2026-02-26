@@ -1,7 +1,7 @@
 ---
 name: finish-hotfix
 allowed-tools: Bash(git:*), Read, Write
-description: This skill should be used when the user asks to "finish a hotfix", "merge hotfix branch", "complete hotfix", "git flow hotfix finish", or wants to finalize a hotfix and merge it into main and develop.
+description: Finalizes a hotfix and merges it into main and develop using git-flow. This skill should be used when the user asks to "finish a hotfix", "merge hotfix branch", "complete hotfix", "git flow hotfix finish", or wants to finalize a hotfix.
 model: haiku
 argument-hint: [version]
 user-invocable: true

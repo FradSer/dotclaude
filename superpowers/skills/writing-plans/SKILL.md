@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: This skill should be used when the user has a design (from brainstorming) and needs to break it down into a detailed, step-by-step implementation plan with verification steps for each task.
+description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
 ---

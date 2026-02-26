@@ -1,6 +1,6 @@
 ---
 name: next-devtools-guide
-description: This skill should be used when working with Next.js projects that have the next-devtools MCP server configured, when encountering MCP connection issues, or when needing guidance on which MCP tool to use for specific tasks such as error detection, route inspection, Server Action tracing, or Cache Components migration.
+description: Provides guidance on using the next-devtools MCP server. This skill should be used when working with Next.js projects that have the MCP server configured, when encountering connection issues, or when needing help with error detection, route inspection, Server Action tracing, or Cache Components migration.
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: create-feishu-doc
-description: This skill should be used when the user asks to "create a Feishu doc", "create a new doc in Feishu", "open Feishu and create document", "create document in leiniao-ibg", or mentions creating documents in Feishu/Lark workspace.
+description: Automates creating new documents in the Feishu workspace. This skill should be used when the user asks to "create a Feishu doc", "create a new doc in Feishu", "open Feishu and create document", "create document in leiniao-ibg", or mentions creating documents in Feishu or Lark workspace.
 user-invocable: true
 version: 0.1.0
 ---
