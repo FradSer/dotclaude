@@ -2,6 +2,8 @@
 
 A comprehensive Claude Code plugin to generate personalized AI assistant configurations with intelligent environment detection and advanced customization options.
 
+**Version**: 1.4.0
+
 ## Installation
 
 ```bash
@@ -118,10 +120,10 @@ User-specific workflow
 
 ## Troubleshooting
 
-
-
 ### Renderer Direct Write
-You can write output directly and let the renderer handle backup and validation:
+
+Run the renderer directly if the interactive skill isn't available or you need scripted generation:
+
 ```bash
 bash scripts/render-claude-config.sh \
   --target-file "$HOME/.claude/CLAUDE.md" \
@@ -132,53 +134,9 @@ bash scripts/render-claude-config.sh \
   --stack "Python:::uv"
 ```
 
-## Version History
-
-### 1.5.0
-- Replaced the legacy template assembler with `scripts/render-claude-config.sh` as the single rendering entrypoint
-- Moved `/init-config` generation to full script-driven assembly (template, TDD, profile, technology stacks, memory)
-- Added renderer integration tests at `tests/render-claude-config.test.sh`
-- Removed obsolete source-attribution references from plugin docs and workflow outputs
-
-### 1.4.0
-- Replaced runtime web search in `/init-config` with local stack reference loading
-- Added `assets/technology-stack-rules.md` for enforceable one-line constraints
-- Fixed Technology Stack contract: one rule per supported language, package-manager-only fallback for unsupported languages
-
-### 1.3.0
-- Lean template: removed generic knowledge Claude already knows (SOLID, DRY, etc.)
-- Optional memory management phase for proactive CLAUDE.md updates
-- Lowered validation thresholds (optimal: 800-2,000 words) to match leaner template
-- Dropped RFC 2119 keywords for direct imperative style
-
-### 1.2.1
-- Applied instruction-type skill template formatting (Goal + Actions structure)
-- Improved phase organization and clarity
-- Optimized README structure alignment
-
-### 1.1.1
-- Added keywords for better plugin discoverability
-- Optimized README structure to reduce redundancy
-- Improved documentation clarity
-
-### 1.1.0
-- Enhanced multi-file sync capabilities
-
-### 1.0.0
-- Added TDD flexibility (include/exclude option)
-- Added web search integration for latest best practices
-- Added length validation with auto-trim options
-- Added multi-file sync (GEMINI.md, AGENTS.md)
-- Added template-priority merge strategy
-- Enhanced environment detection
-- Improved backup safety
-
-### 0.1.0
-- Initial release with basic template generation
-
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT
 
 ## Author
 

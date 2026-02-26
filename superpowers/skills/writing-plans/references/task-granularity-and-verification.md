@@ -19,8 +19,9 @@ Do not group multiple scenarios into one task unless they are trivial variations
 **ONE TASK PER FILE**
 
 - Each task must be in its own `.md` file
-- File naming pattern: `task-<NNN>-<short-description>.md`
-- Example: `task-001-implement-login-test.md`, `task-002-implement-login-logic.md`
+- File naming pattern: `task-<NNN>-<feature>-<type>.md`
+- Example: `task-001-setup.md`, `task-002-login-test.md`, `task-002-login-impl.md`
+- **Test and implementation tasks for the same feature share the same NN prefix**
 - The `_index.md` file contains overview and references to all task files
 
 ## Verification Strategy
@@ -49,23 +50,37 @@ Every task in the plan must result in:
 
 ## Example Task Sequence (Red -> Green)
 
-> **Task 01: [TEST] 'User logs in successfully' (RED)**
+> **Task 01: [TEST] 'Feature behavior' (RED)**
 >
-> **Spec:** `bdd-specs.md` -> Scenario: "User logs in successfully"
->
-> **Steps:**
-> 1. Create `tests/features/login_test.py`.
-> 2. Implement test case mapping to Given/When/Then.
-> 3. **Verify**: Run `npm test tests/features/login_test.py` -> MUST FAIL (Red).
->
-> **Task 02: [IMPL] 'User logs in successfully' (GREEN)**
->
-> **Spec:** `bdd-specs.md` -> Scenario: "User logs in successfully"
+> **BDD Scenario**:
+> ```gherkin
+> Scenario: [concise scenario title]
+>   Given [context or precondition]
+>   When [action or event occurs]
+>   Then [expected outcome]
+>   And [additional conditions or outcomes]
+> ```
 >
 > **Steps:**
-> 1. Update `src/auth_service.ts`.
-> 2. Implement `login` method to validate credentials and return token.
-> 3. **Verify**: Run `npm test tests/features/login_test.py` -> MUST PASS (Green).
+> 1. Create `tests/path/to/test_file.ext`.
+> 2. Implement test case mapping to Given/When/Then above.
+> 3. **Verify**: Run `<test-command>` -> MUST FAIL (Red).
+>
+> **Task 02: [IMPL] 'Feature behavior' (GREEN)**
+>
+> **BDD Scenario**:
+> ```gherkin
+> Scenario: [concise scenario title]
+>   Given [context or precondition]
+>   When [action or event occurs]
+>   Then [expected outcome]
+>   And [additional conditions or outcomes]
+> ```
+>
+> **Steps:**
+> 1. Update `src/path/to/file.ext`.
+> 2. Implement the functionality to satisfy the scenario above.
+> 3. **Verify**: Run `<test-command>` -> MUST PASS (Green).
 
 ## Execution Handoff
 

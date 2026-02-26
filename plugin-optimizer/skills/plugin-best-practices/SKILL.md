@@ -175,8 +175,8 @@ See `./references/mcp-patterns.md` for complete MCP integration patterns.
 - Required: `name` (3-50 chars, kebab-case), `model`, `color`, 2-4 `<example>` blocks
 
 **Command Frontmatter**:
-- Required: `description`, `argument-hint` (MUST be empty/omitted if no arguments)
-- Optional: `allowed-tools`, `disable-model-invocation`
+- Required: `description`
+- Optional: `argument-hint` (omit entirely if command takes no arguments), `allowed-tools`, `disable-model-invocation`
 
 See `./references/components/skills.md`, `./references/components/agents.md`, and `./references/components/commands.md` for complete frontmatter specifications.
 
@@ -222,10 +222,16 @@ See `./references/directory-structure.md` for complete layout guidelines.
 **Best Practices**:
 - Validate inputs strictly in bash hooks
 - Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`)
-- Return valid JSON for decisions (`allow`/`deny`) and messages
+- Return structured JSON with human-readable Markdown in `systemMessage`
 - Exit codes: 0 (success), 1 (non-blocking), 2 (blocking error)
 
-See `./references/components/hooks.md` for complete hook patterns and templates.
+**AI-Native Patterns**:
+- Treat AI like a human user when returning hook output (use human-readable Markdown in `systemMessage` with clear context and examples)
+- Single-pass JSON extraction (avoid multiple `jq` calls)
+- Early exit for non-matching tools/commands
+- Remove dead code (unused variables, unreachable paths)
+
+See `./references/components/hooks.md` for complete hook patterns including AI-native structured output.
 
 ## Agent Teams vs Subagents
 
@@ -339,7 +345,7 @@ See `./references/parallel-execution.md` for parallel coordination patterns.
 - `./references/components/skills.md` - Skill structure, frontmatter, progressive disclosure
 - `./references/components/agents.md` - Agent design, CO-STAR framework, example blocks
 - `./references/components/commands.md` - Command frontmatter, dynamic context
-- `./references/components/hooks.md` - Hook events, types, bash templates
+- `./references/components/hooks.md` - Hook events, types, AI-native patterns, templates
 - `./references/components/mcp-servers.md` - MCP configuration, stdio/http/sse
 - `./references/components/lsp-servers.md` - LSP setup, binary requirements
 

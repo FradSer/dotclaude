@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: Provides systematic debugging methodology with 4-phase process (root cause investigation, pattern analysis, hypothesis testing, implementation). Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
+description: Provides systematic debugging methodology with 4-phase process (root cause investigation, pattern analysis, hypothesis testing, implementation). Use when encountering any bug, error, failure, broken functionality, test failure, unexpected behavior, troubleshooting issue, or investigating why something isn't working. Always apply before proposing fixes or making changes.
 user-invocable: false
 ---
 
@@ -205,6 +205,53 @@ Each phase must be completed before proceeding to the next.
    **Discuss with human partner before attempting more fixes**
 
    This is not a failed hypothesis - this is wrong architecture.
+
+## Complex Bugs and Planning
+
+**For complex bugs, planning must precede any code changes:**
+
+### When Bug is Complex
+
+A bug requires EnterPlanMode before making changes when ANY of these apply:
+
+- **Multi-component involvement** - Issue spans multiple files, modules, or subsystems
+- **Architecture implications** - Fix may affect system design, contracts, or interfaces
+- **Multiple potential approaches** - Several valid implementation paths exist
+- **Side-effect risk** - Change could impact unrelated functionality
+- **Requires refactoring** - Fix needs structural changes beyond minimal patch
+- **Not fully understood** - After Phase 1 investigation, root cause is still unclear
+
+### Planning Process
+
+1. **Complete Phase 1 (Root Cause Investigation)**
+   - Must understand WHAT is broken and WHY before planning
+   - Gather all evidence first
+
+2. **Use EnterPlanMode tool**
+   - This signals to user you need approval before proceeding
+   - Allows user to review approach before implementation
+
+3. **Write implementation plan covering:**
+   - Root cause summary (from Phase 1)
+   - Proposed fix strategy
+   - Files that will be modified
+   - Tests to be created/modified
+   - Potential risks and mitigation
+   - Alternative approaches considered
+
+4. **Wait for user approval**
+   - User may suggest different approach
+   - User may provide additional context
+   - User may approve as-is
+
+### Why Planning for Complex Bugs
+
+- Prevents expensive rework from wrong architectural choices
+- Ensures alignment with user preferences and constraints
+- Catches overlooked dependencies early
+- Provides visibility into proposed changes before execution
+
+**For simple bugs:** Continue with Phase 2-4 directly without planning.
 
 ## Red Flags
 

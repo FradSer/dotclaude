@@ -9,11 +9,10 @@ scopes:
   - review  # review plugin
   - office  # office plugin
   - swiftui  # swiftui plugin
+  - nd  # next-devtools plugin
   - po  # plugin-optimizer
   - sp  # superpowers (workflow skills)
   - cc  # claude-code configuration
-  - utils  # utils plugin
-  - docs  # documentation
   - ci  # continuous integration
 types:
   - feat
@@ -22,8 +21,6 @@ types:
   - refactor
   - test
   - chore
-  - perf
-  - style
 # Branch Naming Conventions
 branch_prefixes:
   feature: feature/*

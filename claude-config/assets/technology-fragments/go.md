@@ -1,0 +1,1 @@
+Define small interfaces at the point of use, pass `context.Context` as the first parameter for request-scoped work, and return wrapped errors using `%w` with actionable context.

@@ -1,0 +1,1 @@
+Model recoverable failures with `Result` and `?`, reserve `unwrap` and `expect` for tests or proven invariants, and keep ownership and borrowing intent explicit in API boundaries.

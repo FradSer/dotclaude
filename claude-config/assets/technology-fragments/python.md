@@ -1,0 +1,1 @@
+Follow PEP 8 for consistent readability, add explicit type hints on public APIs, and use context managers for deterministic resource cleanup.

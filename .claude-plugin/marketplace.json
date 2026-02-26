@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "git",
-      "version": "0.4.4",
+      "version": "0.4.5",
       "description": "Conventional Git automation for commits and repository management",
       "author": {
         "name": "Frad LEE",
@@ -45,7 +45,7 @@
     },
     {
       "name": "github",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -69,7 +69,7 @@
     },
     {
       "name": "swiftui",
-      "version": "0.2.0",
+      "version": "0.1.1",
       "description": "SwiftUI Clean Architecture reviewer.",
       "author": {
         "name": "Frad LEE",
@@ -80,20 +80,8 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/swiftui"
     },
     {
-      "name": "utils",
-      "version": "0.2.0",
-      "description": "Utility commands for day-to-day automation.",
-      "author": {
-        "name": "Frad LEE",
-        "email": "fradser@gmail.com"
-      },
-      "source": "./utils",
-      "category": "productivity",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/utils"
-    },
-    {
       "name": "office",
-      "version": "0.3.1",
+      "version": "0.4.2",
       "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
       "author": {
         "name": "Frad LEE",
@@ -118,7 +106,7 @@
     },
     {
       "name": "superpowers",
-      "version": "1.2.0",
+      "version": "1.5.0",
       "description": "Advanced development superpowers for orchestrating complex workflows",
       "author": {
         "name": "Frad LEE",
@@ -130,7 +118,7 @@
     },
     {
       "name": "plugin-optimizer",
-      "version": "0.11.3",
+      "version": "0.11.4",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
@@ -139,6 +127,18 @@
       "source": "./plugin-optimizer",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/plugin-optimizer"
+    },
+    {
+      "name": "next-devtools",
+      "version": "0.1.1",
+      "description": "Next.js development tools integration via MCP server",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./next-devtools",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/next-devtools"
     }
   ]
 }

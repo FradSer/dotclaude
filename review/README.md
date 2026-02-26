@@ -2,6 +2,8 @@
 
 Multi-agent review system for enforcing high code quality.
 
+**Version**: 0.3.0
+
 ## Installation
 
 ```bash
@@ -319,3 +321,7 @@ Comprehensive multi-stage code review using all specialized subagents.
 ## Author
 
 Frad LEE (fradser@gmail.com)
+
+## License
+
+MIT

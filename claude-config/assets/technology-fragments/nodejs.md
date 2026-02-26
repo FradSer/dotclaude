@@ -1,0 +1,1 @@
+Keep server hot paths non-blocking with async I/O, move CPU-heavy work off the event loop, and treat unhandled promise rejections as production failures.

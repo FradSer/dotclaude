@@ -2,7 +2,6 @@
 name: agent-team-driven-development
 description: Provides guidance on choosing between Agent Teams and Sub-agents and executing complex plans with parallel coordination. Use when implementing complex features requiring multiple specialized teammates working in parallel.
 user-invocable: false
-version: 2.3.0
 ---
 
 # Agent Team Driven Development for Plan Execution

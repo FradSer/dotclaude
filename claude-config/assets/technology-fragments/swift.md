@@ -1,0 +1,1 @@
+Prefer `struct` over `class` unless shared identity is required, model concurrent workflows with `async`/`await`, and isolate shared mutable state with actors under strict concurrency checking.

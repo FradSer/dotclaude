@@ -63,9 +63,14 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 
 ### 2. Task Files - MANDATORY: One task per file
 
-**File Naming Pattern**: `task-<NNN>-<short-description>.md`
+**File Naming Pattern**: `task-<NNN>-<feature>-<type>.md`
 
-Example: `task-001-setup-project-structure.md`
+Example: `task-001-setup.md`, `task-002-auth-test.md`, `task-002-auth-impl.md`
+
+- `<NNN>`: Sequential number (001, 002, ...)
+- `<feature>`: Feature identifier (e.g., auth-handler, user-profile)
+- `<type>`: Type (test, impl, config, refactor)
+- **Test and implementation tasks for the same feature share the same NN prefix**
 
 **Task File Template**:
 
@@ -84,10 +89,17 @@ Example: `task-001-setup-project-structure.md`
 **Phase**: [Setup | Foundation | Core Features | Integration | Refinement | Testing | Documentation]
 **Prerequisites**: [Conditions that must be met before starting this task]
 
-## BDD Scenario Reference
+## BDD Scenario
 
-**Spec**: `../YYYY-MM-DD-<topic>-design/bdd-specs.md`
-**Scenario**: [Scenario Name]
+```gherkin
+Scenario: [concise scenario title]
+  Given [context or precondition]
+  When [action or event occurs]
+  Then [expected outcome]
+  And [additional conditions or outcomes]
+```
+
+**Spec Source**: `../YYYY-MM-DD-<topic>-design/bdd-specs.md` (for reference)
 
 ## Files to Modify/Create
 

@@ -81,24 +81,19 @@ extract_m_message() {
   fi
 }
 
-# Read input from stdin
 input=$(cat)
 
-# Extract tool_name and command from tool input
 tool_name=$(echo "$input" | jq -r '.tool_name // empty')
 command=$(echo "$input" | jq -r '.tool_input.command // empty')
 
-# Only process if this is a Bash tool invocation
 if [[ "$tool_name" != "Bash" ]]; then
   exit 0
 fi
 
-# Only validate git commit commands (must contain "git commit")
 if [[ -z "$command" ]] || ! [[ "$command" =~ git[[:space:]]+commit ]]; then
   exit 0
 fi
 
-# Skip if this is an amend or other special commit
 if [[ "$command" =~ --amend ]] || [[ "$command" =~ --fixup ]] || [[ "$command" =~ --squash ]]; then
   exit 0
 fi
@@ -217,9 +212,9 @@ else
     errors+=("  ")
     errors+=("  Improves security and user experience.")
   else
-    # Validate bullet points start with common verbs (soft check with warning)
+    # Validate bullet points start with common verbs (warning check)
     # Common imperative verbs for commits
-    common_verbs="Add|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow"
+    common_verbs="Add|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow|Define|Describe|Explain|Specify|Outline|Cover"
 
     invalid_bullets=()
     while IFS= read -r line; do
@@ -304,6 +299,5 @@ elif [[ ${#warnings[@]} -gt 0 ]]; then
   }'
   exit 0
 else
-  # Silent success - no need to clutter output for valid commits
   exit 0
 fi

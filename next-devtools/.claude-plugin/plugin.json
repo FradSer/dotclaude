@@ -1,0 +1,19 @@
+{
+  "name": "next-devtools",
+  "version": "0.1.0",
+  "description": "Next.js development tools integration via MCP server",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["nextjs", "mcp", "devtools", "development"],
+  "skills": ["./skills/next-devtools-guide/"],
+  "mcpServers": {
+    "next-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    }
+  }
+}

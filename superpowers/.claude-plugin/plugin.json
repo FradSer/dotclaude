@@ -1,6 +1,6 @@
 {
   "name": "superpowers",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "description": "Advanced development superpowers for orchestrating complex workflows",
   "author": {
     "name": "Frad LEE",
@@ -15,6 +15,7 @@
   "skills": [
     "./skills/agent-team-driven-development/",
     "./skills/behavior-driven-development/",
+    "./skills/build-like-iphone-team/",
     "./skills/systematic-debugging/"
   ]
 }

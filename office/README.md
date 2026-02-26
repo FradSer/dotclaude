@@ -2,6 +2,8 @@
 
 Specialized Claude Skill for patent application generation and intellectual property workflows.
 
+**Version**: 0.4.2
+
 ## Installation
 
 ```bash
@@ -201,3 +203,7 @@ source ~/.zshrc
 ## Author
 
 Frad LEE (fradser@gmail.com)
+
+## License
+
+MIT
