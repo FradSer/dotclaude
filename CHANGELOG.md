@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.8.0] - 2026-02-26
+
+### Added
+
+- Add next-devtools plugin with MCP server integration for Next.js 16+ diagnostics
+- Add build-like-iphone-team skill for Apple's radical innovation methodology
+
+### Changed
+
+- Migrate git skills (commit-and-push, config-git, update-gitignore) to agent-based workflow
+- Refactor executing-plans with improved task naming and batch parallelism
+- Simplify brainstorming phase 4 for better readability
+- Adopt AI-native hook output schema for commit validation
+- Switch to fragment-based CLAUDE.md generation in claude-config
+- Revert to markdown error output for commit validation
+
+### Fixed
+
+- Add allowed-tools (Task, TaskCreate, TaskUpdate, Glob, Grep, Read) to executing-plans
+- Use dynamic model placeholder in Co-Authored-By for different AI models
+- Fix unbound variable warnings in validate-commit-pretool.sh
+- Expand commit validation verb list
+
+### Documentation
+
+- Add Gherkin .feature file storage requirement to BDD workflow
+- Embed BDD scenarios directly in task files
+- Clarify explanation paragraph requirement in commit messages
+- Update hook documentation with markdown patterns
+- Add complex bug planning guidance to superpowers
+- Update MCP capabilities documentation for next-devtools
+
+### Chores
+
+- Remove utils plugin from marketplace (features available elsewhere)
+- Remove version fields from SKILL.md frontmatter (version in plugin.json only)
+- Standardize plugin documentation structure across all plugins
+- Clean up git commit scopes and types configuration
+
 ## [v1.7.0] - 2026-02-11
 
 ### Added
