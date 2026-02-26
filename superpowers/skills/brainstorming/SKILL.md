@@ -141,11 +141,12 @@ See `./references/exit-criteria.md` for Phase 4 validation checklist.
 
 ## Phase 4: Transition to Implementation
 
-1. **Ask**: "Ready to set up for implementation?"
-2. **Invoke** `superpowers:writing-plans` using Skill tool, passing design folder path
-   - REQUIRED: Create detailed implementation plan
-   - PROHIBITED: Do NOT use platform planning features
-   - PROHIBITED: Do NOT start implementing directly
+Prompt the user to use `superpowers:writing-plans` to create a detailed implementation plan.
+
+Example prompt:
+"Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
+
+**PROHIBITED**: Do NOT offer to start implementation directly.
 
 ## Quality Check
 
