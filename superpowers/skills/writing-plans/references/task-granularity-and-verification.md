@@ -19,8 +19,9 @@ Do not group multiple scenarios into one task unless they are trivial variations
 **ONE TASK PER FILE**
 
 - Each task must be in its own `.md` file
-- File naming pattern: `task-<NNN>-<short-description>.md`
-- Example: `task-001-implement-login-test.md`, `task-002-implement-login-logic.md`
+- File naming pattern: `task-<NNN>-<feature>-<type>.md`
+- Example: `task-001-setup.md`, `task-002-login-test.md`, `task-002-login-impl.md`
+- **Test and implementation tasks for the same feature share the same NN prefix**
 - The `_index.md` file contains overview and references to all task files
 
 ## Verification Strategy

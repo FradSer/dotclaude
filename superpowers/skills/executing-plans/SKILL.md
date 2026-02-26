@@ -74,18 +74,21 @@ Execute tasks in batches. Actively use Agent Teams for parallel execution (prefe
    - This shows a spinner in the task list and signals active work
 
 3. **Agent Team Execution**:
+   - For each task assigned to a teammate: Read the task file to get full context before execution
    - Create Agent Team with teammates for parallel execution
    - Assign tasks to teammates with clear file ownership boundaries
    - Wait for teammates to complete all tasks
    - Verify all tasks in the batch
 
 4. **Subagent Parallel Execution**:
+   - For each task: Read the task file to get full context before execution
    - Spawn subagents concurrently for each independent task
    - Each subagent loads the `superpowers:behavior-driven-development` skill
    - Verify all tasks in the batch
 
 5. **Linear Execution**:
    - For each task in the batch:
+     - Read the task file to get full context before execution
      - Execute using subagent loading the `superpowers:behavior-driven-development` skill
      - Verify the task
 

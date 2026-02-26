@@ -63,9 +63,14 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 
 ### 2. Task Files - MANDATORY: One task per file
 
-**File Naming Pattern**: `task-<NNN>-<short-description>.md`
+**File Naming Pattern**: `task-<NNN>-<feature>-<type>.md`
 
-Example: `task-001-setup-project-structure.md`
+Example: `task-001-setup.md`, `task-002-auth-test.md`, `task-002-auth-impl.md`
+
+- `<NNN>`: Sequential number (001, 002, ...)
+- `<feature>`: Feature identifier (e.g., auth-handler, user-profile)
+- `<type>`: Type (test, impl, config, refactor)
+- **Test and implementation tasks for the same feature share the same NN prefix**
 
 **Task File Template**:
 

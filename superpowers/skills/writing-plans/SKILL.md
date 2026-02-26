@@ -63,7 +63,12 @@ Break into small tasks mapped to specific BDD scenarios.
    - Tasks that touch different files and test different scenarios are independent by default
    - **PROHIBITED**: Do not chain tasks sequentially just to impose execution order — use `depends-on` only when there is a real technical reason (e.g., "implement auth middleware" must precede "implement protected route test")
 5. **Ensure Compatibility**: Ensure tasks are compatible with `superpowers:behavior-driven-development`.
-6. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<short-description>.md`.
+6. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<feature>-<type>.md`.
+   - Example: `task-001-setup.md`, `task-002-feature-test.md`, `task-002-feature-impl.md`
+   - `<NNN>`: Sequential number (001, 002, ...)
+   - `<feature>`: Feature identifier (e.g., auth-handler, user-profile)
+   - `<type>`: Type (test, impl, config, refactor)
+   - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `002-feature-test` and `002-feature-impl`
 7. **Describe What, Not How**: **PROHIBITED**: Do not generate actual code. Describe what to implement (e.g., "Create a function that validates user credentials"), not the implementation (e.g., "def validate_credentials(username, password): ...").
 
 ## Phase 3: Validation & Documentation
@@ -74,7 +79,8 @@ Verify completeness, confirm with user, and save.
 2. **Confirm**: Get user approval on the plan.
 3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
    - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with references to all task files
-   - Example: `- [Task 001: Setup](./task-001-setup.md)`
+   - Example: `- [Task 001: Setup project structure](./task-001-setup-project-structure.md)`
+   - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `[Task 002: Whale Discovery Test](./task-002-whale-discovery-test.md)` and `[Task 002: Whale Discovery Impl](./task-002-whale-discovery-impl.md)`
 
 ## Git Commit
 
