@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "plugin-optimizer@frad-dotclaude": true,
+    "plugin-dev@claude-plugins-official": true
+  }
+}

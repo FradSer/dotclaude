@@ -94,14 +94,6 @@ See `../../skills/references/git-commit.md` for detailed patterns, commit messag
 - Subject: Under 50 characters, lowercase
 - Footer: Co-Authored-By with model name
 
-## Phase 4: Transition to Execution
-
-**Goal**: Seamlessly transition to executing the plan.
-
-**Actions**:
-
-1. **Invoke `superpowers:executing-plans`** using the Skill tool, passing the plan folder path as an argument.
-
 ## Exit Criteria
 
 Plan created with clear goal/constraints, decomposed tasks with file lists and verification, BDD steps, commit boundaries, no vague tasks, user approval.
