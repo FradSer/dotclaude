@@ -2,7 +2,7 @@
 
 Multi-agent review system for enforcing high code quality.
 
-**Version**: 0.3.1
+**Version**: 0.4.0
 
 ## Installation
 
@@ -26,20 +26,22 @@ Expert reviewer focusing on correctness, standards, and maintainability.
 |-------|-------|
 | Model | `sonnet` |
 | Color | `blue` |
+| Tools | `Read`, `Glob`, `Grep`, `Bash(git:*)` |
+
+**Workflow:** Context Gathering -> Systematic Review -> Synthesize Findings
 
 **Focus areas:**
-- Correctness and logic analysis
-- Standards compliance (CLAUDE.md)
-- Maintainability and readability
-- Error handling and edge cases
-- Code structure and organization
-- Performance and efficiency
-- Testing and quality assurance
-- Security considerations
+- Correctness and logic analysis (race conditions, null safety, async patterns)
+- Standards compliance (CLAUDE.md, language conventions, SOLID/DRY/KISS)
+- Maintainability (naming, complexity, separation of concerns)
+- Performance (N+1 queries, memory leaks, algorithm complexity)
+- Testing (coverage, edge cases, isolation, assertions)
+
+**Output:** Structured markdown with Critical Issues, Important Issues, Suggestions, and Positive sections
 
 **When triggered:**
-- Automatically in `/hierarchical` review
-- Can be invoked manually when reviewing code
+- Automatically in `/quick` and `/hierarchical` reviews
+- Can be invoked manually for code quality assessment
 
 ---
 
@@ -53,25 +55,22 @@ Security specialist auditing authentication, data protection, and inputs.
 |-------|-------|
 | Model | `sonnet` |
 | Color | `green` |
+| Tools | `Read`, `Glob`, `Grep`, `Bash(git:*)` |
+
+**Workflow:** Attack Surface Mapping -> Vulnerability Scanning -> Risk Assessment
 
 **Focus areas:**
-- Common vulnerabilities (SQL Injection, XSS, CSRF, SSRF, XXE)
-- Authentication and authorization
-- Input validation and data handling
-- Cryptography and data protection
-- Error handling and information disclosure
-- Dependency and configuration security
+- OWASP Top 10 2026 vulnerabilities
+- Authentication & authorization (session management, JWT, MFA)
+- Input validation & data handling
+- Cryptography (AES-256, RSA-2048+, bcrypt)
+- Configuration security (dependencies, secrets management)
+
+**Output:** Structured markdown with risk level, attack scenarios, remediation steps, and compliance notes (OWASP/PCI-DSS/GDPR)
 
 **When triggered:**
-- Automatically in `/hierarchical` review
+- Automatically in `/quick` and `/hierarchical` reviews
 - Can be invoked manually for security audits
-
-**Output structure:**
-1. CRITICAL VULNERABILITIES (immediate security risks)
-2. HIGH PRIORITY ISSUES (significant security concerns)
-3. MEDIUM PRIORITY ISSUES (potential security weaknesses)
-4. BEST PRACTICE RECOMMENDATIONS (security improvements)
-5. COMPLIANCE NOTES (OWASP, PCI-DSS, GDPR)
 
 ---
 
@@ -85,22 +84,22 @@ Architectural reviewer focused on system-wide impact and risk.
 |-------|-------|
 | Model | `sonnet` |
 | Color | `magenta` |
+| Tools | `Read`, `Glob`, `Grep`, `Bash(git:*)` |
+
+**Workflow:** Architecture Mapping -> Impact Assessment -> Recommendations
 
 **Focus areas:**
-- Architectural integrity and Clean Architecture adherence
-- Domain boundaries and module responsibilities
-- Performance implications and scalability
-- Operational readiness (logging, metrics, rollout safety)
-- Risk assessment and mitigation strategies
+- Architectural integrity (Clean Architecture, dependency rule)
+- Scalability (performance ceilings, bottlenecks, resource implications)
+- Operational readiness (logging, metrics, rollout safety, rollback capability)
+- Technical debt identification and tracking
+- Strategic recommendations with effort estimates
 
-**Working process:**
-1. Map the change onto existing architecture
-2. Identify coupling points that may become maintenance liabilities
-3. Flag design decisions that violate guardrails or introduce hidden costs
-4. Recommend strategic improvements with rationale and estimated effort
+**Output:** Structured markdown with impact matrix, blockers, technical debt items, and prioritized recommendations
 
 **When triggered:**
-- Automatically in `/hierarchical` review
+- First agent in `/quick` review (initial assessment)
+- First agent in `/hierarchical` review
 - Can be invoked manually for architecture review
 
 ---
@@ -115,23 +114,22 @@ Experience specialist focused on usability and accessibility.
 |-------|-------|
 | Model | `sonnet` |
 | Color | `yellow` |
+| Tools | `Read`, `Glob`, `Grep`, `Bash(git:*)` |
+
+**Workflow:** Component Analysis -> Heuristic Evaluation -> Accessibility Audit
 
 **Focus areas:**
-- Information hierarchy, layout clarity, and visual rhythm
-- Interaction patterns, state management, and feedback mechanisms
-- Accessibility compliance (WCAG AA): semantics, keyboard flows, contrast
-- Copywriting tone, localization readiness, and content density
-- Performance considerations affecting perceived responsiveness
+- Usability (Nielsen's 10 heuristics, interaction patterns)
+- Accessibility (WCAG 2.2 AA compliance checklist)
+- Component states (loading, empty, error, success)
+- Design consistency (tokens, typography, spacing)
+- Perceived performance (skeleton states, optimistic updates)
 
-**Process:**
-1. Review component structure and states (loading, empty, error, success)
-2. Assess controls for discoverability and affordance
-3. Validate color and typography against design tokens
-4. Recommend usability tests or analytics to validate assumptions
+**Output:** Structured markdown with accessibility issues (WCAG-tagged), usability findings, missing states, and analytics recommendations
 
 **When triggered:**
-- Automatically in `/hierarchical` review (if UI changes detected)
-- Can be invoked manually for UX review
+- Automatically in `/quick` and `/hierarchical` reviews (if UI changes detected)
+- Can be invoked manually for UX/accessibility review
 
 ## User-Invocable Skills
 
@@ -146,69 +144,81 @@ Streamlined code review for rapid assessment and targeted feedback.
 | Allowed Tools | `Task` |
 | Argument Hint | `[files-or-directories]` |
 
+**Review scope** (checked in order):
+1. Uncommitted changes (if git is not clean)
+2. Files modified during current session
+3. User-specified files/directories via argument
+4. Prompt user to specify scope if none of the above
+
 **What it does:**
-1. Runs initial assessment with **@tech-lead-reviewer** to gauge risk
-2. Triggers relevant specialized reviews selectively:
+1. Determine review scope automatically or from argument
+2. Run initial assessment with **@tech-lead-reviewer** to gauge risk
+3. Triggers relevant specialized reviews selectively:
    - **@code-reviewer** — logic correctness, tests, error handling
    - **@security-reviewer** — authentication, data protection, validation
    - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI)
-3. Summarizes results by priority (Critical → High → Medium → Low)
-4. Offers optional implementation support with **@code-simplifier**
-5. Ensures resulting commits follow conventional standards
+4. Summarizes results by priority (Critical → High → Medium → Low)
+5. Offers optional implementation support with **@code-simplifier**
+6. Ensures resulting commits follow conventional standards
 
 **Usage:**
 ```bash
-/quick
-```
-
-Or with specific files:
-```bash
-/quick src/auth/login.ts
+/quick                           # Auto-detect scope from git/session
+/quick src/auth/login.ts         # Review specific files
+/quick src/components/           # Review directory
 ```
 
 **Features:**
+- Smart scope detection
 - Fast, focused review
-- Targets only changed files
-- Selective agent execution (minimizes turnaround time)
+- Selective agent execution
 - Quick feedback cycle
-- Identifies critical issues
 - Suitable for rapid iterations
 
 ---
 
 ### `/hierarchical`
 
-Comprehensive multi-stage code review using all specialized subagents.
+Comprehensive project-level review using all specialized subagents.
 
 **Metadata:**
 
 | Field | Value |
 |-------|-------|
 | Allowed Tools | `Task` |
-| Argument Hint | `[files-or-directories]` |
+| Argument Hint | `[directory]` |
+
+**Review scope:**
+- Reviews entire project or specified directory
+- Provides full codebase analysis (not just changes)
 
 **What it does:**
-1. Performs leadership assessment with **@tech-lead-reviewer** to map risk areas
-2. Launches specialized reviews in parallel:
-   - **@code-reviewer** — logic correctness, tests, error handling
-   - **@security-reviewer** — authentication, data protection, validation
-   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI)
-3. Consolidates findings by priority and confidence
-4. Offers optional implementation support
-5. Engages **@code-simplifier** for final optimization
+1. Determine project scope (current directory or user-specified)
+2. Perform comprehensive leadership assessment with **@tech-lead-reviewer**:
+   - Analyze overall architecture and module structure
+   - Map dependency graph and coupling points
+   - Assess technical debt and scalability
+3. Launches specialized reviews in parallel:
+   - **@code-reviewer** — code quality across modules
+   - **@security-reviewer** — security audit across codebase
+   - **@ux-reviewer** — UI/UX review for user-facing components
+4. Consolidates findings with executive summary
+5. Provides technical debt inventory and strategic recommendations
+6. Offers optional implementation support
 
 **Usage:**
 ```bash
-/hierarchical
+/hierarchical                    # Review entire project
+/hierarchical src/               # Review specific directory
 ```
 
 **Features:**
-- Comprehensive multi-agent review
+- Project-level comprehensive review
+- Architecture analysis
+- Security audit
+- Technical debt inventory
+- Strategic recommendations with effort estimates
 - Parallel agent execution
-- Consolidated findings
-- Prioritized issue reporting
-- Thorough quality assessment
-- Final optimization pass
 
 **Review report includes:**
 - Critical issues (must fix)

@@ -17,7 +17,19 @@ allowed-tools: ["Task"]
 - Files changed since base: !`BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git diff --name-only $BASE..HEAD`
 - Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn test") || ([ -f Cargo.toml ] && echo "cargo test") || ([ -f pyproject.toml ] && echo "pytest/uv run pytest") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
 
-## Phase 1: Initial Assessment
+## Phase 1: Determine Review Scope
+
+**Goal**: Identify what to review based on current state.
+
+**Actions**:
+1. Check review scope in this order:
+   - **Uncommitted changes**: If git status shows modifications, review those files via `git diff`
+   - **Session changes**: If files were modified during this conversation, review those
+   - **User argument**: If `$ARGUMENTS` specifies files/directories, review those
+   - **No scope**: If none of the above, use `AskUserQuestion` tool to ask user to specify files/directories to review
+2. Record the determined scope for Phase 2.
+
+## Phase 2: Initial Assessment
 
 **Goal**: Scope the review and determine which specialized agents are required.
 
@@ -26,7 +38,7 @@ allowed-tools: ["Task"]
 2. Evaluate whether a deeper review is needed based on the tech-lead assessment.
 3. Identify which specialized agents to involve (minimizing turnaround time).
 
-## Phase 2: Targeted Review
+## Phase 3: Targeted Review
 
 **Goal**: Gather targeted feedback from relevant specialized reviewers.
 
@@ -38,7 +50,7 @@ allowed-tools: ["Task"]
 2. Collect outcomes from each agent.
 3. Resolve conflicting recommendations between reviewers.
 
-## Phase 3: Consolidation & Reporting
+## Phase 4: Consolidation & Reporting
 
 **Goal**: Present findings and optionally implement fixes.
 
