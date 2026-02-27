@@ -18,24 +18,23 @@ Issue templates are stored in `.github/ISSUE_TEMPLATE/` directory.
 ### Template Detection
 
 ```bash
-# Check for issue templates
 ls .github/ISSUE_TEMPLATE/*.md .github/ISSUE_TEMPLATE/*.yml 2>/dev/null
 ```
 
 ### Template Types
 
-1. **Markdown Templates** (`.md` files): Contain YAML frontmatter with `name` and `about` keys
-2. **Issue Forms** (`.yml` files): Use GitHub form schema with structured inputs
+1. **Markdown Templates** (`.md` files): YAML frontmatter with `name` and `about` keys
+2. **Issue Forms** (`.yml` files): GitHub form schema with structured inputs and validation
 
-### Template Selection Logic
+### Template Selection
 
-If issue templates exist:
-1. List available templates using `gh issue create --list`
-2. Match the issue type to the appropriate template
-3. Use `gh issue create --template <template-name>` to apply the template
-4. Ensure all required fields from the template are filled
+If templates exist:
+1. List available templates: `gh issue create --list`
+2. Match issue type to appropriate template
+3. Use `gh issue create --template <name>` to apply
+4. Fill all required fields
 
-If no templates exist, use the default issue structure from this skill.
+If no templates exist, use default issue structure from this skill.
 
 ## Pull Request Templates
 
@@ -48,34 +47,27 @@ PR templates can be stored in (in order of precedence):
 ### Template Detection
 
 ```bash
-# Check for PR templates
-ls .github/PULL_REQUEST_TEMPLATE*.md PULL_REQUEST_TEMPLATE*.md docs/PULL_REQUEST_TEMPLATE*.md 2>/dev/null
+ls .github/PULL_REQUEST_TEMPLATE*.md PULL_REQUEST_TEMPLATE*.md 2>/dev/null
 ```
 
 ### Template Application
 
 If a PR template exists:
 1. Read the template content
-2. Ensure the PR body follows the template structure
-3. Fill in all required sections from the template
-4. Do not remove or modify template headers
+2. Follow the template structure
+3. Fill in all sections
+4. Do not remove template headers
 
-If using `gh pr create`:
-- GitHub automatically includes the template in the PR body
-- Verify template sections are properly filled before submitting
+GitHub automatically includes the template when using `gh pr create`.
 
-## Template Compliance Checklist
+## Compliance Checklist
 
-Before creating issues or PRs:
-
-- [ ] Checked for `CONTRIBUTING.md` and followed its guidelines
-- [ ] Detected existing issue/PR templates
-- [ ] Selected appropriate template if multiple exist
-- [ ] Filled all required fields from the template
-- [ ] Maintained template structure and headers
-- [ ] Added content appropriate to each section
+- [ ] Checked `CONTRIBUTING.md` and followed guidelines
+- [ ] Detected and used existing templates
+- [ ] Filled all required fields
+- [ ] Maintained template structure
 
 ## Reference
 
-- [Setting guidelines for repository contributors](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors)
 - [About issue and pull request templates](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/about-issue-and-pull-request-templates)
+- [Syntax for issue forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)

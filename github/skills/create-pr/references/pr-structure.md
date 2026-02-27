@@ -1,11 +1,10 @@
 # PR Structure Requirements
 
-## Title Guidelines
+## Title
 
 - Maximum 70 characters
-- Use imperative mood
-- No emojis
-- Clear and descriptive
+- Imperative mood, no emojis
+- Pattern: `type(scope): description` (e.g., `feat(auth): add oauth support`)
 
 ## Body Template
 
@@ -14,36 +13,42 @@
 Brief description of changes and business impact
 
 ## Changes
-- List of key modifications
-- Technical details and rationale
+- Key modification 1
+- Key modification 2
 
 ## Related Issues
-Fixes #123, Closes #456
+Fixes #123
 
 ## Testing
 - [ ] Unit tests added/updated
 - [ ] All tests pass
 - [ ] Manual testing completed
-- [ ] Edge cases covered
 
-## Security & Quality
+## Checklist
 - [ ] No sensitive data exposed
-- [ ] Input validation implemented
 - [ ] Linting and type checking passed
-- [ ] Build successful
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
+- [ ] Documentation updated (if applicable)
+- [ ] Breaking changes documented (if applicable)
 ```
 
 ## Automated Labeling
 
-Apply labels automatically based on file changes:
+| Label | Trigger Files |
+|-------|---------------|
+| `testing` | `*.test.*`, `*.spec.*`, `__tests__/*` |
+| `documentation` | `*.md`, `docs/*` |
+| `dependencies` | `package.json`, `requirements.txt`, `Cargo.toml` |
 
-- `testing` - Test file modifications
-- `documentation` - Documentation updates
-- `dependencies` - Package file changes (package.json, requirements.txt, etc.)
-- `security` - Security-related modifications
+## Best Practices
+
+1. Keep PRs small (<400 lines when possible)
+2. One logical change per PR
+3. Self-review before requesting review
+4. Include tests for new functionality
+
+## Template Compliance
+
+When project has a PR template:
+1. Read from `.github/PULL_REQUEST_TEMPLATE.md`
+2. Preserve all section headers
+3. Fill all sections (use "N/A" if not applicable)
