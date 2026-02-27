@@ -96,6 +96,7 @@ See `./references/rfc-2119.md` for complete RFC 2119 specification.
 | Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" |
 | TaskCreate | **Explicit** | "**Use TaskCreate tool** to track progress" |
 | AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" |
+| MCP Tools | **Implicit** | "Query the database for user records" |
 
 **Qualified names**: MUST use `plugin-name:component-name` format for plugin components.
 
@@ -103,7 +104,26 @@ See `./references/rfc-2119.md` for complete RFC 2119 specification.
 
 **Inline Bash**: Use inline syntax (exclamation + backtick + command + backtick) for dynamic context.
 
+**MCP Tool Invocation**:
+- Use **natural language** to describe intent - Claude automatically identifies the appropriate MCP tool
+- **Never** specify exact MCP tool names like `mcp__server__tool` in skill content
+- MCP tools follow naming pattern `mcp__<server-name>__<tool-name>` internally
+- Claude Code automatically loads MCP tool definitions when servers are configured
+
+**MCP Tool Examples in Skill Content**:
+```markdown
+# Correct - natural language intent
+"Query the data source for matching records"
+"Fetch items from the external service"
+"Search for documentation on the topic"
+
+# Wrong - explicit tool naming
+"Call mcp__server__tool_name to get data"
+"Use the mcp__service__function tool"
+```
+
 See `./references/tool-invocations.md` for complete patterns and anti-patterns.
+See `./references/mcp-patterns.md` for MCP-specific invocation patterns.
 
 ### Skill Frontmatter (Official Best Practices)
 
@@ -177,17 +197,43 @@ See `./references/task-management.md` for complete patterns and examples.
 
 ### MCP Server Configuration
 
+**Official Documentation**: https://code.claude.com/docs/en/mcp
+
+**Configuration Locations**:
+- `.mcp.json` at plugin root (recommended)
+- Inline in `plugin.json` under `mcpServers` key
+
 **Transport Types:**
-- **stdio**: Local CLI tools (git, docker, npm) - uses `command`, `args`, `env`
-- **http**: Remote APIs (SaaS, cloud) - uses `url`, `headers`
-- **sse**: Real-time streaming (monitoring, live updates) - uses `url`, `headers`
+| Transport | Best For | Configuration |
+|-----------|----------|---------------|
+| **stdio** | Local CLI tools, package managers | `command`, `args`, `env` |
+| **http** | Remote APIs, cloud services (most widely supported) | `url`, `headers` |
+| **sse** | Real-time streaming, live updates | `url`, `headers` |
+
+**Environment Variable Expansion**:
+- `${VAR}` - Expand environment variable
+- `${VAR:-default}` - Expand with fallback default
+- `${CLAUDE_PLUGIN_ROOT}` - Plugin root directory path
 
 **Security:**
 - NEVER hardcode secrets - always use `${ENV_VAR}` syntax
 - Document required environment variables
 - Provide `.env.example` template
 
+**Plugin MCP Features:**
+- Automatic lifecycle: servers start when plugin enables (restart required)
+- Tools appear alongside manually configured MCP tools
+- View all servers with `/mcp` command
+
+**When to Use MCP in Skills:**
+- External tool integration (databases, APIs, services)
+- Data retrieval from remote sources
+- Actions requiring authentication to external systems
+- Real-time data access
+
 See `./references/mcp-patterns.md` for complete MCP integration patterns.
+See `./references/components/mcp-servers.md` for MCP component configuration.
+See `./references/components/mcp-servers.md` for component configuration details.
 
 ### Frontmatter Requirements (Complete)
 

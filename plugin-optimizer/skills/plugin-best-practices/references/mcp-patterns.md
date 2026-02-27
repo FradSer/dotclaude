@@ -2,61 +2,47 @@
 
 Best practices for integrating Model Context Protocol servers in plugins.
 
-## Configuration Options
+**Official Documentation**: https://code.claude.com/docs/en/mcp
 
-### Standalone .mcp.json (Recommended)
-```json
-{
-  "server-name": {
-    "type": "stdio|http|sse",
-    "command": "executable",
-    "args": ["arg1", "arg2"],
-    "env": {
-      "VAR": "${ENV_VAR}"
-    }
-  }
-}
-```
+## Overview
 
-### Embedded in plugin.json
-```json
-{
-  "name": "plugin-name",
-  "mcpServers": {
-    "server-name": {
-      "type": "stdio",
-      "command": "executable"
-    }
-  }
-}
-```
+MCP (Model Context Protocol) connects Claude Code to external tools and services. Plugins can bundle MCP servers for automatic setup.
+
+## Configuration Locations
+
+| Location | Format | Use Case |
+|----------|--------|----------|
+| `.mcp.json` at plugin root | Separate file | Recommended - better organization |
+| Inline in `plugin.json` | `mcpServers` key | Simple setups |
 
 ## Transport Types
 
-### stdio - Local CLI Tools
-Best for: git, docker, npm, local scripts
+| Transport | Best For | Configuration Fields |
+|-----------|----------|---------------------|
+| **http** | Remote cloud services, APIs | `url`, `headers` |
+| **sse** | Real-time streaming, live updates | `url`, `headers` |
+| **stdio** | Local CLI tools, package managers | `command`, `args`, `env` |
 
-```json
-{
-  "github": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-github"],
-    "env": {
-      "GITHUB_TOKEN": "${GITHUB_TOKEN}"
-    }
-  }
-}
-```
+## Configuration Examples
 
-### http - Remote APIs
-Best for: SaaS services, cloud APIs
+### HTTP Server (Remote API)
 
 ```json
 {
   "api-service": {
     "type": "http",
-    "url": "https://api.example.com/mcp",
+    "url": "https://api.example.com/mcp"
+  }
+}
+```
+
+### HTTP with Authentication
+
+```json
+{
+  "secure-api": {
+    "type": "http",
+    "url": "${API_BASE_URL}/mcp",
     "headers": {
       "Authorization": "Bearer ${API_TOKEN}"
     }
@@ -64,179 +50,139 @@ Best for: SaaS services, cloud APIs
 }
 ```
 
-### sse - Real-time Streaming
-Best for: monitoring, live updates
+### SSE Server (Streaming)
 
 ```json
 {
-  "monitoring": {
+  "streaming-service": {
     "type": "sse",
-    "url": "https://monitor.example.com/stream",
+    "url": "https://stream.example.com/sse",
     "headers": {
-      "X-API-Key": "${MONITOR_KEY}"
+      "X-API-Key": "${API_KEY}"
     }
   }
 }
 ```
 
-## Common Integration Patterns
+### stdio Server (Package Manager)
 
-### NPM Package
 ```json
 {
-  "package-server": {
+  "tool-server": {
     "type": "stdio",
     "command": "npx",
-    "args": ["-y", "@company/mcp-server"],
-    "env": {"API_KEY": "${API_KEY}"}
+    "args": ["-y", "@org/mcp-server"],
+    "env": {
+      "API_KEY": "${API_KEY}"
+    }
   }
 }
 ```
 
-### Database
-```json
-{
-  "database": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "@example/db-server"],
-    "env": {"DATABASE_URL": "${DATABASE_URL}"}
-  }
-}
-```
+### stdio Server (Plugin Binary)
 
-### Local Binary
 ```json
 {
   "custom-server": {
     "type": "stdio",
-    "command": "./bin/mcp-server",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/mcp-server",
     "args": ["--config", "${CLAUDE_PLUGIN_ROOT}/config.json"]
   }
 }
 ```
 
-## Best Practices
+## Environment Variable Expansion
 
-### Security
+Supported syntax:
+
+- `${VAR}` - Expand environment variable
+- `${VAR:-default}` - Expand with fallback default
+- `${CLAUDE_PLUGIN_ROOT}` - Plugin root directory (for plugin MCP servers)
+
+Expansion works in: `command`, `args`, `env`, `url`, `headers`
+
+## Using MCP in Skill Content
+
+### Key Principle
+
+**Always use natural language to describe intent.** Claude automatically selects the appropriate MCP tool.
+
+**Never reference internal MCP tool names** (`mcp__server__tool`) in skill content.
+
+### Correct Patterns
+
+```markdown
+Query the data source for records matching the criteria
+Search the external service for items
+Fetch data from the API
+Check the monitoring system for alerts
+Create a draft in the external system
+```
+
+### Wrong Patterns
+
+```markdown
+Call mcp__server__tool_name to get data
+Use mcp__service__function to find items
+Execute mcp__api__endpoint
+```
+
+### When MCP Tools Are Available
+
+- User has configured MCP servers (via `claude mcp add` or `.mcp.json`)
+- Plugin bundles MCP servers
+- Servers are enabled and running
+
+Check available servers: `/mcp`
+
+## Security Best Practices
+
 - **Never hardcode secrets** - always use `${ENV_VAR}` syntax
 - Use minimal permission scopes for tokens
 - Document required environment variables in README
 - Provide `.env.example` template
 
-### Environment Variables
-```json
-{
-  "database": {
-    "type": "http",
-    "url": "${DB_URL}",
-    "headers": {
-      "Authorization": "Bearer ${DB_TOKEN}",
-      "X-Project": "${PROJECT_ID}"
-    }
-  }
-}
-```
+## Plugin MCP Features
 
-### Development
-- Test stdio locally before deploying http/sse
-- Use `.env.example` to document required vars
-- Test MCP integration independently
-- Provide clear error messages
-
-### Performance
-- Use http for remote services (avoids process overhead)
-- Set reasonable timeouts
-- Implement caching where appropriate
-- Clean up resources on shutdown
+- **Automatic lifecycle**: Servers start when plugin enables (restart required to apply changes)
+- **Tools appear alongside** manually configured MCP tools
+- **View all servers** with `/mcp` command
 
 ## Validation Checklist
 
 **Configuration:**
+
 - [ ] Valid JSON syntax
-- [ ] Required fields present (type, command/url)
+- [ ] Required fields present (`type`, and `command` for stdio or `url` for http/sse)
 - [ ] Transport type: stdio, http, or sse
 - [ ] Server names use kebab-case
 
 **Security:**
-- [ ] No hardcoded secrets/API keys
-- [ ] All credentials use ${ENV_VAR}
-- [ ] Environment variables documented
-- [ ] .env.example provided
 
-**Functionality:**
-- [ ] Server executable/URL accessible
-- [ ] Required env vars available
-- [ ] Transport matches server capabilities
-- [ ] Headers/auth properly configured
+- [ ] No hardcoded secrets/API keys
+- [ ] All credentials use `${ENV_VAR}`
+- [ ] Environment variables documented
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
-| Server not found | Verify command in PATH, check network for npx |
+| Server not found | Verify command in PATH, check network connectivity |
 | Auth failures | Check env vars set, verify token permissions |
 | Timeouts | Verify URL accessible, check firewall |
 | Invalid config | Validate JSON, ensure required fields present |
+| Changes not applied | Restart Claude Code to apply MCP server changes |
 
-## MCP Tool Invocation in Claude Code
+## Summary
 
-### Tool Naming Convention
+**Configuration**:
+- Use `.mcp.json` at plugin root (recommended) or inline in `plugin.json`
+- Support stdio, HTTP, and SSE transports
+- Use `${CLAUDE_PLUGIN_ROOT}` for plugin-relative paths
+- Use `${VAR}` and `${VAR:-default}` for environment variables
 
-MCP tools follow the naming pattern `mcp__<server-name>__<tool-name>`:
+**Skill Content**:
+- Use natural language to describe intent - Claude auto-selects MCP tools
+- Never reference internal tool names (`mcp__server__tool`)
 
-```
-mcp__my-server__get_data
-mcp__api-client__fetch
-mcp__docs-server__*        // Wildcard for all tools from a server
-```
-
-### Authorization
-
-MCP tools require explicit permission before use. Configure `allowedTools`:
-
-```typescript
-// In Claude Agent SDK or similar
-options: {
-  mcpServers: {
-    "my-server": {
-      command: "npx",
-      args: ["-y", "@company/mcp-server"]
-    }
-  },
-  allowedTools: ["mcp__my-server__*"]  // Allow all tools from server
-}
-```
-
-### Usage Patterns
-
-**Implicit invocation (recommended)**: Describe intent in natural language
-```
-"Retrieve the current data from the server"
-"List items from the API"
-"Query the database for user records"
-```
-
-**Explicit invocation**: Direct tool specification (rare)
-Claude automatically identifies and calls the appropriate MCP tool.
-
-### Debugging MCP Calls
-
-Log MCP tool invocations in agent code:
-
-```typescript
-if (message.type === "assistant") {
-  for (const block of message.content) {
-    if (block.type === "tool_use" && block.name.startsWith("mcp__")) {
-      console.log(`MCP tool called: ${block.name}`);
-    }
-  }
-}
-```
-
-### Summary
-
-- Claude Code automatically loads MCP tool definitions into context
-- Use natural language requests to trigger MCP tool calls
-- Tool naming follows `mcp__server__tool` format
-- Authorize tools via `allowedTools` configuration
+**Official Documentation**: https://code.claude.com/docs/en/mcp
