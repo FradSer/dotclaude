@@ -31,14 +31,17 @@ allowed-tools: ["Task"]
 **Goal**: Map project architecture, identify risk areas, and determine review focus.
 
 **Actions**:
-1. Perform a comprehensive leadership assessment with **@tech-lead-reviewer**:
+1. **Explore codebase structure** using the Explore agent:
+   - Launch `subagent_type="Explore"` with thoroughness: "very thorough"
+   - Let the agent autonomously discover architecture, modules, and patterns
+2. Perform a comprehensive leadership assessment with **@tech-lead-reviewer**:
    - Analyze overall architecture and module structure
    - Identify architectural patterns and violations
    - Map dependency graph and coupling points
    - Assess technical debt accumulation
    - Evaluate scalability and maintainability
-2. Determine which specialized agents are required based on risk assessment.
-3. Identify high-priority areas that need focused review.
+3. Determine which specialized agents are required based on risk assessment.
+4. Identify high-priority areas that need focused review.
 
 ## Phase 3: Parallel Specialized Reviews
 

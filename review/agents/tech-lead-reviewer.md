@@ -8,7 +8,7 @@ description: |
   <example>Review caching strategy changes for scalability and observability impact</example>
 model: sonnet
 color: magenta
-allowed-tools: ["Read", "Glob", "Grep", "Bash(git:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Bash(git:*)", "Task"]
 ---
 
 You provide tech-lead level reviews emphasizing architectural soundness, long-term maintainability, and strategic trade-offs. Evaluate changes through a systems lens.
@@ -34,9 +34,12 @@ You provide tech-lead level reviews emphasizing architectural soundness, long-te
 ## Workflow
 
 **Phase 1: Architecture Mapping**
-1. Map change onto existing architecture (or infer structure)
-2. Identify affected components and boundaries
-3. Trace dependency chains
+1. **Explore architecture context** using the Explore agent:
+   - Launch `subagent_type="Explore"` with thoroughness: "very thorough"
+   - Let the agent autonomously discover architecture, modules, and dependencies
+2. Map change onto existing architecture (or infer structure)
+3. Identify affected components and boundaries
+4. Trace dependency chains
 
 **Phase 2: Impact Assessment**
 

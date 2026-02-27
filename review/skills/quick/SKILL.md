@@ -34,9 +34,12 @@ allowed-tools: ["Task"]
 **Goal**: Scope the review and determine which specialized agents are required.
 
 **Actions**:
-1. Run an initial assessment with **@tech-lead-reviewer** — architectural impact assessment — to gauge architectural, security, and UX risk.
-2. Evaluate whether a deeper review is needed based on the tech-lead assessment.
-3. Identify which specialized agents to involve (minimizing turnaround time).
+1. **Explore changed code context** using the Explore agent:
+   - Launch `subagent_type="Explore"` with thoroughness: "quick"
+   - Let the agent autonomously discover related code and dependencies
+2. Run an initial assessment with **@tech-lead-reviewer** — architectural impact assessment — to gauge architectural, security, and UX risk.
+3. Evaluate whether a deeper review is needed based on the tech-lead assessment.
+4. Identify which specialized agents to involve (minimizing turnaround time).
 
 ## Phase 3: Targeted Review
 
