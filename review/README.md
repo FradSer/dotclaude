@@ -2,7 +2,7 @@
 
 Multi-agent review system for enforcing high code quality.
 
-**Version**: 0.3.0
+**Version**: 0.3.1
 
 ## Installation
 

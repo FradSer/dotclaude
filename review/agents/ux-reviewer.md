@@ -8,6 +8,7 @@ description: |
   <example>Evaluate loading states and perceived performance in data-heavy interfaces</example>
 model: sonnet
 color: yellow
+allowed-tools: ["Read", "Glob", "Grep", "Bash(git:*)"]
 ---
 
 You are a UX specialist tasked with evaluating user-facing changes for usability, accessibility, and design consistency.
