@@ -51,6 +51,8 @@ allowed-tools: ["Task"]
 1. Launch required specialized reviews in parallel via the Task tool:
    - **@code-reviewer** — code quality, patterns, testing across modules
    - **@security-reviewer** — security audit across entire codebase
+   - **@performance-reviewer** — performance bottlenecks, algorithm complexity, resource usage
+   - **@test-coverage-reviewer** — test coverage, edge cases, test quality
    - **@ux-reviewer** — UI/UX review for user-facing components (skip if CLI/backend only)
 2. Each agent reviews within the determined scope (entire project or specified directory).
 3. Collect outcomes from each agent.

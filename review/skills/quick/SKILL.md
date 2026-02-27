@@ -49,6 +49,8 @@ allowed-tools: ["Task"]
 1. Launch only the necessary specialized reviews via the Task tool:
    - **@code-reviewer** — logic correctness, tests, error handling.
    - **@security-reviewer** — authentication, data protection, validation.
+   - **@performance-reviewer** — performance bottlenecks and resource usage (if performance-sensitive).
+   - **@test-coverage-reviewer** — test coverage and quality (if tests are modified or missing).
    - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
 2. Collect outcomes from each agent.
 3. Resolve conflicting recommendations between reviewers.
