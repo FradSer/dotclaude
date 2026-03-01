@@ -165,6 +165,9 @@ description: You should use this when you want to validate...
 - `color`: blue, cyan, green, yellow, magenta, or red
 - **`<example>` blocks**: 2-4 required for router-friendliness
 
+**Optional fields**:
+- `isolation`: Set to `worktree` for automatic git worktree isolation during parallel execution
+
 **CO-STAR Framework**:
 - **C**ontext: Background info
 - **O**bjective: What to achieve
