@@ -82,11 +82,41 @@ Verify completeness, confirm with user, and save.
    - Example: `- [Task 001: Setup project structure](./task-001-setup-project-structure.md)`
    - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `[Task 002: Whale Discovery Test](./task-002-whale-discovery-test.md)` and `[Task 002: Whale Discovery Impl](./task-002-whale-discovery-impl.md)`
 
-## Git Commit
+## Phase 4: Plan Reflection
+
+Before committing, launch sub-agents in parallel to verify plan quality and identify gaps.
+
+**Core reflection sub-agents (always required)**:
+
+**Sub-agent 1: BDD Coverage Review**
+- Focus: Verify every BDD scenario from design has corresponding tasks
+- Output: Coverage matrix, orphaned scenarios, extra tasks without scenarios
+
+**Sub-agent 2: Dependency Graph Review**
+- Focus: Verify depends-on fields are correct, check for cycles, identify missing dependencies
+- Output: Dependency graph, cycle detection, incorrect dependencies
+
+**Sub-agent 3: Task Completeness Review**
+- Focus: Verify each task has required structure (BDD scenario, files, steps, verification)
+- Output: Incomplete tasks list, missing sections by task
+
+**Additional sub-agents (launch as needed)**:
+- Red-Green Pairing Review - Verify test tasks have corresponding impl tasks
+- File Conflict Review - Identify tasks that modify the same files
+
+**Integrate and Update**:
+1. Collect all sub-agent findings
+2. Prioritize issues by impact
+3. Update plan files to fix issues
+4. Re-verify updated sections
+
+**Output**: Updated plan with issues resolved.
+
+See `./references/plan-reflection.md` for sub-agent prompts and integration workflow.
+
+## Phase 5: Git Commit
 
 Commit the plan folder to git with proper message format.
-
-See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
 **Critical requirements**:
 - Commit the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-plan/`
@@ -94,12 +124,24 @@ See `../../skills/references/git-commit.md` for detailed patterns, commit messag
 - Subject: Under 50 characters, lowercase
 - Footer: Co-Authored-By with model name
 
+See `../../skills/references/git-commit.md` for detailed patterns.
+
+## Phase 6: Transition to Execution
+
+Prompt the user to use `superpowers:executing-plans` to execute the plan.
+
+Example prompt:
+"Plan complete. To execute this plan, use `/superpowers:executing-plans`."
+
+**PROHIBITED**: Do NOT offer to start implementation directly.
+
 ## Exit Criteria
 
-Plan created with clear goal/constraints, decomposed tasks with file lists and verification, BDD steps, commit boundaries, no vague tasks, user approval.
+Plan created with clear goal/constraints, decomposed tasks with file lists and verification, BDD steps, commit boundaries, no vague tasks, reflection completed, user approval.
 
 ## References
 
 - `./references/plan-structure-template.md` - Template for plan structure
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
+- `./references/plan-reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements

@@ -2,9 +2,19 @@
 
 ## Goal
 
-Use parallel sub-agents to systematically review design documents and identify gaps, inconsistencies, and missing considerations before committing.
+Use parallel sub-agents to systematically review design documents and identify gaps before committing.
 
-## Why Use Sub-Agents for Reflection
+## Why Reflection Matters
+
+Design documents can have issues that impact implementation:
+- Requirements from Phase 1 that got lost in synthesis
+- Missing BDD scenarios for edge cases or error conditions
+- Inconsistencies between documents
+- Undocumented assumptions and risks
+
+Reflection catches these issues before implementation begins.
+
+## Why Use Sub-Agents
 
 Sub-agents provide:
 - **Fresh perspective** - No bias from having written the documents

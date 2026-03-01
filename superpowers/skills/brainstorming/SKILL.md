@@ -128,9 +128,9 @@ See `./references/exit-criteria.md` for Phase 3 validation checklist.
 
 ## Phase 4: Design Reflection
 
-Before committing, launch sub-agents in parallel to perform structured reflection and identify gaps.
+Before committing, launch sub-agents in parallel to verify design quality and identify gaps.
 
-**Launch reflection sub-agents in parallel**:
+**Core reflection sub-agents (always required)**:
 
 **Sub-agent 1: Requirements Traceability Review**
 - Focus: Verify every Phase 1 requirement is addressed in design
@@ -150,27 +150,25 @@ Before committing, launch sub-agents in parallel to perform structured reflectio
 
 **Integrate and Update**:
 1. Collect all sub-agent findings
-2. Prioritize gaps by impact
-3. Update design documents to fill gaps
+2. Prioritize issues by impact
+3. Update design documents to fix issues
 4. Re-verify updated sections
 
-**Output**: Updated design documents with gaps filled.
+**Output**: Updated design documents with issues resolved.
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
-See `./references/exit-criteria.md` for Phase 4 validation checklist.
 
 ## Phase 5: Git Commit
 
 Commit the design folder to git with proper message format.
-
-See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
 **Critical requirements**:
 - Commit the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-design/`
 - Prefix: `docs:` (lowercase)
 - Subject: Under 50 characters, lowercase
 - Footer: Co-Authored-By with model name
-See `./references/exit-criteria.md` for Phase 5 validation checklist.
+
+See `../../skills/references/git-commit.md` for detailed patterns.
 
 ## Phase 6: Transition to Implementation
 
