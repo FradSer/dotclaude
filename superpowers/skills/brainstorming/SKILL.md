@@ -15,7 +15,7 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 
 ## Core Principles
 
-1. **Converge in Order**: Clarify → Compare → Choose → Design → Commit → Transition
+1. **Converge in Order**: Clarify → Compare → Choose → Design → Reflect → Commit → Transition
 2. **Context First**: Explore codebase before asking questions
 3. **Incremental Validation**: Validate each phase before proceeding
 4. **YAGNI Ruthlessly**: Only include what's explicitly needed
@@ -126,7 +126,40 @@ docs/plans/YYYY-MM-DD-<topic>-design/
 See `./references/design-creation.md` for sub-agent patterns and integration workflow.
 See `./references/exit-criteria.md` for Phase 3 validation checklist.
 
-## Git Commit
+## Phase 4: Design Reflection
+
+Before committing, launch sub-agents in parallel to perform structured reflection and identify gaps.
+
+**Launch reflection sub-agents in parallel**:
+
+**Sub-agent 1: Requirements Traceability Review**
+- Focus: Verify every Phase 1 requirement is addressed in design
+- Output: Traceability matrix, orphaned requirements list
+
+**Sub-agent 2: BDD Completeness Review**
+- Focus: Check BDD scenarios cover happy path, edge cases, and error conditions
+- Output: Missing scenarios list, coverage gaps
+
+**Sub-agent 3: Cross-Document Consistency Review**
+- Focus: Verify terminology, references, and component names are consistent
+- Output: Inconsistencies list, terminology conflicts
+
+**Additional sub-agents (launch as needed)**:
+- Security Review - Identify security considerations not addressed
+- Risk Assessment - Identify risks, assumptions, and failure modes
+
+**Integrate and Update**:
+1. Collect all sub-agent findings
+2. Prioritize gaps by impact
+3. Update design documents to fill gaps
+4. Re-verify updated sections
+
+**Output**: Updated design documents with gaps filled.
+
+See `./references/reflection.md` for sub-agent prompts and integration workflow.
+See `./references/exit-criteria.md` for Phase 4 validation checklist.
+
+## Phase 5: Git Commit
 
 Commit the design folder to git with proper message format.
 
@@ -137,9 +170,9 @@ See `../../skills/references/git-commit.md` for detailed patterns, commit messag
 - Prefix: `docs:` (lowercase)
 - Subject: Under 50 characters, lowercase
 - Footer: Co-Authored-By with model name
-See `./references/exit-criteria.md` for Phase 4 validation checklist.
+See `./references/exit-criteria.md` for Phase 5 validation checklist.
 
-## Phase 4: Transition to Implementation
+## Phase 6: Transition to Implementation
 
 Prompt the user to use `superpowers:writing-plans` to create a detailed implementation plan.
 
@@ -163,5 +196,6 @@ Detailed guidance for each phase:
 - `./references/discovery.md` - Exploration patterns and question guidelines
 - `./references/options.md` - Option comparison and presentation patterns
 - `./references/design-creation.md` - Sub-agent patterns, integration workflow, design structure
+- `./references/reflection.md` - Design reflection patterns and gap identification strategies
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
