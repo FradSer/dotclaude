@@ -33,6 +33,30 @@ python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> --check=manife
 
 See `./references/component-model.md` for detailed selection criteria and `./references/components/` for implementation guides.
 
+## Tool Design Philosophy
+
+Design Claude's action space by shaping tools to model abilities. The central question: what tools would help given what Claude can actually do well?
+
+**Core Principles**:
+
+| Principle | Application |
+|-----------|-------------|
+| Shape to abilities | Match tool design to model strengths (pattern matching → skills, autonomous reasoning → agents) |
+| High bar for new tools | Each tool adds reasoning complexity; try existing tools + progressive disclosure first |
+| Evolution awareness | Tools that help today may constrain tomorrow; revisit assumptions as models improve |
+| Iterate empirically | Read model outputs, identify friction, adjust tool SHAPE not just content |
+
+**Action Space Decision Tree**:
+
+1. **Existing tools + skill?** → Progressive disclosure (preferred)
+2. **Structured output/UI integration?** → Dedicated tool
+3. **Isolated decision-making?** → Subagent
+4. **External data/action?** → MCP server
+
+**Example**: Claude Code Guide uses a subagent instead of a new "doc search" tool. Same capability, no new tool.
+
+See `./references/tool-design-philosophy.md` for complete design principles, case studies (AskUserQuestion evolution, TodoWrite→Task), and the iterative design process.
+
 ## Progressive Disclosure
 
 Three-tier token structure ensures efficient context usage:
@@ -409,9 +433,12 @@ See `./references/parallel-execution.md` for parallel coordination patterns.
 
 ## Reference Directory
 
+### Philosophy & Principles
+- `./references/tool-design-philosophy.md` - Shaping tools to model abilities, iterative design, evolution awareness
+- `./references/rfc-2119.md` - Requirement levels (MUST/SHOULD/MAY)
+
 ### Validation & Quality
 - `./references/validation-checklist.md` - Complete quality checklist
-- `./references/rfc-2119.md` - Requirement levels (MUST/SHOULD/MAY)
 
 ### Component Implementation
 - `./references/component-model.md` - Component types, selection criteria, token budgets
