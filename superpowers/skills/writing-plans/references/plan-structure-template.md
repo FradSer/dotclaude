@@ -37,6 +37,7 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 **Tech Stack:** [Key technologies/libraries]
 
 **Design Support:**
+<!-- Template: replace YYYY-MM-DD-<topic>-design with actual folder name -->
 - [BDD Specs](../YYYY-MM-DD-<topic>-design/bdd-specs.md)
 - [Architecture](../YYYY-MM-DD-<topic>-design/architecture.md)
 

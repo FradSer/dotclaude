@@ -73,6 +73,10 @@ Loaded when orchestrating complex multi-step tasks across specialized agents. Pr
 - **Reviewer:** Focuses on spec compliance and strict code quality
 - **Architect:** Focuses on high-level design and breaking down complex plans
 
+### Build Like iPhone Team
+
+Loaded when the user wants to challenge industry conventions or approach open-ended problems requiring disruptive thinking. Applies Apple's Project Purple design philosophy for radical innovation, including first-principles thinking, internal competition, and breakthrough research techniques. The `brainstorming` skill loads this automatically for problems that benefit from unconventional approaches.
+
 ### Systematic Debugging
 
 Loaded when diagnosing bugs or unexpected behavior. Provides a 4-phase methodology: root cause investigation, pattern analysis, hypothesis testing, and implementation.
@@ -127,14 +131,25 @@ superpowers/
 │   │   └── references/          # Batch execution and blocker handling
 │   ├── agent-team-driven-development/
 │   │   ├── SKILL.md             # Team orchestration guidance
-│   │   ├── roles/               # Role descriptions
-│   │   └── workflows/           # Team workflows
+│   │   └── references/          # Role descriptions and team workflows
 │   ├── behavior-driven-development/
 │   │   ├── SKILL.md             # BDD cycle guidance
 │   │   └── references/          # Gherkin reference, phase guides, anti-patterns
-│   └── systematic-debugging/
-│       ├── SKILL.md             # Debugging methodology
-│       └── references/          # Phase-specific debugging guides
+│   ├── build-like-iphone-team/
+│   │   ├── SKILL.md             # Project Purple design philosophy
+│   │   └── references/          # First-principles, breakthrough research, experience specs
+│   ├── systematic-debugging/
+│   │   ├── SKILL.md             # Debugging methodology
+│   │   ├── find-polluter.sh     # Script to isolate test polluters
+│   │   └── references/          # Phase-specific debugging guides
+│   └── references/
+│       └── git-commit.md        # Shared git commit patterns (used by 3 skills)
+├── tests/
+│   └── systematic-debugging/    # Evaluation scenarios for systematic-debugging skill
+│       ├── test-academic.md     # Comprehension test: verify skill adherence
+│       ├── test-pressure-1.md   # Pressure: emergency production fix
+│       ├── test-pressure-2.md   # Pressure: sunk cost + exhaustion
+│       └── test-pressure-3.md   # Pressure: authority + social pressure
 └── README.md
 ```
 

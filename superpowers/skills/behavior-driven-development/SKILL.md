@@ -37,9 +37,9 @@ See [Cucumber Gherkin Guide](./references/gherkin-guide.md) for syntax and stora
 
 ### 3. Red-Green-Refactor (TDD)
 The engine of implementation:
-1.  🔴 **RED:** Write a failing test for the scenario (or a unit thereof).
-2.  🟢 **GREEN:** Write the minimal code to pass the test.
-3.  🔵 **REFACTOR:** Clean up the code while keeping tests passing.
+1.  **RED:** Write a failing test for the scenario (or a unit thereof).
+2.  **GREEN:** Write the minimal code to pass the test.
+3.  **REFACTOR:** Clean up the code while keeping tests passing.
 
 ## Quick Reference: The Iron Law
 
