@@ -6,5 +6,6 @@
         "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
-  "keywords": ["swiftui", "ios", "macos", "clean-architecture", "mvvm", "swift"]
+  "keywords": ["swiftui", "ios", "macos", "clean-architecture", "mvvm", "swift"],
+  "agents": ["./agents/"]
 }
