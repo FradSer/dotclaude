@@ -8,7 +8,7 @@ Create comprehensive design documents using parallel sub-agents for research and
 
 ### 1. Launch Sub-agents in Parallel
 
-Use Task tool with `subagent_type=general-purpose` to spawn sub-agents simultaneously.
+Launch using the Agent tool with `subagent_type=general-purpose` to spawn sub-agents simultaneously.
 
 **CRITICAL**: Provide complete context in each sub-agent prompt. Sub-agents start with fresh context and do not see your conversation history.
 

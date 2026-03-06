@@ -2,7 +2,7 @@
 
 Advanced development superpowers for orchestrating complex workflows from idea to execution.
 
-**Version**: 1.4.0
+**Version**: 1.5.0
 
 ## Installation
 

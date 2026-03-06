@@ -84,13 +84,13 @@ Execute tasks in batches. Actively use Agent Teams for parallel execution (prefe
 4. **Subagent Parallel Execution**:
    - For each task: Read the task file to get full context before execution
    - Spawn subagents concurrently for each independent task
-   - Each subagent loads the `superpowers:behavior-driven-development` skill
+   - Each subagent loads the `superpowers:behavior-driven-development` skill using the Skill tool
    - Verify all tasks in the batch
 
 5. **Linear Execution**:
    - For each task in the batch:
      - Read the task file to get full context before execution
-     - Execute using subagent loading the `superpowers:behavior-driven-development` skill
+     - Execute using subagent loading the `superpowers:behavior-driven-development` skill using the Skill tool
      - Verify the task
 
 6. **Mark Tasks Complete**: After verification, use TaskUpdate to set status to `completed`
