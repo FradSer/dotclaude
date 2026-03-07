@@ -24,7 +24,7 @@ Co-Authored-By: <Model Name> <noreply@anthropic.com>
 ```
 
 **Rules**:
-- **Title**: ALL LOWERCASE, <50 chars, imperative, no period. Add "!" before ":" for breaking changes
+- **Title**: ALL LOWERCASE, ≤50 chars, imperative, no period. Add "!" before ":" for breaking changes
 - **Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
 - **Body** (REQUIRED): Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
 - **Explanation paragraph** (REQUIRED): Explains the "why" behind the changes, not just the "what"
@@ -59,7 +59,7 @@ Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
 
 ## Phase 4: Commit Creation
 1. Draft commit message following Conventional Commits format:
-   - Title: lowercase, <50 chars, imperative, no period
+   - Title: lowercase, ≤50 chars, imperative, no period
    - Context paragraph: optional background before bullet points
    - Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
    - Explanation paragraph after bullet points (REQUIRED) - explains the "why"
