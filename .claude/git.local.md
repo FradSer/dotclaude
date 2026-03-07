@@ -8,6 +8,7 @@ scopes:
   - review      # Code review plugin
   - refactor    # Refactoring plugin
   - swiftui     # SwiftUI plugin
+  - office      # Office plugin
   - po          # Plugin optimizer
   - cc          # Claude config
   - sp          # Superpowers

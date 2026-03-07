@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 10 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 11 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, gitflow, github, review, refactor, swiftui, claude-config, office, plugin-optimizer, superpowers
+**Active plugins:** git, gitflow, github, review, refactor, swiftui, claude-config, office, plugin-optimizer, superpowers, next-devtools
 
 ## Plugin Structure
 
@@ -51,19 +51,46 @@ Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
 
 **Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions.
 
+**Token budgets (official best practices):**
+- Level 1 (Metadata): ~100 tokens for name + description - always loaded at startup
+- Level 2 (Instructions): Under 5k tokens for SKILL.md body - loaded when skill triggered
+- Level 3 (Resources): Effectively unlimited - loaded as needed via bash
+
+Validation script enforces these limits with exit codes:
+- 0 = passed (no MUST violations)
+- 1 = failed (MUST violations detected)
+- 2 = critical (token budget exceeded, MUST refactor)
+
 **Creating a New Plugin:**
 1. `mkdir -p plugin-name/{.claude-plugin,skills,agents}`
-2. Add `plugin.json` with name, description, author, version, keywords
+2. Add `plugin.json` with name, description, author, version, keywords, license
 3. Add entry to `.claude-plugin/marketplace.json` with matching version
 4. Validate with plugin-optimizer before committing
 
+**Required plugin.json fields:**
+```json
+{
+  "name": "plugin-name",
+  "version": "0.1.0",
+  "description": "Brief description",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["keyword1", "keyword2"]
+}
+```
+
 ## Git Commit Conventions
 
-**Scopes:** git, gitflow, github, refactor, review, office, swiftui, po, cc, sp, docs, ci
+**Scopes:** git, gitflow, github, refactor, review, office, swiftui, po, cc, sp, nd, docs, ci
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 
 **Format:** `type(scope): lowercase message under 50 chars`
+
+**Pre-commit validation:** The git plugin includes a PreToolUse hook (`scripts/validate-commit-pretool.sh`) that validates commit messages before execution. This ensures all commits follow conventional format with proper scope and type validation.
 
 ## Plugin Development Patterns
 
