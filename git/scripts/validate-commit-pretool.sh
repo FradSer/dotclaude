@@ -184,33 +184,14 @@ body=$(echo "$commit_msg" | tail -n +2)
 body_trimmed=$(echo "$body" | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
 
 if [[ -z "$body_trimmed" ]]; then
-  errors+=("Commit body is REQUIRED and MUST contain bullet-point summary.")
-  errors+=("Format: Body MUST have bullet points with imperative verbs.")
-  errors+=("        Body MUST have explanation paragraph after bullets.")
-  errors+=("        Body MAY include context before bullets.")
-  errors+=("        Line length: All body lines must be ≤72 characters.")
-  errors+=("Example:")
-  errors+=("  - Add user authentication endpoint")
-  errors+=("  - Update middleware to validate tokens")
-  errors+=("  ")
-  errors+=("  Improves security by implementing OAuth 2.0 standard.")
+  errors+=("Body required: bullet points (- Verb ...) + explanation paragraph")
 else
   # Body exists, now validate it has bullet points
   # Look for lines starting with "- " (bullet points)
   bullet_lines=$(echo "$body" | grep -E '^[[:space:]]*-[[:space:]]+' || true)
 
   if [[ -z "$bullet_lines" ]]; then
-    errors+=("Body MUST contain bullet-point summary (lines starting with '- ')")
-    errors+=("Current body format is invalid. Body structure:")
-    errors+=("  REQUIRED: Bullet-point summary with imperative verbs")
-    errors+=("  REQUIRED: Explanation paragraph after bullets")
-    errors+=("  OPTIONAL: Context paragraph before bullets")
-    errors+=("  Line length: All body lines must be ≤72 characters")
-    errors+=("Example:")
-    errors+=("  - Add OAuth 2.0 configuration")
-    errors+=("  - Implement callback endpoint")
-    errors+=("  ")
-    errors+=("  Improves security and user experience.")
+    errors+=("Body must contain bullet points starting with '- <Verb> ...'")
   else
     # Validate bullet points start with common verbs (warning check)
     # Common imperative verbs for commits
@@ -259,13 +240,7 @@ else
       content_after_bullets=$(echo "$body" | tail -n +$((last_bullet_line + 1)) | grep -v '^Co-Authored-By:' | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
 
       if [[ -z "$content_after_bullets" ]]; then
-        errors+=("Body MUST contain explanation paragraph after bullet points")
-        errors+=("The explanation should describe WHY these changes were made")
-        errors+=("Example:")
-        errors+=("  - Add OAuth 2.0 configuration")
-        errors+=("  - Implement callback endpoint")
-        errors+=("  ")
-        errors+=("  Improves security by implementing industry-standard authentication.")
+        errors+=("Body must end with explanation paragraph (the 'why' after bullets)")
       fi
     fi
   fi
@@ -274,10 +249,7 @@ fi
 # 8. Validate Co-Authored-By footer
 # Check if footer contains Co-Authored-By (required for AI-assisted commits)
 if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
-  errors+=("Co-Authored-By footer is required for AI-assisted commits")
-  errors+=("Format: Co-Authored-By: <Model Name> <noreply@anthropic.com>")
-  errors+=("Example:")
-  errors+=("  Co-Authored-By: <Model Name> <noreply@anthropic.com>")
+  errors+=("Missing footer: Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
 fi
 
 # Output results and block execution if errors found
@@ -289,13 +261,13 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nLine length: All body lines must be ≤72 characters\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
+    systemMessage: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + $warnings + "\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n\nImproves security and cross-platform sign-in.\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
   }'
   exit 2
 elif [[ ${#warnings[@]} -gt 0 ]]; then
   warning_list=$(printf "  - %s\n" "${warnings[@]}")
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
-    systemMessage: ("WARNING: Commit message has warnings\n  \"" + $title + "\"\n\nWarnings:\n" + $warnings)
+    systemMessage: ("COMMIT WARNING: \"" + $title + "\"\n\n" + $warnings)
   }'
   exit 0
 else
