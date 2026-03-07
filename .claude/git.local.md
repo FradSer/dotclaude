@@ -2,18 +2,18 @@
 enabled: true
 # Commit Message Conventions
 scopes:
-  - git  # git plugin
-  - gitflow  # gitflow plugin
-  - github  # github plugin
-  - refactor  # refactor plugin
-  - review  # review plugin
-  - office  # office plugin
-  - swiftui  # swiftui plugin
-  - nd  # next-devtools plugin
-  - po  # plugin-optimizer
-  - sp  # superpowers (workflow skills)
-  - cc  # claude-code configuration
-  - ci  # continuous integration
+  - git         # Git plugin
+  - gitflow     # Gitflow plugin
+  - github      # GitHub plugin
+  - review      # Code review plugin
+  - refactor    # Refactoring plugin
+  - swiftui     # SwiftUI plugin
+  - po          # Plugin optimizer
+  - cc          # Claude config
+  - sp          # Superpowers
+  - nd          # Next devtools
+  - docs        # Documentation
+  - ci          # CI/CD
 types:
   - feat
   - fix
@@ -21,6 +21,8 @@ types:
   - refactor
   - test
   - chore
+  - perf
+  - style
 # Branch Naming Conventions
 branch_prefixes:
   feature: feature/*
@@ -31,9 +33,9 @@ branch_prefixes:
 # .gitignore Generation Defaults
 gitignore:
   os: [macos, linux, windows]
-  languages: [markdown]
-  frameworks: []
-  tools: [git, node]
+  languages: [javascript, python, swift, rust, shell]
+  frameworks: [node, nextjs]
+  tools: [git, vscode, idea]
 ---
 
 # Project-Specific Git Settings
