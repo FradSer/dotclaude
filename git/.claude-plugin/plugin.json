@@ -18,7 +18,6 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "once": false,
         "hooks": [
           {
             "type": "command",

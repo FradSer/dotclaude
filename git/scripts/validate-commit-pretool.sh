@@ -261,9 +261,10 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + $warnings + "\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n\nImproves security and cross-platform sign-in.\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+    decision: "block",
+    reason: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + $warnings + "\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n\nImproves security and cross-platform sign-in.\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
   }'
-  exit 2
+  exit 0
 elif [[ ${#warnings[@]} -gt 0 ]]; then
   warning_list=$(printf "  - %s\n" "${warnings[@]}")
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
