@@ -157,8 +157,8 @@ fi
 
 # 3. Check length (< 50 chars for title)
 title_length=${#title_line}
-if [[ $title_length -ge 50 ]]; then
-  errors+=("Title must be <50 characters (current: $title_length)")
+if [[ $title_length -gt 50 ]]; then
+  errors+=("Title must be ≤50 characters (current: $title_length)")
 fi
 
 # 4. Check for period at end
@@ -195,7 +195,7 @@ else
   else
     # Validate bullet points start with common verbs (warning check)
     # Common imperative verbs for commits
-    common_verbs="Add|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow|Define|Describe|Explain|Specify|Outline|Cover"
+    common_verbs="Add|Change|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow|Define|Describe|Explain|Specify|Outline|Cover"
 
     invalid_bullets=()
     while IFS= read -r line; do
@@ -257,12 +257,12 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   error_list=$(printf "  - %s\n" "${errors[@]}")
   warning_list=""
   if [[ ${#warnings[@]} -gt 0 ]]; then
-    warning_list=$(printf "\n\nWarnings:\n  - %s" "${warnings[@]}")
+    warning_list=$(printf "  - %s\n" "${warnings[@]}")
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
     decision: "block",
-    reason: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + $warnings + "\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n\nImproves security and cross-platform sign-in.\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+    reason: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + (if $warnings != "" then "\n\nWarnings:\n" + $warnings else "" end) + "\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n\nImproves security and cross-platform sign-in.\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
   }'
   exit 0
 elif [[ ${#warnings[@]} -gt 0 ]]; then
