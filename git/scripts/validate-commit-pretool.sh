@@ -215,10 +215,8 @@ else
     done <<< "$(echo "$body" | grep -v '^Co-Authored-By:' || true)"
 
     if [[ ${#line_too_long[@]} -gt 0 ]]; then
-      errors+=("Body lines must be ≤72 characters (some lines exceed limit)")
-      errors+=("Found $((${#line_too_long[@]})) line(s) that are too long:")
       for long_line in "${line_too_long[@]}"; do
-        errors+=("  Line (${#long_line} chars): $(echo "$long_line" | cut -c1-50)...")
+        errors+=("Body line too long (${#long_line}/72): $(echo "$long_line" | cut -c1-50)...")
       done
     fi
 
