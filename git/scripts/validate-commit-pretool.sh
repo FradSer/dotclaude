@@ -144,7 +144,6 @@ valid_types="feat|fix|docs|refactor|perf|test|chore|build|ci|style"
 if ! [[ "$title_line" =~ ^($valid_types)(\([a-z0-9_-]+\))?!?:[[:space:]].+ ]]; then
   errors+=("Invalid format. Must be: <type>[scope]: <description>")
   errors+=("Valid types: feat, fix, docs, refactor, perf, test, chore, build, ci, style")
-  errors+=("Example: feat(auth): add login validation")
 fi
 
 # 2. Check for uppercase in description (after the colon)
@@ -268,7 +267,7 @@ if [[ ${#errors[@]} -gt 0 ]]; then
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
     decision: "block",
-    reason: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + (if $warnings != "" then "\n\nWarnings:\n" + $warnings else "" end) + "\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n\nImproves security and cross-platform sign-in.\n\nCo-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+    reason: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + (if $warnings != "" then "\n\nWarnings:\n" + $warnings else "" end))
   }'
   exit 0
 elif [[ ${#warnings[@]} -gt 0 ]]; then
