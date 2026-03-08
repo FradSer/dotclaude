@@ -22,6 +22,7 @@ This shows:
 | Plugin not loading                  | Invalid `plugin.json`           | Validate JSON syntax with `claude plugin validate` or `/plugin validate`          |
 | Commands not appearing              | Wrong directory structure       | Ensure `commands/` at root, not in `.claude-plugin/`                              |
 | Hooks not firing                    | Script not executable           | Run `chmod +x script.sh`                                                          |
+| Hook error but operation not blocked | Script crashes before JSON output | Test script directly; replace bash 4+ builtins (`mapfile`) with bash 3.2 alternatives |
 | MCP server fails                    | Missing `${CLAUDE_PLUGIN_ROOT}` | Use variable for all plugin paths                                                 |
 | Path errors                         | Absolute paths used             | All paths MUST be relative and start with `./`                                    |
 | LSP `Executable not found in $PATH` | Language server not installed   | Install the binary (e.g., `npm install -g typescript-language-server typescript`) |
@@ -48,6 +49,28 @@ This shows:
 2. Verify the shebang line: First line SHOULD be `#!/bin/bash` or `#!/usr/bin/env bash`
 3. Check the path uses `${CLAUDE_PLUGIN_ROOT}`: `"command": "${CLAUDE_PLUGIN_ROOT}/scripts/your-script.sh"`
 4. Test the script manually: `./scripts/your-script.sh`
+
+**Hook shows "hook error" but does not block**:
+
+This means the hook script crashed before outputting any JSON. Claude Code fails open — it shows the error but allows the operation to proceed.
+
+Common causes on macOS:
+- Script uses `mapfile` or `readarray` (bash 4+ only; macOS `/bin/bash` is 3.2)
+- `set -euo pipefail` causes any failing sub-command to exit the script without output
+- `${CLAUDE_PLUGIN_ROOT}` is used in a `SessionStart` or `Stop` hook where it is not injected
+
+Diagnosis steps:
+1. Run the script directly with a sample input to see what happens:
+   ```bash
+   echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"test\""}}' | \
+     bash ./scripts/your-script.sh; echo "Exit: $?"
+   ```
+2. Look for bash 4+ builtins: replace `mapfile -t arr < <(cmd)` with:
+   ```bash
+   arr=()
+   while IFS= read -r line; do arr+=("$line"); done < <(cmd)
+   ```
+3. Check `/bin/bash --version` — if it reports 3.2, avoid all bash 4+ features
 
 **Hook not triggering on expected events**:
 
