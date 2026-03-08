@@ -254,13 +254,15 @@ fi
 
 # Output results and block execution if errors found
 if [[ ${#errors[@]} -gt 0 ]]; then
-  # Deduplicate errors and preserve order
-  mapfile -t unique_errors < <(printf "%s\n" "${errors[@]}" | awk '!seen[$0]++')
+  # Deduplicate errors and preserve order (bash 3.2 compatible)
+  unique_errors=()
+  while IFS= read -r line; do unique_errors+=("$line"); done < <(printf "%s\n" "${errors[@]}" | awk '!seen[$0]++')
   error_list=$(printf "  - %s\n" "${unique_errors[@]}")
   warning_list=""
   if [[ ${#warnings[@]} -gt 0 ]]; then
-    # Deduplicate warnings and preserve order
-    mapfile -t unique_warnings < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
+    # Deduplicate warnings and preserve order (bash 3.2 compatible)
+    unique_warnings=()
+    while IFS= read -r line; do unique_warnings+=("$line"); done < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
     warning_list=$(printf "  - %s\n" "${unique_warnings[@]}")
   fi
 
@@ -270,8 +272,9 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   }'
   exit 0
 elif [[ ${#warnings[@]} -gt 0 ]]; then
-  # Deduplicate warnings and preserve order
-  mapfile -t unique_warnings < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
+  # Deduplicate warnings and preserve order (bash 3.2 compatible)
+  unique_warnings=()
+  while IFS= read -r line; do unique_warnings+=("$line"); done < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
   warning_list=$(printf "  - %s\n" "${unique_warnings[@]}")
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
     systemMessage: ("COMMIT WARNING: \"" + $title + "\"\n\n" + $warnings)
