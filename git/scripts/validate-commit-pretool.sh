@@ -254,10 +254,14 @@ fi
 
 # Output results and block execution if errors found
 if [[ ${#errors[@]} -gt 0 ]]; then
-  error_list=$(printf "  - %s\n" "${errors[@]}")
+  # Deduplicate errors and preserve order
+  mapfile -t unique_errors < <(printf "%s\n" "${errors[@]}" | awk '!seen[$0]++')
+  error_list=$(printf "  - %s\n" "${unique_errors[@]}")
   warning_list=""
   if [[ ${#warnings[@]} -gt 0 ]]; then
-    warning_list=$(printf "  - %s\n" "${warnings[@]}")
+    # Deduplicate warnings and preserve order
+    mapfile -t unique_warnings < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
+    warning_list=$(printf "  - %s\n" "${unique_warnings[@]}")
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
@@ -266,7 +270,9 @@ if [[ ${#errors[@]} -gt 0 ]]; then
   }'
   exit 0
 elif [[ ${#warnings[@]} -gt 0 ]]; then
-  warning_list=$(printf "  - %s\n" "${warnings[@]}")
+  # Deduplicate warnings and preserve order
+  mapfile -t unique_warnings < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
+  warning_list=$(printf "  - %s\n" "${unique_warnings[@]}")
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
     systemMessage: ("COMMIT WARNING: \"" + $title + "\"\n\n" + $warnings)
   }'
