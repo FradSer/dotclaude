@@ -452,6 +452,32 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
                                     suggestion=f'Add "{skill_path}" to "commands" array in plugin.json'
                                 )
 
+    # Validate hooks field
+    if "hooks" in manifest:
+        hooks = manifest["hooks"]
+        if isinstance(hooks, str):
+            if not re.match(r'^\./.*$', hooks):
+                result.must(
+                    "Invalid hooks path format",
+                    file=".claude-plugin/plugin.json",
+                    source=f'"hooks": "{hooks}"',
+                    suggestion="Use './path/' format for hooks file"
+                )
+            else:
+                hooks_path = plugin_dir / hooks.lstrip("./")
+                if not hooks_path.exists():
+                    result.must(
+                        "Hooks file not found",
+                        file=".claude-plugin/plugin.json",
+                        source=f'"hooks": "{hooks}"',
+                        suggestion=f"Create hooks file at {hooks}"
+                    )
+                elif verbose:
+                    result.ok("Hooks file exists", file=".claude-plugin/plugin.json")
+        elif isinstance(hooks, dict):
+            if verbose:
+                result.ok("Inline hooks configuration valid", file=".claude-plugin/plugin.json")
+
     return result
 
 
