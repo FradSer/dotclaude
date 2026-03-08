@@ -456,7 +456,15 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     if "hooks" in manifest:
         hooks = manifest["hooks"]
         if isinstance(hooks, str):
-            if not re.match(r'^\./.*$', hooks):
+            # If the path is the standard default path, suggest removing it
+            if hooks == "./hooks/hooks.json":
+                result.must(
+                    "Duplicate hooks file detected",
+                    file=".claude-plugin/plugin.json",
+                    source=f'"hooks": "{hooks}"',
+                    suggestion="Remove the 'hooks' field from plugin.json. The standard hooks/hooks.json is loaded automatically, so manifest.hooks should only reference additional hook files."
+                )
+            elif not re.match(r'^\./.*$', hooks):
                 result.must(
                     "Invalid hooks path format",
                     file=".claude-plugin/plugin.json",
