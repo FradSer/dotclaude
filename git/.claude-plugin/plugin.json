@@ -18,11 +18,10 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "once": false,
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-commit-pretool.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-commit-pretool.sh",
             "timeout": 10
           }
         ]
