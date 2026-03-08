@@ -30,7 +30,7 @@ Explore codebase first, then ask focused questions to clarify requirements.
 1. **Explore codebase** - Use Read/Grep/Glob to find relevant files and patterns
 2. **Review context** - Check docs/, README.md, CLAUDE.md, recent commits
 3. **Identify gaps** - Determine what's unclear from codebase alone
-4. **Ask questions** - Use AskUserQuestion tool with exactly 1 question per call
+4. **Ask questions** - Use AskUserQuestion with exactly 1 question per call
    - Prefer multiple choice (2-4 options)
    - Ask one at a time, never bundle
    - Base on exploration gaps
@@ -195,5 +195,5 @@ Detailed guidance for each phase:
 - `./references/options.md` - Option comparison and presentation patterns
 - `./references/design-creation.md` - Sub-agent patterns, integration workflow, design structure
 - `./references/reflection.md` - Design reflection patterns and gap identification strategies
-- `../../skills/references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls

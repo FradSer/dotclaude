@@ -227,7 +227,7 @@ A bug requires EnterPlanMode before making changes when ANY of these apply:
    - Must understand WHAT is broken and WHY before planning
    - Gather all evidence first
 
-2. **Use EnterPlanMode tool**
+2. **Use EnterPlanMode**
    - This signals to user you need approval before proceeding
    - Allows user to review approach before implementation
 
@@ -321,6 +321,7 @@ These techniques are part of systematic debugging:
 - **`./references/defense-in-depth.md`** - Add validation at multiple layers after finding root cause
 - **`./references/condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
 - **`./references/condition-based-waiting-example.ts`** - Example implementation of condition-based waiting
+- **`./find-polluter.sh`** - Bisect test suite to identify which test pollutes shared state
 
 **Related skills:**
 - **superpowers:behavior-driven-development** - BDD principles including Gherkin scenarios for test design

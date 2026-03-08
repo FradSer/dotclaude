@@ -44,7 +44,7 @@ Read plan, understand the project and requirements.
    - `activeForm`: Present continuous form (e.g., "Implementing login handler")
    - `depends-on`: Dependencies (if any)
 
-2. **Create Tasks First**: Use TaskCreate tool to register every task
+2. **Create Tasks First**: Use TaskCreate to register every task
    - All tasks MUST be created before proceeding to the next phase
    - Do NOT execute any tasks until all tasks are created
 
@@ -135,4 +135,4 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
-- `../../skills/references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
