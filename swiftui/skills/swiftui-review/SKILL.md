@@ -20,6 +20,7 @@ Review process:
 1. Ensure the code is able to run efficiently using `references/performance.md`.
 1. Quick validation of Swift code using `references/swift.md`.
 1. Final code hygiene check using `references/hygiene.md`.
+1. For architecture reviews, check Clean Architecture compliance using `references/clean-architecture.md`.
 
 If doing a partial review, load only the relevant reference files.
 
@@ -99,6 +100,7 @@ End of example.
 
 - `references/accessibility.md` - Dynamic Type, VoiceOver, Reduce Motion, and other accessibility requirements.
 - `references/api.md` - updating code for modern API, and the deprecated code it replaces.
+- `references/clean-architecture.md` - Clean Architecture patterns, layer separation, MVVM, dependency injection, and modern SwiftUI architecture.
 - `references/design.md` - guidance for building accessible apps that meet Apple’s Human Interface Guidelines.
 - `references/hygiene.md` - making code compile cleanly and be maintainable in the long term.
 - `references/navigation.md` - navigation using `NavigationStack`/`NavigationSplitView`, plus alerts, confirmation dialogs, and sheets.
