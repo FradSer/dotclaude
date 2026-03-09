@@ -202,6 +202,7 @@ Based on prioritized issue list:
 3. **Complete sections** - Add missing files, steps, verification
 4. **Clarify descriptions** - Make vague tasks specific
 5. **Fix pairing** - Ensure Red-Green tasks are properly paired
+6. **MANDATORY: Add dependency graph to `_index.md`** - Insert the visual dependency graph from Sub-agent 2 into the "Dependency Chain" section of `_index.md`, including analysis of circular dependencies, logical flow, and parallel paths
 
 ### 5. Re-Verify Updated Sections
 

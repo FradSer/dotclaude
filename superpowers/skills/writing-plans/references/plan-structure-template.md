@@ -47,6 +47,27 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 - [Task 003: Implement login test](./task-003-implement-login-test.md)
 - ...
 
+## BDD Coverage
+
+All BDD scenarios from the design are covered by these tasks. See individual task files for scenario mapping.
+
+## Dependency Chain
+
+```
+task-001 (setup)
+    │
+    ├─→ task-002 (feature-a)
+    │       └─→ task-004 (integration)
+    │
+    └─→ task-003 (feature-b)
+            └─→ task-004 (integration)
+```
+
+**Analysis**:
+- No circular dependencies
+- Logical dependency flow: foundation → features → integration
+- Parallel paths where independence allows (e.g., task-002/003 can proceed after task-001)
+
 ---
 
 ## Execution Handoff

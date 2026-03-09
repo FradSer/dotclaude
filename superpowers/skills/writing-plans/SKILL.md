@@ -79,6 +79,8 @@ Verify completeness, confirm with user, and save.
 2. **Confirm**: Get user approval on the plan.
 3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
    - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with references to all task files
+   - **CRITICAL**: `_index.md` MUST include "BDD Coverage" section confirming all scenarios are covered
+   - **CRITICAL**: `_index.md` MUST include "Dependency Chain" section with visual dependency graph (will be populated in Phase 4)
    - Example: `- [Task 001: Setup project structure](./task-001-setup-project-structure.md)`
    - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `[Task 002: Whale Discovery Test](./task-002-whale-discovery-test.md)` and `[Task 002: Whale Discovery Impl](./task-002-whale-discovery-impl.md)`
 
@@ -108,9 +110,10 @@ Before committing, launch sub-agents in parallel to verify plan quality and iden
 1. Collect all sub-agent findings
 2. Prioritize issues by impact
 3. Update plan files to fix issues
-4. Re-verify updated sections
+4. **MANDATORY**: Add dependency graph from Sub-agent 2 to `_index.md` in "Dependency Chain" section
+5. Re-verify updated sections
 
-**Output**: Updated plan with issues resolved.
+**Output**: Updated plan with issues resolved and dependency graph included in `_index.md`.
 
 See `./references/plan-reflection.md` for sub-agent prompts and integration workflow.
 
