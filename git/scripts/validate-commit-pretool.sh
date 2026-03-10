@@ -221,11 +221,12 @@ else
     fi
 
     if [[ ${#invalid_bullets[@]} -gt 0 ]]; then
-      warnings+=("Some bullet points may not start with imperative verbs:")
+      warnings+=("INVALID_BULLETS_START")
       for bullet in "${invalid_bullets[@]}"; do
-        warnings+=("  $bullet")
+        warnings+=("${bullet}")
       done
-      warnings+=("Expected format: '- <Verb> <description>' (Add, Remove, Update, Fix, etc.)")
+      warnings+=("INVALID_BULLETS_END")
+      warnings+=("Use imperative verbs: Add, Remove, Update, Fix, etc.")
     fi
 
     # Validate explanation paragraph after bullets (REQUIRED)
@@ -260,7 +261,22 @@ if [[ ${#errors[@]} -gt 0 ]]; then
     # Deduplicate warnings and preserve order (bash 3.2 compatible)
     unique_warnings=()
     while IFS= read -r line; do unique_warnings+=("$line"); done < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
-    warning_list=$(printf "  - %s\n" "${unique_warnings[@]}")
+
+    # Build warning list with special handling for invalid bullets
+    warning_list=""
+    in_bullets=false
+    for item in "${unique_warnings[@]}"; do
+      if [[ "$item" == "INVALID_BULLETS_START" ]]; then
+        in_bullets=true
+        warning_list+="  - Bullet points do not start with imperative verbs:"$'\n'
+      elif [[ "$item" == "INVALID_BULLETS_END" ]]; then
+        in_bullets=false
+      elif [[ "$in_bullets" == true ]]; then
+        warning_list+="    ${item}"$'\n'
+      else
+        warning_list+="  - ${item}"$'\n'
+      fi
+    done
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
@@ -272,7 +288,23 @@ elif [[ ${#warnings[@]} -gt 0 ]]; then
   # Deduplicate warnings and preserve order (bash 3.2 compatible)
   unique_warnings=()
   while IFS= read -r line; do unique_warnings+=("$line"); done < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
-  warning_list=$(printf "  - %s\n" "${unique_warnings[@]}")
+
+  # Build warning list with special handling for invalid bullets
+  warning_list=""
+  in_bullets=false
+  for item in "${unique_warnings[@]}"; do
+    if [[ "$item" == "INVALID_BULLETS_START" ]]; then
+      in_bullets=true
+      warning_list+="  - Bullet points do not start with imperative verbs:"$'\n'
+    elif [[ "$item" == "INVALID_BULLETS_END" ]]; then
+      in_bullets=false
+    elif [[ "$in_bullets" == true ]]; then
+      warning_list+="    ${item}"$'\n'
+    else
+      warning_list+="  - ${item}"$'\n'
+    fi
+  done
+
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
     systemMessage: ("COMMIT WARNING: \"" + $title + "\"\n\n" + $warnings)
   }'
