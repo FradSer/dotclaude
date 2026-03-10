@@ -54,3 +54,12 @@ Verify working tree is clean and current branch matches `release/*` per `${CLAUD
 **Actions**:
 1. Extract changelog for this version from CHANGELOG.md
 2. Run `gh release create "v$VERSION" --title "v$VERSION" --notes "<changelog>" --verify-tag`
+
+## Phase 6: Finalize
+
+**Goal**: Ensure working branch is develop.
+
+**Actions**:
+1. Switch to develop: `git checkout develop`
+2. Pull latest: `git pull origin develop`
+3. Verify: `git branch --show-current` (should output "develop")

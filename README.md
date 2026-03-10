@@ -146,10 +146,9 @@ claude plugin install swiftui@frad-dotclaude
 ```
 
 **Key Features:**
-- Clean Architecture pattern enforcement
+- Clean Architecture enforcement (layer separation, violations, DI)
 - SwiftUI best practices (2024-2025)
 - @Observable and @MainActor validation
-- Architecture review and suggestions
 
 ---
 
@@ -319,10 +318,10 @@ SwiftUI Clean Architecture reviewer for iOS/macOS development.
 | `swiftui-clean-architecture-reviewer` | Specialized SwiftUI architecture reviewer | `opus` | `red` |
 
 **Features:**
-- Clean Architecture pattern enforcement
+- Clean Architecture enforcement (layer separation, violations, DI)
 - SwiftUI best practices (2024-2025)
 - @Observable and @MainActor validation
-- Architecture review and suggestions
+- Clean Architecture reference with layer separation patterns, violations, and DI guidelines
 
 ---
 
