@@ -139,6 +139,18 @@
       "source": "./next-devtools",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/next-devtools"
+    },
+    {
+      "name": "acpx",
+      "version": "0.1.0",
+      "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./acpx",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/acpx"
     }
   ]
 }
