@@ -1,10 +1,12 @@
 {
   "name": "swiftui",
-  "version": "0.1.1",
-  "description": "SwiftUI Clean Architecture reviewer.",
+  "version": "0.2.0",
+  "description": "SwiftUI code review with modern API best practices.",
   "author": {
-        "name": "Frad LEE",
+    "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
-  "keywords": ["swiftui", "ios", "macos", "clean-architecture", "mvvm", "swift"]
+  "keywords": ["swiftui", "ios", "macos", "swift", "code-review", "best-practices"],
+  "license": "MIT",
+  "commands": ["./skills/swiftui-review/"]
 }

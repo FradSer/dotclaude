@@ -1,6 +1,6 @@
 ---
 name: behavior-driven-development
-description: Apply BDD principles including Gherkin scenarios and the Red-Green-Refactor cycle. Use when implementing features, fixing bugs, or refactoring to ensure test-driven development and shared understanding of requirements.
+description: Applies behavior-driven development principles including Gherkin scenarios and test-driven development. This skill should be used when the user asks to implement features, fix bugs, or when writing executable specifications and tests before writing production code.
 user-invocable: false
 ---
 
@@ -37,9 +37,9 @@ See [Cucumber Gherkin Guide](./references/gherkin-guide.md) for syntax and stora
 
 ### 3. Red-Green-Refactor (TDD)
 The engine of implementation:
-1.  🔴 **RED:** Write a failing test for the scenario (or a unit thereof).
-2.  🟢 **GREEN:** Write the minimal code to pass the test.
-3.  🔵 **REFACTOR:** Clean up the code while keeping tests passing.
+1.  **RED:** Write a failing test for the scenario (or a unit thereof).
+2.  **GREEN:** Write the minimal code to pass the test.
+3.  **REFACTOR:** Clean up the code while keeping tests passing.
 
 ## Quick Reference: The Iron Law
 

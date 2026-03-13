@@ -45,3 +45,40 @@ Adhere to the **Principle of Least Privilege**.
 1.  **Examples are Key**: Include 2-4 `<example>` blocks in the agent description. This is "Few-Shot Prompting" for the router. It teaches Claude *exactly* when to pick this agent.
 2.  **Fail Fast**: Instruct agents to stop and report if prerequisites aren't met.
 3.  **Hooks for Safety**: Use `PreToolUse` hooks to validate commands (e.g., preventing `git push --force` in a junior-dev agent). See `./references/components/hooks.md` for configuration.
+
+## Worktree Isolation
+
+Agents can run in isolated git worktrees to prevent file conflicts during parallel execution.
+
+### Session-Level Worktree
+
+Request worktree isolation during a session:
+
+```markdown
+"work in a worktree"
+"start a worktree for this bug fix"
+```
+
+### Agent-Level Isolation (Strongest Mode)
+
+Add `isolation: worktree` to agent frontmatter for automatic worktree creation:
+
+```yaml
+---
+name: feature-implementer
+description: Implements features in isolated worktrees
+isolation: worktree
+tools: Read, Write, Edit, Bash
+---
+```
+
+**Behavior**:
+- Each agent invocation creates a fresh worktree with its own branch
+- Agent has complete filesystem isolation
+- Worktree auto-cleans if no changes are made
+- Ideal for parallel agents editing overlapping files
+
+**When to Use**:
+- Multiple agents working on same codebase simultaneously
+- Parallel feature development with potential file conflicts
+- Competitive implementation (N solutions, pick best)

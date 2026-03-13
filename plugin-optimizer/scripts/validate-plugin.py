@@ -452,6 +452,40 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
                                     suggestion=f'Add "{skill_path}" to "commands" array in plugin.json'
                                 )
 
+    # Validate hooks field
+    if "hooks" in manifest:
+        hooks = manifest["hooks"]
+        if isinstance(hooks, str):
+            # If the path is the standard default path, suggest removing it
+            if hooks == "./hooks/hooks.json":
+                result.must(
+                    "Duplicate hooks file detected",
+                    file=".claude-plugin/plugin.json",
+                    source=f'"hooks": "{hooks}"',
+                    suggestion="Remove the 'hooks' field from plugin.json. The standard hooks/hooks.json is loaded automatically, so manifest.hooks should only reference additional hook files."
+                )
+            elif not re.match(r'^\./.*$', hooks):
+                result.must(
+                    "Invalid hooks path format",
+                    file=".claude-plugin/plugin.json",
+                    source=f'"hooks": "{hooks}"',
+                    suggestion="Use './path/' format for hooks file"
+                )
+            else:
+                hooks_path = plugin_dir / hooks.lstrip("./")
+                if not hooks_path.exists():
+                    result.must(
+                        "Hooks file not found",
+                        file=".claude-plugin/plugin.json",
+                        source=f'"hooks": "{hooks}"',
+                        suggestion=f"Create hooks file at {hooks}"
+                    )
+                elif verbose:
+                    result.ok("Hooks file exists", file=".claude-plugin/plugin.json")
+        elif isinstance(hooks, dict):
+            if verbose:
+                result.ok("Inline hooks configuration valid", file=".claude-plugin/plugin.json")
+
     return result
 
 

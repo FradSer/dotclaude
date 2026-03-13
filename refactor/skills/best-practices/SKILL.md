@@ -1,6 +1,6 @@
 ---
 name: best-practices
-description: Provides language-specific best practices, code quality standards, and framework detection for refactoring workflows
+description: Provides language-specific best practices, code quality standards, and framework detection. Use when executing refactoring workflows, applying code quality rules, or checking framework-specific patterns.
 user-invocable: false
 version: 1.3.0
 ---

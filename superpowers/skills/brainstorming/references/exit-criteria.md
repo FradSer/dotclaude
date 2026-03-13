@@ -53,7 +53,7 @@ Before creating design document, verify:
   - Know which files and patterns to reference
 
 ## After Phase 3: Design Creation
-Before proceeding to Phase 4, verify:
+Before proceeding to Phase 4 (Reflection), verify:
 
 - [ ] **Core sub-agents completed**
   - Architecture Research sub-agent completed with recommendations
@@ -92,8 +92,53 @@ Before proceeding to Phase 4, verify:
   - Shows concrete examples and interfaces
   - Aligns with project's architectural style
 
-## After Phase 4: Git Commit
-Before proceeding to Phase 5, verify:
+## After Phase 4: Design Reflection
+Before proceeding to Phase 5 (Git Commit), verify:
+
+- [ ] **Core reflection sub-agents launched and completed**
+  - Requirements Traceability Review sub-agent completed
+  - BDD Completeness Review sub-agent completed
+  - Cross-Document Consistency Review sub-agent completed
+
+- [ ] **Additional reflection sub-agents completed (if launched)**
+  - Security Review sub-agent completed (if applicable)
+  - Risk Assessment sub-agent completed (if applicable)
+
+- [ ] **Findings synthesized and prioritized**
+  - All sub-agent outputs collected via TaskOutput
+  - Findings merged into unified gap list
+  - Gaps prioritized by impact (High/Medium/Low)
+
+- [ ] **Requirements traceability verified**
+  - Every Phase 1 requirement is addressed in design
+  - Requirements are traced to specific sections
+  - No orphaned requirements without implementation
+
+- [ ] **Gaps identified and filled**
+  - Error handling paths documented
+  - Edge cases covered in BDD scenarios
+  - Integration points clearly defined
+  - Non-functional requirements addressed
+
+- [ ] **Cross-document consistency verified**
+  - Terminology consistent across all documents
+  - Cross-references between documents work
+  - Component and file names consistent
+
+- [ ] **BDD scenario completeness verified**
+  - Happy path scenarios covered
+  - Error path scenarios covered
+  - Edge case scenarios covered
+  - Testing strategy is clear
+
+- [ ] **Documents updated based on findings**
+  - High priority gaps addressed
+  - Gaps filled with new content
+  - Ambiguities clarified
+  - Inconsistencies fixed
+
+## After Phase 5: Git Commit
+Before proceeding to Phase 6, verify:
 
 - [ ] **Entire folder committed**
   - Used `git add docs/plans/YYYY-MM-DD-<topic>-design/`
@@ -126,6 +171,9 @@ Before proceeding to Phase 5, verify:
 - Launched core sub-agents in parallel for design creation
 - Launched additional sub-agents as needed for specialized research
 - Integrated all sub-agent results successfully
+- Launched reflection sub-agents in parallel for gap identification
+- Synthesized and prioritized reflection findings
+- Updated design documents based on reflection findings
 - Design document is comprehensive and actionable with BDD scenarios
 - Saved design files with proper structure inside dated folder
 - Committed design folder as checkpoint before implementation
@@ -139,6 +187,10 @@ Before proceeding to Phase 5, verify:
 - Launching sub-agents without providing complete context
 - Not integrating sub-agent results before creating documents
 - Launching too many sub-agents for simple features (stay focused)
+- Skipping reflection phase - "it looks fine, let's just commit"
+- Single-agent reflection - not leveraging parallel sub-agents
+- Ignoring sub-agent findings - not acting on identified gaps
+- Superficial fixes - adding content without proper integration
 - Missing BDD specifications or best practices sections
 - Saving design to wrong location (should be `docs/plans/YYYY-MM-DD-<topic>-design/`)
 - Committing individual files instead of entire folder

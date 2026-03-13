@@ -1,6 +1,6 @@
 ---
 name: agent-browser
-description: Browser automation command reference and usage patterns for web testing, form filling, screenshots, and data extraction.
+description: Provides browser automation command reference and usage patterns. This skill should be used when the user asks for guidance on web testing, form filling, capturing screenshots, extracting data, or needs help with agent-browser commands.
 user-invocable: false
 ---
 

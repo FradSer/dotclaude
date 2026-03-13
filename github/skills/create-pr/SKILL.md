@@ -1,7 +1,7 @@
 ---
 name: create-pr
 allowed-tools: Task, Bash(gh:*), Bash(git:*)
-description: Create comprehensive GitHub pull requests with quality validation
+description: Creates comprehensive GitHub pull requests with automated quality validation and security scanning. This skill should be used when the user asks to "create a PR", "submit a pull request", or needs to merge completed work with full compliance checks.
 argument-hint: [optional description or issue reference]
 user-invocable: true
 ---
@@ -24,14 +24,18 @@ Ensure repository readiness with clean state and authentication. Complete all qu
 
 ## Phase 1: Validation and Analysis
 
-**Goal**: Validate repository state, analyze changes, and identify blockers.
+**Goal**: Validate repository state, analyze changes, detect templates, and identify blockers.
 
 **Actions**:
 1. Verify GitHub authentication from context
 2. Check branch status and unpushed commits
 3. Analyze commit history for conventional commit compliance
 4. Identify changed files and determine PR scope
-5. Detect potential blockers (merge conflicts, missing tests, etc.)
+5. Check for contributing guidelines (`CONTRIBUTING.md`) and follow its requirements
+6. Detect PR templates (`.github/PULL_REQUEST_TEMPLATE.md` or root/docs locations)
+7. Detect potential blockers (merge conflicts, missing tests, etc.)
+
+See `references/repository-templates.md` for template detection and compliance details.
 
 ## Phase 2: Quality and Security Checks
 
@@ -59,6 +63,7 @@ Ensure repository readiness with clean state and authentication. Complete all qu
 ## References
 
 - **Requirements**: `references/requirements.md` - Pre-creation checklist and commit standards
+- **Repository Templates**: `references/repository-templates.md` - Contributing guidelines and PR templates
 - **Quality Validation**: `references/quality-validation.md` - Node.js/Python validation commands
 - **PR Structure**: `references/pr-structure.md` - Title guidelines, body template, labels
 - **Failure Resolution**: `references/failure-resolution.md` - Agent collaboration for fixing failures

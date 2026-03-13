@@ -23,7 +23,7 @@ All tools follow the naming pattern `mcp__plugin_next-devtools_next-devtools__<t
 | `upgrade-nextjs-16` | Complete Next.js 16 upgrade with codemod execution and manual fixes | Upgrading from Next.js 15 or earlier |
 | `enable-cache-components` | Complete Cache Components setup with automated error fixing | Migrating to Next.js 16 Cache Components |
 
-## MCP Resources (19)
+## MCP Resources (17)
 
 ### Cache Components Resources (13)
 

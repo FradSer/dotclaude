@@ -1,6 +1,6 @@
 ---
 name: create-prd
-description: This skill should be used when the user asks to "创建PRD", "写产品需求文档", "生成PRD", "新建PRD", "create PRD", "write product requirements document", or mentions "产品需求文档", "PRD模板". Automatically generates comprehensive Chinese PRD documents following 2026 best practices.
+description: Automatically generates comprehensive Chinese PRD documents following best practices. This skill should be used when the user asks to "创建PRD", "写产品需求文档", "生成PRD", "新建PRD", "create PRD", "write product requirements document", or mentions "产品需求文档", "PRD模板".
 user-invocable: true
 allowed-tools: Read, Write, AskUserQuestion
 version: 0.1.0

@@ -33,7 +33,7 @@ ${context}
 
 ${summary}
 
-Co-Authored-By: ${model_name} <noreply@anthropic.com>"
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
 ```
 
 **Commit Pattern for Implementation Changes**:
@@ -49,7 +49,7 @@ ${context}
 
 ${summary}
 
-Co-Authored-By: ${model_name} <noreply@anthropic.com>"
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
 ```
 
 **Commit Message Requirements**:
@@ -60,7 +60,7 @@ Co-Authored-By: ${model_name} <noreply@anthropic.com>"
   - Context (user request, feature description, or project background)
   - Specific actions taken (as a bulleted list)
   - Brief summary of the approach
-- **Footer**: `Co-Authored-By: ${model_name} <noreply@anthropic.com>`
+- **Footer**: `Co-Authored-By: <Model Name> <noreply@anthropic.com>` (valid: `Claude Sonnet 4.6`, `Claude Opus 4.6`, `Claude Haiku 4.5`)
 
 **Example - Design**:
 
@@ -76,7 +76,7 @@ Request: Implement JWT auth for API.
 Summary: Implements stateless JWT auth using existing library with
 bearer token validation and refresh token rotation.
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
 ```
 
 **Example - Implementation Plan**:
@@ -93,7 +93,7 @@ Implementation plan derived from design.
 Summary: Tasks organized in sequential batches following BDD
 principles with clear file ownership and verification commands.
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
 ```
 
 **Example - Implementation**:
@@ -105,7 +105,7 @@ git commit -m "feat(auth): implement JWT token validation
 - Added middleware for request header parsing
 - Integrated with existing user service
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: <Model Name> <noreply@anthropic.com>"
 ```
 
 ### 2. Verify Commit

@@ -1,6 +1,6 @@
 ---
 name: commit
-description: This skill should be used when the user requests "commit", "git commit", "create commit", or wants to commit staged/unstaged changes following conventional commits format
+description: Creates a conventional git commit. This skill should be used when the user requests "commit", "git commit", "create commit", or wants to commit staged and unstaged changes following the conventional commits format.
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Skill", "Task"]
 model: haiku
@@ -20,11 +20,11 @@ model: haiku
 
 [explanation paragraph - REQUIRED, explains the "why" behind changes]
 
-Co-Authored-By: <Model Name> <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 **Rules**:
-- **Title**: ALL LOWERCASE, <50 chars, imperative, no period. Add "!" before ":" for breaking changes
+- **Title**: ALL LOWERCASE, ≤50 chars, imperative, no period. Add "!" before ":" for breaking changes
 - **Types**: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `build`, `ci`, `style`
 - **Body** (REQUIRED): Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
 - **Explanation paragraph** (REQUIRED): Explains the "why" behind the changes, not just the "what"
@@ -59,11 +59,12 @@ Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
 
 ## Phase 4: Commit Creation
 1. Draft commit message following Conventional Commits format:
-   - Title: lowercase, <50 chars, imperative, no period
+   - Title: lowercase, ≤50 chars, imperative, no period
    - Context paragraph: optional background before bullet points
    - Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
    - Explanation paragraph after bullet points (REQUIRED) - explains the "why"
    - Footer: Co-Authored-By: <Model Name> <noreply@anthropic.com>
+   - Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
 2. Validate message format
 3. Stage files and create commit
 

@@ -1,9 +1,9 @@
 ---
 name: quick
 user-invocable: true
-description: Streamlined code review for rapid assessment and targeted feedback. Use when reviewing small PRs, simple changes, or when you need a quick triage to determine if deeper review is required.
+description: Streamlines code review for rapid assessment and targeted feedback. This skill should be used when the user asks for a "quick review", "triage PR", or when evaluating small, simple changes that may not require deep architectural analysis.
 argument-hint: [files-or-directories]
-allowed-tools: Task
+allowed-tools: ["Task"]
 ---
 
 # Quick Code Review
@@ -17,27 +17,59 @@ allowed-tools: Task
 - Files changed since base: !`BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git diff --name-only $BASE..HEAD`
 - Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn test") || ([ -f Cargo.toml ] && echo "cargo test") || ([ -f pyproject.toml ] && echo "pytest/uv run pytest") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
 
-## Requirements
+## Phase 1: Determine Review Scope
 
-- Use **@tech-lead-reviewer** — architectural impact assessment — to scope the review and decide which specialized agents are required.
-- Launch only the necessary specialized reviews to minimize turnaround time.
-- Summarize results by priority (Critical → High → Medium → Low) and confidence (High → Medium → Low).
-- Offer optional implementation support and ensure resulting commits follow Git commit conventions (See `${CLAUDE_PLUGIN_ROOT}/skills/references/git-commit-conventions.md` for details).
+**Goal**: Identify what to review based on current state.
 
-## Your Task
+**Actions**:
+1. Check review scope in this order:
+   - **Uncommitted changes**: If git status shows modifications, review those files via `git diff`
+   - **Session changes**: If files were modified during this conversation, review those
+   - **User argument**: If `$ARGUMENTS` specifies files/directories, review those
+   - **No scope**: If none of the above, use `AskUserQuestion` tool to ask user to specify files/directories to review
+2. Record the determined scope for Phase 2.
 
-**IMPORTANT: You MUST use the Task tool to complete ALL tasks.**
+## Phase 2: Initial Assessment
 
-1. Run an initial assessment with **@tech-lead-reviewer** — architectural impact assessment — to gauge architectural, security, and UX risk, and determine if a deeper review is needed.
-2. Trigger the relevant specialized reviews via the Task tool, gather targeted feedback, and resolve conflicting recommendations.
-3. Present a concise summary, ask whether the user wants fixes implemented, and if confirmed, apply changes, refactor with **@code-simplifier** — code simplification and optimization —, test, and stage commits before reporting outcomes.
+**Goal**: Scope the review and determine which specialized agents are required.
 
-### Targeted Review Flow
+**Actions**:
+1. **Explore changed code context** using the Explore agent:
+   - Launch `subagent_type="Explore"` with thoroughness: "quick"
+   - Let the agent autonomously discover related code and dependencies
+2. Run an initial assessment with **@tech-lead-reviewer** — architectural impact assessment — to gauge architectural, security, and UX risk.
+3. Evaluate whether a deeper review is needed based on the tech-lead assessment.
+4. Identify which specialized agents to involve (minimizing turnaround time).
 
-- **Selective Agents**:
-  - **@code-reviewer** — logic correctness, tests, error handling.
-  - **@security-reviewer** — authentication, data protection, validation.
-  - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
-- **Results Analysis**: Organize findings using the priority/confidence matrix and provide actionable steps.
-- **Optional Implementation**: Execute requested fixes, optimize the code, rerun tests, and prepare commits that adhere to the standards fragment.
-- **Closure**: Push updates if changes were made and confirm review completion with the user.
+## Phase 3: Targeted Review
+
+**Goal**: Gather targeted feedback from relevant specialized reviewers.
+
+**Actions**:
+1. Launch only the necessary specialized reviews via the Task tool:
+   - **@code-reviewer** — logic correctness, tests, error handling.
+   - **@security-reviewer** — authentication, data protection, validation.
+   - **@performance-reviewer** — performance bottlenecks and resource usage (if performance-sensitive).
+   - **@test-coverage-reviewer** — test coverage and quality (if tests are modified or missing).
+   - **@ux-reviewer** — usability and accessibility (skip if purely backend/CLI).
+2. Collect outcomes from each agent.
+3. Resolve conflicting recommendations between reviewers.
+
+## Phase 4: Consolidation & Reporting
+
+**Goal**: Present findings and optionally implement fixes.
+
+**Actions**:
+1. Organize findings using the priority/confidence matrix:
+   - Priority: Critical → High → Medium → Low
+   - Confidence: High → Medium → Low
+2. Present a concise summary to the user.
+3. Ask whether the user wants fixes implemented.
+4. If confirmed:
+   - Apply requested changes.
+   - Refactor with **@code-simplifier** — code simplification and optimization.
+   - Run tests to validate fixes.
+   - Stage commits following Git commit conventions (see `${CLAUDE_PLUGIN_ROOT}/skills/references/git-commit-conventions.md`).
+5. Report outcomes and confirm review completion.
+
+**IMPORTANT**: You MUST use the Task tool to complete ALL tasks.

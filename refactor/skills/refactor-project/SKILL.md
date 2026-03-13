@@ -1,6 +1,6 @@
 ---
 name: refactor-project
-description: This skill should be used when the user asks for project-wide refactoring, cross-file simplification, consistency standardization across the codebase, duplication reduction, or invokes `/refactor-project`.
+description: Executes automated project-wide refactoring with a focus on cross-file optimization. This skill should be used when the user asks for project-wide refactoring, cross-file simplification, consistency standardization across the codebase, duplication reduction, or invokes "/refactor-project".
 argument-hint: (no arguments needed)
 allowed-tools: ["Task", "Read", "Bash(git:*)", "Grep", "Glob"]
 user-invocable: true

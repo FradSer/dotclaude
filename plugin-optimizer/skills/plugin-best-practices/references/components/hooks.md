@@ -60,6 +60,7 @@ Plugins provide event handlers that respond to Claude Code events automatically.
 - **Quote Variables**: Always quote bash variables (e.g., `"$CLAUDE_PROJECT_DIR"`) to handle spaces
 - **Early Exit**: Exit early for non-matching tools/commands to reduce processing
 - **Single JSON Parse**: Extract all needed values in one `jq` call, not multiple
+- **Use bash 3.2-compatible syntax**: macOS `/bin/bash` is version 3.2 — avoid bash 4+ features
 
 ### Avoid
 
@@ -68,6 +69,7 @@ Plugins provide event handlers that respond to Claude Code events automatically.
 - **Legacy Fields**: Avoid using the deprecated `hookSpecificOutput` schema (including `permissionDecision` and `additionalContext`). Use `systemMessage` instead.
 - **Warning Output Without Action**: If exit 0, output is ignored; either enforce or remove the check
 - **Blocking Errors for Non-Critical Issues**: Reserve exit 2 for security/correctness, not style
+- **bash 4+ builtins**: `mapfile`/`readarray` are bash 4+ and silently crash on macOS, causing fail-open
 
 ## AI-Native Human-Readable Output
 
@@ -269,6 +271,47 @@ if [[ "$command" =~ dangerous ]]; then
   echo "Blocked: $command"
 fi
 ```
+
+## macOS bash Compatibility
+
+macOS ships `/bin/bash` version 3.2. Hook scripts run with this shell unless explicitly using a different interpreter. Bash 4+ features silently cause exit code 127 under `set -euo pipefail`, which Claude Code treats as a hook error and **fails open** (allows the operation).
+
+### Common bash 4+ Features to Avoid
+
+| Feature | bash 4+ | bash 3.2 Alternative |
+|---------|---------|----------------------|
+| `mapfile -t arr < <(cmd)` | 4+ only | `while IFS= read -r line; do arr+=("$line"); done < <(cmd)` |
+| `readarray -t arr < <(cmd)` | 4+ only | same as above |
+| `declare -A` (associative arrays) | 4+ only | use `case` or parallel arrays |
+
+### Hook Error vs Block Decision
+
+These are fundamentally different outcomes:
+
+| Situation | Claude Code Shows | Operation |
+|-----------|------------------|-----------|
+| Script outputs `{"decision":"block"}` | Block reason to user | **Blocked** |
+| Script crashes (no JSON output) | `PreToolUse:Bash hook error` | **Allowed** (fail-open) |
+
+`set -euo pipefail` makes any failing command kill the script before it can output the block JSON. Test hooks directly before deploying:
+
+```bash
+echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"test\""}}' | \
+  bash ./scripts/validate-commit-pretool.sh
+echo "Exit: $?"
+```
+
+### ${CLAUDE_PLUGIN_ROOT} Availability
+
+`${CLAUDE_PLUGIN_ROOT}` is a template variable expanded by Claude Code before execution. Its availability depends on the hook event:
+
+| Event | `${CLAUDE_PLUGIN_ROOT}` | Notes |
+|-------|------------------------|-------|
+| `PreToolUse` | Available | Official recommended usage |
+| `PostToolUse` | Available | Official recommended usage |
+| `PermissionRequest` | Available | — |
+| `SessionStart` | **Not available** | Known limitation — use absolute paths |
+| `Stop` | **Not available** | Known limitation — use absolute paths |
 
 ## Security Considerations
 

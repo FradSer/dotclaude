@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.9.0] - 2026-03-13
+
+### Added
+
+- Add shadcn plugin for UI component management (adds, searches, fixes, debugs, styles, and composes shadcn components)
+- Add acpx plugin for agent-to-agent communication via ACP protocol with persistent sessions
+- Add performance and test-coverage reviewers to review plugin for specialized code audits
+- Add missing agent definitions (tech-lead-reviewer, ux-reviewer) to review plugin
+- Add design reflection phase to plugin-optimizer for improved plugin quality
+- Add plan reflection phase to superpowers for iterative design refinement
+- Add agent tool restrictions to review plugin to enforce safe capability boundaries
+- Add worktree isolation mode for agent teams in superpowers skill
+- Add iphone-team agent implementing Apple's Project Purple methodology
+- Add design reflection and MCP integration guidance to plugin-optimizer
+
+### Changed
+
+- Refactor git validation script to accept semantic versioning for Claude models (supports 4.6, 4.7, 5.0, etc.)
+- Refactor plugin-optimizer skill structure for improved organization
+- Optimize acpx skill documentation with progressive disclosure (Level 3 token structure)
+- Standardize agent workflows across review plugin with autonomous explore phase
+- Improve review plugin reference documentation with standardized patterns
+- Enhance github plugin with repository template detection capabilities
+- Improve swiftui plugin with Clean Architecture reference documentation
+- Condense plugin-optimizer skill files for better maintainability
+- Migrate swiftui plugin from command-based to skill-based architecture
+
+### Fixed
+
+- Fix git pretool hook to use correct decision field for commit validation
+- Fix git title validation to properly enforce 50-character limit
+- Fix git pretool hook to ensure it runs on every bash call
+- Fix git error message formatting and symbol usage
+- Fix jq output redirection in git validation script
+- Fix bash 3.2 compatibility issues in git hook script
+- Fix hook configuration for proper event-driven automation
+- Fix duplicate message deduplication while preserving order in git hooks
+
+### Documentation
+
+- Add worktree isolation guidance for autonomous agents in plugin-optimizer
+- Add tool design philosophy reference to plugin-optimizer
+- Add Gherkin .feature file storage requirement to BDD workflow
+- Enhance plugin documentation with standardized descriptions
+- Clarify skill tool usage patterns in superpowers
+- Correct MCP resources count in next-devtools documentation
+
+### Chores
+
+- Remove executing-plans transition step for improved workflow efficiency
+- Remove version fields from SKILL.md frontmatter (version in plugin.json only)
+- Update git commit scopes and types configuration
+- Standardize plugin documentation structure across all plugins
+
 ## [v1.8.0] - 2026-02-26
 
 ### Added

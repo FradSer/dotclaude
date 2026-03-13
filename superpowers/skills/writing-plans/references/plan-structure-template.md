@@ -28,7 +28,7 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use Skill tool load `superpowers:executing-plans` skill to implement this plan task-by-task.
+> **For Claude:** REQUIRED SUB-SKILL: Load `superpowers:executing-plans` skill using the Skill tool to implement this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -37,6 +37,7 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 **Tech Stack:** [Key technologies/libraries]
 
 **Design Support:**
+<!-- Template: replace YYYY-MM-DD-<topic>-design with actual folder name -->
 - [BDD Specs](../YYYY-MM-DD-<topic>-design/bdd-specs.md)
 - [Architecture](../YYYY-MM-DD-<topic>-design/architecture.md)
 
@@ -46,17 +47,38 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 - [Task 003: Implement login test](./task-003-implement-login-test.md)
 - ...
 
+## BDD Coverage
+
+All BDD scenarios from the design are covered by these tasks. See individual task files for scenario mapping.
+
+## Dependency Chain
+
+```
+task-001 (setup)
+    │
+    ├─→ task-002 (feature-a)
+    │       └─→ task-004 (integration)
+    │
+    └─→ task-003 (feature-b)
+            └─→ task-004 (integration)
+```
+
+**Analysis**:
+- No circular dependencies
+- Logical dependency flow: foundation → features → integration
+- Parallel paths where independence allows (e.g., task-002/003 can proceed after task-001)
+
 ---
 
 ## Execution Handoff
 
 **"Plan complete and saved to `docs/plans/YYYY-MM-DD-<topic>-plan/`. Execution options:**
 
-**1. Orchestrated Execution (Recommended)** - Use Skill tool load `superpowers:executing-plans` skill.
+**1. Orchestrated Execution (Recommended)** - Load `superpowers:executing-plans` skill using the Skill tool.
 
-**2. Direct Agent Team** - Use Skill tool load `superpowers:agent-team-driven-development` skill.
+**2. Direct Agent Team** - Load `superpowers:agent-team-driven-development` skill using the Skill tool.
 
-**3. BDD-Focused Execution** - Use Skill tool load `superpowers:behavior-driven-development` skill for specific scenarios.
+**3. BDD-Focused Execution** - Load `superpowers:behavior-driven-development` skill using the Skill tool for specific scenarios.
 ```
 
 **CRITICAL**: The Execution Plan section with task file references is MANDATORY in `_index.md`

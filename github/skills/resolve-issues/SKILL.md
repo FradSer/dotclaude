@@ -1,7 +1,7 @@
 ---
 name: resolve-issues
 allowed-tools: Bash(gh:*), Bash(git:*), Bash(cd:*), Bash(mkdir:*), Task
-description: Resolve GitHub issues using isolated worktrees and TDD
+description: Resolves GitHub issues using isolated worktrees and test-driven development. This skill should be used when the user asks to "resolve an issue", "fix issue #123", or needs to implement a solution for a specific GitHub ticket using a structured workflow.
 argument-hint: [issue number or description]
 user-invocable: true
 ---

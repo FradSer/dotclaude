@@ -1,7 +1,7 @@
 ---
 name: finish-release
 allowed-tools: Bash(git:*), Bash(gh:*), Read, Write
-description: This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release and merge it into main and develop with a tag.
+description: Finalizes a release and merges it into main and develop with a tag using git-flow. This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release.
 model: haiku
 argument-hint: [version]
 user-invocable: true
@@ -54,3 +54,12 @@ Verify working tree is clean and current branch matches `release/*` per `${CLAUD
 **Actions**:
 1. Extract changelog for this version from CHANGELOG.md
 2. Run `gh release create "v$VERSION" --title "v$VERSION" --notes "<changelog>" --verify-tag`
+
+## Phase 6: Finalize
+
+**Goal**: Ensure working branch is develop.
+
+**Actions**:
+1. Switch to develop: `git checkout develop`
+2. Pull latest: `git pull origin develop`
+3. Verify: `git branch --show-current` (should output "develop")

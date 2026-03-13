@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: This skill should be used when the user has a new idea, feature request, or ambiguous requirement. It clarifies needs, explores options, and produces a solid design document and BDD specs before implementation starts.
+description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
 ---
 
@@ -15,7 +15,7 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 
 ## Core Principles
 
-1. **Converge in Order**: Clarify → Compare → Choose → Design → Commit → Transition
+1. **Converge in Order**: Clarify → Compare → Choose → Design → Reflect → Commit → Transition
 2. **Context First**: Explore codebase before asking questions
 3. **Incremental Validation**: Validate each phase before proceeding
 4. **YAGNI Ruthlessly**: Only include what's explicitly needed
@@ -30,7 +30,7 @@ Explore codebase first, then ask focused questions to clarify requirements.
 1. **Explore codebase** - Use Read/Grep/Glob to find relevant files and patterns
 2. **Review context** - Check docs/, README.md, CLAUDE.md, recent commits
 3. **Identify gaps** - Determine what's unclear from codebase alone
-4. **Ask questions** - Use AskUserQuestion tool with exactly 1 question per call
+4. **Ask questions** - Use AskUserQuestion with exactly 1 question per call
    - Prefer multiple choice (2-4 options)
    - Ask one at a time, never bundle
    - Base on exploration gaps
@@ -126,20 +126,51 @@ docs/plans/YYYY-MM-DD-<topic>-design/
 See `./references/design-creation.md` for sub-agent patterns and integration workflow.
 See `./references/exit-criteria.md` for Phase 3 validation checklist.
 
-## Git Commit
+## Phase 4: Design Reflection
+
+Before committing, launch sub-agents in parallel to verify design quality and identify gaps.
+
+**Core reflection sub-agents (always required)**:
+
+**Sub-agent 1: Requirements Traceability Review**
+- Focus: Verify every Phase 1 requirement is addressed in design
+- Output: Traceability matrix, orphaned requirements list
+
+**Sub-agent 2: BDD Completeness Review**
+- Focus: Check BDD scenarios cover happy path, edge cases, and error conditions
+- Output: Missing scenarios list, coverage gaps
+
+**Sub-agent 3: Cross-Document Consistency Review**
+- Focus: Verify terminology, references, and component names are consistent
+- Output: Inconsistencies list, terminology conflicts
+
+**Additional sub-agents (launch as needed)**:
+- Security Review - Identify security considerations not addressed
+- Risk Assessment - Identify risks, assumptions, and failure modes
+
+**Integrate and Update**:
+1. Collect all sub-agent findings
+2. Prioritize issues by impact
+3. Update design documents to fix issues
+4. Re-verify updated sections
+
+**Output**: Updated design documents with issues resolved.
+
+See `./references/reflection.md` for sub-agent prompts and integration workflow.
+
+## Phase 5: Git Commit
 
 Commit the design folder to git with proper message format.
-
-See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
 **Critical requirements**:
 - Commit the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-design/`
 - Prefix: `docs:` (lowercase)
 - Subject: Under 50 characters, lowercase
 - Footer: Co-Authored-By with model name
-See `./references/exit-criteria.md` for Phase 4 validation checklist.
 
-## Phase 4: Transition to Implementation
+See `../../skills/references/git-commit.md` for detailed patterns.
+
+## Phase 6: Transition to Implementation
 
 Prompt the user to use `superpowers:writing-plans` to create a detailed implementation plan.
 
@@ -163,5 +194,6 @@ Detailed guidance for each phase:
 - `./references/discovery.md` - Exploration patterns and question guidelines
 - `./references/options.md` - Option comparison and presentation patterns
 - `./references/design-creation.md` - Sub-agent patterns, integration workflow, design structure
-- `../../skills/references/git-commit.md` - Git commit patterns and requirements
+- `./references/reflection.md` - Design reflection patterns and gap identification strategies
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls

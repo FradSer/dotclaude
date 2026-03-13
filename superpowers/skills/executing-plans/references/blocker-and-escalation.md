@@ -13,6 +13,6 @@
 ## Integration
 
 **Required workflow skills (MANDATORY for all execution modes):**
-- **Superpowers: Agent Team Driven Development** - Use Skill tool load `superpowers:agent-team-driven-development` skill for team coordination guidance
-- **Superpowers: Behavior Driven Development** - Use Skill tool load `superpowers:behavior-driven-development` skill for BDD/TDD workflow guidance
-- **Superpowers: Writing Plans** - Use Skill tool load `superpowers:writing-plans` skill to create the plan this skill executes
+- **Superpowers: Agent Team Driven Development** - Load `superpowers:agent-team-driven-development` skill using the Skill tool for team coordination guidance
+- **Superpowers: Behavior Driven Development** - Load `superpowers:behavior-driven-development` skill using the Skill tool for BDD/TDD workflow guidance
+- **Superpowers: Writing Plans** - Load `superpowers:writing-plans` skill using the Skill tool to create the plan this skill executes

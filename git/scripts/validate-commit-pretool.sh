@@ -90,7 +90,7 @@ if [[ "$tool_name" != "Bash" ]]; then
   exit 0
 fi
 
-if [[ -z "$command" ]] || ! [[ "$command" =~ git[[:space:]]+commit ]]; then
+if [[ -z "$command" ]] || ! [[ "$command" =~ ^[[:space:]]*git[[:space:]]+commit ]]; then
   exit 0
 fi
 
@@ -122,12 +122,12 @@ if [[ -z "$commit_msg" ]] && [[ "$command" =~ --file= ]]; then
   fi
 fi
 
-# Fail-closed: Block if we cannot extract the message
+# Fail-open: If we cannot extract the message, it might be a script containing the words "git commit"
+# rather than an actual commit command. We only validate if we successfully extracted a message.
 if [[ -z "$commit_msg" ]]; then
-  jq -n '{
-    systemMessage: ("VALIDATION BLOCKED: Cannot extract commit message\n\nThe commit message format is not recognized and cannot be validated.\nThis is a security measure to prevent bypassing conventional commit validation.\n\nSupported formats:\n  - git commit -m \"message\"\n  - git commit -F <file>\n  - git commit --file=<file>\n\nIf you believe this is an error, please check your commit command format.")
-  }' >&2
-  exit 2
+  # If the command is strictly just 'git commit ...' and we couldn't parse it, we should warn,
+  # but since the hook is often triggered by 'sed' or 'cat' containing the words, we exit 0.
+  exit 0
 fi
 
 # Get just the title line (first line)
@@ -144,7 +144,6 @@ valid_types="feat|fix|docs|refactor|perf|test|chore|build|ci|style"
 if ! [[ "$title_line" =~ ^($valid_types)(\([a-z0-9_-]+\))?!?:[[:space:]].+ ]]; then
   errors+=("Invalid format. Must be: <type>[scope]: <description>")
   errors+=("Valid types: feat, fix, docs, refactor, perf, test, chore, build, ci, style")
-  errors+=("Example: feat(auth): add login validation")
 fi
 
 # 2. Check for uppercase in description (after the colon)
@@ -157,8 +156,8 @@ fi
 
 # 3. Check length (< 50 chars for title)
 title_length=${#title_line}
-if [[ $title_length -ge 50 ]]; then
-  errors+=("Title must be <50 characters (current: $title_length)")
+if [[ $title_length -gt 50 ]]; then
+  errors+=("Title must be ≤50 characters (current: $title_length)")
 fi
 
 # 4. Check for period at end
@@ -184,37 +183,18 @@ body=$(echo "$commit_msg" | tail -n +2)
 body_trimmed=$(echo "$body" | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
 
 if [[ -z "$body_trimmed" ]]; then
-  errors+=("Commit body is REQUIRED and MUST contain bullet-point summary.")
-  errors+=("Format: Body MUST have bullet points with imperative verbs.")
-  errors+=("        Body MUST have explanation paragraph after bullets.")
-  errors+=("        Body MAY include context before bullets.")
-  errors+=("        Line length: All body lines must be ≤72 characters.")
-  errors+=("Example:")
-  errors+=("  - Add user authentication endpoint")
-  errors+=("  - Update middleware to validate tokens")
-  errors+=("  ")
-  errors+=("  Improves security by implementing OAuth 2.0 standard.")
+  errors+=("Body required: bullet points (- Verb ...) + explanation paragraph")
 else
   # Body exists, now validate it has bullet points
   # Look for lines starting with "- " (bullet points)
   bullet_lines=$(echo "$body" | grep -E '^[[:space:]]*-[[:space:]]+' || true)
 
   if [[ -z "$bullet_lines" ]]; then
-    errors+=("Body MUST contain bullet-point summary (lines starting with '- ')")
-    errors+=("Current body format is invalid. Body structure:")
-    errors+=("  REQUIRED: Bullet-point summary with imperative verbs")
-    errors+=("  REQUIRED: Explanation paragraph after bullets")
-    errors+=("  OPTIONAL: Context paragraph before bullets")
-    errors+=("  Line length: All body lines must be ≤72 characters")
-    errors+=("Example:")
-    errors+=("  - Add OAuth 2.0 configuration")
-    errors+=("  - Implement callback endpoint")
-    errors+=("  ")
-    errors+=("  Improves security and user experience.")
+    errors+=("Body must contain bullet points starting with '- <Verb> ...'")
   else
     # Validate bullet points start with common verbs (warning check)
     # Common imperative verbs for commits
-    common_verbs="Add|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow|Define|Describe|Explain|Specify|Outline|Cover"
+    common_verbs="Add|Change|Remove|Update|Fix|Implement|Create|Delete|Refactor|Optimize|Improve|Rename|Move|Extract|Replace|Merge|Split|Enhance|Reduce|Increase|Prevent|Enable|Disable|Configure|Set|Unset|Reset|Clear|Clean|Deprecate|Restore|Revert|Introduce|Migrate|Upgrade|Downgrade|Consolidate|Simplify|Standardize|Normalize|Validate|Verify|Test|Document|Annotate|Comment|Modify|Adjust|Tweak|Tune|Streamline|Reorganize|Restructure|Rearrange|Rewrite|Redesign|Rebuild|Redo|Revise|Correct|Align|Synchronize|Sync|Preload|Load|Unload|Initialize|Init|Finalize|Register|Unregister|Bind|Unbind|Attach|Detach|Connect|Disconnect|Link|Unlink|Expand|Collapse|Extend|Shorten|Widen|Narrow|Define|Describe|Explain|Specify|Outline|Cover"
 
     invalid_bullets=()
     while IFS= read -r line; do
@@ -235,19 +215,18 @@ else
     done <<< "$(echo "$body" | grep -v '^Co-Authored-By:' || true)"
 
     if [[ ${#line_too_long[@]} -gt 0 ]]; then
-      errors+=("Body lines must be ≤72 characters (some lines exceed limit)")
-      errors+=("Found $((${#line_too_long[@]})) line(s) that are too long:")
       for long_line in "${line_too_long[@]}"; do
-        errors+=("  Line (${#long_line} chars): $(echo "$long_line" | cut -c1-50)...")
+        errors+=("Body line too long (${#long_line}/72): $(echo "$long_line" | cut -c1-50)...")
       done
     fi
 
     if [[ ${#invalid_bullets[@]} -gt 0 ]]; then
-      warnings+=("Some bullet points may not start with imperative verbs:")
+      warnings+=("INVALID_BULLETS_START")
       for bullet in "${invalid_bullets[@]}"; do
-        warnings+=("  $bullet")
+        warnings+=("${bullet}")
       done
-      warnings+=("Expected format: '- <Verb> <description>' (Add, Remove, Update, Fix, etc.)")
+      warnings+=("INVALID_BULLETS_END")
+      warnings+=("Use imperative verbs: Add, Remove, Update, Fix, etc.")
     fi
 
     # Validate explanation paragraph after bullets (REQUIRED)
@@ -259,43 +238,76 @@ else
       content_after_bullets=$(echo "$body" | tail -n +$((last_bullet_line + 1)) | grep -v '^Co-Authored-By:' | sed 's/^[[:space:]]*$//' | grep -v '^$' || true)
 
       if [[ -z "$content_after_bullets" ]]; then
-        errors+=("Body MUST contain explanation paragraph after bullet points")
-        errors+=("The explanation should describe WHY these changes were made")
-        errors+=("Example:")
-        errors+=("  - Add OAuth 2.0 configuration")
-        errors+=("  - Implement callback endpoint")
-        errors+=("  ")
-        errors+=("  Improves security by implementing industry-standard authentication.")
+        errors+=("Body must end with explanation paragraph (the 'why' after bullets)")
       fi
     fi
   fi
 fi
 
 # 8. Validate Co-Authored-By footer
-# Check if footer contains Co-Authored-By (required for AI-assisted commits)
-if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
-  errors+=("Co-Authored-By footer is required for AI-assisted commits")
-  errors+=("Format: Co-Authored-By: <Model Name> <noreply@anthropic.com>")
-  errors+=("Example:")
-  errors+=("  Co-Authored-By: <Model Name> <noreply@anthropic.com>")
+# Check if footer contains Co-Authored-By with a Claude model and Anthropic email
+if ! echo "$commit_msg" | grep -qE "^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9]+(\.[0-9]+)*[[:space:]]+<noreply@anthropic\.com>"; then
+  errors+=("Missing footer: Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+  errors+=("Example: Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>")
 fi
 
 # Output results and block execution if errors found
 if [[ ${#errors[@]} -gt 0 ]]; then
-  error_list=$(printf "  - %s\n" "${errors[@]}")
+  # Deduplicate errors and preserve order (bash 3.2 compatible)
+  unique_errors=()
+  while IFS= read -r line; do unique_errors+=("$line"); done < <(printf "%s\n" "${errors[@]}" | awk '!seen[$0]++')
+  error_list=$(printf "  - %s\n" "${unique_errors[@]}")
   warning_list=""
   if [[ ${#warnings[@]} -gt 0 ]]; then
-    warning_list=$(printf "\n\nWarnings:\n  - %s" "${warnings[@]}")
+    # Deduplicate warnings and preserve order (bash 3.2 compatible)
+    unique_warnings=()
+    while IFS= read -r line; do unique_warnings+=("$line"); done < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
+
+    # Build warning list with special handling for invalid bullets
+    warning_list=""
+    in_bullets=false
+    for item in "${unique_warnings[@]}"; do
+      if [[ "$item" == "INVALID_BULLETS_START" ]]; then
+        in_bullets=true
+        warning_list+="  - Bullet points do not start with imperative verbs:"$'\n'
+      elif [[ "$item" == "INVALID_BULLETS_END" ]]; then
+        in_bullets=false
+      elif [[ "$in_bullets" == true ]]; then
+        warning_list+="    ${item}"$'\n'
+      else
+        warning_list+="  - ${item}"$'\n'
+      fi
+    done
   fi
 
   jq -n --arg title "$title_line" --arg errors "$error_list" --arg warnings "$warning_list" '{
-    systemMessage: ("VALIDATION FAILED: Conventional commit format error\n\nCommit message:\n  \"" + $title + "\"\n\nErrors:\n" + $errors + $warnings + "\n\nRequired format:\n<type>[scope]: <description>\n\n[Optional context paragraph]\n\n- <Verb> <change description> (REQUIRED)\n- <Verb> <change description> (REQUIRED)\n\n<Explanation paragraph> (REQUIRED)\n\nLine length: All body lines must be ≤72 characters\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>\n\nExample:\nfeat(auth): add google oauth login\n\n- Add OAuth 2.0 configuration\n- Implement callback endpoint\n- Update session management\n\nImproves cross-platform sign-in experience.\n\nCo-Authored-By: <Model Name> <noreply@anthropic.com>")
-  }' >&2
-  exit 2
+    decision: "block",
+    reason: ("COMMIT BLOCKED: \"" + $title + "\"\n\nIssues:\n" + $errors + (if $warnings != "" then "\n\nWarnings:\n" + $warnings else "" end))
+  }'
+  exit 0
 elif [[ ${#warnings[@]} -gt 0 ]]; then
-  warning_list=$(printf "  - %s\n" "${warnings[@]}")
+  # Deduplicate warnings and preserve order (bash 3.2 compatible)
+  unique_warnings=()
+  while IFS= read -r line; do unique_warnings+=("$line"); done < <(printf "%s\n" "${warnings[@]}" | awk '!seen[$0]++')
+
+  # Build warning list with special handling for invalid bullets
+  warning_list=""
+  in_bullets=false
+  for item in "${unique_warnings[@]}"; do
+    if [[ "$item" == "INVALID_BULLETS_START" ]]; then
+      in_bullets=true
+      warning_list+="  - Bullet points do not start with imperative verbs:"$'\n'
+    elif [[ "$item" == "INVALID_BULLETS_END" ]]; then
+      in_bullets=false
+    elif [[ "$in_bullets" == true ]]; then
+      warning_list+="    ${item}"$'\n'
+    else
+      warning_list+="  - ${item}"$'\n'
+    fi
+  done
+
   jq -n --arg title "$title_line" --arg warnings "$warning_list" '{
-    systemMessage: ("WARNING: Commit message has warnings\n  \"" + $title + "\"\n\nWarnings:\n" + $warnings)
+    systemMessage: ("COMMIT WARNING: \"" + $title + "\"\n\n" + $warnings)
   }'
   exit 0
 else

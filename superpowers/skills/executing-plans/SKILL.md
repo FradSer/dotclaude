@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: This skill should be used when the user has a completed implementation plan (plan.md) and is ready to execute the tasks defined therein. Actively uses Agent Teams or subagents to execute batches of independent tasks in parallel, following BDD/TDD principles.
+description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
 allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Task"]
@@ -44,7 +44,7 @@ Read plan, understand the project and requirements.
    - `activeForm`: Present continuous form (e.g., "Implementing login handler")
    - `depends-on`: Dependencies (if any)
 
-2. **Create Tasks First**: Use TaskCreate tool to register every task
+2. **Create Tasks First**: Use TaskCreate to register every task
    - All tasks MUST be created before proceeding to the next phase
    - Do NOT execute any tasks until all tasks are created
 
@@ -67,6 +67,7 @@ Execute tasks in batches. Actively use Agent Teams for parallel execution (prefe
 
 1. **Choose Execution Mode** (strict priority — justify any downgrade explicitly):
    - **Agent Team** (default): Use unless a specific technical reason prevents it. File conflicts or sequential `depends-on` within a batch are NOT valid reasons to downgrade — resolve by splitting the batch further.
+   - **Agent Team + Worktree**: Launch parallel agents with worktree isolation when multiple agents edit overlapping files or for competitive implementation (N solutions, pick best).
    - **Subagent Parallel** (downgrade only if): Agent Team overhead is disproportionate (e.g., batch has exactly 2 small tasks). State the reason explicitly.
    - **Linear** (last resort only if): Tasks within the batch have unavoidable file conflicts that cannot be split, or the batch genuinely contains only 1 task. State the reason explicitly.
 
@@ -83,13 +84,13 @@ Execute tasks in batches. Actively use Agent Teams for parallel execution (prefe
 4. **Subagent Parallel Execution**:
    - For each task: Read the task file to get full context before execution
    - Spawn subagents concurrently for each independent task
-   - Each subagent loads the `superpowers:behavior-driven-development` skill
+   - Each subagent loads the `superpowers:behavior-driven-development` skill using the Skill tool
    - Verify all tasks in the batch
 
 5. **Linear Execution**:
    - For each task in the batch:
      - Read the task file to get full context before execution
-     - Execute using subagent loading the `superpowers:behavior-driven-development` skill
+     - Execute using subagent loading the `superpowers:behavior-driven-development` skill using the Skill tool
      - Verify the task
 
 6. **Mark Tasks Complete**: After verification, use TaskUpdate to set status to `completed`
@@ -134,4 +135,4 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
-- `../../skills/references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)

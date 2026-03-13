@@ -39,6 +39,7 @@ Blank line after body, then add these footers:
 **Required:**
 - **Co-Authored-By**: Always add this to attribute AI assistance. Use the appropriate format:
   - `Co-Authored-By: <Model Name> <noreply@anthropic.com>`
+  - Valid models: `Claude Sonnet 4.6`, `Claude Opus 4.6`, `Claude Haiku 4.5`
 
 **Optional:**
 - Issue references: `Closes #123`, `Fixes #456`
@@ -54,7 +55,7 @@ feat(auth): add oauth login flow
 - Implement callback endpoint handler
 - Update session management
 
-Co-Authored-By: <Model Name> <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 ### Bug fix
@@ -65,7 +66,7 @@ fix(api): handle null payload in session refresh
 - Return 400 response instead of 500
 - Add regression test for null input
 
-Co-Authored-By: <Model Name> <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 Fixes #105
 ```
@@ -80,7 +81,7 @@ feat(auth)!: migrate to oauth 2.0
 
 BREAKING CHANGE: Authentication API now requires OAuth 2.0 tokens. Basic auth is no longer supported.
 
-Co-Authored-By: <Model Name> <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 Closes #120
 ```
