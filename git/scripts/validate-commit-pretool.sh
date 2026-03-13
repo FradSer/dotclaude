@@ -245,9 +245,11 @@ else
 fi
 
 # 8. Validate Co-Authored-By footer
-# Check if footer contains Co-Authored-By (required for AI-assisted commits)
-if ! echo "$commit_msg" | grep -qE '^Co-Authored-By:[[:space:]]+Claude[[:space:]]+(Sonnet|Opus|Haiku)[[:space:]]+[0-9.]+[[:space:]]+<noreply@anthropic\.com>'; then
-  errors+=("Missing footer: Co-Authored-By: Claude <Model> <Version> <noreply@anthropic.com>")
+# Check if footer contains Co-Authored-By with valid Claude model and Anthropic email
+valid_models="Claude Sonnet 4\.6|Claude Opus 4\.6|Claude Haiku 4\.5"
+if ! echo "$commit_msg" | grep -qE "^Co-Authored-By:[[:space:]]+($valid_models)[[:space:]]+<noreply@anthropic\.com>"; then
+  errors+=("Missing footer: Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>")
+  errors+=("Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5")
 fi
 
 # Output results and block execution if errors found

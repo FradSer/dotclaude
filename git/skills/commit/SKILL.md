@@ -20,7 +20,7 @@ model: haiku
 
 [explanation paragraph - REQUIRED, explains the "why" behind changes]
 
-Co-Authored-By: <Model Name> <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 **Rules**:
@@ -64,6 +64,7 @@ Execute the complete commit workflow (4 phases) for any staged/unstaged changes.
    - Bullet points with `- ` prefix, imperative verbs, ≤72 chars/line
    - Explanation paragraph after bullet points (REQUIRED) - explains the "why"
    - Footer: Co-Authored-By: <Model Name> <noreply@anthropic.com>
+   - Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
 2. Validate message format
 3. Stage files and create commit
 
