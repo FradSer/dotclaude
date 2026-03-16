@@ -2,6 +2,42 @@
 
 Agents are autonomous subprocesses with isolated context. Combine a **Persona** (System Prompt) with **Capabilities** (Tools/Skills) to solve problems.
 
+## Frontmatter Structure
+
+Agent frontmatter MUST follow this exact field order within the YAML block:
+
+```yaml
+---
+name: agent-name
+description: Use this agent when... <example>blocks required</example>
+model: sonnet
+color: cyan
+skills:
+  - plugin-name:skill-name
+tools: ["Read", "Grep", "Glob"]
+isolation: worktree  # optional
+---
+```
+
+**Field ordering rules**:
+- `name` and `description` MUST come first
+- `model`, `color`, `skills`, `tools`, `isolation` MUST appear immediately after `description`, before any `<example>` blocks
+- `<example>` blocks MUST appear after all YAML fields and before the closing `---`
+
+**Anti-pattern** — fields after `<example>` blocks are parsed as body text, not YAML:
+
+```yaml
+---
+name: agent-name
+description: ...
+
+<example>...</example>
+
+model: sonnet   # WRONG: not parsed as YAML frontmatter
+tools: [...]    # WRONG: not parsed as YAML frontmatter
+---
+```
+
 ## Anatomy of a Robust Agent
 
 ### Persona (System Prompt)

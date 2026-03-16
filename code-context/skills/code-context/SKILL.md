@@ -1,7 +1,6 @@
 ---
 name: code-context
 description: This skill should be used when the user asks to "understand a codebase", "get code context", "research a library", "explore a repository", "find code examples", "look up documentation", or wants to understand how a specific project or library works before making changes.
-context: fork
 user-invocable: false
 ---
 
@@ -9,7 +8,16 @@ user-invocable: false
 
 This skill provides 4 methods for retrieving code context. Select methods based on the target: public GitHub repos, library docs, code search, or direct inspection.
 
-Always spawn a Task agent for MCP calls to isolate token usage from the main context.
+## Token Isolation (Critical)
+
+Never run any external lookup in the main context. Always spawn Task agents:
+
+- **DeepWiki**: Agent calls `read_wiki_structure` / `read_wiki_contents` / `ask_question`, extracts architecture summary and key relationships, returns concise overview.
+- **Context7**: Agent calls `resolve-library-id` then `query-docs`, extracts the minimum viable API surface and usage examples, returns copyable snippets with version notes.
+- **Exa**: Agent calls `get_code_context_exa`, extracts minimum viable snippets, deduplicates near-identical results (mirrors, forks, repeated StackOverflow answers), returns copyable snippets + brief explanation.
+- **Git clone**: Agent clones to `/tmp/`, reads entry points and core modules, runs `rm -rf` cleanup, returns file structure summary and key patterns.
+
+Main context stays clean regardless of search volume. Only final summaries return to the caller.
 
 ## Method 1: DeepWiki (AI-powered repo documentation)
 
@@ -34,11 +42,12 @@ Best for: Getting up-to-date API docs, usage examples, and version-specific docu
 
 **Process**:
 1. Call `resolve-library-id` with the library name (e.g., `"react"`, `"fastapi"`) to get the canonical ID
-2. Call `query-docs` with the resolved ID and a specific topic or function name
-3. Pass `tokens` to control response length (default 5000); increase for complex topics
-4. Always pass the `version` parameter when the user specifies a version (e.g., `"react@18"`)
+2. When the user specifies a version (e.g., `"react@18"`), select the matching version from the `versions` list returned by `resolve-library-id` and append it to the library ID path (e.g., `/facebook/react/18.3.1`)
+3. Call `query-docs` with `libraryId` and `query` — these are the only two parameters
 
 **Query tips**: Be specific -- `"useCallback dependency array"` beats `"react hooks"`. Include the framework version when known.
+
+**Version pinning**: Encode version into the library ID path (e.g., `/vercel/next.js/v14.3.0-canary.87`), not as a separate parameter. Use the `versions` list from `resolve-library-id` to pick the correct slug.
 
 **Strengths**: Always current docs, supports version pinning, covers thousands of libraries, excellent for API reference.
 
@@ -49,6 +58,8 @@ Best for: Getting up-to-date API docs, usage examples, and version-specific docu
 Best for: Finding real-world usage patterns, StackOverflow-style answers, GitHub Gist examples, and code snippets from across the web.
 
 **Tool**: `get_code_context_exa`
+
+**Setup**: Works without an API key (free tier with rate limits). For higher limits, set the `EXA_API_KEY` environment variable.
 
 **Process**:
 1. Call `get_code_context_exa` with a precise query

@@ -9,6 +9,9 @@
   },
   "exa-code-context": {
     "type": "http",
-    "url": "https://mcp.exa.ai/mcp?tools=get_code_context_exa"
+    "url": "https://mcp.exa.ai/mcp?tools=get_code_context_exa",
+    "headers": {
+      "x-api-key": "${EXA_API_KEY}"
+    }
   }
 }

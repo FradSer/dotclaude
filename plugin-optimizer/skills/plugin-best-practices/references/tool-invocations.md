@@ -120,7 +120,50 @@ Modified files: !`git diff --name-only`
 
 Format: `!`command`` (exclamation + backtick + command + backtick)
 
-## Anti-Patterns to Avoid
+## External Services Token Isolation (Critical)
+
+When using external search services (Exa, WebSearch, etc.), **never run them in the main context**. Always spawn a Task agent to handle searches to avoid polluting the conversation context with large search results.
+
+### Why It Matters
+
+External search services can return large volumes of content (code snippets, documentation, StackOverflow answers). Running these directly in the main context:
+- Consumes significant token budget
+- Mixes unrelated results from different searches
+- Makes it harder to find relevant information in conversation history
+
+### Pattern
+
+```
+Launch Task agent to search for [topic]
+  → Agent runs Exa/WebSearch MCP tool
+  → Agent extracts minimum viable snippets + constraints
+  → Agent deduplicates near-identical results (mirrors, forks, repeated answers)
+  → Agent returns copyable snippets + brief explanation
+Main context stays clean regardless of search volume
+```
+
+### Good Examples
+
+```markdown
+# Correct - Use Task agent for external searches
+Launch Task agent to research authentication best practices
+Launch Task agent to find relevant code examples online
+Launch Task agent to search for current documentation
+
+# Wrong - Running searches in main context
+Search the web for authentication best practices
+Query external service for code examples
+```
+
+### When to Apply
+
+Use this pattern when:
+- Web search for current information
+- Code search services (Exa, GitHub search, etc.)
+- Any external API returning large response volumes
+- Multi-step research requiring multiple queries
+
+This keeps the main conversation context clean and token-efficient.
 
 ```markdown
 # Bad - Explicit tool calls for core operations
@@ -142,8 +185,10 @@ Query the data source for records
 |------|-------|---------|
 | Read, Write, Edit, Glob, Grep | Implicit | "Find files matching...", "Read the file..." |
 | Bash | Implicit | "Run `git status`", "Check with `npm test`" |
-| Task | Implicit | "Launch `plugin-name:agent-name` agent" |
-| **MCP Tools** | **Implicit** | "Query data source...", "Fetch from API...", "Search external service..." |
+| Task (code/search) | Implicit | "Launch Task agent to search for..." |
+| Task (workflow) | Implicit | "Launch `plugin-name:agent-name` agent" |
+| **MCP Tools** | **Implicit** | "Query data source...", "Fetch from API..." |
+| External Search (Exa/WebSearch) | **Task Agent** | "Launch Task agent to search for..." |
 | Skill | **Explicit** | "**Load `plugin-name:skill-name` skill** using the Skill tool" |
 | TaskCreate | **Explicit** | "**Use TaskCreate tool** to track progress" |
 | AskUserQuestion | **Explicit** | "Use `AskUserQuestion` tool to [action]" |
