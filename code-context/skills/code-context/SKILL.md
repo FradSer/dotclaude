@@ -6,7 +6,7 @@ user-invocable: false
 
 # Code Context Retrieval
 
-This skill provides 4 methods for retrieving code context. Select methods based on the target: public GitHub repos, library docs, code search, or direct inspection.
+This skill provides 5 methods for retrieving code context. Select methods based on the target: public GitHub repos, library docs, code search, direct inspection, or post-clone web enrichment.
 
 ## Token Isolation (Critical)
 
@@ -16,6 +16,7 @@ Never run any external lookup in the main context. Always spawn Task agents:
 - **Context7**: Agent calls `resolve-library-id` then `query-docs`, extracts the minimum viable API surface and usage examples, returns copyable snippets with version notes.
 - **Exa**: Agent calls `get_code_context_exa`, extracts minimum viable snippets, deduplicates near-identical results (mirrors, forks, repeated StackOverflow answers), returns copyable snippets + brief explanation.
 - **Git clone**: Agent clones to `/tmp/`, reads entry points and core modules, runs `rm -rf` cleanup, returns file structure summary and key patterns.
+- **Web Search+Fetch**: Agent runs `WebSearch` with version-anchored queries derived from clone findings, calls `WebFetch` on high-signal URLs, returns only validated insights cross-referenced against cloned code.
 
 Main context stays clean regardless of search volume. Only final summaries return to the caller.
 
@@ -91,6 +92,31 @@ Best for: Private repositories, detailed implementation review, running local an
 
 **Limitations**: Requires network access and disk space; slow for large repos; credentials needed for private repos.
 
+## Method 5: Web Search + Fetch (post-clone enrichment)
+
+Best for: Enriching findings from a git clone with changelogs, issue discussions, blog posts, and migration guides that live outside the repository itself.
+
+**Tools**: `WebSearch`, `WebFetch`
+
+**When to apply**: Use after completing Method 4. The clone gives you the code; this method gives you the *why* and *what changed*.
+
+**Process**:
+1. Derive targeted queries from clone findings — use exact identifiers, error strings, or design patterns found in the source
+2. Call `WebSearch` with `query` set to a precise, version-anchored string (e.g., `"<library> <version> breaking change <symbol>"`)
+3. For each high-signal result, call `WebFetch` with `url` (from search results) and a focused `prompt` to extract only the relevant section
+4. Cross-reference fetched content against the cloned code to validate accuracy
+5. Discard results older than 2 years unless the topic is stable/foundational
+
+**Query patterns**:
+- Changelogs: `"<repo-name> CHANGELOG v<version>"` or `"<repo-name> release notes"`
+- Design rationale: `"<repo-name> <concept> why OR rationale site:github.com"`
+- Known issues: `"<repo-name> <symbol or pattern> issue OR bug site:github.com"`
+- Migration: `"<repo-name> migrate from <old-version> to <new-version>"`
+
+**Strengths**: Surfaces context that never appears in source code — deprecation notices, upstream issue threads, author blog posts, community migration experiences.
+
+**Limitations**: Results may be stale or inaccurate; always validate fetched claims against the actual cloned code. Rate-limited without API key.
+
 ## Method Selection Guide
 
 | Scenario | Primary Method | Fallback |
@@ -101,6 +127,8 @@ Best for: Private repositories, detailed implementation review, running local an
 | "Inspect private/internal repo" | Git Clone | - |
 | "What changed in v3 of library?" | Context7 | Exa |
 | "How are modules connected?" | DeepWiki | Git Clone |
+| "Why was this design decision made?" | Git Clone → Web Search+Fetch | DeepWiki |
+| "What broke between versions?" | Web Search+Fetch | Context7 |
 
 ## Combining Methods
 
