@@ -5,7 +5,7 @@ model: sonnet
 color: cyan
 skills:
   - code-context:code-context
-tools: ["Read", "Grep", "Glob", "Bash", "mcp__deepwiki-code-context__read_wiki_structure", "mcp__deepwiki-code-context__read_wiki_contents", "mcp__deepwiki-code-context__ask_question", "mcp__context7-code-context__resolve-library-id", "mcp__context7-code-context__query-docs", "mcp__exa-code-context__get_code_context_exa"]
+tools: ["Read", "Grep", "Glob", "Bash(git:*)", "mcp__deepwiki-code-context__read_wiki_structure", "mcp__deepwiki-code-context__read_wiki_contents", "mcp__deepwiki-code-context__ask_question", "mcp__context7-code-context__resolve-library-id", "mcp__context7-code-context__query-docs", "mcp__exa-code-context__get_code_context_exa", "WebSearch", "WebFetch"]
 
 <example>
 Context: User asks how the Zustand state manager works internally
