@@ -1,0 +1,15 @@
+{
+  "description": "Autoresearch stop hook — keeps the experiment loop running indefinitely",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

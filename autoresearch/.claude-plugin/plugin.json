@@ -1,0 +1,11 @@
+{
+  "name": "autoresearch",
+  "version": "0.1.0",
+  "description": "Autonomous ML research loop inspired by karpathy/autoresearch — runs endless experiments on train.py, logs results, and iterates overnight",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["ml", "research", "autonomous", "loop", "training", "experiment"]
+}
