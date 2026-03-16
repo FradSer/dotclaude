@@ -1,14 +1,14 @@
 {
-  "deepwiki": {
+  "deepwiki-code-context": {
     "type": "http",
     "url": "https://mcp.deepwiki.com/mcp"
   },
-  "context7": {
+  "context7-code-context": {
     "type": "http",
     "url": "https://mcp.context7.com/mcp"
   },
-  "exa": {
+  "exa-code-context": {
     "type": "http",
-    "url": "https://mcp.exa.ai/mcp"
+    "url": "https://mcp.exa.ai/mcp?tools=get_code_context_exa"
   }
 }

@@ -1,6 +1,7 @@
 ---
 name: code-context
 description: This skill should be used when the user asks to "understand a codebase", "get code context", "research a library", "explore a repository", "find code examples", "look up documentation", or wants to understand how a specific project or library works before making changes.
+context: fork
 user-invocable: false
 ---
 
@@ -8,11 +9,13 @@ user-invocable: false
 
 This skill provides 4 methods for retrieving code context. Select methods based on the target: public GitHub repos, library docs, code search, or direct inspection.
 
+Always spawn a Task agent for MCP calls to isolate token usage from the main context.
+
 ## Method 1: DeepWiki (AI-powered repo documentation)
 
 Best for: Well-known public GitHub repositories where you need architecture overview, component explanations, or high-level understanding fast.
 
-**Tools**: `mcp__deepwiki__read_wiki_structure`, `mcp__deepwiki__read_wiki_contents`, `mcp__deepwiki__ask_question`
+**Tools**: `read_wiki_structure`, `read_wiki_contents`, `ask_question`
 
 **Process**:
 1. Call `read_wiki_structure` with the owner/repo (e.g., `"facebook/react"`) to get topic list
@@ -27,12 +30,15 @@ Best for: Well-known public GitHub repositories where you need architecture over
 
 Best for: Getting up-to-date API docs, usage examples, and version-specific documentation for npm/pip packages and frameworks.
 
-**Tools**: `mcp__plugin_context7_context7__resolve-library-id`, `mcp__plugin_context7_context7__query-docs`
+**Tools**: `resolve-library-id`, `query-docs`
 
 **Process**:
 1. Call `resolve-library-id` with the library name (e.g., `"react"`, `"fastapi"`) to get the canonical ID
 2. Call `query-docs` with the resolved ID and a specific topic or function name
-3. Optionally pass `tokens` parameter to control response length (default 5000)
+3. Pass `tokens` to control response length (default 5000); increase for complex topics
+4. Always pass the `version` parameter when the user specifies a version (e.g., `"react@18"`)
+
+**Query tips**: Be specific -- `"useCallback dependency array"` beats `"react hooks"`. Include the framework version when known.
 
 **Strengths**: Always current docs, supports version pinning, covers thousands of libraries, excellent for API reference.
 
@@ -42,12 +48,19 @@ Best for: Getting up-to-date API docs, usage examples, and version-specific docu
 
 Best for: Finding real-world usage patterns, StackOverflow-style answers, GitHub Gist examples, and code snippets from across the web.
 
-**Tool**: `mcp__plugin_exa-mcp-server_exa__get_code_context_exa`
+**Tool**: `get_code_context_exa`
 
 **Process**:
-1. Call `get_code_context_exa` with a precise query describing the code pattern needed
-2. Craft queries like: `"react useCallback dependency array optimization example"` or `"python asyncio gather error handling"`
-3. Use the returned snippets as reference; verify sources before adopting patterns
+1. Call `get_code_context_exa` with a precise query
+2. Set `tokensNum` based on need: 3000 for quick examples, 8000 for comprehensive patterns
+3. Verify publication dates on results; prefer recent sources
+
+**Query writing guidance**:
+- Include the language or framework: `"TypeScript React"` not just `"React"`
+- Include the version when relevant: `"Next.js 14 app router"`
+- Use exact identifiers: `"useServerAction"` not `"server action hook"`
+- Add the pattern type: `"example"`, `"error handling"`, `"migration guide"`
+- Example: `"TypeScript Next.js 14 app router server action error handling example"`
 
 **Strengths**: Finds diverse real-world examples, not limited to official docs, surfaces community solutions.
 
@@ -58,11 +71,10 @@ Best for: Finding real-world usage patterns, StackOverflow-style answers, GitHub
 Best for: Private repositories, detailed implementation review, running local analysis, or when other methods lack depth.
 
 **Process**:
-1. Run `git clone <repo-url> /tmp/<repo-name>` to fetch the code
+1. Run `git clone <repo-url> /tmp/<repo-name> --depth=1` to fetch the code
 2. Read key files: entry points, configuration, core modules
-3. Use Glob to map structure: `find /tmp/<repo-name> -name "*.ts" | head -50`
-4. Use Grep to search patterns: `grep -r "functionName" /tmp/<repo-name>/src`
-5. Clean up when done: `rm -rf /tmp/<repo-name>`
+3. Use Glob to map structure; use Grep to search patterns
+4. Clean up when done: `rm -rf /tmp/<repo-name>`
 
 **Strengths**: Full code access, works with private repos (with credentials), enables static analysis tools.
 
