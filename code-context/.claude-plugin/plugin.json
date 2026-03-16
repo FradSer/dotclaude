@@ -1,0 +1,20 @@
+{
+  "name": "code-context",
+  "version": "0.2.0",
+  "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "code-context",
+    "deepwiki",
+    "context7",
+    "exa",
+    "mcp",
+    "research"
+  ],
+  "skills": ["./skills/code-context"],
+  "commands": ["./skills/get-context/"]
+}
