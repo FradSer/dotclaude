@@ -11,6 +11,7 @@ scopes:
   - office      # Office plugin
   - po          # Plugin optimizer
   - cc          # Claude config
+  - codec       # Code context
   - sp          # Superpowers
   - nd          # Next devtools
   - docs        # Documentation

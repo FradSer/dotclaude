@@ -163,6 +163,18 @@
       "source": "./shadcn",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/shadcn"
+    },
+    {
+      "name": "code-context",
+      "version": "0.2.0",
+      "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./code-context",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/code-context"
     }
   ]
 }

@@ -127,6 +127,8 @@ See `./references/components/skills.md` for complete frontmatter specification.
 - **`<example>` blocks**: 2-4 required for router-friendliness
 - **`isolation: worktree`**: Optional — enables automatic git worktree isolation for parallel execution
 
+**Field order**: `name` → `description` → `model`/`color`/`skills`/`tools`/`isolation` → `<example>` blocks → closing `---`. Fields placed after `<example>` blocks are not parsed as YAML.
+
 See `./references/components/agents.md` for complete agent design guidelines including CO-STAR framework.
 
 ### Task Management
