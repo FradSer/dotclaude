@@ -1,0 +1,14 @@
+{
+  "deepwiki": {
+    "type": "http",
+    "url": "https://mcp.deepwiki.com/mcp"
+  },
+  "context7": {
+    "type": "http",
+    "url": "https://mcp.context7.com/mcp"
+  },
+  "exa": {
+    "type": "http",
+    "url": "https://mcp.exa.ai/mcp"
+  }
+}
