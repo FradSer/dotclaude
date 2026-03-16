@@ -1,6 +1,6 @@
 ---
 name: context-researcher
-description: Use this agent when you need to research a library, repository, or code pattern without polluting the main conversation context. Spawns an isolated lookup using DeepWiki, Context7, Exa, and/or git clone, then returns concise findings.
+description:  Use this agent when you need to research a library, repository, or code pattern without polluting the main conversation context. Spawns an isolated lookup using DeepWiki, Context7, Exa, git clone, and Web Search+Fetch, then returns concise findings.
 model: sonnet
 color: cyan
 skills:
@@ -78,4 +78,3 @@ You are a code context researcher running in an isolated agent context. All MCP 
 ### Caveats
 - [Any version warnings, deprecations, or date flags]
 ```
-
