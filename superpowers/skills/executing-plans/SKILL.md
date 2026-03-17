@@ -3,12 +3,12 @@ name: executing-plans
 description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Task", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Task", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Executing Plans
 
-Execute written implementation plans efficiently. Each task runs in its own Ralph Loop for iterative refinement, following BDD/TDD principles.
+Execute written implementation plans efficiently. Each task runs in its own Superpower Loop for iterative refinement, following BDD/TDD principles.
 
 ## Initialization
 
@@ -28,9 +28,9 @@ Execute written implementation plans efficiently. Each task runs in its own Ralp
 
 ## Phase 1: Plan Review & Understanding
 
-Read plan, understand the project and requirements.
+Read `_index.md` only — task files are read on-demand during execution.
 
-1. **Read Plan**: Read all plan files (`_index.md` and task files) to understand the scope, architecture, and dependencies.
+1. **Read Plan**: Read `_index.md` to understand scope, task list, architecture decisions, and dependencies. Do NOT read individual task files yet.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
 
@@ -60,9 +60,9 @@ Read plan, understand the project and requirements.
    - `addBlocks`: Array of task IDs that must wait for this task to complete
    - Example: `TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })` means task #2 waits for task #1
 
-## Phase 3: Batch Execution Loop with Ralph Loop
+## Phase 3: Batch Execution Loop with Superpower Loop
 
-Execute tasks in batches using Ralph Loop for each task to enable iterative refinement.
+Execute tasks in batches using Superpower Loop for each task to enable iterative refinement.
 
 **For Each Batch**:
 
@@ -135,14 +135,15 @@ Execute tasks in batches using Ralph Loop for each task to enable iterative refi
       Execute this task and output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
       ```
 
-   c. **Start Ralph Loop for Task**: Run via Bash with the constructed prompt:
+   c. **Start Superpower Loop for Task**: Run via Bash with the constructed prompt:
       ```bash
-      "${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "<task-prompt>" --completion-promise "TASK_<taskId>_COMPLETE" --max-iterations 20
+      "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<task-prompt>" --completion-promise "TASK_<taskId>_COMPLETE" --max-iterations 20 --state-file ".claude/superpower-loop-task-<taskId>.local.md"
       ```
       Replace `<task-prompt>` with the full task prompt built in step b, and `<taskId>` with the actual task ID.
+      Each task MUST use a unique `--state-file` path. This prevents parallel loops from overwriting each other's state.
 
    d. **Execute Task in Loop**:
-      - The Ralph Loop allows iterative refinement
+      - The Superpower Loop allows iterative refinement
       - Each iteration, Claude sees previous work and can improve
       - When verification passes, output `<promise>TASK_${taskId}_COMPLETE</promise>` as the **absolute last line** — nothing after it
       - Loop continues until promise is output or max iterations reached
@@ -151,7 +152,7 @@ Execute tasks in batches using Ralph Loop for each task to enable iterative refi
 
 4. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
 
-**Parallel Execution Note**: Tasks within the same batch that have no dependencies can be executed in parallel using Agent Teams, but each task still runs in its own Ralph Loop. Teammates can work on different tasks simultaneously.
+**Parallel Execution Note**: Tasks within the same batch that have no dependencies can be executed in parallel using Agent Teams, but each task still runs in its own Superpower Loop. Teammates can work on different tasks simultaneously.
 
 See `./references/batch-execution-playbook.md`.
 
@@ -186,3 +187,5 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
+- `../../skills/superpower-loop/references/prompt-patterns.md` - Writing effective task prompts for superpower loop
+- `../../skills/superpower-loop/references/completion-promises.md` - Per-task completion promise design

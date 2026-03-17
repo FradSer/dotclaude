@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Ralph Loop Setup Script
-# Creates state file for in-session Ralph loop
+# Superpower Loop Setup Script
+# Creates state file for in-session Superpower loop
 
 set -euo pipefail
 
@@ -9,16 +9,17 @@ set -euo pipefail
 PROMPT_PARTS=()
 MAX_ITERATIONS=0
 COMPLETION_PROMISE="null"
+STATE_FILE=".claude/superpower-loop.local.md"
 
 # Parse options and positional arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
       cat << 'HELP_EOF'
-Ralph Loop - Interactive self-referential development loop
+Superpower Loop - Interactive self-referential development loop
 
 USAGE:
-  /ralph-loop [PROMPT...] [OPTIONS]
+  /superpower-loop [PROMPT...] [OPTIONS]
 
 ARGUMENTS:
   PROMPT...    Initial prompt to start the loop (can be multiple words without quotes)
@@ -26,10 +27,13 @@ ARGUMENTS:
 OPTIONS:
   --max-iterations <n>           Maximum iterations before auto-stop (default: unlimited)
   --completion-promise '<text>'  Promise phrase (USE QUOTES for multi-word)
+  --state-file <path>            Custom state file path (default: .claude/superpower-loop.local.md)
+                                 Use per-task paths when running multiple loops in parallel,
+                                 e.g. --state-file .claude/superpower-loop-task-42.local.md
   -h, --help                     Show this help message
 
 DESCRIPTION:
-  Starts a Ralph Loop in your CURRENT session. The stop hook prevents
+  Starts a Superpower Loop in your CURRENT session. The stop hook prevents
   exit and feeds your output back as input until completion or iteration limit.
 
   To signal completion, you must output: <promise>YOUR_PHRASE</promise>
@@ -37,24 +41,24 @@ DESCRIPTION:
   Use this for:
   - Interactive iteration where you want to see progress
   - Tasks requiring self-correction and refinement
-  - Learning how Ralph works
+  - Learning how the loop works
 
 EXAMPLES:
-  /ralph-loop Build a todo API --completion-promise 'DONE' --max-iterations 20
-  /ralph-loop --max-iterations 10 Fix the auth bug
-  /ralph-loop Refactor cache layer  (runs forever)
-  /ralph-loop --completion-promise 'TASK COMPLETE' Create a REST API
+  /superpower-loop Build a todo API --completion-promise 'DONE' --max-iterations 20
+  /superpower-loop --max-iterations 10 Fix the auth bug
+  /superpower-loop Refactor cache layer  (runs forever)
+  /superpower-loop --completion-promise 'TASK COMPLETE' Create a REST API
 
 STOPPING:
   Only by reaching --max-iterations or detecting --completion-promise
-  No manual stop - Ralph runs infinitely by default!
+  No manual stop - loop runs infinitely by default!
 
 MONITORING:
   # View current iteration:
-  grep '^iteration:' .claude/ralph-loop.local.md
+  grep '^iteration:' .claude/superpower-loop.local.md
 
   # View full state:
-  head -10 .claude/ralph-loop.local.md
+  head -10 .claude/superpower-loop.local.md
 HELP_EOF
       exit 0
       ;;
@@ -101,6 +105,17 @@ HELP_EOF
       COMPLETION_PROMISE="$2"
       shift 2
       ;;
+    --state-file)
+      if [[ -z "${2:-}" ]]; then
+        echo "❌ Error: --state-file requires a path argument" >&2
+        echo "" >&2
+        echo "   Valid examples:" >&2
+        echo "     --state-file .claude/superpower-loop-task-42.local.md" >&2
+        exit 1
+      fi
+      STATE_FILE="$2"
+      shift 2
+      ;;
     *)
       # Non-option argument - collect all as prompt parts
       PROMPT_PARTS+=("$1")
@@ -116,19 +131,19 @@ PROMPT="${PROMPT_PARTS[*]:-}"
 if [[ -z "$PROMPT" ]]; then
   echo "❌ Error: No prompt provided" >&2
   echo "" >&2
-  echo "   Ralph needs a task description to work on." >&2
+  echo "   Superpower loop needs a task description to work on." >&2
   echo "" >&2
   echo "   Examples:" >&2
-  echo "     /ralph-loop Build a REST API for todos" >&2
-  echo "     /ralph-loop Fix the auth bug --max-iterations 20" >&2
-  echo "     /ralph-loop --completion-promise 'DONE' Refactor code" >&2
+  echo "     /superpower-loop Build a REST API for todos" >&2
+  echo "     /superpower-loop Fix the auth bug --max-iterations 20" >&2
+  echo "     /superpower-loop --completion-promise 'DONE' Refactor code" >&2
   echo "" >&2
-  echo "   For all options: /ralph-loop --help" >&2
+  echo "   For all options: /superpower-loop --help" >&2
   exit 1
 fi
 
 # Create state file for stop hook (markdown with YAML frontmatter)
-mkdir -p .claude
+mkdir -p "$(dirname "$STATE_FILE")"
 
 # Quote completion promise for YAML if it contains special chars or is not null
 if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
@@ -137,7 +152,7 @@ else
   COMPLETION_PROMISE_YAML="null"
 fi
 
-cat > .claude/ralph-loop.local.md <<EOF
+cat > "$STATE_FILE" <<EOF
 ---
 active: true
 iteration: 1
@@ -152,8 +167,9 @@ EOF
 
 # Output setup message
 cat <<EOF
-🔄 Ralph loop activated in this session!
+Superpower loop activated in this session!
 
+State file: $STATE_FILE
 Iteration: 1
 Max iterations: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "unlimited"; fi)
 Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "${COMPLETION_PROMISE//\"/} (ONLY output when TRUE - do not lie!)"; else echo "none (runs forever)"; fi)
@@ -162,7 +178,7 @@ The stop hook is now active. When you try to exit, the SAME PROMPT will be
 fed back to you. You'll see your previous work in files, creating a
 self-referential loop where you iteratively improve on the same task.
 
-To monitor: head -10 .claude/ralph-loop.local.md
+To monitor: head -10 $STATE_FILE
 
 ⚠️  WARNING: This loop cannot be stopped manually! It will run infinitely
     unless you set --max-iterations or --completion-promise.
@@ -180,7 +196,7 @@ fi
 if [[ "$COMPLETION_PROMISE" != "null" ]]; then
   echo ""
   echo "═══════════════════════════════════════════════════════════"
-  echo "CRITICAL - Ralph Loop Completion Promise"
+  echo "CRITICAL - Superpower Loop Completion Promise"
   echo "═══════════════════════════════════════════════════════════"
   echo ""
   echo "To complete this loop, output this EXACT text:"

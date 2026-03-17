@@ -3,20 +3,20 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh:*)"]
+allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Writing Plans
 
-Create executable implementation plans that reduce ambiguity for whoever executes them using Ralph Loop for continuous iteration.
+Create executable implementation plans that reduce ambiguity for whoever executes them using Superpower Loop for continuous iteration.
 
-## Ralph Loop Integration
+## Superpower Loop Integration
 
-This skill uses Ralph Loop to enable self-referential iteration throughout the planning process.
+This skill uses Superpower Loop to enable self-referential iteration throughout the planning process.
 
-**启动 Ralph Loop**: Run via Bash after resolving the design path:
+**启动 Superpower Loop**: Run via Bash after resolving the design path:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "<design-path>" --completion-promise "PLAN_COMPLETE" --max-iterations 50
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<design-path>" --completion-promise "PLAN_COMPLETE" --max-iterations 50
 ```
 Replace `<design-path>` with the actual resolved design folder path.
 
@@ -41,7 +41,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 2. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
 3. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
 
-**Initialize Ralph Loop immediately after resolving the design path** using the setup script with the design path as prompt. The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
+**Initialize Superpower Loop immediately after resolving the design path** using the setup script with the design path as prompt. The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
 ## Background Knowledge
 
@@ -172,3 +172,5 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
 - `./references/plan-reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/superpower-loop/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
+- `../../skills/superpower-loop/references/completion-promises.md` - Completion promise design and safety nets

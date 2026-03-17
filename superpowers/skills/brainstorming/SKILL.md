@@ -2,20 +2,20 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh:*)"]
+allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
 
-Turn rough ideas into implementation-ready designs through structured collaborative dialogue using Ralph Loop for continuous iteration.
+Turn rough ideas into implementation-ready designs through structured collaborative dialogue using Superpower Loop for continuous iteration.
 
-## Ralph Loop Integration
+## Superpower Loop Integration
 
-This skill uses Ralph Loop to enable self-referential iteration throughout the brainstorming process.
+This skill uses Superpower Loop to enable self-referential iteration throughout the brainstorming process.
 
-**启动 Ralph Loop**: Run via Bash after capturing the initial prompt:
+**启动 Superpower Loop**: Run via Bash after capturing the initial prompt:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "<initial-prompt>" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<initial-prompt>" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
 ```
 Replace `<initial-prompt>` with the actual brainstorming topic from `$ARGUMENTS`.
 
@@ -31,11 +31,11 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
-1. **Capture Initial Prompt**: Use `$ARGUMENTS` as the topic/prompt for Ralph Loop
+1. **Capture Initial Prompt**: Use `$ARGUMENTS` as the topic/prompt for Superpower Loop
 2. **Context Check**: Ensure you have read `CLAUDE.md` and `README.md` to understand project constraints.
 3. **Codebase Index**: Verify you have access to the codebase and can run searches.
 
-**Initialize Ralph Loop immediately after capturing the initial prompt** using the setup script. The loop will continue through all phases until `<promise>BRAINSTORMING_COMPLETE</promise>` is output.
+**Initialize Superpower Loop immediately after capturing the initial prompt** using the setup script. The loop will continue through all phases until `<promise>BRAINSTORMING_COMPLETE</promise>` is output.
 
 ## Core Principles
 
@@ -214,3 +214,5 @@ Output in this exact order:
 - `./references/reflection.md` - Design reflection patterns and gap identification strategies
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
+- `../../skills/superpower-loop/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
+- `../../skills/superpower-loop/references/completion-promises.md` - Completion promise design and safety nets
