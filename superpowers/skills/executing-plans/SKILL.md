@@ -28,9 +28,7 @@ Execute written implementation plans efficiently. Each task runs in its own Supe
 
 ## Phase 1: Plan Review & Understanding
 
-Read `_index.md` only — task files are read on-demand during execution.
-
-1. **Read Plan**: Read `_index.md` to understand scope, task list, architecture decisions, and dependencies. Do NOT read individual task files yet.
+1. **Read Plan**: Read `_index.md` to understand scope, architecture decisions, and extract inline YAML task metadata from the "Execution Plan" section.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
 
@@ -38,15 +36,19 @@ Read `_index.md` only — task files are read on-demand during execution.
 
 **CRITICAL**: You MUST use TaskCreate to create ALL tasks BEFORE executing any task. Task creation must complete before dependency analysis or execution begins.
 
-1. **Extract Tasks**: Extract all tasks from the plan file. Parse each task's:
+1. **Extract Tasks from _index.md**: Read `_index.md` only. Parse the inline YAML metadata in the "Execution Plan" section to extract:
+   - `id`: Task identifier (e.g., "001")
    - `subject`: Brief title in imperative form (e.g., "Implement login handler")
-   - `description`: Detailed description including files, verification steps, BDD scenario reference
-   - `activeForm`: Present continuous form (e.g., "Implementing login handler")
-   - `depends-on`: Dependencies (if any)
+   - `slug`: Hyphenated slug for filename (e.g., "implement-login-handler")
+   - `type`: Task type (test, impl, setup, config, refactor)
+   - `depends-on`: Array of task IDs this task depends on (e.g., ["001"])
 
 2. **Create Tasks First**: Use TaskCreate to register every task
+   - Set `subject` from YAML `subject` field
+   - Set `description` to: "See task file: ./task-{id}-{slug}-{type}.md for full details including BDD scenario and verification steps"
+   - Set `activeForm` by converting subject to present continuous form (e.g., "Setting up project structure")
    - All tasks MUST be created before proceeding to the next phase
-   - Do NOT execute any tasks until all tasks are created
+   - Do NOT read individual task files during this phase — they are read on-demand during execution
 
 3. **Analyze Dependencies**: After all tasks are created, build the dependency graph
    - Compute dependency tiers: Tier 0 = no dependencies, Tier N = all depends-on tasks are in earlier tiers
@@ -135,12 +137,19 @@ Execute tasks in batches using Superpower Loop for each task to enable iterative
       Execute this task and output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
       ```
 
-   c. **Start Superpower Loop for Task**: Run via Bash with the constructed prompt:
-      ```bash
-      "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<task-prompt>" --completion-promise "TASK_<taskId>_COMPLETE" --max-iterations 20 --state-file ".claude/superpower-loop-task-<taskId>.local.md"
-      ```
-      Replace `<task-prompt>` with the full task prompt built in step b, and `<taskId>` with the actual task ID.
-      Each task MUST use a unique `--state-file` path. This prevents parallel loops from overwriting each other's state.
+   c. **Start Superpower Loop for Task**:
+      - Write the task prompt to a temporary file to avoid shell escaping issues:
+        ```bash
+        cat > ".claude/task-${taskId}-prompt.tmp.md" <<'PROMPT_EOF'
+        <task-prompt-content-here>
+        PROMPT_EOF
+        ```
+      - Run the setup script with `--prompt-file`:
+        ```bash
+        "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" --prompt-file ".claude/task-${taskId}-prompt.tmp.md" --completion-promise "TASK_${taskId}_COMPLETE" --max-iterations 20 --state-file ".claude/superpower-loop-task-${taskId}.local.md"
+        ```
+      - Replace `${taskId}` with the actual task ID
+      - Each task MUST use a unique `--state-file` path to prevent parallel loops from overwriting each other's state
 
    d. **Execute Task in Loop**:
       - The Superpower Loop allows iterative refinement

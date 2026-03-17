@@ -9,6 +9,19 @@ allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"
 
 Turn rough ideas into implementation-ready designs through structured collaborative dialogue using Superpower Loop for continuous iteration.
 
+## CRITICAL: First Action - Start Superpower Loop NOW
+
+**THIS MUST BE YOUR FIRST ACTION. Do NOT explore codebase, do NOT ask questions, do NOT do anything else until you have started the Superpower Loop.**
+
+1. Capture `$ARGUMENTS` as the initial prompt
+2. Immediately run:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "$ARGUMENTS" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
+```
+3. Only after the loop is running, proceed to explore the codebase and continue with Phase 1
+
+**The loop enables self-referential iteration throughout the brainstorming process.**
+
 ## Superpower Loop Integration
 
 This skill uses Superpower Loop to enable self-referential iteration throughout the brainstorming process.
@@ -31,11 +44,12 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
-1. **Capture Initial Prompt**: Use `$ARGUMENTS` as the topic/prompt for Superpower Loop
-2. **Context Check**: Ensure you have read `CLAUDE.md` and `README.md` to understand project constraints.
-3. **Codebase Index**: Verify you have access to the codebase and can run searches.
+(The Superpower Loop was already started in the critical first action above - do NOT start it again)
 
-**Initialize Superpower Loop immediately after capturing the initial prompt** using the setup script. The loop will continue through all phases until `<promise>BRAINSTORMING_COMPLETE</promise>` is output.
+1. **Context Check**: Ensure you have read `CLAUDE.md` and `README.md` to understand project constraints.
+2. **Codebase Index**: Verify you have access to the codebase and can run searches.
+
+The loop will continue through all phases until `<promise>BRAINSTORMING_COMPLETE</promise>` is output.
 
 ## Core Principles
 

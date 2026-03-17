@@ -7,6 +7,7 @@ set -euo pipefail
 
 # Parse arguments
 PROMPT_PARTS=()
+PROMPT_FILE=""
 MAX_ITERATIONS=0
 COMPLETION_PROMISE="null"
 STATE_FILE=".claude/superpower-loop.local.md"
@@ -25,6 +26,7 @@ ARGUMENTS:
   PROMPT...    Initial prompt to start the loop (can be multiple words without quotes)
 
 OPTIONS:
+  --prompt-file <path>           Read prompt from file (avoids shell escaping issues)
   --max-iterations <n>           Maximum iterations before auto-stop (default: unlimited)
   --completion-promise '<text>'  Promise phrase (USE QUOTES for multi-word)
   --state-file <path>            Custom state file path (default: .claude/superpower-loop.local.md)
@@ -48,6 +50,7 @@ EXAMPLES:
   /superpower-loop --max-iterations 10 Fix the auth bug
   /superpower-loop Refactor cache layer  (runs forever)
   /superpower-loop --completion-promise 'TASK COMPLETE' Create a REST API
+  /superpower-loop --prompt-file task.md --completion-promise 'DONE' --max-iterations 20
 
 STOPPING:
   Only by reaching --max-iterations or detecting --completion-promise
@@ -116,6 +119,22 @@ HELP_EOF
       STATE_FILE="$2"
       shift 2
       ;;
+    --prompt-file)
+      if [[ -z "${2:-}" ]]; then
+        echo "❌ Error: --prompt-file requires a path argument" >&2
+        echo "" >&2
+        echo "   Valid examples:" >&2
+        echo "     --prompt-file task.md" >&2
+        echo "     --prompt-file /path/to/task-description.txt" >&2
+        exit 1
+      fi
+      if [[ ! -f "$2" ]]; then
+        echo "❌ Error: --prompt-file path does not exist: $2" >&2
+        exit 1
+      fi
+      PROMPT_FILE="$2"
+      shift 2
+      ;;
     *)
       # Non-option argument - collect all as prompt parts
       PROMPT_PARTS+=("$1")
@@ -124,8 +143,12 @@ HELP_EOF
   esac
 done
 
-# Join all prompt parts with spaces
-PROMPT="${PROMPT_PARTS[*]:-}"
+# Join all prompt parts with spaces or read from file
+if [[ -n "$PROMPT_FILE" ]]; then
+  PROMPT=$(cat "$PROMPT_FILE")
+else
+  PROMPT="${PROMPT_PARTS[*]:-}"
+fi
 
 # Validate prompt is non-empty
 if [[ -z "$PROMPT" ]]; then
@@ -137,6 +160,7 @@ if [[ -z "$PROMPT" ]]; then
   echo "     /superpower-loop Build a REST API for todos" >&2
   echo "     /superpower-loop Fix the auth bug --max-iterations 20" >&2
   echo "     /superpower-loop --completion-promise 'DONE' Refactor code" >&2
+  echo "     /superpower-loop --prompt-file task.md --max-iterations 20" >&2
   echo "" >&2
   echo "   For all options: /superpower-loop --help" >&2
   exit 1

@@ -79,8 +79,16 @@ Output <promise>COMPLETE</promise> when all tests pass.
 ```
 
 ```bash
-# Always set max-iterations to prevent infinite loops on impossible tasks
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "..." --completion-promise "COMPLETE" --max-iterations 20
+# For simple prompts (user input, short text):
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Build a REST API" --completion-promise "COMPLETE" --max-iterations 20
+
+# For complex prompts with special characters (task descriptions, code blocks, Gherkin scenarios):
+# Write prompt to file first to avoid shell escaping issues
+cat > ".claude/task-prompt.tmp.md" <<'PROMPT_EOF'
+## Task: Complex task with special characters
+...
+PROMPT_EOF
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" --prompt-file ".claude/task-prompt.tmp.md" --completion-promise "COMPLETE" --max-iterations 20
 ```
 
 ## Superpowers-Specific Patterns

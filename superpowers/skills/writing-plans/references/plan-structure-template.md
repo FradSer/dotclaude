@@ -39,13 +39,42 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 **Design Support:**
 <!-- Template: replace YYYY-MM-DD-<topic>-design with actual folder name -->
 - [BDD Specs](../YYYY-MM-DD-<topic>-design/bdd-specs.md)
-- [Architecture](../YYYY-MM-DD-<topic>-design/architecture.md)
+- [Architecture](../YYYY-MM-DD-<topic>-design/architecture.md]
 
-**Execution Plan:**
+## Execution Plan
+
+<!-- Inline task metadata for efficient execution by executing-plans skill -->
+<!-- Format: YAML for easy parsing -->
+<!-- slug: lowercase hyphenated version of subject, used for filename derivation -->
+```yaml
+tasks:
+  - id: "001"
+    subject: "Setup project structure"
+    slug: "setup-project-structure"
+    type: "setup"
+    depends-on: []
+  - id: "002"
+    subject: "Create base authentication handler"
+    slug: "create-base-auth-handler"
+    type: "impl"
+    depends-on: ["001"]
+  - id: "003"
+    subject: "Implement login test"
+    slug: "implement-login-test"
+    type: "test"
+    depends-on: ["002"]
+  - id: "004"
+    subject: "Implement login handler"
+    slug: "implement-login-handler"
+    type: "impl"
+    depends-on: ["003"]
+```
+
+**Task File References (for detailed BDD scenarios):**
 - [Task 001: Setup project structure](./task-001-setup-project-structure.md)
 - [Task 002: Create base authentication handler](./task-002-create-base-auth-handler.md)
 - [Task 003: Implement login test](./task-003-implement-login-test.md)
-- ...
+- [Task 004: Implement login handler](./task-004-implement-login-handler.md)
 
 ## BDD Coverage
 

@@ -10,6 +10,19 @@ allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"
 
 Create executable implementation plans that reduce ambiguity for whoever executes them using Superpower Loop for continuous iteration.
 
+## CRITICAL: First Action - Start Superpower Loop NOW
+
+**THIS MUST BE YOUR FIRST ACTION. Do NOT resolve the design path, do NOT read files, do NOT do anything else until you have started the Superpower Loop.**
+
+1. Resolve the design path from `$ARGUMENTS` (if provided) or by searching `docs/plans/`
+2. Immediately run:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<resolved-design-path>" --completion-promise "PLAN_COMPLETE" --max-iterations 50
+```
+3. Only after the loop is running, proceed to verify the design folder and continue with planning
+
+**The loop enables self-referential iteration throughout the planning process.**
+
 ## Superpower Loop Integration
 
 This skill uses Superpower Loop to enable self-referential iteration throughout the planning process.
@@ -32,7 +45,9 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
-1. **Resolve Design Path**:
+(The Superpower Loop was already started in the critical first action above - do NOT start it again)
+
+1. **Resolve Design Path** (must complete to build the prompt for the loop above):
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it as the design source.
    - If no argument is provided:
      - Search `docs/plans/` for the most recent `*-design/` folder matching the pattern `YYYY-MM-DD-*-design/`
@@ -41,7 +56,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 2. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
 3. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
 
-**Initialize Superpower Loop immediately after resolving the design path** using the setup script with the design path as prompt. The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
+The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
 ## Background Knowledge
 
@@ -100,11 +115,31 @@ Verify completeness, confirm with user, and save.
 1. **Verify**: Check for valid commit boundaries and no vague tasks.
 2. **Confirm**: Get user approval on the plan.
 3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
-   - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with references to all task files
+   - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with **inline YAML metadata** (see template in `./references/plan-structure-template.md`)
+   - **CRITICAL**: `_index.md` MUST include "Task File References" section with links to full task files for detailed BDD scenarios
    - **CRITICAL**: `_index.md` MUST include "BDD Coverage" section confirming all scenarios are covered
    - **CRITICAL**: `_index.md` MUST include "Dependency Chain" section with visual dependency graph (will be populated in Phase 4)
-   - Example: `- [Task 001: Setup project structure](./task-001-setup-project-structure.md)`
-   - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `[Task 002: Whale Discovery Test](./task-002-whale-discovery-test.md)` and `[Task 002: Whale Discovery Impl](./task-002-whale-discovery-impl.md)`
+   - Example YAML metadata:
+     ```yaml
+     tasks:
+       - id: "001"
+         subject: "Setup project structure"
+         slug: "setup-project-structure"
+         type: "setup"
+         depends-on: []
+       - id: "002"
+         subject: "Whale Discovery Test"
+         slug: "whale-discovery-test"
+         type: "test"
+         depends-on: ["001"]
+       - id: "003"
+         subject: "Whale Discovery Impl"
+         slug: "whale-discovery-impl"
+         type: "impl"
+         depends-on: ["002"]
+     ```
+   - Example file reference:
+     `- [Task 002: Whale Discovery Test](./task-002-whale-discovery-test.md)`
 
 ## Phase 4: Plan Reflection
 
