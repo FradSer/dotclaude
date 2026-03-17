@@ -177,8 +177,9 @@ Before committing, launch sub-agents in parallel to verify design quality and id
 2. Prioritize issues by impact
 3. Update design documents to fix issues
 4. Re-verify updated sections
+5. **Confirm with user**: Present reflection summary and get approval before committing
 
-**Output**: Updated design documents with issues resolved.
+**Output**: Updated design documents with issues resolved and user approval received.
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
@@ -204,21 +205,12 @@ Output in this exact order:
 
 **PROHIBITED**: Do NOT offer to start implementation directly. Do NOT output any text after the promise tag.
 
-## Quality Check
-
-See `./references/exit-criteria.md` for:
-- Complete validation checklists for all phases
-- Success indicators for high-quality brainstorming sessions
-- Common pitfalls to avoid
-
 ## References
-
-Detailed guidance for each phase:
 
 - `./references/core-principles.md` - Core principles guiding the workflow
 - `./references/discovery.md` - Exploration patterns and question guidelines
 - `./references/options.md` - Option comparison and presentation patterns
 - `./references/design-creation.md` - Sub-agent patterns, integration workflow, design structure
 - `./references/reflection.md` - Design reflection patterns and gap identification strategies
-- `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
+- `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)

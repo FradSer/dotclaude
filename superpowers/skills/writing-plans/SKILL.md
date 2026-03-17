@@ -79,14 +79,13 @@ Break into small tasks mapped to specific BDD scenarios.
 
    The scenario content should be self-contained in the task file, not just a reference to `bdd-specs.md`. This allows the executor to see the complete scenario without switching files.
 2. **Define Verification**: **CRITICAL**: Verification steps must run the BDD specs (e.g., `npm test tests/login.spec.ts`).
-3. **Enforce Ordering**: Task N (Test/Red) -> Task N+1 (Implementation/Green).
+3. **Enforce Ordering**: For each feature NNN, the test task (`task-NNN-<feature>-test`) must precede its paired impl task (`task-NNN-<feature>-impl`) via `depends-on`.
 4. **Declare Dependencies**: **MANDATORY**: Each task file must include a `**depends-on**` field listing only **true technical prerequisites** — tasks whose output is required before this task can start. Rules:
    - A test task (Red) for feature X has no dependency on test tasks for other features
    - An implementation task (Green) depends only on its paired test task (Red), not on other features' implementations
    - Tasks that touch different files and test different scenarios are independent by default
    - **PROHIBITED**: Do not chain tasks sequentially just to impose execution order — use `depends-on` only when there is a real technical reason (e.g., "implement auth middleware" must precede "implement protected route test")
-5. **Ensure Compatibility**: Ensure tasks are compatible with `superpowers:behavior-driven-development`.
-6. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<feature>-<type>.md`.
+5. **Create Task Files**: **MANDATORY**: Create one `.md` file per task. Filename pattern: `task-<NNN>-<feature>-<type>.md`.
    - Example: `task-001-setup.md`, `task-002-feature-test.md`, `task-002-feature-impl.md`
    - `<NNN>`: Sequential number (001, 002, ...)
    - `<feature>`: Feature identifier (e.g., auth-handler, user-profile)
@@ -135,8 +134,9 @@ Before committing, launch sub-agents in parallel to verify plan quality and iden
 3. Update plan files to fix issues
 4. **MANDATORY**: Add dependency graph from Sub-agent 2 to `_index.md` in "Dependency Chain" section
 5. Re-verify updated sections
+6. **Confirm with user**: Present reflection summary and get approval before committing
 
-**Output**: Updated plan with issues resolved and dependency graph included in `_index.md`.
+**Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, and user approval received.
 
 See `./references/plan-reflection.md` for sub-agent prompts and integration workflow.
 

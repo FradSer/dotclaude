@@ -10,17 +10,6 @@ allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob
 
 Execute written implementation plans efficiently. Each task runs in its own Ralph Loop for iterative refinement, following BDD/TDD principles.
 
-## Ralph Loop Integration
-
-This skill uses **per-task Ralph Loop** - each task executes in its own Ralph Loop for self-referential iteration until completion.
-
-**For each task in Phase 3**:
-1. Start Ralph Loop for the task with its specific prompt
-2. Task prompt includes: subject, description, BDD scenario, verification steps
-3. Completion promise: `<promise>TASK_${taskId}_COMPLETE</promise>`
-4. Task outputs promise when verification passes
-5. Continue to next task
-
 ## Initialization
 
 1. **Resolve Plan Path**:
@@ -62,6 +51,7 @@ Read plan, understand the project and requirements.
 3. **Analyze Dependencies**: After all tasks are created, build the dependency graph
    - Compute dependency tiers: Tier 0 = no dependencies, Tier N = all depends-on tasks are in earlier tiers
    - Within each tier, group tasks by type to maximize parallelism (e.g., all "write test" tasks together, all "implement" tasks together)
+   - **Identify Red-Green Pairs**: Scan all task filenames for matching NNN prefixes (e.g., `task-002-auth-test` + `task-002-auth-impl`). Mark each such pair as a **Red-Green pair** — these are always scheduled as a coordinated unit in the same batch. The test task retains its Tier 0 position; the impl task follows immediately after in the same batch execution (not a separate batch).
    - **Target**: Each batch should contain 3-6 tasks
    - **Rule**: Every batch must contain ≥2 tasks unless it is the sole remaining batch
 
@@ -77,18 +67,19 @@ Execute tasks in batches using Ralph Loop for each task to enable iterative refi
 **For Each Batch**:
 
 1. **Choose Execution Mode** (strict priority — justify any downgrade explicitly):
+   - **Red-Green Pair (MANDATORY)**: If the batch contains a Red-Green pair (same NNN prefix, one `test` + one `impl`), assign exactly two dedicated agents — one per task. The test agent runs first: writes the failing test and confirms Red state. Once Red is confirmed, the impl agent starts: implements to make the test pass. Two agents, coordinated sequence within the pair. Multiple pairs across batches run in parallel. This is non-negotiable and overrides all other mode selection rules for that pair.
    - **Agent Team** (default): Use unless a specific technical reason prevents it. File conflicts or sequential `depends-on` within a batch are NOT valid reasons to downgrade — resolve by splitting the batch further.
    - **Agent Team + Worktree**: Launch parallel agents with worktree isolation when multiple agents edit overlapping files or for competitive implementation (N solutions, pick best).
    - **Subagent Parallel** (downgrade only if): Agent Team overhead is disproportionate (e.g., batch has exactly 2 small tasks). State the reason explicitly.
    - **Linear** (last resort only if): Tasks within the batch have unavoidable file conflicts that cannot be split, or the batch genuinely contains only 1 task. State the reason explicitly.
 
-2. **Build Dependency Graph**: After Phase 2, tasks are grouped into batches based on dependency tiers
-
-3. **For Each Task in Batch**:
+2. **For Each Task in Batch**:
 
    a. **Read Task Context**: Read the task file to get full context (subject, description, BDD scenario, verification steps)
 
-   b. **Construct Task Prompt**: Build a prompt containing:
+   b. **Construct Task Prompt**: Build a prompt based on task type (inferred from filename suffix):
+
+      **For `*-test` tasks (Red agent)**:
       ```
       ## Task: {subject}
 
@@ -100,12 +91,48 @@ Execute tasks in batches using Ralph Loop for each task to enable iterative refi
       ## Verification Steps
       {verification steps from task file}
 
-      Execute this task following BDD/TDD principles:
-      1. Write failing test first (Red)
-      2. Implement minimal code to pass (Green)
-      3. Refactor while keeping tests green
+      Your goal: write the failing test only (Red phase).
+      - Write the test file that covers the BDD scenario above
+      - Run the test and confirm it fails for the right reason
+      - Do NOT write any implementation code
+
+      Output <promise>TASK_{taskId}_COMPLETE</promise> when the test exists and fails as expected.
+      ```
+
+      **For `*-impl` tasks (Green agent)**:
+      ```
+      ## Task: {subject}
+
+      {description}
+
+      ## BDD Scenario
+      {full scenario from task file}
+
+      ## Verification Steps
+      {verification steps from task file}
+
+      Your goal: implement the minimal code to make the failing test pass (Green phase).
+      - The test file already exists and is failing — do not modify it
+      - Write the implementation that satisfies the BDD scenario
+      - Run the test and confirm it passes
+      - Refactor while keeping tests green
 
       Output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
+      ```
+
+      **For all other task types** (config, refactor, setup, etc.):
+      ```
+      ## Task: {subject}
+
+      {description}
+
+      ## BDD Scenario
+      {full scenario from task file}
+
+      ## Verification Steps
+      {verification steps from task file}
+
+      Execute this task and output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
       ```
 
    c. **Start Ralph Loop for Task**: Run via Bash with the constructed prompt:
@@ -128,23 +155,6 @@ Execute tasks in batches using Ralph Loop for each task to enable iterative refi
 
 See `./references/batch-execution-playbook.md`.
 
-## Git Commit
-
-Commit the implementation changes to git with proper message format.
-
-See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
-
-**Critical requirements**:
-- Commit the implementation changes after all tasks are completed
-- Prefix: `feat(<scope>):` for implementation changes
-- Subject: Under 50 characters, lowercase
-- Footer: Co-Authored-By with model name
-
-**Commit timing**:
-- Commit implementation changes after all tasks in the plan are completed
-- Commit should reflect the completed feature, not individual tasks
-- Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
-
 ## Phase 4: Verification & Feedback
 
 Close the loop.
@@ -152,6 +162,20 @@ Close the loop.
 1. **Publish Evidence**: Log outputs and test results.
 2. **Confirm**: Get user confirmation.
 3. **Loop**: Repeat Phase 3-4 until complete.
+
+## Git Commit
+
+Commit the implementation changes to git with proper message format.
+
+See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
+
+**Critical requirements**:
+- Commit only after Phase 4 user confirmation
+- Prefix: `feat(<scope>):` for implementation changes
+- Subject: Under 50 characters, lowercase
+- Footer: Co-Authored-By with model name
+- Commit should reflect the completed feature, not individual tasks
+- Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
 
 ## Exit Criteria
 
