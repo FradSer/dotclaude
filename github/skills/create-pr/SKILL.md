@@ -14,9 +14,9 @@ Execute automated PR creation workflow with comprehensive quality validation and
 
 - Current git status: !`git status`
 - Current branch: !`git branch --show-current`
-- Unpushed commits: !`git log @{u}..HEAD --oneline 2>/dev/null || git log --oneline -5`
+- Unpushed commits: !`git log --oneline -5`
 - GitHub authentication: !`gh auth status`
-- Repository changes: !`git diff --stat HEAD~1..HEAD 2>/dev/null || echo "No recent changes"`
+- Repository changes: !`git diff --stat HEAD~1..HEAD`
 
 ## Requirements Summary
 

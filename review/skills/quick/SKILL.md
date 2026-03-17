@@ -12,10 +12,10 @@ allowed-tools: ["Task"]
 
 - Current branch: !`git branch --show-current`
 - Git status: !`git status --porcelain`
-- Base branch: !`(git show-branch | grep '*' | grep -v "$(git rev-parse --abbrev-ref HEAD)" | head -1 | sed 's/.*\[\([^]]*\)\].*/\1/' | sed 's/\^.*//' 2>/dev/null) || echo "develop"`
-- Changes since base: !`BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git log --oneline $BASE..HEAD`
-- Files changed since base: !`BASE=$(git merge-base HEAD develop 2>/dev/null || git merge-base HEAD main 2>/dev/null) && git diff --name-only $BASE..HEAD`
-- Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn test") || ([ -f Cargo.toml ] && echo "cargo test") || ([ -f pyproject.toml ] && echo "pytest/uv run pytest") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
+- Base branch: [detect dynamically - check for develop or main]
+- Recent commits: !`git log --oneline -10`
+- Changed files: !`git diff --name-only HEAD~5..HEAD`
+- Test framework: [detect dynamically based on project files]
 
 ## Phase 1: Determine Review Scope
 

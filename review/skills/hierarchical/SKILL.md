@@ -11,10 +11,10 @@ allowed-tools: ["Task"]
 ## Context
 
 - Project root: !`pwd`
-- Directory structure: !`find . -type f -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.swift" 2>/dev/null | head -50`
-- Tech stack: !`([ -f package.json ] && echo "Node.js") || ([ -f Cargo.toml ] && echo "Rust") || ([ -f pyproject.toml ] && echo "Python") || ([ -f go.mod ] && echo "Go") || ([ -f pom.xml ] && echo "Java") || ([ -f Package.swift ] && echo "Swift") || echo "Unknown"`
-- Test commands available: !`([ -f package.json ] && echo "npm/pnpm/yarn test") || ([ -f Cargo.toml ] && echo "cargo test") || ([ -f pyproject.toml ] && echo "pytest/uv run pytest") || ([ -f go.mod ] && echo "go test") || echo "no standard test framework detected"`
-- Total files: !`find . -type f \( -name "*.py" -o -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.swift" \) 2>/dev/null | wc -l | tr -d ' '`
+- Directory structure: !`find . -type f -name "*.py" 2>/dev/null | head -50`
+- Tech stack: [detect dynamically based on project files]
+- Test framework: [detect dynamically based on project files]
+- Total files: !`find . -type f -name "*.py" 2>/dev/null | wc -l`
 
 ## Phase 1: Determine Review Scope
 
