@@ -3,22 +3,60 @@ name: executing-plans
 description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Task", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Agent", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Executing Plans
 
-Execute written implementation plans efficiently. Each task runs in its own Superpower Loop for iterative refinement, following BDD/TDD principles.
+Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
+
+## CRITICAL: First Action - Start Superpower Loop NOW
+
+**THIS MUST BE YOUR FIRST ACTION. Do NOT resolve the plan path, do NOT read files, do NOT do anything else until you have started the Superpower Loop.**
+
+1. Resolve the plan path from `$ARGUMENTS` (if provided) or by searching `docs/plans/`
+2. Immediately run:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<resolved-plan-path>" --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
+```
+3. Only after the loop is running, proceed to verify the plan folder and continue with execution
+
+**The loop enables self-referential iteration throughout the execution process.**
+
+## Superpower Loop Integration
+
+This skill uses Superpower Loop to enable self-referential iteration throughout the execution process.
+
+**Start Superpower Loop**: Run via Bash after resolving the plan path:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<plan-path>" --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
+```
+Replace `<plan-path>` with the actual resolved plan folder path.
+
+**CRITICAL**: Throughout the process, you MUST output `<promise>EXECUTION_COMPLETE</promise>` only when:
+- Phase 1-5 (Plan Review, Task Creation, Batch Execution, Verification, Git Commit) are all complete
+- All tasks executed and verified
+- User approval received in Phase 4
+- Git commit completed
+
+Do NOT output the promise until ALL conditions are genuinely TRUE.
+
+**ABSOLUTE LAST OUTPUT RULE**: The promise tag MUST be the very last text you output. Output any transition messages or instructions to the user BEFORE the promise tag. Nothing may follow `<promise>EXECUTION_COMPLETE</promise>`.
 
 ## Initialization
 
-1. **Resolve Plan Path**:
-   - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), look for `_index.md` or `plan.md` inside it.
+(The Superpower Loop was already started in the critical first action above - do NOT start it again)
+
+1. **Resolve Plan Path** (must complete to build the prompt for the loop above):
+   - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it as the plan source.
    - If no argument is provided:
      - Search `docs/plans/` for the most recent `*-plan/` folder matching the pattern `YYYY-MM-DD-*-plan/`
      - If found, confirm with user: "Execute this plan: [path]?"
      - If not found or user declines, ask the user for the plan folder path.
-2. **Plan Check**: Verify the plan file exists and contains actionable tasks.
+2. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
+3. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
+
+The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
 ## Background Knowledge
 
@@ -62,9 +100,9 @@ Execute written implementation plans efficiently. Each task runs in its own Supe
    - `addBlocks`: Array of task IDs that must wait for this task to complete
    - Example: `TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })` means task #2 waits for task #1
 
-## Phase 3: Batch Execution Loop with Superpower Loop
+## Phase 3: Batch Execution Loop
 
-Execute tasks in batches using Superpower Loop for each task to enable iterative refinement.
+Execute tasks in batches using Agent Teams or subagents for parallel execution.
 
 **For Each Batch**:
 
@@ -77,93 +115,38 @@ Execute tasks in batches using Superpower Loop for each task to enable iterative
 
 2. **For Each Task in Batch**:
 
-   a. **Read Task Context**: Read the task file to get full context (subject, description, BDD scenario, verification steps)
+   a. **Mark Task In Progress**: Use TaskUpdate to set status to `in_progress`
 
-   b. **Construct Task Prompt**: Build a prompt based on task type (inferred from filename suffix):
+   b. **Read Task Context**: Read the task file to get full context (subject, description, BDD scenario, verification steps)
 
-      **For `*-test` tasks (Red agent)**:
-      ```
-      ## Task: {subject}
+   c. **Execute Task**: Based on execution mode:
 
-      {description}
+      **For Agent Team / Worktree mode**:
+      - Create team if not already created
+      - Assign task to available teammate with clear context
+      - Provide task file content and verification steps
+      - Wait for teammate to complete
 
-      ## BDD Scenario
-      {full scenario from task file}
+      **For Subagent mode**:
+      - Launch subagent with task context
+      - Include BDD scenario and verification steps
+      - Wait for subagent to complete
 
-      ## Verification Steps
-      {verification steps from task file}
+      **For Linear mode**:
+      - Execute task directly in current session
+      - Follow BDD scenario and verification steps
+      - Run verification commands
 
-      Your goal: write the failing test only (Red phase).
-      - Write the test file that covers the BDD scenario above
-      - Run the test and confirm it fails for the right reason
-      - Do NOT write any implementation code
-
-      Output <promise>TASK_{taskId}_COMPLETE</promise> when the test exists and fails as expected.
-      ```
-
-      **For `*-impl` tasks (Green agent)**:
-      ```
-      ## Task: {subject}
-
-      {description}
-
-      ## BDD Scenario
-      {full scenario from task file}
-
-      ## Verification Steps
-      {verification steps from task file}
-
-      Your goal: implement the minimal code to make the failing test pass (Green phase).
-      - The test file already exists and is failing — do not modify it
-      - Write the implementation that satisfies the BDD scenario
-      - Run the test and confirm it passes
-      - Refactor while keeping tests green
-
-      Output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
-      ```
-
-      **For all other task types** (config, refactor, setup, etc.):
-      ```
-      ## Task: {subject}
-
-      {description}
-
-      ## BDD Scenario
-      {full scenario from task file}
-
-      ## Verification Steps
-      {verification steps from task file}
-
-      Execute this task and output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
-      ```
-
-   c. **Start Superpower Loop for Task**:
-      - Write the task prompt to a temporary file to avoid shell escaping issues:
-        ```bash
-        cat > ".claude/task-${taskId}-prompt.tmp.md" <<'PROMPT_EOF'
-        <task-prompt-content-here>
-        PROMPT_EOF
-        ```
-      - Run the setup script with `--prompt-file`:
-        ```bash
-        "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" --prompt-file ".claude/task-${taskId}-prompt.tmp.md" --completion-promise "TASK_${taskId}_COMPLETE" --max-iterations 20 --state-file ".claude/superpower-loop-task-${taskId}.local.md"
-        ```
-      - Replace `${taskId}` with the actual task ID
-      - Each task MUST use a unique `--state-file` path to prevent parallel loops from overwriting each other's state
-
-   d. **Execute Task in Loop**:
-      - The Superpower Loop allows iterative refinement
-      - Each iteration, Claude sees previous work and can improve
-      - When verification passes, output `<promise>TASK_${taskId}_COMPLETE</promise>` as the **absolute last line** — nothing after it
-      - Loop continues until promise is output or max iterations reached
+   d. **Verify Task**: Run verification steps from task file
+      - For test tasks: Confirm test fails for the right reason (Red)
+      - For impl tasks: Confirm test passes (Green)
+      - For other tasks: Run verification commands and check output
 
    e. **Mark Task Complete**: Use TaskUpdate to set status to `completed`
 
-4. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
+3. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
 
-**Parallel Execution Note**: Tasks within the same batch that have no dependencies can be executed in parallel using Agent Teams, but each task still runs in its own Superpower Loop. Teammates can work on different tasks simultaneously.
-
-See `./references/batch-execution-playbook.md`.
+See `./references/batch-execution-playbook.md` for detailed execution patterns.
 
 ## Phase 4: Verification & Feedback
 
@@ -173,7 +156,7 @@ Close the loop.
 2. **Confirm**: Get user confirmation.
 3. **Loop**: Repeat Phase 3-4 until complete.
 
-## Git Commit
+## Phase 5: Git Commit
 
 Commit the implementation changes to git with proper message format.
 
@@ -187,9 +170,19 @@ See `../../skills/references/git-commit.md` for detailed patterns, commit messag
 - Commit should reflect the completed feature, not individual tasks
 - Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
 
+## Phase 6: Completion
+
+Output the promise as the absolute last line.
+
+Output in this exact order:
+1. Summary message: "Plan execution complete. All tasks verified and committed."
+2. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
+
+**PROHIBITED**: Do NOT output any text after the promise tag.
+
 ## Exit Criteria
 
-All tasks executed and verified, evidence captured, no blockers, user approval received, final verification passes.
+All tasks executed and verified, evidence captured, no blockers, user approval received, final verification passes, git commit completed.
 
 ## References
 

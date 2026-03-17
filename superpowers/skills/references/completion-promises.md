@@ -38,7 +38,7 @@ A completion promise should name a **state** that is objectively true or false, 
 |-------|---------------|-----------------|
 | brainstorming | `BRAINSTORMING_COMPLETE` | All 4 phases done, design folder committed |
 | writing-plans | `PLAN_COMPLETE` | All phases done, plan folder committed |
-| executing-plans | `TASK_{taskId}_COMPLETE` | Task verification steps pass (per-task) |
+| executing-plans | `EXECUTION_COMPLETE` | All tasks executed, verified, and committed |
 
 ## Promise Integrity Rules
 

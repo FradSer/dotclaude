@@ -111,18 +111,11 @@ Work through phases: Plan Structure → Task Decomposition → Validation → Pl
 Output <promise>PLAN_COMPLETE</promise> when plan is complete, reflected, and committed.
 ```
 
-### executing-plans task prompt structure
+### executing-plans prompt structure
 
 ```
-## Task: {subject}
+Execute implementation plan: <plan-path>
 
-{description}
-
-## BDD Scenario
-{full scenario}
-
-## Verification Steps
-{steps}
-
-Output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
+Work through phases: Plan Review → Task Creation → Batch Execution → Verification → Git Commit.
+Output <promise>EXECUTION_COMPLETE</promise> when all tasks are executed, verified, and committed.
 ```
