@@ -14,10 +14,11 @@ Create executable implementation plans that reduce ambiguity for whoever execute
 
 This skill uses Ralph Loop to enable self-referential iteration throughout the planning process.
 
-**启动 Ralph Loop**:
-```!
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$DESIGN_PATH" --completion-promise "PLAN_COMPLETE" --max-iterations 50
+**启动 Ralph Loop**: Run via Bash after resolving the design path:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "<design-path>" --completion-promise "PLAN_COMPLETE" --max-iterations 50
 ```
+Replace `<design-path>` with the actual resolved design folder path.
 
 **CRITICAL**: Throughout the process, you MUST output `<promise>PLAN_COMPLETE</promise>` only when:
 - Phase 1-4 (Plan Structure, Task Decomposition, Validation, Plan Reflection) are all complete
@@ -26,6 +27,8 @@ This skill uses Ralph Loop to enable self-referential iteration throughout the p
 - Git commit completed
 
 Do NOT output the promise until ALL conditions are genuinely TRUE.
+
+**ABSOLUTE LAST OUTPUT RULE**: The promise tag MUST be the very last text you output. Output any transition messages or instructions to the user BEFORE the promise tag. Nothing may follow `<promise>PLAN_COMPLETE</promise>`.
 
 ## Initialization
 
@@ -151,12 +154,13 @@ See `../../skills/references/git-commit.md` for detailed patterns.
 
 ## Phase 6: Transition to Execution
 
-Prompt the user to use `superpowers:executing-plans` to execute the plan.
+Prompt the user to use `superpowers:executing-plans`, then output the promise as the absolute last line.
 
-Example prompt:
-"Plan complete. To execute this plan, use `/superpowers:executing-plans`."
+Output in this exact order:
+1. Transition message: "Plan complete. To execute this plan, use `/superpowers:executing-plans`."
+2. `<promise>PLAN_COMPLETE</promise>` — nothing after this
 
-**PROHIBITED**: Do NOT offer to start implementation directly.
+**PROHIBITED**: Do NOT offer to start implementation directly. Do NOT output any text after the promise tag.
 
 ## Exit Criteria
 

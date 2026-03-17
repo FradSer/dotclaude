@@ -108,15 +108,16 @@ Execute tasks in batches using Ralph Loop for each task to enable iterative refi
       Output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
       ```
 
-   c. **Start Ralph Loop for Task**:
-      ```!
-      "${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$TASK_PROMPT" --completion-promise "TASK_${taskId}_COMPLETE" --max-iterations 20
+   c. **Start Ralph Loop for Task**: Run via Bash with the constructed prompt:
+      ```bash
+      "${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "<task-prompt>" --completion-promise "TASK_<taskId>_COMPLETE" --max-iterations 20
       ```
+      Replace `<task-prompt>` with the full task prompt built in step b, and `<taskId>` with the actual task ID.
 
    d. **Execute Task in Loop**:
       - The Ralph Loop allows iterative refinement
       - Each iteration, Claude sees previous work and can improve
-      - When verification passes, output `<promise>TASK_${taskId}_COMPLETE</promise>`
+      - When verification passes, output `<promise>TASK_${taskId}_COMPLETE</promise>` as the **absolute last line** — nothing after it
       - Loop continues until promise is output or max iterations reached
 
    e. **Mark Task Complete**: Use TaskUpdate to set status to `completed`

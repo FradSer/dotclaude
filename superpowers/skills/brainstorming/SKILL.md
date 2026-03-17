@@ -13,10 +13,11 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 
 This skill uses Ralph Loop to enable self-referential iteration throughout the brainstorming process.
 
-**启动 Ralph Loop**:
-```!
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$INITIAL_PROMPT" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
+**启动 Ralph Loop**: Run via Bash after capturing the initial prompt:
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "<initial-prompt>" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
 ```
+Replace `<initial-prompt>` with the actual brainstorming topic from `$ARGUMENTS`.
 
 **CRITICAL**: Throughout the process, you MUST output `<promise>BRAINSTORMING_COMPLETE</promise>` only when:
 - Phase 1-4 (Discovery, Option Analysis, Design Creation, Design Reflection) are all complete
@@ -25,6 +26,8 @@ This skill uses Ralph Loop to enable self-referential iteration throughout the b
 - Git commit completed
 
 Do NOT output the promise until ALL conditions are genuinely TRUE.
+
+**ABSOLUTE LAST OUTPUT RULE**: The promise tag MUST be the very last text you output. Output any transition messages or instructions to the user BEFORE the promise tag. Nothing may follow `<promise>BRAINSTORMING_COMPLETE</promise>`.
 
 ## Initialization
 
@@ -193,12 +196,13 @@ See `../../skills/references/git-commit.md` for detailed patterns.
 
 ## Phase 6: Transition to Implementation
 
-Prompt the user to use `superpowers:writing-plans` to create a detailed implementation plan.
+Prompt the user to use `superpowers:writing-plans`, then output the promise as the absolute last line.
 
-Example prompt:
-"Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
+Output in this exact order:
+1. Transition message: "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
+2. `<promise>BRAINSTORMING_COMPLETE</promise>` — nothing after this
 
-**PROHIBITED**: Do NOT offer to start implementation directly.
+**PROHIBITED**: Do NOT offer to start implementation directly. Do NOT output any text after the promise tag.
 
 ## Quality Check
 
