@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # PreToolUse hook: Validate conventional commit message format BEFORE execution
 # Runs before git commit commands to prevent invalid commits from being created
 
