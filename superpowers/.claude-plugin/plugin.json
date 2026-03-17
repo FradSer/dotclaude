@@ -7,12 +7,11 @@
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["planning", "brainstorming", "bdd", "teams", "execution", "superpower-loop"],
+  "keywords": ["planning", "brainstorming", "bdd", "teams", "execution"],
   "commands": [
     "./skills/brainstorming/",
     "./skills/writing-plans/",
-    "./skills/executing-plans/",
-    "./skills/superpower-loop/"
+    "./skills/executing-plans/"
   ],
   "skills": [
     "./skills/agent-team-driven-development/",

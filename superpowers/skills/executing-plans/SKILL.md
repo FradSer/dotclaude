@@ -187,5 +187,5 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
-- `../../skills/superpower-loop/references/prompt-patterns.md` - Writing effective task prompts for superpower loop
-- `../../skills/superpower-loop/references/completion-promises.md` - Per-task completion promise design
+- `../../skills/references/prompt-patterns.md` - Writing effective task prompts for superpower loop
+- `../../skills/references/completion-promises.md` - Per-task completion promise design

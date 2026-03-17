@@ -214,5 +214,5 @@ Output in this exact order:
 - `./references/reflection.md` - Design reflection patterns and gap identification strategies
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
-- `../../skills/superpower-loop/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
-- `../../skills/superpower-loop/references/completion-promises.md` - Completion promise design and safety nets
+- `../../skills/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
+- `../../skills/references/completion-promises.md` - Completion promise design and safety nets

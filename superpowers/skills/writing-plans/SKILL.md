@@ -172,5 +172,5 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
 - `./references/plan-reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
-- `../../skills/superpower-loop/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
-- `../../skills/superpower-loop/references/completion-promises.md` - Completion promise design and safety nets
+- `../../skills/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
+- `../../skills/references/completion-promises.md` - Completion promise design and safety nets
