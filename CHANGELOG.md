@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.11.0] - 2026-03-18
+
+### Added
+
+- Add superpowers v2.0.0 with significant enhancements
+- Add prompt-file and first-action pattern to superpowers
+- Add red-green pair workflow to superpowers
+- Add ralph loop stop hook to superpowers
+- Add ralph loop to superpowers v1.6.0
+
+### Changed
+
+- Refactor github skill context commands for simplicity
+- Consolidate superpower-loop references in superpowers
+- Rename ralph-loop to superpower-loop in superpowers
+
+### Fixed
+
+- Use portable shebang in validate-commit-pretool.sh
+- Fix ralph loop syntax and promise order
+
+### Documentation
+
+- Add README for code-context plugin
+
+### Chores
+
+- Sync plugin versions
+
 ## [v1.10.0] - 2026-03-16
 
 ### Changed
