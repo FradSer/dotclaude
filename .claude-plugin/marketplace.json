@@ -57,7 +57,7 @@
     },
     {
       "name": "review",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "description": "Multi-agent review system for enforcing high quality",
       "author": {
         "name": "Frad LEE",
@@ -69,7 +69,7 @@
     },
     {
       "name": "swiftui",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "description": "SwiftUI Clean Architecture reviewer.",
       "author": {
         "name": "Frad LEE",
@@ -142,7 +142,7 @@
     },
     {
       "name": "acpx",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
       "author": {
         "name": "Frad LEE",
