@@ -2,16 +2,37 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
+allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
 
-Turn rough ideas into implementation-ready designs through structured collaborative dialogue.
+Turn rough ideas into implementation-ready designs through structured collaborative dialogue using Ralph Loop for continuous iteration.
+
+## Ralph Loop Integration
+
+This skill uses Ralph Loop to enable self-referential iteration throughout the brainstorming process.
+
+**启动 Ralph Loop**:
+```!
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$INITIAL_PROMPT" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
+```
+
+**CRITICAL**: Throughout the process, you MUST output `<promise>BRAINSTORMING_COMPLETE</promise>` only when:
+- Phase 1-4 (Discovery, Option Analysis, Design Creation, Design Reflection) are all complete
+- Design folder created with all required documents
+- User approval received in Phase 2
+- Git commit completed
+
+Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
-1. **Context Check**: Ensure you have read `CLAUDE.md` and `README.md` to understand project constraints.
-2. **Codebase Index**: Verify you have access to the codebase and can run searches.
+1. **Capture Initial Prompt**: Use `$ARGUMENTS` as the topic/prompt for Ralph Loop
+2. **Context Check**: Ensure you have read `CLAUDE.md` and `README.md` to understand project constraints.
+3. **Codebase Index**: Verify you have access to the codebase and can run searches.
+
+**Initialize Ralph Loop immediately after capturing the initial prompt** using the setup script. The loop will continue through all phases until `<promise>BRAINSTORMING_COMPLETE</promise>` is output.
 
 ## Core Principles
 

@@ -3,11 +3,29 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
+allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh:*)"]
 ---
 
 # Writing Plans
 
-Create executable implementation plans that reduce ambiguity for whoever executes them.
+Create executable implementation plans that reduce ambiguity for whoever executes them using Ralph Loop for continuous iteration.
+
+## Ralph Loop Integration
+
+This skill uses Ralph Loop to enable self-referential iteration throughout the planning process.
+
+**启动 Ralph Loop**:
+```!
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$DESIGN_PATH" --completion-promise "PLAN_COMPLETE" --max-iterations 50
+```
+
+**CRITICAL**: Throughout the process, you MUST output `<promise>PLAN_COMPLETE</promise>` only when:
+- Phase 1-4 (Plan Structure, Task Decomposition, Validation, Plan Reflection) are all complete
+- Plan folder created with all task files
+- User approval received in Phase 3
+- Git commit completed
+
+Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
@@ -19,6 +37,8 @@ Create executable implementation plans that reduce ambiguity for whoever execute
      - If not found or user declines, ask the user for the design folder path.
 2. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
 3. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
+
+**Initialize Ralph Loop immediately after resolving the design path** using the setup script with the design path as prompt. The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
 ## Background Knowledge
 

@@ -3,12 +3,23 @@ name: executing-plans
 description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Task"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Task", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh:*)"]
 ---
 
 # Executing Plans
 
-Execute written implementation plans efficiently. Actively use Agent Teams or subagents to execute batches of independent tasks in parallel, following BDD/TDD principles.
+Execute written implementation plans efficiently. Each task runs in its own Ralph Loop for iterative refinement, following BDD/TDD principles.
+
+## Ralph Loop Integration
+
+This skill uses **per-task Ralph Loop** - each task executes in its own Ralph Loop for self-referential iteration until completion.
+
+**For each task in Phase 3**:
+1. Start Ralph Loop for the task with its specific prompt
+2. Task prompt includes: subject, description, BDD scenario, verification steps
+3. Completion promise: `<promise>TASK_${taskId}_COMPLETE</promise>`
+4. Task outputs promise when verification passes
+5. Continue to next task
 
 ## Initialization
 
@@ -59,9 +70,9 @@ Read plan, understand the project and requirements.
    - `addBlocks`: Array of task IDs that must wait for this task to complete
    - Example: `TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })` means task #2 waits for task #1
 
-## Phase 3: Batch Execution Loop
+## Phase 3: Batch Execution Loop with Ralph Loop
 
-Execute tasks in batches. Actively use Agent Teams for parallel execution (preferred), with subagents or linear execution as fallbacks.
+Execute tasks in batches using Ralph Loop for each task to enable iterative refinement.
 
 **For Each Batch**:
 
@@ -71,34 +82,48 @@ Execute tasks in batches. Actively use Agent Teams for parallel execution (prefe
    - **Subagent Parallel** (downgrade only if): Agent Team overhead is disproportionate (e.g., batch has exactly 2 small tasks). State the reason explicitly.
    - **Linear** (last resort only if): Tasks within the batch have unavoidable file conflicts that cannot be split, or the batch genuinely contains only 1 task. State the reason explicitly.
 
-2. **Update Task Status**: Before starting work on any task, use TaskUpdate to set status to `in_progress`
-   - This shows a spinner in the task list and signals active work
+2. **Build Dependency Graph**: After Phase 2, tasks are grouped into batches based on dependency tiers
 
-3. **Agent Team Execution**:
-   - For each task assigned to a teammate: Read the task file to get full context before execution
-   - Create Agent Team with teammates for parallel execution
-   - Assign tasks to teammates with clear file ownership boundaries
-   - Wait for teammates to complete all tasks
-   - Verify all tasks in the batch
+3. **For Each Task in Batch**:
 
-4. **Subagent Parallel Execution**:
-   - For each task: Read the task file to get full context before execution
-   - Spawn subagents concurrently for each independent task
-   - Each subagent loads the `superpowers:behavior-driven-development` skill using the Skill tool
-   - Verify all tasks in the batch
+   a. **Read Task Context**: Read the task file to get full context (subject, description, BDD scenario, verification steps)
 
-5. **Linear Execution**:
-   - For each task in the batch:
-     - Read the task file to get full context before execution
-     - Execute using subagent loading the `superpowers:behavior-driven-development` skill using the Skill tool
-     - Verify the task
+   b. **Construct Task Prompt**: Build a prompt containing:
+      ```
+      ## Task: {subject}
 
-6. **Mark Tasks Complete**: After verification, use TaskUpdate to set status to `completed`
-   - Only mark as completed after full verification passes
+      {description}
 
-7. **Between Batches**:
-   - Report progress and verification results
-   - Proceed to next batch automatically
+      ## BDD Scenario
+      {full scenario from task file}
+
+      ## Verification Steps
+      {verification steps from task file}
+
+      Execute this task following BDD/TDD principles:
+      1. Write failing test first (Red)
+      2. Implement minimal code to pass (Green)
+      3. Refactor while keeping tests green
+
+      Output <promise>TASK_{taskId}_COMPLETE</promise> when all verification steps pass.
+      ```
+
+   c. **Start Ralph Loop for Task**:
+      ```!
+      "${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$TASK_PROMPT" --completion-promise "TASK_${taskId}_COMPLETE" --max-iterations 20
+      ```
+
+   d. **Execute Task in Loop**:
+      - The Ralph Loop allows iterative refinement
+      - Each iteration, Claude sees previous work and can improve
+      - When verification passes, output `<promise>TASK_${taskId}_COMPLETE</promise>`
+      - Loop continues until promise is output or max iterations reached
+
+   e. **Mark Task Complete**: Use TaskUpdate to set status to `completed`
+
+4. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
+
+**Parallel Execution Note**: Tasks within the same batch that have no dependencies can be executed in parallel using Agent Teams, but each task still runs in its own Ralph Loop. Teammates can work on different tasks simultaneously.
 
 See `./references/batch-execution-playbook.md`.
 
