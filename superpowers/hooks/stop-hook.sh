@@ -178,10 +178,26 @@ else
   SYSTEM_MSG="Superpower loop iteration $NEXT_ITERATION | No completion promise set - loop runs infinitely"
 fi
 
+# Append completion instruction to the re-injected prompt so Claude always
+# has a positive directive — not just the negative "do not lie" constraint in
+# the system message. This is critical: by the time later iterations run,
+# the original skill context (SKILL.md) has been compressed out of the
+# conversation window. Without this, Claude sees only a bare task prompt and
+# never knows it must emit the promise tag when done.
+if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
+  INJECTED_PROMPT="${PROMPT_TEXT}
+
+---
+LOOP COMPLETION REQUIRED: When the above task is genuinely complete, output the following tag as the very last line of your response — nothing after it:
+<promise>${COMPLETION_PROMISE}</promise>"
+else
+  INJECTED_PROMPT="$PROMPT_TEXT"
+fi
+
 # Output JSON to block the stop and feed prompt back
 # The "reason" field contains the prompt that will be sent back to Claude
 jq -n \
-  --arg prompt "$PROMPT_TEXT" \
+  --arg prompt "$INJECTED_PROMPT" \
   --arg msg "$SYSTEM_MSG" \
   '{
     "decision": "block",
