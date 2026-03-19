@@ -41,6 +41,15 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 - [BDD Specs](../YYYY-MM-DD-<topic>-design/bdd-specs.md)
 - [Architecture](../YYYY-MM-DD-<topic>-design/architecture.md]
 
+## Context
+
+[Why this work is needed — motivation, constraints, prior incidents, or stakeholder requirement.]
+
+<!-- Include a current-state vs target-state comparison when there is existing code being changed. Omit for greenfield work. -->
+| Aspect | Current State | Target State |
+|--------|--------------|--------------|
+| [Dimension] | [As-is] | [To-be] |
+
 ## Execution Plan
 
 <!-- Inline task metadata for efficient execution by executing-plans skill -->
@@ -195,7 +204,8 @@ Scenario: [concise scenario title]
 ```
 
 **CRITICAL RULES FOR TASK FILES**:
-- **PROHIBITED**: Do not generate actual code in task files
+- **PROHIBITED**: Do not generate implementation bodies in task files — no function logic, no algorithm code
+- **ALLOWED**: Interface signatures, type definitions, and function signatures that define the contract (e.g., `async function maybeSpawnTeammate(params: {...}): Promise<Result>`)
 - Describe **what** to implement, not **how**
 - Focus on actions: "Create a function that X", "Modify Y to do Z"
 - One task = One file
