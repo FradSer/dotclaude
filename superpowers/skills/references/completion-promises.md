@@ -36,9 +36,9 @@ A completion promise should name a **state** that is objectively true or false, 
 
 | Skill | Promise String | When It Is TRUE |
 |-------|---------------|-----------------|
-| brainstorming | `BRAINSTORMING_COMPLETE` | All 4 phases done, design folder committed |
-| writing-plans | `PLAN_COMPLETE` | All phases done, plan folder committed |
-| executing-plans | `EXECUTION_COMPLETE` | All tasks executed, verified, and committed |
+| `superpowers:brainstorming` | `BRAINSTORMING_COMPLETE` | All 4 phases done, design folder committed |
+| `superpowers:writing-plans` | `PLAN_COMPLETE` | All phases done, plan folder committed |
+| `superpowers:executing-plans` | `EXECUTION_COMPLETE` | All tasks executed, verified, and committed |
 
 ## Promise Integrity Rules
 

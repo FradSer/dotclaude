@@ -16,7 +16,7 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 1. Capture `$ARGUMENTS` as the initial prompt
 2. Immediately run:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "$ARGUMENTS" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: $ARGUMENTS. Continue progressing through the superpowers:brainstorming skill phases: Phase 1 (Discovery) → Phase 2 (Option Analysis) → Phase 3 (Design Creation) → Phase 4 (Design Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
 ```
 3. Only after the loop is running, proceed to explore the codebase and continue with Phase 1
 
@@ -25,12 +25,6 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 ## Superpower Loop Integration
 
 This skill uses Superpower Loop to enable self-referential iteration throughout the brainstorming process.
-
-**启动 Superpower Loop**: Run via Bash after capturing the initial prompt:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<initial-prompt>" --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 50
-```
-Replace `<initial-prompt>` with the actual brainstorming topic from `$ARGUMENTS`.
 
 **CRITICAL**: Throughout the process, you MUST output `<promise>BRAINSTORMING_COMPLETE</promise>` only when:
 - Phase 1-4 (Discovery, Option Analysis, Design Creation, Design Reflection) are all complete

@@ -17,7 +17,7 @@ Execute written implementation plans efficiently using Superpower Loop for conti
 1. Resolve the plan path from `$ARGUMENTS` (if provided) or by searching `docs/plans/`
 2. Immediately run:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<resolved-plan-path>" --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3 (Batch Execution) → Phase 4 (Verification) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
 ```
 3. Only after the loop is running, proceed to verify the plan folder and continue with execution
 
@@ -26,12 +26,6 @@ Execute written implementation plans efficiently using Superpower Loop for conti
 ## Superpower Loop Integration
 
 This skill uses Superpower Loop to enable self-referential iteration throughout the execution process.
-
-**Start Superpower Loop**: Run via Bash after resolving the plan path:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "<plan-path>" --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
-```
-Replace `<plan-path>` with the actual resolved plan folder path.
 
 **CRITICAL**: Throughout the process, you MUST output `<promise>EXECUTION_COMPLETE</promise>` only when:
 - Phase 1-5 (Plan Review, Task Creation, Batch Execution, Verification, Git Commit) are all complete

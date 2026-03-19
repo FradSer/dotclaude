@@ -93,7 +93,7 @@ PROMPT_EOF
 
 ## Superpowers-Specific Patterns
 
-### brainstorming prompt structure
+### superpowers:brainstorming prompt structure
 
 ```
 Brainstorm: <topic>
@@ -102,7 +102,7 @@ Work through phases: Discovery → Option Analysis → Design Creation → Desig
 Output <promise>BRAINSTORMING_COMPLETE</promise> when all phases are complete and design is committed.
 ```
 
-### writing-plans prompt structure
+### superpowers:writing-plans prompt structure
 
 ```
 Write an implementation plan for: <design-path>
@@ -111,7 +111,7 @@ Work through phases: Plan Structure → Task Decomposition → Validation → Pl
 Output <promise>PLAN_COMPLETE</promise> when plan is complete, reflected, and committed.
 ```
 
-### executing-plans prompt structure
+### superpowers:executing-plans prompt structure
 
 ```
 Execute implementation plan: <plan-path>

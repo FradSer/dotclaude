@@ -12,7 +12,7 @@ Load plan, create task tracking system, identify batches, execute batches in par
 
 **Core principle:** Active parallel execution for independent tasks, serial execution for dependent tasks.
 
-**Announce at start:** "I'm using the executing-plans skill to implement this plan."
+**Announce at start:** "I'm using the superpowers:executing-plans skill to implement this plan."
 
 ## The Process
 
@@ -94,7 +94,7 @@ Load plan, create task tracking system, identify batches, execute batches in par
 For each task in the serial batch:
 1. **Enter Plan Mode**: Use `EnterPlanMode` to plan the implementation
 2. **Exit Plan Mode**: Use `ExitPlanMode` to get approval on the task plan
-3. **Execute**: Use subagent following `behavior-driven-development` principles
+3. **Execute**: Use subagent following `superpowers:behavior-driven-development` principles
 4. **Verify**: Run verification commands
 5. **Mark Task Complete**: Use `TaskUpdate` to mark task as completed
 

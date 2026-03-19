@@ -43,6 +43,6 @@ This ensures the design is testable and implementation-ready.
 **Phase 2**: Research → Propose → Get approval
 **Phase 3**: Parallel sub-agents (Architecture, Best Practices, Context) → Integrate → Save
 **Phase 4**: Git commit → Verify
-**Phase 5**: Transition to writing-plans
+**Phase 5**: Transition to superpowers:writing-plans
 
 Each phase builds on the previous, creating a complete design document ready for implementation planning.

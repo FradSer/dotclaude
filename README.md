@@ -390,8 +390,8 @@ Advanced development superpowers for orchestrating complex workflows from idea t
 **Internal Skills:**
 | Skill | Description |
 |-------|-------------|
-| `behavior-driven-development` | Red-Green-Refactor cycle with Gherkin scenarios |
-| `agent-team-driven-development` | Agent Team coordination (Implementer, Reviewer, Architect) |
+| `superpowers:behavior-driven-development` | Red-Green-Refactor cycle with Gherkin scenarios |
+| `superpowers:agent-team-driven-development` | Agent Team coordination (Implementer, Reviewer, Architect) |
 
 **Features:**
 - End-to-end workflow from idea to shipped code

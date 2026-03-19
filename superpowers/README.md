@@ -38,7 +38,7 @@ Create executable implementation plans that reduce ambiguity for execution.
 - Enforces Test-First (Red-Green) ordering
 - Ensures compatibility with behavior-driven development practices
 
-**Prerequisites:** Output from `brainstorming` skill (design folder with `bdd-specs.md`)
+**Prerequisites:** Output from `superpowers:brainstorming` skill (design folder with `bdd-specs.md`)
 
 **Output:** Plan folder with `_index.md` and task files ready for execution
 
@@ -51,7 +51,7 @@ Execute written implementation plans in predictable batches.
 - Tracks task completion and captures evidence
 - Provides closure and verification loops
 
-**Prerequisites:** Output from `writing-plans` skill (plan folder with `_index.md`)
+**Prerequisites:** Output from `superpowers:writing-plans` skill (plan folder with `_index.md`)
 
 **Modes:**
 - **Serial Execution:** Single agent executes tasks sequentially
@@ -75,7 +75,7 @@ Loaded when orchestrating complex multi-step tasks across specialized agents. Pr
 
 ### Build Like iPhone Team
 
-Loaded when the user wants to challenge industry conventions or approach open-ended problems requiring disruptive thinking. Applies Apple's Project Purple design philosophy for radical innovation, including first-principles thinking, internal competition, and breakthrough research techniques. The `brainstorming` skill loads this automatically for problems that benefit from unconventional approaches.
+Loaded when the user wants to challenge industry conventions or approach open-ended problems requiring disruptive thinking. Applies Apple's Project Purple design philosophy for radical innovation, including first-principles thinking, internal competition, and breakthrough research techniques. The `superpowers:brainstorming` skill loads this automatically for problems that benefit from unconventional approaches.
 
 ### Systematic Debugging
 
