@@ -5,6 +5,7 @@ description: Finalizes a release and merges it into main and develop with a tag 
 model: haiku
 argument-hint: [version]
 user-invocable: true
+disable-model-invocation: true
 ---
 
 ## Pre-operation Checks

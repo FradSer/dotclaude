@@ -5,6 +5,7 @@ description: Finalizes a hotfix and merges it into main and develop using git-fl
 model: haiku
 argument-hint: [version]
 user-invocable: true
+disable-model-invocation: true
 ---
 
 ## Pre-operation Checks

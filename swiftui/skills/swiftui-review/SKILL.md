@@ -1,6 +1,7 @@
 ---
 name: swiftui-review
 description: Comprehensively reviews SwiftUI code for best practices on modern APIs, maintainability, and performance. Use when reading, writing, or reviewing SwiftUI projects.
+user-invocable: true
 license: MIT
 metadata:
   author: Paul Hudson

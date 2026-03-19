@@ -5,6 +5,7 @@ description: Begins a hotfix for a production issue using git-flow. This skill s
 model: haiku
 argument-hint: <version>
 user-invocable: true
+disable-model-invocation: true
 ---
 
 ## Pre-operation Checks

@@ -5,6 +5,7 @@ description: Finalizes and merges a feature branch into develop using git-flow. 
 model: haiku
 argument-hint: [feature-name]
 user-invocable: true
+disable-model-invocation: true
 ---
 
 ## Pre-operation Checks

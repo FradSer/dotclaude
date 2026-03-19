@@ -5,6 +5,7 @@ description: Begins a new version release using git-flow. This skill should be u
 model: haiku
 argument-hint: <version>
 user-invocable: true
+disable-model-invocation: true
 ---
 
 ## Pre-operation Checks
