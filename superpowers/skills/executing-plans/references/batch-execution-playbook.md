@@ -124,6 +124,63 @@ After all tasks complete and verified:
 - Run full test suite to ensure no regressions
 - Report completion and test results to the user
 
+## Verification Gate
+
+Every task MUST pass this gate before being marked `completed`. This is not optional.
+
+### Pass Criteria
+
+| Check | How to Verify | On Failure |
+|-------|--------------|------------|
+| Exit code | Verification command exits 0 | Retry; escalate if still failing after 2 attempts |
+| Test output | All assertions pass, no FAILED/ERROR lines | Fix failing tests; do not mark complete |
+| No stubs | No TODO/FIXME/pass/... only bodies | Complete the implementation |
+| No empty logic | All functions execute real code | Implement actual logic |
+
+### Retry Behavior
+
+1. First failure: fix the issue and re-run verification immediately
+2. Second failure: fix again, re-run verification
+3. Third failure: escalate as a blocker per `blocker-and-escalation.md`; leave task `in_progress`
+
+NEVER mark a task `completed` after a failed verification, even if the batch schedule is tight.
+
+### Anti-Stub Checklist
+
+Before calling any task done, confirm for every file written:
+- [ ] File has more than import/type-declaration lines
+- [ ] No function body consists solely of `pass`, `...`, `raise NotImplementedError`, or a hardcoded default return
+- [ ] No `TODO` or `FIXME` comments are the only content of a block
+- [ ] Tests actually execute logic (not just `assert True` or empty test bodies)
+
+## Agent Prompt Template
+
+When assigning a task to a teammate or launching a subagent, the prompt MUST include all three of the following sections verbatim (fill in the bracketed placeholders):
+
+```
+## Task Assignment
+
+[Paste full task file content here]
+
+## Quality Requirements (MANDATORY)
+
+You MUST produce complete, working implementation code — not stubs, skeletons, or placeholders.
+Specifically:
+- Every function body must contain real logic, not `pass`, `...`, `TODO`, or a hardcoded stub return
+- Every file must be fully implemented, not a skeleton with empty methods
+- If you cannot implement something completely, stop and report a blocker; do NOT write a stub
+
+## Verification (MANDATORY BEFORE REPORTING DONE)
+
+After implementation, run the following verification commands and confirm they all pass (exit code 0, no test failures):
+
+[Paste verification commands from task file here]
+
+Report the actual command output. Do not report completion until all verification commands pass.
+```
+
+Omitting any of the three sections (Task Assignment, Quality Requirements, Verification) is a protocol violation.
+
 ## When to Stop and Ask for Help
 
 **STOP executing immediately when:**

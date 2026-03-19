@@ -58,6 +58,27 @@ The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</pr
 
 **MANDATORY SKILLS**: Both `superpowers:agent-team-driven-development` and `superpowers:behavior-driven-development` must be loaded regardless of execution mode.
 
+## Definition of Done
+
+These rules are non-negotiable and override all other guidance.
+
+**PROHIBITED outputs** — a task MUST NOT be marked `completed` if it produces any of the following:
+- Stub files: files containing only function signatures, `pass`, or `...` with no logic
+- Placeholder implementations: `TODO`, `FIXME`, `NotImplemented`, `raise NotImplementedError`, or equivalent in any language
+- Empty function bodies: functions that return a hardcoded default or `None`/`null` without executing real logic
+- Skeleton-only files: files with only imports, type declarations, or class definitions but no method bodies
+
+**A task is "done" only when ALL of the following are true:**
+1. Verification commands from the task file exit with code 0
+2. Expected output matches actual output (no test failures, no assertion errors)
+3. No prohibited patterns exist in any file written during the task
+
+**On verification failure:**
+- The task MUST remain `in_progress`
+- Fix the issue and re-run verification
+- If blocked after two retries, escalate per `./references/blocker-and-escalation.md`
+- NEVER mark a task `completed` after a failed verification
+
 ## Phase 1: Plan Review & Understanding
 
 1. **Read Plan**: Read `_index.md` to understand scope, architecture decisions, and extract inline YAML task metadata from the "Execution Plan" section.
@@ -115,28 +136,39 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
 
    c. **Execute Task**: Based on execution mode:
 
+      **Mandatory prompt content** — regardless of execution mode, every agent/teammate prompt MUST include:
+      1. Full task file content (subject, description, BDD scenario, verification commands)
+      2. The Quality Requirements block: "You MUST produce complete, working implementation code — not stubs, skeletons, or placeholders. Every function body must contain real logic. If you cannot implement something completely, stop and report a blocker."
+      3. The Verification block: "After implementation, run the verification commands below and confirm they all pass (exit code 0, no test failures). Report the actual command output. Do NOT report completion until all verification commands pass."
+
+      See `./references/batch-execution-playbook.md` — "Agent Prompt Template" section — for the full required template.
+
       **For Agent Team / Worktree mode**:
       - Create team if not already created
-      - Assign task to available teammate with clear context
-      - Provide task file content and verification steps
-      - Wait for teammate to complete
+      - Assign task to available teammate using the mandatory prompt template above
+      - Wait for teammate to complete and report verification output
 
       **For Subagent mode**:
-      - Launch subagent with task context
-      - Include BDD scenario and verification steps
-      - Wait for subagent to complete
+      - Launch subagent using the mandatory prompt template above
+      - Wait for subagent to complete and report verification output
 
       **For Linear mode**:
       - Execute task directly in current session
       - Follow BDD scenario and verification steps
-      - Run verification commands
+      - Run verification commands and capture output
 
-   d. **Verify Task**: Run verification steps from task file
-      - For test tasks: Confirm test fails for the right reason (Red)
-      - For impl tasks: Confirm test passes (Green)
-      - For other tasks: Run verification commands and check output
+   d. **Verification Gate**: Run all verification commands from the task file. Capture the actual output.
+      - For test tasks: Confirm test fails for the right reason (Red state confirmed)
+      - For impl tasks: Confirm all tests pass (Green state confirmed, exit code 0)
+      - For other tasks: Confirm verification command exits 0 and output matches expected
 
-   e. **Mark Task Complete**: Use TaskUpdate to set status to `completed`
+      **HARD GATE**: If ANY verification step fails (non-zero exit, test failure, unexpected output):
+      - The task MUST remain `in_progress`
+      - Fix the issue and re-run verification (up to two retries)
+      - If still failing after two retries, escalate per `./references/blocker-and-escalation.md`
+      - NEVER proceed to step 2e while any verification is failing
+
+   e. **Mark Task Complete**: Only after ALL verification steps in 2d pass, use TaskUpdate to set status to `completed`. Include in the update: which verification commands ran and that they passed.
 
 3. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
 
@@ -144,11 +176,20 @@ See `./references/batch-execution-playbook.md` for detailed execution patterns.
 
 ## Phase 4: Verification & Feedback
 
-Close the loop.
+Close the loop with structured evidence.
 
-1. **Publish Evidence**: Log outputs and test results.
-2. **Confirm**: Get user confirmation.
-3. **Loop**: Repeat Phase 3-4 until complete.
+1. **Publish Evidence**: For each completed task in the batch, output a structured evidence block:
+   ```
+   Task [ID]: [subject]
+   Verification command: <command run>
+   Output: <actual output, truncated to last 20 lines if long>
+   Status: PASS / FAIL
+   ```
+   Any task without a PASS evidence block is NOT verified. Do not proceed to confirmation until all tasks have PASS status.
+
+2. **Confirm**: Present the evidence summary to the user and ask: "All tasks in this batch verified. Proceed to the next batch?" Get explicit confirmation before continuing.
+
+3. **Loop**: Repeat Phase 3-4 until all batches complete.
 
 ## Phase 5: Git Commit
 
