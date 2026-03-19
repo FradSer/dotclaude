@@ -175,6 +175,18 @@
       "source": "./code-context",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/code-context"
+    },
+    {
+      "name": "utils",
+      "version": "0.1.0",
+      "description": "General-purpose utility skills for documentation, writing, and project maintenance",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./utils",
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/utils"
     }
   ]
 }
