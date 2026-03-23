@@ -1,6 +1,6 @@
 ---
 name: finish-feature
-allowed-tools: Bash(git:*), Read, Write
+allowed-tools: ["Bash(git:*)", "Read", "Write"]
 description: Finalizes and merges a feature branch into develop using git-flow. This skill should be used when the user asks to "finish a feature", "merge feature branch", "complete feature", "git flow feature finish", or wants to finalize a feature branch.
 model: haiku
 argument-hint: [feature-name]

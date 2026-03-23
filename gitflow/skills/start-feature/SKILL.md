@@ -1,6 +1,6 @@
 ---
 name: start-feature
-allowed-tools: Bash(git:*)
+allowed-tools: ["Bash(git:*)"]
 description: Starts working on a new feature branch using git-flow. This skill should be used when the user asks to "start a feature", "create feature branch", "begin new feature", "git flow feature start", or wants to start a new feature.
 model: haiku
 argument-hint: <feature-name>

@@ -1,6 +1,6 @@
 ---
 name: start-hotfix
-allowed-tools: Bash(git:*), Read, Write
+allowed-tools: ["Bash(git:*)", "Read", "Write"]
 description: Begins a hotfix for a production issue using git-flow. This skill should be used when the user asks to "start a hotfix", "create hotfix branch", "fix a critical bug", "git flow hotfix start", or wants to begin a hotfix.
 model: haiku
 argument-hint: <version>

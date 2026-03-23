@@ -1,6 +1,6 @@
 ---
 name: finish-release
-allowed-tools: Bash(git:*), Bash(gh:*), Read, Write
+allowed-tools: ["Bash(git:*)", "Bash(gh:*)", "Read", "Write"]
 description: Finalizes a release and merges it into main and develop with a tag using git-flow. This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release.
 model: haiku
 argument-hint: [version]
