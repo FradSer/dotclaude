@@ -3,9 +3,6 @@
 .AppleDouble
 .LSOverride
 
-# Claude local settings
-.claude/*.local.md
-
 # Node
 node_modules/
 npm-debug.log*
