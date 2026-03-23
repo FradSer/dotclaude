@@ -7,7 +7,23 @@ allowed-tools:
   - Read
   - Write
   - AskUserQuestion
-  - Bash(*)
+  - Bash(git:*)
+  - Bash(node:*)
+  - Bash(python3:*)
+  - Bash(rustc:*)
+  - Bash(go:*)
+  - Bash(java:*)
+  - Bash(docker:*)
+  - Bash(which:*)
+  - Bash(command:*)
+  - Bash(npm:*)
+  - Bash(pnpm:*)
+  - Bash(yarn:*)
+  - Bash(bun:*)
+  - Bash(uv:*)
+  - Bash(pip:*)
+  - Bash(poetry:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 ## Initialization
