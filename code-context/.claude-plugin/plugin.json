@@ -15,6 +15,7 @@
     "mcp",
     "research"
   ],
+  "agents": ["./agents/context-researcher.md"],
   "skills": ["./skills/code-context"],
   "commands": ["./skills/get-context/"]
 }
