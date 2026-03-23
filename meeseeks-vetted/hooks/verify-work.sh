@@ -134,12 +134,12 @@ build_system_message() {
 
   local msg="# Verification Checkpoint"
   msg="${msg}${NL}${NL}You were asked to:${NL}> ${primary}"
-  msg="${msg}${NL}${NL}## Verification Steps${NL}Do not report back until you have verified this is actually done:"
-  msg="${msg}${NL}- Run any code or scripts and check the output"
+  msg="${msg}${NL}${NL}## Verification Steps${NL}First, classify the task: was it a discussion/question or an implementation request?"
+  msg="${msg}${NL}${NL}**If discussion/question** (analysis, problem investigation, exploring options):${NL}- Verify your analysis is grounded in evidence (code reads, logs, docs)${NL}- Confirm you presented findings without prematurely offering to implement a fix${NL}- Skip code execution verification — this is not an implementation task"
+  msg="${msg}${NL}${NL}**If implementation request** (build, fix, change, create):${NL}- Run any code or scripts and check the output"
   msg="${msg}${NL}- For web apps, open the page, click through flows, confirm rendering and interactions"
   msg="${msg}${NL}- Test with real or representative input and inspect results"
   msg="${msg}${NL}- Simulate edge cases if possible"
-  msg="${msg}${NL}- If the task has no verifiable output (pure discussion, planning), you may skip verification"
   msg="${msg}${NL}${NL}Once verified (or confirmed no verification needed), append \`${STOP_TAG}\` at the end of your response, then report back."
   msg="${msg}${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
 
@@ -151,7 +151,7 @@ if [[ -n "$USER_PROMPT" ]]; then
   jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 else
   NL=$'\n'
-  MSG="# Verification Checkpoint${NL}${NL}Do not report back until you have verified your work is actually done:${NL}- Run any code or scripts and check the output${NL}- For web apps, open the page, click through flows, confirm rendering and interactions${NL}- Test with real or representative input and inspect results${NL}- Simulate edge cases if possible${NL}- If the task has no verifiable output (pure discussion, planning), you may skip verification${NL}${NL}Once verified (or confirmed no verification needed), append \`${STOP_TAG}\` at the end of your response, then report back.${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
+  MSG="# Verification Checkpoint${NL}${NL}First, classify the task: was it a discussion/question or an implementation request?${NL}${NL}**If discussion/question** (analysis, problem investigation, exploring options):${NL}- Verify your analysis is grounded in evidence${NL}- Confirm you presented findings without prematurely offering to implement${NL}- Skip code execution verification${NL}${NL}**If implementation request** (build, fix, change, create):${NL}- Run any code or scripts and check the output${NL}- For web apps, open the page, click through flows, confirm rendering and interactions${NL}- Test with real or representative input and inspect results${NL}- Simulate edge cases if possible${NL}${NL}Once verified (or confirmed no verification needed), append \`${STOP_TAG}\` at the end of your response, then report back.${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
   jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 fi
 
