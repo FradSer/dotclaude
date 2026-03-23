@@ -1,6 +1,6 @@
 # meeseeks-vetted
 
-**Version:** 0.2.0
+**Version:** 0.3.1
 
 Enforces task clarity before execution and requires verified work before exit.
 
@@ -23,6 +23,43 @@ claude --plugin-dir ./meeseeks-vetted
 ## Overview
 
 meeseeks-vetted is a Claude Code plugin that ensures every task has clear completion criteria and every deliverable is verified before the session ends. It uses hooks to automatically track session state, accumulate file changes, and block exit until work is genuinely verified.
+
+## Core Workflow
+
+### 1. Task Injection (UserPromptSubmit)
+
+When the user submits a prompt:
+- The task is persisted to a session-scoped state file (`~/.claude/projects/<project-key>/<session_id>.vetted.json`)
+- A system message is injected requiring Claude to:
+  - Classify the task as either **discussion/question** or **implementation request**
+  - For implementation requests: ensure completion criteria are clear before working
+  - **Must end responses with `<verified>Fully Vetted.</verified>` when done**
+
+### 2. Verification Gate (Stop)
+
+When Claude tries to exit:
+
+**If verified** (`<verified>Fully Vetted.</verified>` found):
+- Merge the assistant's response into the evolving task description
+- Keep the state file for future reference
+- Allow exit
+
+**If NOT verified**:
+- Block exit (exit code 2)
+- Build a verification prompt containing:
+  - The synthesized task description (from state file or transcript)
+  - List of modified files during this turn
+  - Instructions to verify and append the verified tag
+
+### 3. Task Evolution (Multi-turn)
+
+When the user submits a new prompt before the previous one is verified:
+- The previous prompt is saved as `pending_prompt`
+- On Stop, the hook merges:
+  - Existing task description
+  - The pending prompt
+  - Assistant's response (what was done)
+- Into a single coherent task statement for the next turn
 
 ## Features
 
@@ -79,13 +116,58 @@ Manually surface the current session task and evaluate its clarity and completio
 
 ### Hooks
 
-| Event | Script | Purpose |
-|-------|--------|---------|
-| UserPromptSubmit | `task-start.sh` | Persists user prompt to session state, injects task clarity instructions |
-| PostToolUse | `track-changes.sh` | Tracks modified files after Edit/Write/MultiEdit (async) |
-| Stop | `verify-work.sh` | Blocks exit until `<verified>Fully Vetted.</verified>` is appended |
+| Event | Script | Trigger Condition | Purpose |
+|-------|--------|-------------------|---------|
+| UserPromptSubmit | `task-start.sh` | Every user prompt | Persists task to state file, injects verification instructions |
+| PostToolUse | `track-changes.sh` | Edit/Write/MultiEdit tools | Tracks modified files (async) |
+| Stop | `verify-work.sh` | Every exit attempt | Blocks exit until `<verified>Fully Vetted.</verified>` or merges task context |
 
-**Technical implementation**: Inline hooks defined in `plugin.json` `hooks` array. Each hook runs a shell script that operates on session-scoped state files in `~/.claude/projects/<project-key>/`.
+**Technical implementation**: Inline hooks defined in `hooks/hooks.json`. Each hook runs a shell script that operates on session-scoped state files in `~/.claude/projects/<project-key>/`.
+
+### Key Scripts
+
+| Script | Responsibility |
+|--------|----------------|
+| `task-start.sh` | First prompt: save task; subsequent prompts: queue as pending |
+| `track-changes.sh` | Record files modified during this turn |
+| `verify-work.sh` | Check for verified tag → merge or block exit |
+
+### State File
+
+The state file (`~/.claude/projects/<project-key>/<session_id>.vetted.json`) stores:
+
+```json
+{
+  "session_id": "abc123",
+  "task": "Original user prompt or merged task description",
+  "pending_prompt": "New prompt submitted before previous was verified (optional)",
+  "modified_files": ["file1.ts", "file2.ts"],
+  "created_at": "2026-03-24T10:00:00Z",
+  "updated_at": "2026-03-24T10:30:00Z"
+}
+```
+
+### Three-round Workflow
+
+```
+Round 1:
+  User: "Fix the bug in auth"
+  → task-start.sh saves task, injects verification prompt
+  Claude: works...
+  → Stop hook checks: no <verified> → blocks, returns task context
+
+Round 2 (if user continues):
+  User: "Also add unit tests"
+  → task-start.sh queues "Also add unit tests" as pending_prompt
+  → verify-work.sh merges: "Fix the bug in auth + what was done + Also add unit tests"
+  Claude: continues with merged context...
+  → Stop hook checks: <verified> found → allows exit
+```
+
+This design ensures:
+1. Every task has explicit verification before completion
+2. Multi-turn tasks accumulate context rather than being lost
+3. Claude cannot "hand off" incomplete work to the user
 
 ### Library
 
@@ -118,10 +200,43 @@ meeseeks-vetted/
 
 ## How It Works
 
-1. **Task capture**: On each user prompt, `task-start.sh` saves the task to a session-scoped state file (`~/.claude/projects/<project-key>/<session_id>.vetted.json`)
-2. **Change tracking**: `track-changes.sh` records every file modified during the session
-3. **Task evolution**: On each stop, `verify-work.sh` merges pending prompts with assistant responses to keep the task description current
-4. **Verification gate**: Claude must verify its work and append the verified tag before the session can end
+### Stage 1: Task Injection (UserPromptSubmit Hook)
+
+When the user submits a prompt, `task-start.sh`:
+
+1. **Persists the task** to `~/.claude/projects/<project-key>/<session_id>.vetted.json`
+2. **Injects a system message** that instructs Claude to:
+   - Classify the task type
+   - Ensure completion criteria are clear for implementation requests
+   - **Finish with `<verified>Fully Vetted.</verified>` when done**
+
+### Stage 2: Verification Gate (Stop Hook)
+
+When Claude tries to exit:
+
+**If `<verified>Fully Vetted.</verified>` is found:**
+- Merge the assistant's response into the task description
+- Allow exit
+
+**If NOT verified:**
+- Block exit (exit code 2)
+- Return a verification prompt containing:
+  - User's original task (from state file or transcript)
+  - Modified files during this turn
+  - Instruction to verify work and append the verified tag
+
+### Stage 3: Task Evolution (Multi-turn)
+
+If the user submits a new prompt before the previous one is verified:
+
+1. `task-start.sh` saves the pending prompt to `pending_prompt`
+2. On Stop, `verify-work.sh` merges:
+   - Existing task description
+   - Pending prompt
+   - Assistant's response (what was actually done)
+3. Creates a unified task description for the next turn
+
+This ensures the task context evolves with each interaction rather than being reset.
 
 ## Prerequisites
 

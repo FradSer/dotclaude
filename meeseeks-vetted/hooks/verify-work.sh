@@ -40,16 +40,16 @@ LAST_MSG=$(echo "$HOOK_INPUT" | jq -r '.last_assistant_message // ""')
 VERIFIED_TEXT=$(extract_verified_text "$LAST_MSG")
 STATE_FILE="$(state_dir)/${SESSION_ID}.vetted.json"
 
-# Verified — merge this turn's output into evolving task, keep state file
+# Verified — synthesize final task summary, keep state file
 if [[ -n "$VERIFIED_TEXT" ]] && [[ "$VERIFIED_TEXT" = "$STOP_CHAR" ]]; then
   if [[ -f "$STATE_FILE" ]]; then
     CURRENT_TASK=$(jq -r '.task // ""' "$STATE_FILE")
     TURN_OUTPUT="${LAST_MSG:0:500}"
 
     if [[ -n "$CURRENT_TASK" && -n "$TURN_OUTPUT" ]]; then
-      MERGED=$(run_haiku_merge "Update this task description to reflect what was accomplished. Output only the updated task — no explanation, no preamble, no quotes.
+      MERGED=$(run_haiku_merge "Synthesize a one-sentence task summary from the inputs below. Extract the core intent and outcome — discard noise, hooks output, and duplicated context. Plain text only, no quotes.
 Task: ${CURRENT_TASK}
-What was done: ${TURN_OUTPUT}")
+Outcome: ${TURN_OUTPUT}")
 
       if [[ -n "$MERGED" ]]; then
         NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -80,13 +80,13 @@ if [[ -f "$STATE_FILE" ]]; then
 
     MERGED=""
     if [[ -n "$EXISTING_TASK" && "$EXISTING_TASK" != "$PENDING_PROMPT" ]]; then
-      MERGE_INPUT="Combine the following into a single concise task statement. Output only the merged task — no explanation, no preamble, no quotes.
-Existing task: ${EXISTING_TASK}
-New input: ${PENDING_PROMPT}"
+      MERGE_INPUT="Distill these inputs into one concise task sentence. Keep only the core intent and any new direction — strip duplicated context, hook output, and verbose details. Plain text only, no quotes.
+Previous: ${EXISTING_TASK}
+New direction: ${PENDING_PROMPT}"
 
       if [[ -n "$LAST_ASSISTANT" ]]; then
         MERGE_INPUT="${MERGE_INPUT}
-Assistant response (what was done): ${LAST_ASSISTANT}"
+Done so far: ${LAST_ASSISTANT}"
       fi
 
       MERGED=$(run_haiku_merge "$MERGE_INPUT")
@@ -104,12 +104,23 @@ Assistant response (what was done): ${LAST_ASSISTANT}"
   fi
 fi
 
-# --- Resolve task ---
+# --- Resolve task and changes ---
 
 USER_PROMPT=""
+CHANGES_SUMMARY=""
 
 if [[ -f "$STATE_FILE" ]]; then
   USER_PROMPT=$(jq -r '.task // ""' "$STATE_FILE")
+
+  # Read modified_files from state and build a changes summary
+  MODIFIED_FILES=()
+  while IFS= read -r f; do
+    [[ -n "$f" && "$f" != "null" ]] && MODIFIED_FILES+=("$f")
+  done < <(jq -r '.modified_files // [] | .[]' "$STATE_FILE" 2>/dev/null)
+
+  if [[ ${#MODIFIED_FILES[@]} -gt 0 ]]; then
+    CHANGES_SUMMARY=$(build_changes_section "${MODIFIED_FILES[@]}")
+  fi
 fi
 
 # Fallback: transcript's last-prompt entry (transcript_path extracted at top)
@@ -130,10 +141,16 @@ STOP_TAG="<verified>${STOP_CHAR}</verified>"
 
 build_system_message() {
   local primary="$1"
+  local changes="${2:-}"
   local NL=$'\n'
 
   local msg="# Verification Checkpoint"
   msg="${msg}${NL}${NL}You were asked to:${NL}> ${primary}"
+
+  if [[ -n "$changes" ]]; then
+    msg="${msg}${NL}${NL}## Changes Made${NL}\`\`\`${NL}${changes}${NL}\`\`\`"
+  fi
+
   msg="${msg}${NL}${NL}## Verification Steps${NL}First, classify the task: was it a discussion/question or an implementation request?"
   msg="${msg}${NL}${NL}**If discussion/question** (analysis, problem investigation, exploring options):${NL}- Verify your analysis is grounded in evidence (code reads, logs, docs)${NL}- Confirm you presented findings without prematurely offering to implement a fix${NL}- Skip code execution verification — this is not an implementation task"
   msg="${msg}${NL}${NL}**If implementation request** (build, fix, change, create):${NL}- Run any code or scripts and check the output"
@@ -147,7 +164,7 @@ build_system_message() {
 }
 
 if [[ -n "$USER_PROMPT" ]]; then
-  MSG=$(build_system_message "$USER_PROMPT")
+  MSG=$(build_system_message "$USER_PROMPT" "$CHANGES_SUMMARY")
   jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 else
   NL=$'\n'
