@@ -10,7 +10,7 @@
     {
       "name": "git",
       "version": "0.4.5",
-      "description": "Conventional Git automation for commits and repository management",
+      "description": "Conventional Git automation and advanced repository management",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -34,7 +34,7 @@
     {
       "name": "claude-config",
       "version": "1.4.0",
-      "description": "Generate AI assistant configurations with environment detection, TDD options, best practices research, and multi-file sync",
+      "description": "Generate AI assistant configurations with environment detection, TDD options, local best-practices references, and multi-file sync",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -70,7 +70,7 @@
     {
       "name": "swiftui",
       "version": "0.2.0",
-      "description": "SwiftUI Clean Architecture reviewer.",
+      "description": "SwiftUI code review with modern API best practices",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -82,7 +82,7 @@
     {
       "name": "office",
       "version": "0.4.2",
-      "description": "Specialized Claude Skill for patent application generation and intellectual property workflows",
+      "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, and browser automation",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -155,7 +155,7 @@
     {
       "name": "shadcn",
       "version": "0.1.0",
-      "description": "Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI",
+      "description": "Manages shadcn components and projects \u2014 adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
