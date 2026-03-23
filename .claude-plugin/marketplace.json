@@ -187,6 +187,18 @@
       "source": "./utils",
       "category": "productivity",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/utils"
+    },
+    {
+      "name": "meeseeks-vetted",
+      "version": "0.3.0",
+      "description": "Enforces task clarity before execution and requires verified work before exit",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./meeseeks-vetted",
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/meeseeks-vetted"
     }
   ]
 }
