@@ -1,6 +1,6 @@
 ---
 name: best-practices
-description: Provides language-specific best practices, code quality standards, and framework detection. Use when executing refactoring workflows, applying code quality rules, or checking framework-specific patterns.
+description: This skill should be used when executing refactoring workflows, applying code quality rules, detecting frameworks, or checking language-specific best practices and code quality standards.
 user-invocable: false
 version: 1.3.0
 ---
