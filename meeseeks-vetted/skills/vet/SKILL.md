@@ -2,24 +2,37 @@
 name: vet
 description: This skill should be used when the user invokes /vet to manually surface the current session task and have Claude evaluate whether it is clear and complete.
 user-invocable: true
+allowed-tools: ["Bash(ls:*)", "Bash(cat:*)", "Read", "AskUserQuestion"]
 ---
 
-Run `ls -t ~/.claude/projects/$(echo "$PWD" | tr '/' '-')/*.vetted.json 2>/dev/null | head -1` to find the most recent session state file for this project.
+# Vet Session Task
 
-If no state file exists, report: "No task is being tracked in this session."
+Surface the current session task and evaluate its clarity and completion status.
 
-Otherwise read the file and extract:
-- `task` — the active task description (synthesized from the session's prompts)
-- `updated_at` — when it was last updated
-- `modified_files` — files changed so far (if present)
+## Phase 1: Resolve Task State
 
-Display the tracked task clearly, then evaluate two things:
+**Goal**: Locate and read the session state file.
 
-**1. Clarity check**
-Is the task specific enough to have unambiguous completion criteria? If not, call the AskUserQuestion tool and ask the user to clarify before proceeding.
+**Actions**:
+1. Find the most recent `*.vetted.json` file in `~/.claude/projects/$(echo "$PWD" | tr '/' '-')/` (use the file with the most recent modification time)
+2. If no state file exists, report "No task is being tracked in this session" and stop
+3. Read the file and extract `task`, `updated_at`, and `modified_files` (if present)
+4. Display the tracked task clearly to the user
 
-**2. Completion check**
-Based on what has been done in this conversation, is the task complete?
-- If yes: confirm what was done and append `<verified>Fully Vetted.</verified>`.
-- If no: list what remains undone and what the next step is. Do not mark verified.
-- If indeterminate (discussion/planning only): state that and skip verification.
+## Phase 2: Clarity Check
+
+**Goal**: Determine whether the task has unambiguous completion criteria.
+
+**Actions**:
+1. Evaluate whether the task is specific enough to define a concrete delivery checklist
+2. If the task is vague or ambiguous, use the `AskUserQuestion` tool to ask the user to clarify before proceeding
+3. Do not continue to Phase 3 until the task is clear
+
+## Phase 3: Completion Check
+
+**Goal**: Assess whether the task is complete based on the conversation so far.
+
+**Actions**:
+1. If complete: confirm what was done and append `<verified>Fully Vetted.</verified>`
+2. If incomplete: list what remains undone and identify the next step (do not mark verified)
+3. If indeterminate (discussion or planning only): state that and skip verification

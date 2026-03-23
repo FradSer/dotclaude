@@ -119,16 +119,13 @@ Creates comprehensive GitHub pull requests with quality validation and gates.
 - **Auto-labeling**: Applies labels based on change types
 - **Issue linking**: Automatically links related issues
 - **Security scanning**: Checks for sensitive data exposure
-- **Failure resolution**: Uses specialized agents to fix issues
+- **Failure resolution**: Systematic process to fix issues
 
 **Failure resolution process:**
 When quality checks fail, the command:
-1. Uses TodoWrite to create specific task lists
-2. Invokes specialized agents for fixes:
-   - **@code-reviewer** for logic and correctness
-   - **@security-reviewer** for security issues
-3. Fixes issues systematically with validation
-4. Re-runs checks until all pass
+1. Creates specific task lists for failures
+2. Fixes issues systematically with validation
+3. Re-runs checks until all pass
 
 ---
 
@@ -212,9 +209,9 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 1. **Issue Selection**: Evaluates open issues and prioritizes next actionable item
 2. **Worktree Setup**: Creates or reuses isolated worktree with descriptive branch name
 3. **TDD Implementation**:
-   - Plan with **@tech-lead-reviewer** for architectural impact
+   - Plan implementation and assess architectural impact
    - Write failing tests (red phase)
-   - Implement fixes with **@code-simplifier** for optimization
+   - Implement fixes
    - Refactor while keeping tests green
 4. **Quality Validation**: Runs project-specific lint, test, and build commands
 5. **PR Creation**: Pushes branch and creates PR with auto-closing keywords
@@ -244,15 +241,9 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 **Features:**
 - **Isolated worktrees**: Clean environment for each issue
 - **TDD workflow**: Red → Green → Refactor cycle
-- **Multi-agent collaboration**: Works with specialized reviewers
 - **Quality gates**: All checks must pass
 - **Auto-cleanup**: Removes worktrees after completion
 - **Documentation**: Tracks all decisions and actions
-
-**Agent collaboration:**
-- **@tech-lead-reviewer**: Architectural review and planning
-- **@code-simplifier**: Code optimization and simplification
-- **@security-reviewer**: Security validation (when applicable)
 
 ## Best Practices
 
@@ -327,7 +318,6 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 **Solution**:
 - Review failure output carefully
 - Fix all issues systematically
-- For security issues, work with @security-reviewer
 - Re-run `/github:create-pr` after all fixes
 - Consider splitting large PRs if too many issues
 

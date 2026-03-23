@@ -1,0 +1,16 @@
+scopes:
+    - acpx
+    - cc
+    - claude-config
+    - git
+    - gitflow
+    - github
+    - meeseeks
+    - nd
+    - office
+    - po
+    - review
+    - shadcn
+    - sp
+    - swiftui
+    - utils

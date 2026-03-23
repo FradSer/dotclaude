@@ -20,8 +20,10 @@ source "${SCRIPT_DIR}/../lib/utils.sh"
 
 HOOK_INPUT=$(cat)
 
-SESSION_ID=$(echo "$HOOK_INPUT" | jq -r '.session_id // "default"')
-FILE_PATH=$(echo "$HOOK_INPUT" | jq -r '.tool_input.file_path // ""')
+# Single-pass extraction of all needed fields
+read -r SESSION_ID FILE_PATH < <(
+  echo "$HOOK_INPUT" | jq -r '[.session_id // "default", .tool_input.file_path // ""] | @tsv'
+)
 
 # Nothing to track if no file path
 [[ -z "$FILE_PATH" || "$FILE_PATH" == "null" ]] && exit 0

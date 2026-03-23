@@ -1,6 +1,8 @@
 ---
 name: update-readme
 description: Updates README.md and README.zh-CN.md to reflect the project's current state. Use this skill whenever the user asks to "update the README", "sync the docs", "update documentation", "reflect latest changes in README", or wants both the English and Chinese READMEs to match the current project. Always triggers when the user mentions updating or regenerating README files, especially for bilingual (EN/ZH) projects.
+user-invocable: true
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash(git:*)"]
 disable-model-invocation: true
 ---
 

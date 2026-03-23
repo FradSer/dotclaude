@@ -30,7 +30,7 @@ Create or reuse an isolated worktree with a descriptive branch name:
 
 Follow the red-green-refactor cycle with agent collaboration:
 
-1. **Plan with @tech-lead-reviewer**:
+1. **Plan implementation**:
    - Assess architectural impact of the change
    - Identify potential design issues or anti-patterns
    - Plan the implementation approach
@@ -43,8 +43,8 @@ Follow the red-green-refactor cycle with agent collaboration:
    - Write code to make tests pass
    - Focus on solving the problem, not optimization
 
-4. **Refactor Phase with @code-simplifier**:
-   - Request code simplification and optimization
+4. **Refactor Phase**:
+   - Simplify and optimize code
    - Remove duplication and improve readability
    - Ensure tests still pass after refactoring
 

@@ -25,7 +25,7 @@ When arguments look like glob patterns:
 ```
 
 **Strategy**:
-1. Use Glob tool to expand the pattern
+1. Expand the pattern with glob matching
 2. Treat all matching files as target scope
 3. If no matches found, inform user and exit
 

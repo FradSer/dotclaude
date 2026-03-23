@@ -56,18 +56,6 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/github"
     },
     {
-      "name": "review",
-      "version": "0.4.0",
-      "description": "Multi-agent review system for enforcing high quality",
-      "author": {
-        "name": "Frad LEE",
-        "email": "fradser@gmail.com"
-      },
-      "source": "./review",
-      "category": "productivity",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/review"
-    },
-    {
       "name": "swiftui",
       "version": "0.2.0",
       "description": "SwiftUI code review with modern API best practices",
@@ -190,7 +178,7 @@
     },
     {
       "name": "meeseeks-vetted",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "description": "Enforces task clarity before execution and requires verified work before exit",
       "author": {
         "name": "Frad LEE",

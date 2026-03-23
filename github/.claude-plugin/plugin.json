@@ -3,14 +3,10 @@
   "version": "0.2.1",
   "description": "GitHub project operations with quality gates.",
   "author": {
-        "name": "Frad LEE",
+    "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
-  "commands": [
-    "./skills/create-issues/",
-    "./skills/create-pr/",
-    "./skills/resolve-issues/"
-  ],
+  "license": "MIT",
   "keywords": [
     "github",
     "issues",
@@ -18,5 +14,10 @@
     "quality-gates",
     "tdd",
     "worktrees"
+  ],
+  "commands": [
+    "./skills/create-issues/",
+    "./skills/create-pr/",
+    "./skills/resolve-issues/"
   ]
 }

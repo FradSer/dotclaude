@@ -38,10 +38,10 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 **Goal**: Implement fix using test-driven development with agent collaboration.
 
 **Actions**:
-1. Plan implementation with @tech-lead-reviewer for architectural assessment
+1. Plan implementation approach and assess architectural impact
 2. Write failing tests that verify issue is resolved (RED phase)
 3. Implement minimal code to make tests pass (GREEN phase)
-4. Refactor with @code-simplifier while keeping tests green (REFACTOR phase)
+4. Refactor while keeping tests green (REFACTOR phase)
 5. Run quality validation commands (see `references/workflow-details.md` for project-specific checks)
 
 ## Phase 3: PR Creation and Cleanup

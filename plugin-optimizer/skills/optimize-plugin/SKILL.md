@@ -3,7 +3,7 @@ name: optimize-plugin
 description: This skill should be used when the user asks to "validate a plugin", "optimize plugin", "check plugin quality", "review plugin structure", or "run plugin optimizer".
 argument-hint: <plugin-path>
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Bash(realpath *)", "Bash(bash:*)", "Task", "AskUserQuestion", "TaskCreate", "TaskUpdate"]
+allowed-tools: ["Read", "Glob", "Bash(realpath:*)", "Bash(python3:*)", "AskUserQuestion", "TaskCreate", "TaskUpdate"]
 ---
 
 # Plugin Optimization

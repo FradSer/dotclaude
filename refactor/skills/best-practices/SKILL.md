@@ -1,6 +1,6 @@
 ---
 name: best-practices
-description: This skill should be used when executing refactoring workflows, applying code quality rules, detecting frameworks, or checking language-specific best practices and code quality standards.
+description: Language-specific best practices, code quality standards, and framework detection rules. Use when executing refactoring workflows, applying code quality rules, detecting frameworks, or checking language-specific patterns for TypeScript, Python, Go, Swift, or React.
 user-invocable: false
 version: 1.3.0
 ---

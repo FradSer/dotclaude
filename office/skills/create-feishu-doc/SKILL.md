@@ -2,6 +2,7 @@
 name: create-feishu-doc
 description: Automates creating new documents in the Feishu workspace. This skill should be used when the user asks to "create a Feishu doc", "create a new doc in Feishu", "open Feishu and create document", "create document in leiniao-ibg", or mentions creating documents in Feishu or Lark workspace.
 user-invocable: true
+allowed-tools: ["Bash(agent-browser:*)", "Skill"]
 version: 0.1.0
 ---
 
@@ -10,13 +11,6 @@ version: 0.1.0
 ## Purpose
 
 Automate the process of creating new documents in Feishu (Lark) workspace by using browser automation to navigate the UI, authenticate, and create documents with specified titles and content.
-
-## When to Use This Skill
-
-Use this skill when:
-- User asks to create a new document in Feishu
-- User wants to automate document creation in their Feishu workspace
-- User needs to quickly create documents without manual UI interaction
 
 ## Prerequisites
 

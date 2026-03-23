@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 11 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 10 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, gitflow, github, review, refactor, swiftui, claude-config, office, plugin-optimizer, superpowers, next-devtools
+**Active plugins:** git, gitflow, github, refactor, swiftui, claude-config, office, plugin-optimizer, superpowers, next-devtools
 
 ## Plugin Structure
 
@@ -84,7 +84,7 @@ Validation script enforces these limits with exit codes:
 
 ## Git Commit Conventions
 
-**Scopes:** git, gitflow, github, refactor, review, office, swiftui, po, cc, sp, nd, docs, ci
+**Scopes:** git, gitflow, github, refactor, office, swiftui, po, cc, sp, nd, docs, ci
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 
@@ -145,7 +145,7 @@ user-invocable: true  # false for internal-only skills
 | File ops (Read, Write, Edit, Glob, Grep) | Describe actions directly, never "Use X tool" |
 | Bash | Describe commands directly: "Run `git diff`" |
 | Skill | **Always explicit**: "Load X skill using the Skill tool" |
-| Task | Describe agent launch: "Launch code-reviewer agent" |
+| Task | Describe agent launch: "Launch explore agent" |
 
 ## Reference Materials
 

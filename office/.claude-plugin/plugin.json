@@ -2,13 +2,13 @@
   "name": "office",
   "version": "0.4.2",
   "license": "MIT",
-  "description": "Specialized Claude Skill for patent application generation and intellectual property workflows.",
+  "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, and browser automation",
   "keywords": [
     "patent",
-    "legal",
-    "chinese",
-    "search",
-    "intellectual-property"
+    "prd",
+    "feishu",
+    "browser-automation",
+    "productivity"
   ],
   "author": {
     "name": "Frad LEE",
