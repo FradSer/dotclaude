@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.12.0] - 2026-03-24
+
+### Added
+
+- Add meeseeks-vetted plugin for plugin verification
+- Add utils plugin with update-readme skill
+- Add context researcher agent to claude-config
+- Add license and expand bash permissions to claude-config
+- Add verification gate to executing-plans in superpowers
+- Add plan writing boundaries clarification to superpowers
+- Add completion promise injection to prompt re-run in superpowers
+- Add model invocation disable option to gitflow skills
+
+### Changed
+
+- Refactor meeseeks: add plugin, clean marketplace
+- Refactor meeseeks: update task messages
+- Refactor gitflow: standardize skill tool definitions
+- Refactor: update skill descriptions
+- Refactor superpowers: standardize skill name references
+- Refactor superpowers: align executing-plans with single-loop pattern
+
+### Fixed
+
+- Fix superpowers: remove warning for missing transcript
+
+### Documentation
+
+- Update README plugin list for meeseeks
+- Improve git skill descriptions and plugin keywords
+- Update claude-config plugin descriptions
+- Update swiftui-review skill description
+- Add license to plugin.json
+
 ## [v1.11.0] - 2026-03-18
 
 ### Added
