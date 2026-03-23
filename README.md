@@ -1,4 +1,4 @@
-# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-15+-blue)
+# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-15-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
@@ -38,17 +38,6 @@ GitHub project operations with quality gates, TDD workflows, and comprehensive v
 **Installation:**
 ```bash
 claude plugin install github@frad-dotclaude
-```
-
----
-
-### [review](review/)
-
-Multi-agent code review system with specialized reviewers for code quality, security, architecture, and UX.
-
-**Installation:**
-```bash
-claude plugin install review@frad-dotclaude
 ```
 
 ---
@@ -170,6 +159,17 @@ General-purpose utility skills for documentation, writing, and project maintenan
 **Installation:**
 ```bash
 claude plugin install utils@frad-dotclaude
+```
+
+---
+
+### [meeseeks-vetted](meeseeks-vetted/)
+
+Enforces task clarity before execution and requires verified work before exit.
+
+**Installation:**
+```bash
+claude plugin install meeseeks-vetted@frad-dotclaude
 ```
 
 ---

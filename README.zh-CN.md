@@ -1,4 +1,4 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-15+-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-15-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
@@ -11,7 +11,7 @@
 
 ### [git](git/)
 
- Conventional Git 自动化工具，支持代码质量检查的提交和仓库管理。
+Conventional Git 自动化工具，支持代码质量检查的提交和仓库管理。
 
 **安装：**
 ```bash
@@ -42,17 +42,6 @@ claude plugin install github@frad-dotclaude
 
 ---
 
-### [review](review/)
-
-多 Agent 代码审查系统，提供代码质量、安全、架构和用户体验方面的专业审查。
-
-**安装：**
-```bash
-claude plugin install review@frad-dotclaude
-```
-
----
-
 ### [superpowers](superpowers/)
 
 高级开发工作流编排，支持 BDD 和 Agent Team 执行，适用于复杂项目。
@@ -77,7 +66,7 @@ claude plugin install refactor@frad-dotclaude
 
 ### [swiftui](swiftui/)
 
-SwiftUI  Clean Architecture 审查器，支持 iOS/macOS 开发的最佳实践规范。
+SwiftUI Clean Architecture 审查器，支持 iOS/macOS 开发的最佳实践规范。
 
 **安装：**
 ```bash
@@ -170,6 +159,17 @@ claude plugin install code-context@frad-dotclaude
 **安装：**
 ```bash
 claude plugin install utils@frad-dotclaude
+```
+
+---
+
+### [meeseeks-vetted](meeseeks-vetted/)
+
+执行前确保任务清晰，完成后要求验证工作。
+
+**安装：**
+```bash
+claude plugin install meeseeks-vetted@frad-dotclaude
 ```
 
 ---
