@@ -1,200 +1,139 @@
-# Executing Plans Details (1/2)
-
-# Detailed Guidance
-
-This file preserves the previously detailed SKILL.md guidance for deeper reference.
-
-# Executing Plans
+# Batch Execution Playbook
 
 ## Overview
 
-Load plan, create task tracking system, identify batches, execute batches in parallel or serial as appropriate, report for review between batches.
+Load plan, create task tracking, identify batches, execute in parallel or serial, report between batches.
 
-**Core principle:** Active parallel execution for independent tasks, serial execution for dependent tasks.
-
-**Announce at start:** "I'm using the superpowers:executing-plans skill to implement this plan."
+**Core principle:** Parallel execution for independent tasks, serial for dependent tasks.
 
 ## The Process
 
 ### Step 1: Load and Understand Plan
 1. Read all plan files (`_index.md` and task files)
-2. Understand the project scope, architecture, and dependencies
-3. Review critically - identify any questions or concerns about the plan
-4. Explore relevant codebase files to understand existing patterns
+2. Understand scope, architecture, and dependencies
+3. Explore relevant codebase files to understand existing patterns
 
 ### Step 2: Create Tasks and Scope Batches (MANDATORY)
 
-**REQUIRED**: Before any execution begins, create task tracking system and identify batches using `TaskCreate`.
+**REQUIRED**: Create task tracking and identify batches using `TaskCreate` before any execution.
 
-1. **MANDATORY**: Use `TaskCreate` tool to create tasks from the plan
-   - Each task in the plan becomes a separate task entry
-   - Include: `subject` (imperative), `description` (from plan), `activeForm` (continuous)
-   - Set task dependencies using `addBlockedBy` for tasks that depend on others
-
-2. **MANDATORY**: Load both skills before proceeding:
-   - `superpowers:agent-team-driven-development` - Provides team coordination guidance
-   - `superpowers:behavior-driven-development` - Provides BDD/TDD workflow guidance
-
-3. **MANDATORY**: Identify execution batches
-   - Group independent tasks (no file conflicts, no dependencies) into parallel batches
-   - Keep each batch at 3-6 tasks for optimal parallelism
-   - Sequential tasks (with dependencies) go into serial batches
-
-**Batch Identification Criteria**:
+1. Use `TaskCreate` for each task in the plan
+2. Load both `superpowers:agent-team-driven-development` and `superpowers:behavior-driven-development` skills
+3. Group independent tasks into parallel batches (3-6 tasks per batch)
 
 | Criterion | Parallel Batch | Serial Batch |
 |-----------|---------------|--------------|
-| Task dependencies | None between tasks | Some tasks depend on others |
-| File conflicts | No shared files | Some files modified by multiple tasks |
-| Teammate count | 3-6 teammates | Single session/subagent |
+| Dependencies | None between tasks | Some tasks depend on others |
+| File conflicts | No shared files | Shared files that cannot be split |
 
 ### Step 3: Batch Execution Loop (MANDATORY)
 
-**Execute batches one by one. Actively use parallel execution for independent tasks.**
+#### Execution Mode Decision Tree
 
-#### For Each Parallel Batch (Preferred Mode):
+```
+Is this a Red-Green pair (test + impl, same NNN prefix)?
+  YES → Red-Green Pair mode
+  NO  → Does the batch have 2+ tasks?
+          YES → Parallel mode (Agent Team for 3+, subagents for 2)
+          NO  → Linear mode
+```
 
-1. **Enter Plan Mode**: Use `EnterPlanMode` to plan the batch execution strategy
-   - Identify which tasks will be assigned to which teammates
-   - Define file ownership boundaries to prevent conflicts
+#### Red-Green Pair Mode
 
-2. **Exit Plan Mode**: Use `ExitPlanMode` to get approval on the batch plan
+For test+impl pairs sharing the same NNN prefix:
 
-3. **Create Agent Team**:
-   Use a prompt with **"agent team"** or **"teammates"** to initialize the team.
+1. Assign test task to first agent — writes failing test, confirms Red state
+2. Once Red confirmed, assign impl task to second agent — implements to pass
+3. Multiple pairs across batches run in parallel
+4. Non-negotiable: overrides all other mode selection for that pair
 
-   *Pattern:*
-   ```
-   Create an agent team to execute [batch description].
-   ```
+#### Parallel Mode (Default)
 
-   *Example:*
-   "Create an agent team with 4 teammates to implement independent test cases for different modules."
+For independent multi-task batches:
 
-4. **Assign Tasks with Context Isolation**:
-   Assign tasks with clear boundaries. Ensure teammates work on different files or logical units.
+1. **Plan**: Use `EnterPlanMode` to plan batch execution, define file ownership
+2. **Approve**: Use `ExitPlanMode` to get approval
+3. **Launch**: Create Agent Team (3+ tasks) or subagents (2 tasks)
+   - If agents edit overlapping files, add `isolation: "worktree"` for isolation
+4. **Assign**: Give each agent its task with full context and file boundaries
+5. **Wait**: Wait for all agents to complete
+6. **Verify**: Run verification commands for all tasks
+7. **Complete**: Use `TaskUpdate` to mark tasks completed
 
-   *Pattern:*
-   ```
-   Assign [Task ID] to [Teammate Name]. Context: [Specific File/Module]. Constraint: "Only edit [X], do not touch [Y]."
-   ```
+#### Linear Mode (Last Resort)
 
-   *Key Principle:* **Isolation**. Give each teammate only the context they need.
+For single-task batches or unavoidable sequential dependencies:
 
-5. **Wait for Teammates**:
-   Wait for your teammates to complete all tasks in the batch.
+1. Plan and get approval
+2. Execute task directly or via single subagent following BDD principles
+3. Verify and mark complete
 
-6. **Verify Batch**:
-   Run verification commands for all tasks in the batch.
-
-7. **Mark Tasks Complete**: Use `TaskUpdate` to mark all tasks in the batch as completed
-
-#### For Each Serial Batch (When dependencies exist):
-
-For each task in the serial batch:
-1. **Enter Plan Mode**: Use `EnterPlanMode` to plan the implementation
-2. **Exit Plan Mode**: Use `ExitPlanMode` to get approval on the task plan
-3. **Execute**: Use subagent following `superpowers:behavior-driven-development` principles
-4. **Verify**: Run verification commands
-5. **Mark Task Complete**: Use `TaskUpdate` to mark task as completed
-
-#### Between Batches:
+#### Between Batches
 
 - Report progress and verification results
-- Get user confirmation before proceeding to next batch
+- Get user confirmation before next batch
 
-### Step 4: Report
+### Step 4: Report and Continue
 
-After completing each batch:
-- Show what was implemented
-- Show verification output for all tasks
-- Say: "Ready for feedback on batch [N]."
+After each batch: show what was implemented, show verification output, get feedback, apply changes if needed, continue to next batch.
 
-### Step 5: Continue
+### Step 5: Complete Development
 
-Based on feedback:
-- Apply changes if needed
-- Continue to next batch
-- Repeat until all batches complete
-
-### Step 6: Complete Development
-
-After all tasks complete and verified:
-- Verify all tasks are marked as completed
-- Run full test suite to ensure no regressions
-- Report completion and test results to the user
+After all tasks verified: run full test suite, report completion and results.
 
 ## Verification Gate
 
-Every task MUST pass this gate before being marked `completed`. This is not optional.
-
-### Pass Criteria
+Every task MUST pass before being marked `completed`.
 
 | Check | How to Verify | On Failure |
 |-------|--------------|------------|
-| Exit code | Verification command exits 0 | Retry; escalate if still failing after 2 attempts |
-| Test output | All assertions pass, no FAILED/ERROR lines | Fix failing tests; do not mark complete |
-| No stubs | No TODO/FIXME/pass/... only bodies | Complete the implementation |
-| No empty logic | All functions execute real code | Implement actual logic |
+| Exit code | Command exits 0 | Retry; escalate after 2 attempts |
+| Test output | All assertions pass | Fix failing tests |
+| No stubs | No TODO/FIXME/pass-only bodies | Complete implementation |
 
-### Retry Behavior
+**Retry**: Fix and re-run immediately (max 2 retries, then escalate per `blocker-and-escalation.md`).
 
-1. First failure: fix the issue and re-run verification immediately
-2. Second failure: fix again, re-run verification
-3. Third failure: escalate as a blocker per `blocker-and-escalation.md`; leave task `in_progress`
-
-NEVER mark a task `completed` after a failed verification, even if the batch schedule is tight.
+NEVER mark a task `completed` after a failed verification.
 
 ### Anti-Stub Checklist
 
-Before calling any task done, confirm for every file written:
+Before calling any task done:
 - [ ] File has more than import/type-declaration lines
-- [ ] No function body consists solely of `pass`, `...`, `raise NotImplementedError`, or a hardcoded default return
-- [ ] No `TODO` or `FIXME` comments are the only content of a block
-- [ ] Tests actually execute logic (not just `assert True` or empty test bodies)
+- [ ] No function body is solely `pass`, `...`, `raise NotImplementedError`, or hardcoded default
+- [ ] No `TODO`/`FIXME` comments as only block content
+- [ ] Tests execute real logic (not just `assert True`)
 
 ## Agent Prompt Template
 
-When assigning a task to a teammate or launching a subagent, the prompt MUST include all three of the following sections verbatim (fill in the bracketed placeholders):
+Every agent/teammate prompt MUST include all three sections:
 
 ```
 ## Task Assignment
 
-[Paste full task file content here]
+[Full task file content]
 
 ## Quality Requirements (MANDATORY)
 
 You MUST produce complete, working implementation code — not stubs, skeletons, or placeholders.
-Specifically:
-- Every function body must contain real logic, not `pass`, `...`, `TODO`, or a hardcoded stub return
-- Every file must be fully implemented, not a skeleton with empty methods
-- If you cannot implement something completely, stop and report a blocker; do NOT write a stub
+Every function body must contain real logic, not `pass`, `...`, `TODO`, or a hardcoded stub return.
+If you cannot implement something completely, stop and report a blocker; do NOT write a stub.
 
 ## Verification (MANDATORY BEFORE REPORTING DONE)
 
 After implementation, run the following verification commands and confirm they all pass (exit code 0, no test failures):
 
-[Paste verification commands from task file here]
+[Verification commands from task file]
 
 Report the actual command output. Do not report completion until all verification commands pass.
 ```
 
-Omitting any of the three sections (Task Assignment, Quality Requirements, Verification) is a protocol violation.
+Omitting any section is a protocol violation.
 
-## When to Stop and Ask for Help
+## When to Stop
 
-**STOP executing immediately when:**
-- Hit a blocker mid-batch (missing dependency, test fails, instruction unclear)
-- Plan has critical gaps preventing starting
-- You don't understand an instruction
+**STOP immediately when:**
+- Blocker mid-batch (missing dependency, repeated test failure, unclear instruction)
+- Plan has critical gaps
 - Verification fails repeatedly
 
 **Ask for clarification rather than guessing.**
-
-## When to Revisit Earlier Steps
-
-**Return to Review (Step 1) when:**
-- Partner updates the plan based on your feedback
-- Fundamental approach needs rethinking
-
-**Don't force through blockers** - stop and ask.

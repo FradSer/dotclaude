@@ -121,12 +121,10 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
 
 **For Each Batch**:
 
-1. **Choose Execution Mode** (strict priority — justify any downgrade explicitly):
-   - **Red-Green Pair (MANDATORY)**: If the batch contains a Red-Green pair (same NNN prefix, one `test` + one `impl`), assign exactly two dedicated agents — one per task. The test agent runs first: writes the failing test and confirms Red state. Once Red is confirmed, the impl agent starts: implements to make the test pass. Two agents, coordinated sequence within the pair. Multiple pairs across batches run in parallel. This is non-negotiable and overrides all other mode selection rules for that pair.
-   - **Agent Team** (default): Use unless a specific technical reason prevents it. File conflicts or sequential `depends-on` within a batch are NOT valid reasons to downgrade — resolve by splitting the batch further.
-   - **Agent Team + Worktree**: Launch parallel agents with worktree isolation when multiple agents edit overlapping files or for competitive implementation (N solutions, pick best).
-   - **Subagent Parallel** (downgrade only if): Agent Team overhead is disproportionate (e.g., batch has exactly 2 small tasks). State the reason explicitly.
-   - **Linear** (last resort only if): Tasks within the batch have unavoidable file conflicts that cannot be split, or the batch genuinely contains only 1 task. State the reason explicitly.
+1. **Choose Execution Mode** (decision tree):
+   - **Red-Green Pair**: If the batch contains a Red-Green pair (same NNN prefix, one `test` + one `impl`), assign exactly two dedicated agents — one per task. The test agent runs first and confirms Red state; then the impl agent starts. Multiple pairs run in parallel. Non-negotiable for any test+impl pair.
+   - **Parallel** (default for all other multi-task batches): Use Agent Team for 3+ tasks, or plain subagents for exactly 2 tasks. If agents edit overlapping files, use worktree isolation (`isolation: "worktree"`) as an option within this mode — not a separate mode. File conflicts within a batch should be resolved by splitting the batch further when possible.
+   - **Linear** (last resort): Only when the batch has a single task or unavoidable sequential dependencies that cannot be split. State the reason explicitly.
 
 2. **For Each Task in Batch**:
 
@@ -224,5 +222,4 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
-- `../../skills/references/prompt-patterns.md` - Writing effective task prompts for superpower loop
-- `../../skills/references/completion-promises.md` - Per-task completion promise design
+- `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets

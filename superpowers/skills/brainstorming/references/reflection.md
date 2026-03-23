@@ -24,7 +24,21 @@ Sub-agents provide:
 
 ## Sub-Agent Launch Strategy
 
-### Core Reflection Sub-Agents (Always Required)
+Scale reflection based on the complexity assessment from Phase 1 Discovery.
+
+### Simple Complexity
+
+No sub-agents. Main agent performs a single review pass: check requirements coverage, BDD completeness, and document consistency sequentially.
+
+### Medium Complexity (2 sub-agents)
+
+Launch two sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`:
+
+**Sub-agent 1: Requirements & BDD Review** — Combine the requirements traceability and BDD completeness checks into one agent. Verify every Phase 1 requirement is addressed AND check BDD scenarios cover happy path, edge cases, and error conditions.
+
+**Sub-agent 2: Consistency & Risk Review** — Combine the cross-document consistency and risk checks into one agent. Verify terminology, references, component names, and identify key unaddressed risks.
+
+### Complex Complexity (3+ sub-agents)
 
 Launch these three sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`:
 

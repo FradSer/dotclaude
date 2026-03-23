@@ -74,7 +74,16 @@ If the problem appears open-ended, ambiguous, or requires challenging assumption
 - Question "why" repeatedly to reach core truths
 - Be prepared to **explicitly load `superpowers:build-like-iphone-team` skill** in Phase 2 for radical innovation approaches
 
-**Output**: Clear requirements, constraints, success criteria, and relevant patterns.
+**Complexity Assessment** (determines sub-agent strategy for Phase 3 & 4):
+
+At the end of discovery, classify the scope:
+- **Simple** (single file/component, clear pattern to follow): Skip sub-agents in Phase 3 & 4 — main agent handles directly
+- **Medium** (cross-module, some architectural decisions): 2 sub-agents in Phase 3 (Architecture + BDD merged, Context), 2 reflection sub-agents in Phase 4
+- **Complex** (new system, large refactor, multiple integration points): Full 3+ sub-agents in Phase 3 and Phase 4
+
+State the assessment explicitly before proceeding.
+
+**Output**: Clear requirements, constraints, success criteria, relevant patterns, and complexity assessment.
 
 See `./references/discovery.md` for detailed patterns and question guidelines.
 See `./references/exit-criteria.md` for Phase 1 validation checklist.
@@ -107,9 +116,22 @@ See `./references/exit-criteria.md` for Phase 2 validation checklist.
 
 ## Phase 3: Design Creation
 
-Launch sub-agents in parallel for specialized research, integrate results, and create design documents.
+Create design documents. Scale sub-agent usage based on **complexity assessment from Phase 1**.
 
-**Core sub-agents (always required)**:
+**Simple**: Main agent handles all research and document creation directly. No sub-agents needed — explore codebase, search for best practices, write BDD scenarios, and create design documents in a single pass.
+
+**Medium** (2 sub-agents):
+
+**Sub-agent 1: Architecture & Best Practices Research**
+- Focus: Existing patterns, libraries, WebSearch for best practices, security, performance
+- Load `superpowers:behavior-driven-development` skill
+- Output: Architecture recommendations, BDD scenarios, best practices summary
+
+**Sub-agent 2: Context & Requirements Synthesis**
+- Focus: Synthesize Phase 1 and Phase 2 results
+- Output: Context summary, requirements list, success criteria
+
+**Complex** (3+ sub-agents):
 
 **Sub-agent 1: Architecture Research**
 - Focus: Existing patterns, architecture, libraries in codebase
@@ -125,9 +147,7 @@ Launch sub-agents in parallel for specialized research, integrate results, and c
 - Focus: Synthesize Phase 1 and Phase 2 results
 - Output: Context summary, requirements list, success criteria
 
-**Additional sub-agents (launch as needed based on project complexity)**:
-
-Launch additional specialized sub-agents for distinct, research-intensive aspects. Each agent should have a single, clear responsibility and receive complete context.
+**Additional sub-agents**: Launch for distinct, research-intensive aspects as needed.
 
 **Integrate results**: Merge all findings, resolve conflicts, create unified design.
 
@@ -160,9 +180,21 @@ See `./references/exit-criteria.md` for Phase 3 validation checklist.
 
 ## Phase 4: Design Reflection
 
-Before committing, launch sub-agents in parallel to verify design quality and identify gaps.
+Before committing, verify design quality. Scale reflection based on **complexity assessment from Phase 1**.
 
-**Core reflection sub-agents (always required)**:
+**Simple**: Main agent performs a single review pass — check requirements coverage, BDD completeness, and document consistency sequentially. No sub-agents needed.
+
+**Medium** (2 reflection sub-agents):
+
+**Sub-agent 1: Requirements & BDD Review**
+- Focus: Verify requirements traceability AND BDD scenario completeness (happy path, edge cases, errors)
+- Output: Traceability matrix, missing scenarios, coverage gaps
+
+**Sub-agent 2: Consistency & Risk Review**
+- Focus: Cross-document terminology, references, component names, and key risks
+- Output: Inconsistencies, broken references, unaddressed risks
+
+**Complex** (3+ reflection sub-agents):
 
 **Sub-agent 1: Requirements Traceability Review**
 - Focus: Verify every Phase 1 requirement is addressed in design
@@ -176,9 +208,7 @@ Before committing, launch sub-agents in parallel to verify design quality and id
 - Focus: Verify terminology, references, and component names are consistent
 - Output: Inconsistencies list, terminology conflicts
 
-**Additional sub-agents (launch as needed)**:
-- Security Review - Identify security considerations not addressed
-- Risk Assessment - Identify risks, assumptions, and failure modes
+**Additional sub-agents (launch as needed)**: Security Review, Risk Assessment.
 
 **Integrate and Update**:
 1. Collect all sub-agent findings
@@ -222,5 +252,4 @@ Output in this exact order:
 - `./references/reflection.md` - Design reflection patterns and gap identification strategies
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
-- `../../skills/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
-- `../../skills/references/completion-promises.md` - Completion promise design and safety nets
+- `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets

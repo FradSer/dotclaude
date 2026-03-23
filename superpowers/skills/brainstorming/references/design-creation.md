@@ -12,7 +12,25 @@ Launch using the Agent tool with `subagent_type=general-purpose` to spawn sub-ag
 
 **CRITICAL**: Provide complete context in each sub-agent prompt. Sub-agents start with fresh context and do not see your conversation history.
 
-## Core Sub-agents (Always Required)
+## Sub-agent Strategy by Complexity
+
+Scale sub-agent usage based on the complexity assessment from Phase 1 Discovery.
+
+### Simple Complexity
+
+No sub-agents. Main agent handles all research and document creation directly — explore codebase, search for best practices, write BDD scenarios, and create design documents in a single pass.
+
+### Medium Complexity (2 sub-agents)
+
+**Sub-agent 1: Architecture & Best Practices Research**
+
+Research existing patterns, architecture, libraries, security, and performance. Load `superpowers:behavior-driven-development` skill. Output architecture recommendations, BDD scenarios in Given-When-Then format, testing strategy, and best practices summary.
+
+**Sub-agent 2: Context & Requirements Synthesis**
+
+Synthesize Phase 1 discovery results and Phase 2 options into a unified context. Output user's original request, discovery results summary, finalized requirements list, success criteria, and rationale for the chosen approach.
+
+### Complex Complexity (3+ sub-agents)
 
 **Sub-agent 1: Architecture Research**
 
@@ -26,9 +44,7 @@ Research best practices, security considerations, and performance patterns for t
 
 Synthesize Phase 1 discovery results and Phase 2 options into a unified context. Output user's original request, discovery results summary, finalized requirements list, success criteria, and rationale for the chosen approach.
 
-## Additional Sub-agents (Launch as Needed)
-
-Based on project complexity and requirements, launch additional specialized sub-agents for distinct, research-intensive aspects. Each agent should have a single, clear responsibility and receive complete context (Phase 1 and Phase 2 results).
+**Additional sub-agents**: Launch for distinct, research-intensive aspects as needed. Each agent should have a single, clear responsibility and receive complete context.
 
 ### 2. Wait for All Sub-agents to Complete
 

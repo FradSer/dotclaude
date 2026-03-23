@@ -141,9 +141,21 @@ Verify completeness, confirm with user, and save.
 
 ## Phase 4: Plan Reflection
 
-Before committing, launch sub-agents in parallel to verify plan quality and identify gaps.
+Before committing, verify plan quality. Scale reflection based on plan size.
 
-**Core reflection sub-agents (always required)**:
+**Small plans (up to 6 tasks)**: Main agent performs a single review pass — check BDD coverage, dependency graph, and task completeness sequentially. No sub-agents needed.
+
+**Medium plans (7-15 tasks, 2 sub-agents)**:
+
+**Sub-agent 1: BDD Coverage & Completeness Review**
+- Focus: Verify BDD scenario coverage AND task structure completeness
+- Output: Coverage matrix, incomplete tasks, missing sections
+
+**Sub-agent 2: Dependency Graph Review**
+- Focus: Verify depends-on fields, check for cycles, identify missing dependencies
+- Output: Dependency graph, cycle detection, incorrect dependencies
+
+**Large plans (16+ tasks, 3+ sub-agents)**:
 
 **Sub-agent 1: BDD Coverage Review**
 - Focus: Verify every BDD scenario from design has corresponding tasks
@@ -157,9 +169,7 @@ Before committing, launch sub-agents in parallel to verify plan quality and iden
 - Focus: Verify each task has required structure (BDD scenario, files, steps, verification)
 - Output: Incomplete tasks list, missing sections by task
 
-**Additional sub-agents (launch as needed)**:
-- Red-Green Pairing Review - Verify test tasks have corresponding impl tasks
-- File Conflict Review - Identify tasks that modify the same files
+**Additional sub-agents (launch as needed)**: Red-Green Pairing Review, File Conflict Review.
 
 **Integrate and Update**:
 1. Collect all sub-agent findings
@@ -205,5 +215,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
 - `./references/plan-reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
-- `../../skills/references/prompt-patterns.md` - Writing effective superpower loop prompts for each phase
-- `../../skills/references/completion-promises.md` - Completion promise design and safety nets
+- `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets

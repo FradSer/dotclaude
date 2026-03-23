@@ -25,7 +25,21 @@ Sub-agents provide:
 
 ## Sub-Agent Launch Strategy
 
-### Core Reflection Sub-Agents (Always Required)
+Scale reflection based on plan size.
+
+### Small Plans (up to 6 tasks)
+
+No sub-agents. Main agent performs a single review pass: check BDD coverage, dependency correctness, and task completeness sequentially.
+
+### Medium Plans (7-15 tasks, 2 sub-agents)
+
+Launch two sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`:
+
+**Sub-agent 1: BDD Coverage & Completeness Review** — Combine the BDD coverage and task completeness checks. Verify every design scenario has corresponding tasks AND each task has required structure.
+
+**Sub-agent 2: Dependency Graph Review** — Verify depends-on fields, check for cycles, identify missing/unnecessary dependencies, verify Red-Green pairing.
+
+### Large Plans (16+ tasks, 3+ sub-agents)
 
 Launch these three sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`:
 
