@@ -1,6 +1,6 @@
 ---
 name: swiftui-review
-description: Comprehensively reviews SwiftUI code for best practices on modern APIs, maintainability, and performance. Use when reading, writing, or reviewing SwiftUI projects.
+description: Reviews SwiftUI code for best practices on modern APIs, maintainability, and performance. This skill should be used when the user asks to review SwiftUI code, check for deprecated iOS/macOS APIs, validate data flow patterns, or audit accessibility compliance in Swift projects.
 user-invocable: true
 license: MIT
 metadata:
