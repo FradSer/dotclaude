@@ -1,16 +1,20 @@
 #!/bin/bash
 
 # Superpower Loop Setup Script
-# Creates state file for in-session Superpower loop
+# Creates JSON state file for in-session Superpower loop
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+# shellcheck source=../lib/utils.sh
+source "${SCRIPT_DIR}/../lib/utils.sh"
 
 # Parse arguments
 PROMPT_PARTS=()
 PROMPT_FILE=""
 MAX_ITERATIONS=0
 COMPLETION_PROMISE="null"
-STATE_FILE=".claude/superpower-loop.local.md"
+STATE_FILE_OVERRIDE=""
 
 # Parse options and positional arguments
 while [[ $# -gt 0 ]]; do
@@ -29,14 +33,14 @@ OPTIONS:
   --prompt-file <path>           Read prompt from file (avoids shell escaping issues)
   --max-iterations <n>           Maximum iterations before auto-stop (default: unlimited)
   --completion-promise '<text>'  Promise phrase (USE QUOTES for multi-word)
-  --state-file <path>            Custom state file path (default: .claude/superpower-loop.local.md)
-                                 Use per-task paths when running multiple loops in parallel,
-                                 e.g. --state-file .claude/superpower-loop-task-42.local.md
+  --state-file <path>            Custom state file path (overrides default)
   -h, --help                     Show this help message
 
 DESCRIPTION:
   Starts a Superpower Loop in your CURRENT session. The stop hook prevents
   exit and feeds your output back as input until completion or iteration limit.
+
+  State files are stored in ~/.claude/projects/<project-key>/ as JSON.
 
   To signal completion, you must output: <promise>YOUR_PHRASE</promise>
 
@@ -57,35 +61,28 @@ STOPPING:
   No manual stop - loop runs infinitely by default!
 
 MONITORING:
-  # View current iteration:
-  grep '^iteration:' .claude/superpower-loop.local.md
-
-  # View full state:
-  head -10 .claude/superpower-loop.local.md
+  # View current state:
+  cat ~/.claude/projects/<project-key>/<session_id>.superpowers.json | jq .
 HELP_EOF
       exit 0
       ;;
     --max-iterations)
       if [[ -z "${2:-}" ]]; then
-        echo "❌ Error: --max-iterations requires a number argument" >&2
+        echo "Error: --max-iterations requires a number argument" >&2
         echo "" >&2
         echo "   Valid examples:" >&2
         echo "     --max-iterations 10" >&2
         echo "     --max-iterations 50" >&2
         echo "     --max-iterations 0  (unlimited)" >&2
-        echo "" >&2
-        echo "   You provided: --max-iterations (with no number)" >&2
         exit 1
       fi
       if ! [[ "$2" =~ ^[0-9]+$ ]]; then
-        echo "❌ Error: --max-iterations must be a positive integer or 0, got: $2" >&2
+        echo "Error: --max-iterations must be a positive integer or 0, got: $2" >&2
         echo "" >&2
         echo "   Valid examples:" >&2
         echo "     --max-iterations 10" >&2
         echo "     --max-iterations 50" >&2
         echo "     --max-iterations 0  (unlimited)" >&2
-        echo "" >&2
-        echo "   Invalid: decimals (10.5), negative numbers (-5), text" >&2
         exit 1
       fi
       MAX_ITERATIONS="$2"
@@ -93,16 +90,11 @@ HELP_EOF
       ;;
     --completion-promise)
       if [[ -z "${2:-}" ]]; then
-        echo "❌ Error: --completion-promise requires a text argument" >&2
+        echo "Error: --completion-promise requires a text argument" >&2
         echo "" >&2
         echo "   Valid examples:" >&2
         echo "     --completion-promise 'DONE'" >&2
         echo "     --completion-promise 'TASK COMPLETE'" >&2
-        echo "     --completion-promise 'All tests passing'" >&2
-        echo "" >&2
-        echo "   You provided: --completion-promise (with no text)" >&2
-        echo "" >&2
-        echo "   Note: Multi-word promises must be quoted!" >&2
         exit 1
       fi
       COMPLETION_PROMISE="$2"
@@ -110,33 +102,25 @@ HELP_EOF
       ;;
     --state-file)
       if [[ -z "${2:-}" ]]; then
-        echo "❌ Error: --state-file requires a path argument" >&2
-        echo "" >&2
-        echo "   Valid examples:" >&2
-        echo "     --state-file .claude/superpower-loop-task-42.local.md" >&2
+        echo "Error: --state-file requires a path argument" >&2
         exit 1
       fi
-      STATE_FILE="$2"
+      STATE_FILE_OVERRIDE="$2"
       shift 2
       ;;
     --prompt-file)
       if [[ -z "${2:-}" ]]; then
-        echo "❌ Error: --prompt-file requires a path argument" >&2
-        echo "" >&2
-        echo "   Valid examples:" >&2
-        echo "     --prompt-file task.md" >&2
-        echo "     --prompt-file /path/to/task-description.txt" >&2
+        echo "Error: --prompt-file requires a path argument" >&2
         exit 1
       fi
       if [[ ! -f "$2" ]]; then
-        echo "❌ Error: --prompt-file path does not exist: $2" >&2
+        echo "Error: --prompt-file path does not exist: $2" >&2
         exit 1
       fi
       PROMPT_FILE="$2"
       shift 2
       ;;
     *)
-      # Non-option argument - collect all as prompt parts
       PROMPT_PARTS+=("$1")
       shift
       ;;
@@ -152,9 +136,7 @@ fi
 
 # Validate prompt is non-empty
 if [[ -z "$PROMPT" ]]; then
-  echo "❌ Error: No prompt provided" >&2
-  echo "" >&2
-  echo "   Superpower loop needs a task description to work on." >&2
+  echo "Error: No prompt provided" >&2
   echo "" >&2
   echo "   Examples:" >&2
   echo "     /superpower-loop Build a REST API for todos" >&2
@@ -166,28 +148,45 @@ if [[ -z "$PROMPT" ]]; then
   exit 1
 fi
 
-# Create state file for stop hook (markdown with YAML frontmatter)
-mkdir -p "$(dirname "$STATE_FILE")"
-
-# Quote completion promise for YAML if it contains special chars or is not null
-if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
-  COMPLETION_PROMISE_YAML="\"$COMPLETION_PROMISE\""
+# Resolve state file path
+SESSION_ID="${CLAUDE_CODE_SESSION_ID:-default}"
+if [[ -n "$STATE_FILE_OVERRIDE" ]]; then
+  STATE_FILE="$STATE_FILE_OVERRIDE"
+  mkdir -p "$(dirname "$STATE_FILE")"
 else
-  COMPLETION_PROMISE_YAML="null"
+  STATE_DIR="$(state_dir)"
+  mkdir -p "$STATE_DIR"
+  STATE_FILE="${STATE_DIR}/${SESSION_ID}.superpowers.json"
 fi
 
-cat > "$STATE_FILE" <<EOF
----
-active: true
-iteration: 1
-session_id: ${CLAUDE_CODE_SESSION_ID:-}
-max_iterations: $MAX_ITERATIONS
-completion_promise: $COMPLETION_PROMISE_YAML
-started_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
----
+NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-$PROMPT
-EOF
+# Build completion_promise as proper JSON value
+if [[ "$COMPLETION_PROMISE" == "null" ]]; then
+  PROMISE_JSON="null"
+else
+  PROMISE_JSON=$(jq -n --arg p "$COMPLETION_PROMISE" '$p')
+fi
+
+# Create JSON state file
+jq -n \
+  --arg session_id "$SESSION_ID" \
+  --arg prompt "$PROMPT" \
+  --argjson iteration 1 \
+  --argjson max_iterations "$MAX_ITERATIONS" \
+  --argjson completion_promise "$PROMISE_JSON" \
+  --arg started_at "$NOW" \
+  --arg updated_at "$NOW" \
+  '{
+    session_id: $session_id,
+    active: true,
+    iteration: $iteration,
+    max_iterations: $max_iterations,
+    completion_promise: $completion_promise,
+    prompt: $prompt,
+    started_at: $started_at,
+    updated_at: $updated_at
+  }' > "$STATE_FILE"
 
 # Output setup message
 cat <<EOF
@@ -196,18 +195,13 @@ Superpower loop activated in this session!
 State file: $STATE_FILE
 Iteration: 1
 Max iterations: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "unlimited"; fi)
-Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "${COMPLETION_PROMISE//\"/} (ONLY output when TRUE - do not lie!)"; else echo "none (runs forever)"; fi)
+Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "${COMPLETION_PROMISE} (ONLY output when TRUE - do not lie!)"; else echo "none (runs forever)"; fi)
 
 The stop hook is now active. When you try to exit, the SAME PROMPT will be
 fed back to you. You'll see your previous work in files, creating a
 self-referential loop where you iteratively improve on the same task.
 
-To monitor: head -10 $STATE_FILE
-
-⚠️  WARNING: This loop cannot be stopped manually! It will run infinitely
-    unless you set --max-iterations or --completion-promise.
-
-🔄
+To monitor: jq . $STATE_FILE
 EOF
 
 # Output the initial prompt if provided
@@ -219,18 +213,18 @@ fi
 # Display completion promise requirements if set
 if [[ "$COMPLETION_PROMISE" != "null" ]]; then
   echo ""
-  echo "═══════════════════════════════════════════════════════════"
+  echo "==============================================================="
   echo "CRITICAL - Superpower Loop Completion Promise"
-  echo "═══════════════════════════════════════════════════════════"
+  echo "==============================================================="
   echo ""
   echo "To complete this loop, output this EXACT text:"
   echo "  <promise>$COMPLETION_PROMISE</promise>"
   echo ""
   echo "STRICT REQUIREMENTS (DO NOT VIOLATE):"
-  echo "  ✓ Use <promise> XML tags EXACTLY as shown above"
-  echo "  ✓ The statement MUST be completely and unequivocally TRUE"
-  echo "  ✓ Do NOT output false statements to exit the loop"
-  echo "  ✓ Do NOT lie even if you think you should exit"
+  echo "  - Use <promise> XML tags EXACTLY as shown above"
+  echo "  - The statement MUST be completely and unequivocally TRUE"
+  echo "  - Do NOT output false statements to exit the loop"
+  echo "  - Do NOT lie even if you think you should exit"
   echo ""
   echo "IMPORTANT - Do not circumvent the loop:"
   echo "  Even if you believe you're stuck, the task is impossible,"
@@ -240,5 +234,5 @@ if [[ "$COMPLETION_PROMISE" != "null" ]]; then
   echo ""
   echo "  If the loop should stop, the promise statement will become"
   echo "  true naturally. Do not force it by lying."
-  echo "═══════════════════════════════════════════════════════════"
+  echo "==============================================================="
 fi
