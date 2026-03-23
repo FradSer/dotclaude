@@ -1,6 +1,6 @@
 ---
 name: config-git
-description: Interactively configures git setup for user identity and project conventions. Use when setting up Git for a new project, configuring commit scopes and types, or creating project-specific Git settings.
+description: Interactively configures git setup for user identity and project conventions. This skill should be used when the user asks to "configure git", "setup git", "set commit scopes", or needs to set up Git for a new project, configure commit scopes and types, or create project-specific Git settings.
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion", "Task"]
 model: sonnet

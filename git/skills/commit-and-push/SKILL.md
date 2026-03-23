@@ -1,6 +1,6 @@
 ---
 name: commit-and-push
-description: Creates an atomic conventional git commit and pushes it to the remote repository. Use when committing staged changes with the conventional commit format and immediately pushing to the remote branch.
+description: Creates an atomic conventional git commit and pushes it to the remote repository. This skill should be used when the user asks to "commit and push", "push my changes", or wants to commit staged changes following conventional commits and immediately push to the remote branch.
 user-invocable: true
 allowed-tools: ["Bash(git:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill", "Task"]
 model: haiku
