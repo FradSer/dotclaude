@@ -76,7 +76,10 @@ if [[ -f "$STATE_FILE" ]]; then
   EXISTING_TASK=$(jq -r '.task // ""' "$STATE_FILE")
 
   if [[ -n "$PENDING_PROMPT" && "$PENDING_PROMPT" != "null" ]]; then
-    CURRENT_PROMPT="$PENDING_PROMPT"
+    # CURRENT_PROMPT = existing task (what was being worked on)
+    # SYNTHESIZED   = merged context (existing + new prompt + output)
+    CURRENT_PROMPT="$EXISTING_TASK"
+    [[ -z "$CURRENT_PROMPT" ]] && CURRENT_PROMPT="$PENDING_PROMPT"
     NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     LAST_ASSISTANT="${LAST_MSG:0:500}"
 
@@ -86,8 +89,18 @@ Prompt: ${PENDING_PROMPT}"
 Output: ${LAST_ASSISTANT}"
 
     MERGED=$(run_haiku_merge "$MERGE_INPUT")
-    [[ -z "$MERGED" ]] && MERGED="$PENDING_PROMPT"
-    SYNTHESIZED="$MERGED"
+    # Fallback: combine existing task + pending prompt (preserve both)
+    if [[ -z "$MERGED" ]]; then
+      if [[ -n "$EXISTING_TASK" && "$EXISTING_TASK" != "$PENDING_PROMPT" ]]; then
+        MERGED="${EXISTING_TASK} — ${PENDING_PROMPT}"
+      else
+        MERGED="$PENDING_PROMPT"
+      fi
+    fi
+    # Only show Historical Context if it differs from Current Task
+    if [[ "$MERGED" != "$CURRENT_PROMPT" ]]; then
+      SYNTHESIZED="$MERGED"
+    fi
 
     TEMP="${STATE_FILE}.tmp.$$"
     jq \
