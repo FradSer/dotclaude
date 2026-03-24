@@ -19,9 +19,6 @@
     "./skills/build-like-iphone-team/",
     "./skills/systematic-debugging/"
   ],
-  "scripts": [
-    "./scripts/setup-superpower-loop.sh"
-  ],
   "hooks": {
     "Stop": [
       {
