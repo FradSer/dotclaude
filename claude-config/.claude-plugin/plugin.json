@@ -1,6 +1,6 @@
 {
   "name": "claude-config",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Generate AI assistant configurations with environment detection, TDD options, local best-practices references, and multi-file sync",
   "author": {
     "name": "Frad LEE",
