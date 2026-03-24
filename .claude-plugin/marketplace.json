@@ -178,7 +178,7 @@
     },
     {
       "name": "meeseeks-vetted",
-      "version": "0.3.3",
+      "version": "0.3.4",
       "description": "Enforces task clarity before execution and requires verified work before exit",
       "author": {
         "name": "Frad LEE",
