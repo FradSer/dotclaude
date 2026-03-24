@@ -1,13 +1,19 @@
 {
   "name": "superpowers",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop integration",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["planning", "brainstorming", "bdd", "teams", "execution"],
+  "keywords": [
+    "planning",
+    "brainstorming",
+    "bdd",
+    "teams",
+    "execution"
+  ],
   "commands": [
     "./skills/brainstorming/",
     "./skills/writing-plans/",

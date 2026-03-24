@@ -1,8 +1,14 @@
 {
   "name": "refactor",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
-  "keywords": ["refactor", "code-quality", "best-practices", "simplification", "maintainability"],
+  "keywords": [
+    "refactor",
+    "code-quality",
+    "best-practices",
+    "simplification",
+    "maintainability"
+  ],
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"

@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "git",
-      "version": "0.4.5",
+      "version": "0.4.6",
       "description": "Conventional Git automation and advanced repository management",
       "author": {
         "name": "Frad LEE",
@@ -21,7 +21,7 @@
     },
     {
       "name": "gitflow",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "GitFlow workflow automation for feature, hotfix, and release branches",
       "author": {
         "name": "Frad LEE",
@@ -33,7 +33,7 @@
     },
     {
       "name": "claude-config",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "description": "Generate AI assistant configurations with environment detection, TDD options, local best-practices references, and multi-file sync",
       "author": {
         "name": "Frad LEE",
@@ -45,7 +45,7 @@
     },
     {
       "name": "github",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -57,7 +57,7 @@
     },
     {
       "name": "swiftui",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "SwiftUI code review with modern API best practices",
       "author": {
         "name": "Frad LEE",
@@ -69,7 +69,7 @@
     },
     {
       "name": "office",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, and browser automation",
       "author": {
         "name": "Frad LEE",
@@ -82,7 +82,7 @@
     },
     {
       "name": "refactor",
-      "version": "1.5.3",
+      "version": "1.5.4",
       "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
@@ -94,7 +94,7 @@
     },
     {
       "name": "superpowers",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop integration",
       "author": {
         "name": "Frad LEE",
@@ -106,7 +106,7 @@
     },
     {
       "name": "plugin-optimizer",
-      "version": "0.11.4",
+      "version": "0.11.5",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
@@ -118,7 +118,7 @@
     },
     {
       "name": "next-devtools",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "Next.js development tools integration via MCP server",
       "author": {
         "name": "Frad LEE",
@@ -130,7 +130,7 @@
     },
     {
       "name": "acpx",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
       "author": {
         "name": "Frad LEE",
@@ -142,7 +142,7 @@
     },
     {
       "name": "shadcn",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Manages shadcn components and projects \u2014 adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples",
       "author": {
         "name": "Frad LEE",
@@ -154,7 +154,7 @@
     },
     {
       "name": "code-context",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
       "author": {
         "name": "Frad LEE",
@@ -166,7 +166,7 @@
     },
     {
       "name": "utils",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "General-purpose utility skills for documentation, writing, and project maintenance",
       "author": {
         "name": "Frad LEE",
@@ -178,7 +178,7 @@
     },
     {
       "name": "meeseeks-vetted",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "description": "Enforces task clarity before execution and requires verified work before exit",
       "author": {
         "name": "Frad LEE",

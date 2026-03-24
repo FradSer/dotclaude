@@ -1,13 +1,18 @@
 {
   "name": "utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "General-purpose utility skills for documentation, writing, and project maintenance",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["utils", "documentation", "readme", "productivity"],
+  "keywords": [
+    "utils",
+    "documentation",
+    "readme",
+    "productivity"
+  ],
   "commands": [
     "./skills/update-readme/"
   ]
