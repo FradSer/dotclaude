@@ -1,12 +1,19 @@
 {
   "name": "meeseeks-vetted",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Enforces task clarity before execution and requires verified work before exit",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["quality", "verification", "hooks", "workflow"],
-  "commands": ["./skills/vet/"]
+  "keywords": [
+    "quality",
+    "verification",
+    "hooks",
+    "workflow"
+  ],
+  "commands": [
+    "./skills/vet/"
+  ]
 }
