@@ -1,13 +1,19 @@
 {
   "name": "acpx",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["acp", "agent-protocol", "cli", "agent-communication", "sessions"],
+  "keywords": [
+    "acp",
+    "agent-protocol",
+    "cli",
+    "agent-communication",
+    "sessions"
+  ],
   "skills": [
     "./skills/use-acpx/"
   ]
