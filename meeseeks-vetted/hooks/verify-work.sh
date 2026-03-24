@@ -6,11 +6,12 @@
 # <verified>Fully Vetted.</verified> to confirm work is done.
 #
 # Also merges any pending_prompt (deferred from task-start.sh) with the
-# assistant's response before verification — this ensures the task description
-# reflects what Claude actually did, not just what was requested.
+# assistant's last response to build historical context.
 #
 # Verification prompt includes:
-#   - task (synthesized description, merged at Stop time with full context)
+#   - current task (user's latest prompt)
+#   - synthesized context (pending_prompt + last_assistant_message)
+#   - modified files (maintained in vetted.json)
 #
 # Task resolution order:
 #   1. Session state file (~/.claude/projects/<project-key>/<id>.vetted.json)
@@ -65,35 +66,28 @@ Outcome: ${TURN_OUTPUT}")
   exit 0
 fi
 
-# --- Merge pending prompt (deferred from UserPromptSubmit) ---
+# --- Merge pending prompt (only pending_prompt + last_assistant_message) ---
+
+CURRENT_PROMPT=""
+SYNTHESIZED=""
 
 if [[ -f "$STATE_FILE" ]]; then
-  # Single-pass extraction of pending_prompt and task from state file
   PENDING_PROMPT=$(jq -r '.pending_prompt // ""' "$STATE_FILE")
   EXISTING_TASK=$(jq -r '.task // ""' "$STATE_FILE")
 
   if [[ -n "$PENDING_PROMPT" && "$PENDING_PROMPT" != "null" ]]; then
+    CURRENT_PROMPT="$PENDING_PROMPT"
     NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-    # LAST_MSG already holds the current turn's assistant response (from hook input)
     LAST_ASSISTANT="${LAST_MSG:0:500}"
 
-    MERGED=""
-    if [[ -n "$EXISTING_TASK" && "$EXISTING_TASK" != "$PENDING_PROMPT" ]]; then
-      MERGE_INPUT="Distill these inputs into one concise task sentence. Keep only the core intent and any new direction — strip duplicated context, hook output, and verbose details. Plain text only, no quotes.
-Previous: ${EXISTING_TASK}
-New direction: ${PENDING_PROMPT}"
+    MERGE_INPUT="Distill these inputs into one concise context sentence. Keep only the core intent and outcome. Plain text only, no quotes.
+Prompt: ${PENDING_PROMPT}"
+    [[ -n "$LAST_ASSISTANT" ]] && MERGE_INPUT="${MERGE_INPUT}
+Output: ${LAST_ASSISTANT}"
 
-      if [[ -n "$LAST_ASSISTANT" ]]; then
-        MERGE_INPUT="${MERGE_INPUT}
-Done so far: ${LAST_ASSISTANT}"
-      fi
-
-      MERGED=$(run_haiku_merge "$MERGE_INPUT")
-      [[ -z "$MERGED" ]] && MERGED="${EXISTING_TASK} — updated: ${PENDING_PROMPT}"
-    else
-      MERGED="$PENDING_PROMPT"
-    fi
+    MERGED=$(run_haiku_merge "$MERGE_INPUT")
+    [[ -z "$MERGED" ]] && MERGED="$PENDING_PROMPT"
+    SYNTHESIZED="$MERGED"
 
     TEMP="${STATE_FILE}.tmp.$$"
     jq \
@@ -101,33 +95,16 @@ Done so far: ${LAST_ASSISTANT}"
       --arg ts "$NOW" \
       '.task = $task | .updated_at = $ts | del(.pending_prompt)' \
       "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
+  else
+    CURRENT_PROMPT="$EXISTING_TASK"
   fi
 fi
 
-# --- Resolve task and changes ---
-
-USER_PROMPT=""
-CHANGES_SUMMARY=""
-
-if [[ -f "$STATE_FILE" ]]; then
-  USER_PROMPT=$(jq -r '.task // ""' "$STATE_FILE")
-
-  # Read modified_files from state and build a changes summary
-  MODIFIED_FILES=()
-  while IFS= read -r f; do
-    [[ -n "$f" && "$f" != "null" ]] && MODIFIED_FILES+=("$f")
-  done < <(jq -r '.modified_files // [] | .[]' "$STATE_FILE" 2>/dev/null)
-
-  if [[ ${#MODIFIED_FILES[@]} -gt 0 ]]; then
-    CHANGES_SUMMARY=$(build_changes_section "${MODIFIED_FILES[@]}")
-  fi
-fi
-
-# Fallback: transcript's last-prompt entry (transcript_path extracted at top)
-if [[ -z "$USER_PROMPT" ]]; then
+# Fallback: transcript's last-prompt entry
+if [[ -z "$CURRENT_PROMPT" ]]; then
   if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
     set +e
-    USER_PROMPT=$(grep '"type":"last-prompt"' "$TRANSCRIPT_PATH" \
+    CURRENT_PROMPT=$(grep '"type":"last-prompt"' "$TRANSCRIPT_PATH" \
       | tail -1 \
       | jq -r '.lastPrompt // ""' \
       2>/dev/null || echo "")
@@ -135,20 +112,32 @@ if [[ -z "$USER_PROMPT" ]]; then
   fi
 fi
 
+# --- Read modified files from state ---
+
+MODIFIED_FILES=""
+if [[ -f "$STATE_FILE" ]]; then
+  MODIFIED_FILES=$(jq -r '.modified_files // [] | .[]' "$STATE_FILE" 2>/dev/null | sort -u)
+fi
+
 # --- Build verification message ---
 
 STOP_TAG="<verified>${STOP_CHAR}</verified>"
 
 build_system_message() {
-  local primary="$1"
-  local changes="${2:-}"
+  local current="$1"
+  local synthesized="${2:-}"
+  local files="${3:-}"
   local NL=$'\n'
 
   local msg="# Verification Checkpoint"
-  msg="${msg}${NL}${NL}You were asked to:${NL}> ${primary}"
+  msg="${msg}${NL}${NL}## Current Task${NL}> ${current}"
 
-  if [[ -n "$changes" ]]; then
-    msg="${msg}${NL}${NL}## Changes Made${NL}\`\`\`${NL}${changes}${NL}\`\`\`"
+  if [[ -n "$synthesized" ]]; then
+    msg="${msg}${NL}${NL}## Historical Context${NL}> ${synthesized}"
+  fi
+
+  if [[ -n "$files" ]]; then
+    msg="${msg}${NL}${NL}## Modified Files${NL}\`\`\`${NL}${files}${NL}\`\`\`"
   fi
 
   msg="${msg}${NL}${NL}## Verification Steps${NL}First, classify the task: was it a discussion/question or an implementation request?"
@@ -163,8 +152,8 @@ build_system_message() {
   echo "$msg"
 }
 
-if [[ -n "$USER_PROMPT" ]]; then
-  MSG=$(build_system_message "$USER_PROMPT" "$CHANGES_SUMMARY")
+if [[ -n "$CURRENT_PROMPT" ]]; then
+  MSG=$(build_system_message "$CURRENT_PROMPT" "$SYNTHESIZED" "$MODIFIED_FILES")
   jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 else
   NL=$'\n'
