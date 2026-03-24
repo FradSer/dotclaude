@@ -156,8 +156,7 @@ if [[ -n "$CURRENT_PROMPT" ]]; then
   MSG=$(build_system_message "$CURRENT_PROMPT" "$SYNTHESIZED" "$MODIFIED_FILES")
   jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 else
-  NL=$'\n'
-  MSG="# Verification Checkpoint${NL}${NL}First, classify the task: was it a discussion/question or an implementation request?${NL}${NL}**If discussion/question** (analysis, problem investigation, exploring options):${NL}- Verify your analysis is grounded in evidence${NL}- Confirm you presented findings without prematurely offering to implement${NL}- Skip code execution verification${NL}${NL}**If implementation request** (build, fix, change, create):${NL}- Run any code or scripts and check the output${NL}- For web apps, open the page, click through flows, confirm rendering and interactions${NL}- Test with real or representative input and inspect results${NL}- Simulate edge cases if possible${NL}${NL}Once verified (or confirmed no verification needed), append \`${STOP_TAG}\` at the end of your response, then report back.${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
+  MSG=$(build_system_message "(no task context available)" "" "$MODIFIED_FILES")
   jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 fi
 

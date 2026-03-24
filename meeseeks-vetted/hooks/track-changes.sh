@@ -43,9 +43,12 @@ if [[ -f "$STATE_FILE" ]]; then
     "$STATE_FILE" --args "${FILE_PATHS[@]}" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
 else
   # State file not yet created (e.g. first prompt had @mention with null user_prompt).
-  # Don't create a stub here — task-start.sh will create the file on the next
-  # prompt with real content. Silently skip to avoid persisting task: "".
-  :
+  # Create a minimal stub so modified files are not lost — task-start.sh will
+  # populate the task field on the next prompt with real content.
+  jq -n \
+    --args -- "${FILE_PATHS[@]}" \
+    '{task: "", modified_files: $ARGS.positional}' \
+    > "$STATE_FILE"
 fi
 
 exit 0
