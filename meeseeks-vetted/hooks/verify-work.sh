@@ -41,8 +41,10 @@ LAST_MSG=$(echo "$HOOK_INPUT" | jq -r '.last_assistant_message // ""')
 VERIFIED_TEXT=$(extract_verified_text "$LAST_MSG")
 STATE_FILE="$(state_dir)/${SESSION_ID}.vetted.json"
 
-# Bypass: skip verification if session has skip_vet flag
-if [[ -f "$STATE_FILE" ]] && jq -e '.skip_vet == true' "$STATE_FILE" >/dev/null 2>&1; then
+# Bypass: skip verification for this turn, then clear the flag
+if [[ -f "$STATE_FILE" ]] && jq -e '.skip_turn == true' "$STATE_FILE" >/dev/null 2>&1; then
+  TEMP="${STATE_FILE}.tmp.$$"
+  jq 'del(.skip_turn)' "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
   exit 0
 fi
 

@@ -43,8 +43,8 @@ done <<< "$FILE_PATHS_RAW"
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.vetted.json"
 
-# Bypass: skip tracking if session has skip_vet flag
-if [[ -f "$STATE_FILE" ]] && jq -e '.skip_vet == true' "$STATE_FILE" >/dev/null 2>&1; then
+# Bypass: skip tracking if current turn has skip_turn flag
+if [[ -f "$STATE_FILE" ]] && jq -e '.skip_turn == true' "$STATE_FILE" >/dev/null 2>&1; then
   exit 0
 fi
 
