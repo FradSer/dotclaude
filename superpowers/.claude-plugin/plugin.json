@@ -1,7 +1,7 @@
 {
   "name": "superpowers",
-  "version": "2.0.1",
-  "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop integration",
+  "version": "2.1.0",
+  "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop and work verification",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
@@ -12,12 +12,14 @@
     "brainstorming",
     "bdd",
     "teams",
-    "execution"
+    "execution",
+    "verification"
   ],
   "commands": [
     "./skills/brainstorming/",
     "./skills/writing-plans/",
-    "./skills/executing-plans/"
+    "./skills/executing-plans/",
+    "./skills/vet/"
   ],
   "skills": [
     "./skills/agent-team-driven-development/",
@@ -26,6 +28,29 @@
     "./skills/systematic-debugging/"
   ],
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/task-start.sh",
+            "statusMessage": "Setting completion criteria..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/track-changes.sh",
+            "async": true
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
