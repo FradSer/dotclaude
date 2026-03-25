@@ -122,11 +122,19 @@ if [[ "$IS_LOOP_ACTIVE" == "true" ]]; then
         fi
 
         if [[ "$LOOP_COMPLETE" == "true" ]]; then
-          # Loop complete — clear loop fields, fall through to verification
+          # Loop complete — clear loop fields
           NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           state_update "$SUPERPOWER_STATE_FILE" --arg ts "$NOW" \
             'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at) | .updated_at = $ts'
-          # Fall through to verification
+
+          # Skills with built-in phase verification skip vet
+          SKILL_NAME=$(state_read "$SUPERPOWER_STATE_FILE" '.skill_name // ""')
+          case "$SKILL_NAME" in
+            brainstorming|writing-plans|executing-plans)
+              exit 0
+              ;;
+          esac
+          # Other skills fall through to verification
         else
           # Not complete — continue loop iteration
           NEXT_ITERATION=$((ITERATION + 1))
