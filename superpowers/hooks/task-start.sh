@@ -44,7 +44,10 @@ if [[ -z "$USER_PROMPT" || "$USER_PROMPT" == "null" ]]; then
 fi
 
 # Detect slash commands — persist state but skip system message and novet
+# Primary: check .prompt field for <command-name> tag
+# Fallback: check transcript — Claude Code may not populate .prompt with the tag
 IS_SLASH_COMMAND=false
+COMMAND_NAME=""
 if echo "$USER_PROMPT" | grep -q '<command-name>'; then
   IS_SLASH_COMMAND=true
   # Clean prompt: strip XML tag, format as readable task description
@@ -54,6 +57,22 @@ if echo "$USER_PROMPT" | grep -q '<command-name>'; then
     USER_PROMPT="Use ${COMMAND_NAME} skill. ${CLEAN_ARGS}"
   else
     USER_PROMPT="Use ${COMMAND_NAME} skill."
+  fi
+elif [[ -n "$TRANSCRIPT_FILE" && -f "$TRANSCRIPT_FILE" ]]; then
+  LAST_USER_CONTENT=$(grep '"type":"user"' "$TRANSCRIPT_FILE" \
+    | grep -v '"isMeta":true' \
+    | tail -1 \
+    | jq -r '.message.content | if type == "string" then . elif type == "array" then (map(select(.type == "text") | .text // "") | join(" ")) else "" end' \
+    2>/dev/null || echo "")
+  if echo "$LAST_USER_CONTENT" | grep -q '<command-name>'; then
+    IS_SLASH_COMMAND=true
+    COMMAND_NAME=$(echo "$LAST_USER_CONTENT" | sed -n 's/.*<command-name>\([^<]*\)<\/command-name>.*/\1/p')
+    CLEAN_ARGS=$(echo "$LAST_USER_CONTENT" | sed 's/<command-name>[^<]*<\/command-name>//' | sed 's/^[[:space:]]*//')
+    if [[ -n "$CLEAN_ARGS" ]]; then
+      USER_PROMPT="Use ${COMMAND_NAME} skill. ${CLEAN_ARGS}"
+    else
+      USER_PROMPT="Use ${COMMAND_NAME} skill."
+    fi
   fi
 fi
 
