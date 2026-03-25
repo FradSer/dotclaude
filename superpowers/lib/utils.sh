@@ -80,3 +80,53 @@ extract_last_assistant_text() {
   ' 2>/dev/null
   set -e
 }
+
+# --- Vet utilities ---
+
+# Canonical verified-tag content marker
+STOP_CHAR="Fully Vetted."
+
+# Extract content between <verified>...</verified> tags.
+# Returns the last match (relevant when multiple tags appear).
+# macOS-compatible: uses sed instead of grep -P.
+# Usage: TEXT=$(extract_verified_text "$MESSAGE")
+extract_verified_text() {
+  local msg="${1:-}"
+  [[ -z "$msg" ]] && return 0
+  echo "$msg" | sed -n 's/.*<verified>\(.*\)<\/verified>.*/\1/p' | tail -1
+}
+
+# Send a prompt to Claude Haiku and return the text response.
+# Uses the Anthropic Messages API. Requires ANTHROPIC_API_KEY in the environment.
+# Sets SUPERPOWERS_MERGE_SESSION=1 to prevent hook recursion.
+# Usage: RESULT=$(run_haiku_merge "Synthesize a summary from: ...")
+run_haiku_merge() {
+  local prompt="${1:-}"
+  [[ -z "$prompt" ]] && return 0
+
+  export SUPERPOWERS_MERGE_SESSION=1
+
+  local api_key="${ANTHROPIC_API_KEY:-}"
+  if [[ -z "$api_key" ]]; then
+    return 0
+  fi
+
+  local payload
+  payload=$(jq -n \
+    --arg prompt "$prompt" \
+    '{
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 256,
+      messages: [{role: "user", content: $prompt}]
+    }')
+
+  local response
+  response=$(curl -sS --max-time 10 \
+    -H "x-api-key: ${api_key}" \
+    -H "anthropic-version: 2023-06-01" \
+    -H "content-type: application/json" \
+    -d "$payload" \
+    "https://api.anthropic.com/v1/messages" 2>/dev/null) || return 0
+
+  echo "$response" | jq -r '.content[0].text // ""' 2>/dev/null
+}
