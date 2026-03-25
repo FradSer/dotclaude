@@ -43,6 +43,11 @@ done <<< "$FILE_PATHS_RAW"
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.vetted.json"
 
+# Bypass: skip tracking if session has skip_vet flag
+if [[ -f "$STATE_FILE" ]] && jq -e '.skip_vet == true' "$STATE_FILE" >/dev/null 2>&1; then
+  exit 0
+fi
+
 if [[ -f "$STATE_FILE" ]]; then
   # Append all paths to existing session state (dedup via unique)
   TEMP="${STATE_FILE}.tmp.$$"

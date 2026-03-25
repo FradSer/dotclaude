@@ -41,6 +41,11 @@ LAST_MSG=$(echo "$HOOK_INPUT" | jq -r '.last_assistant_message // ""')
 VERIFIED_TEXT=$(extract_verified_text "$LAST_MSG")
 STATE_FILE="$(state_dir)/${SESSION_ID}.vetted.json"
 
+# Bypass: skip verification if session has skip_vet flag
+if [[ -f "$STATE_FILE" ]] && jq -e '.skip_vet == true' "$STATE_FILE" >/dev/null 2>&1; then
+  exit 0
+fi
+
 # Verified — synthesize final task summary, keep state file
 if [[ -n "$VERIFIED_TEXT" ]] && [[ "$VERIFIED_TEXT" = "$STOP_CHAR" ]]; then
   if [[ -f "$STATE_FILE" ]]; then

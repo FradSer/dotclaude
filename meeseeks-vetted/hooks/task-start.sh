@@ -53,6 +53,23 @@ mkdir -p "$STATE_DIR"
 STATE_FILE="${STATE_DIR}/${SESSION_ID}.vetted.json"
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# Bypass: novet in prompt disables all hooks for this session
+if echo "$USER_PROMPT" | grep -qF 'novet'; then
+  if [[ -f "$STATE_FILE" ]]; then
+    TEMP="${STATE_FILE}.tmp.$$"
+    jq --arg ts "$NOW" '.skip_vet = true | .updated_at = $ts' "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
+  else
+    jq -n --arg session "$SESSION_ID" --arg ts "$NOW" \
+      '{session_id: $session, skip_vet: true, created_at: $ts, updated_at: $ts}' > "$STATE_FILE"
+  fi
+  exit 0
+fi
+
+# If session is already in bypass mode, skip silently
+if [[ -f "$STATE_FILE" ]] && jq -e '.skip_vet == true' "$STATE_FILE" >/dev/null 2>&1; then
+  exit 0
+fi
+
 if [[ -f "$STATE_FILE" ]]; then
   # Existing session — queue prompt for merge at Stop time
   # (verify-work.sh will combine it with the assistant's response)
