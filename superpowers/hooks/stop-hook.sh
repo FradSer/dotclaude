@@ -330,10 +330,9 @@ build_system_message() {
 
 if [[ -n "$CURRENT_PROMPT" ]]; then
   MSG=$(build_system_message "$CURRENT_PROMPT" "$SYNTHESIZED" "$MODIFIED_FILES")
-  jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 else
   MSG=$(build_system_message "(no task context available)" "" "$MODIFIED_FILES")
-  jq -n --arg msg "$MSG" '{"systemMessage": $msg}' >&2
 fi
 
-exit 2
+jq -n --arg msg "$MSG" '{"decision": "block", "reason": $msg}'
+exit 0
