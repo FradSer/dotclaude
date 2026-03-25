@@ -38,6 +38,13 @@ if [[ -z "$SUPERPOWER_STATE_FILE" ]]; then
   exit 0
 fi
 
+# Guard: corrupted JSON — remove and allow exit
+if ! jq empty "$SUPERPOWER_STATE_FILE" 2>/dev/null; then
+  echo "Warning: State file corrupted, removing: $SUPERPOWER_STATE_FILE" >&2
+  rm -f "$SUPERPOWER_STATE_FILE"
+  exit 0
+fi
+
 # ============================================================================
 # PHASE 1: LOOP CHECK
 # ============================================================================
@@ -146,15 +153,22 @@ if [[ "$IS_LOOP_ACTIVE" == "true" ]]; then
               SYSTEM_MSG="Superpower loop iteration $NEXT_ITERATION | No completion promise set - loop runs infinitely"
             fi
 
-            # Append completion instruction to prompt for context continuity
+            # Build continuation prompt
+            # If skill_name is available, use concise skill reference instead of full prompt
+            SKILL_NAME=$(state_read "$SUPERPOWER_STATE_FILE" '.skill_name // ""')
+            if [[ -n "$SKILL_NAME" ]]; then
+              INJECTED_PROMPT="Use superpowers:${SKILL_NAME} skill."
+            else
+              INJECTED_PROMPT="$PROMPT"
+            fi
+
+            # Append completion instruction
             if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
-              INJECTED_PROMPT="${PROMPT}
+              INJECTED_PROMPT="${INJECTED_PROMPT}
 
 ---
 LOOP COMPLETION REQUIRED: When the above task is genuinely complete, output the following tag as the very last line of your response — nothing after it:
 <promise>${COMPLETION_PROMISE}</promise>"
-            else
-              INJECTED_PROMPT="$PROMPT"
             fi
 
             # Block exit and feed prompt back

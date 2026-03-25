@@ -149,14 +149,21 @@ if [[ -z "$PROMPT" ]]; then
 fi
 
 # Resolve state file path
+# Prefer existing state file (created by task-start.sh with session_id from hook input)
+# to avoid mismatch with CLAUDE_CODE_SESSION_ID env var
 SESSION_ID="${CLAUDE_CODE_SESSION_ID:-default}"
 if [[ -n "$STATE_FILE_OVERRIDE" ]]; then
   STATE_FILE="$STATE_FILE_OVERRIDE"
   mkdir -p "$(dirname "$STATE_FILE")"
 else
-  STATE_DIR="$(state_dir)"
-  mkdir -p "$STATE_DIR"
-  STATE_FILE="${STATE_DIR}/${SESSION_ID}.superpowers.json"
+  EXISTING_FILE=$(find_state_file "$SESSION_ID")
+  if [[ -n "$EXISTING_FILE" ]]; then
+    STATE_FILE="$EXISTING_FILE"
+  else
+    STATE_DIR="$(state_dir)"
+    mkdir -p "$STATE_DIR"
+    STATE_FILE="${STATE_DIR}/${SESSION_ID}.superpowers.json"
+  fi
 fi
 
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -180,7 +187,7 @@ if [[ -f "$STATE_FILE" ]]; then
     --argjson completion_promise "$PROMISE_JSON" \
     --arg started_at "$NOW" \
     --arg updated_at "$NOW" \
-    '.session_id = $session_id | .active = true | .iteration = $iteration | .max_iterations = $max_iterations | .completion_promise = $completion_promise | .prompt = $prompt | .started_at = $started_at | .updated_at = $updated_at'
+    '.session_id = $session_id | .active = true | .iteration = $iteration | .max_iterations = $max_iterations | .completion_promise = $completion_promise | .prompt = $prompt | .started_at = $started_at | .updated_at = $updated_at | del(.skip_turn)'
 else
   jq -n \
     --arg session_id "$SESSION_ID" \
