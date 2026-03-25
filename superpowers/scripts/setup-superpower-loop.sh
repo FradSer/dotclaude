@@ -168,25 +168,39 @@ else
   PROMISE_JSON=$(jq -n --arg p "$COMPLETION_PROMISE" '$p')
 fi
 
-# Create JSON state file
-jq -n \
-  --arg session_id "$SESSION_ID" \
-  --arg prompt "$PROMPT" \
-  --argjson iteration 1 \
-  --argjson max_iterations "$MAX_ITERATIONS" \
-  --argjson completion_promise "$PROMISE_JSON" \
-  --arg started_at "$NOW" \
-  --arg updated_at "$NOW" \
-  '{
-    session_id: $session_id,
-    active: true,
-    iteration: $iteration,
-    max_iterations: $max_iterations,
-    completion_promise: $completion_promise,
-    prompt: $prompt,
-    started_at: $started_at,
-    updated_at: $updated_at
-  }' > "$STATE_FILE"
+# Create or merge JSON state file
+# If the file already exists (e.g. task-start.sh created it with vet fields),
+# merge loop fields into it to preserve vet state (task, modified_files, etc.)
+if [[ -f "$STATE_FILE" ]]; then
+  state_update "$STATE_FILE" \
+    --arg session_id "$SESSION_ID" \
+    --arg prompt "$PROMPT" \
+    --argjson iteration 1 \
+    --argjson max_iterations "$MAX_ITERATIONS" \
+    --argjson completion_promise "$PROMISE_JSON" \
+    --arg started_at "$NOW" \
+    --arg updated_at "$NOW" \
+    '.session_id = $session_id | .active = true | .iteration = $iteration | .max_iterations = $max_iterations | .completion_promise = $completion_promise | .prompt = $prompt | .started_at = $started_at | .updated_at = $updated_at'
+else
+  jq -n \
+    --arg session_id "$SESSION_ID" \
+    --arg prompt "$PROMPT" \
+    --argjson iteration 1 \
+    --argjson max_iterations "$MAX_ITERATIONS" \
+    --argjson completion_promise "$PROMISE_JSON" \
+    --arg started_at "$NOW" \
+    --arg updated_at "$NOW" \
+    '{
+      session_id: $session_id,
+      active: true,
+      iteration: $iteration,
+      max_iterations: $max_iterations,
+      completion_promise: $completion_promise,
+      prompt: $prompt,
+      started_at: $started_at,
+      updated_at: $updated_at
+    }' > "$STATE_FILE"
+fi
 
 # Output setup message
 cat <<EOF
