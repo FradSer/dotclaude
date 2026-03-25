@@ -1,44 +1,70 @@
-# Execution Task Tracking Design
+# Execution Task Tracking & No-Vet Design
 
 ## Context
 
-The `executing-plans` skill uses Claude's internal TaskCreate/TaskUpdate tools to track task progress. However, the stop-hook has no visibility into whether tasks are actually completed. Claude can claim all tasks are done and output `<promise>EXECUTION_COMPLETE</promise>` to exit the loop without genuine verification.
+Two related stop-hook behaviors need explicit design documentation:
 
-This design adds external task tracking in the superpowers state file, a script-based completion gate, and stop-hook enforcement to prevent premature loop exit.
+1. **External task tracking** for `executing-plans`: Claude's internal `TaskUpdate` is invisible to hooks. This design adds an external tracking file and a completion gate so `stop-hook.sh` can independently verify all tasks are done before allowing `EXECUTION_COMPLETE` to exit the loop. Task state lives in `.claude/.execution-state.json` — separate from session state, persistent within the plan, and deleted on verified completion.
+
+2. **No-vet for workflow skills**: `brainstorming`, `writing-plans`, and `executing-plans` each have built-in phase verification. The generic vet checkpoint is redundant for these skills. When their completion promise is detected and all preconditions pass, `stop-hook.sh` MUST exit cleanly (`exit 0`) without triggering vet.
+
+Both behaviors are implemented as part of the **loop completion path** in `stop-hook.sh`.
 
 ## Requirements
 
-1. **Task Registration**: When executing-plans starts Phase 2, write all tasks (with file paths) into `superpowers.json`
-2. **Script-Based Completion**: Create `manage-execution-tasks.sh` to manage task status in state file
-3. **SKILL.md Enforcement**: Require Claude to call the script after each task's verification passes
-4. **Progress Display**: stop-hook shows task progress during loop iterations
-5. **Completion Gate**: stop-hook blocks loop exit if `execution_tasks` has incomplete items
-6. **Anti-Lying**: Global requirement - do not mark tasks complete to exit; the hook enforces truth
+### Functional Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| F1 | `executing-plans` MUST write all tasks to `.claude/.execution-state.json` at Phase 2 start | MUST |
+| F2 | `manage-execution-tasks.sh` MUST manage task lifecycle (`init`, `start`, `complete`, `status`) in `.claude/.execution-state.json` | MUST |
+| F3 | `executing-plans` SKILL.md MUST call `start` before each task and `complete` after verification passes | MUST |
+| F4 | `stop-hook.sh` SHOULD include task progress in the loop continuation system message | SHOULD |
+| F5 | `stop-hook.sh` MUST block loop exit when `.claude/.execution-state.json` exists and any task is not `completed` | MUST |
+| F6 | `stop-hook.sh` MUST delete `.claude/.execution-state.json` after all tasks complete and promise is verified | MUST |
+| F7 | `brainstorming`, `writing-plans`, and `executing-plans` MUST skip vet phase when their completion promise is verified | MUST |
+| F8 | `stop-hook.sh` MUST use glob trailing-match patterns for `skill_name` comparison | MUST |
+
+### Non-Functional Requirements
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| NF1 | `.claude/.execution-state.json` MUST use a generic `tasks` schema usable by any skill, not tied to `executing-plans` | MUST |
+| NF2 | Task state MUST NOT be stored in `superpowers.json` — separation of session state and plan execution state | MUST |
+| NF3 | `.claude/.execution-state.json` SHOULD be gitignored — it is a runtime artifact | SHOULD |
 
 ## Rationale
 
-- **External enforcement** over internal claims: Claude's TaskUpdate is invisible to hooks; the script writes to state file which hooks CAN read
-- **Explicit marking** over automatic detection: Claude must actively call the script, creating a deliberate checkpoint
-- **Progress visibility** in stop-hook: shows completed/total in system message, giving Claude (and the loop) awareness of remaining work
+- **Separate file over state file**: `superpowers.json` is session state; task execution progress is plan state. Keeping them separate avoids bloating session state and allows plan execution data to outlive session scope.
+- **Deletion on completion**: `.claude/.execution-state.json` is a temporary artifact. Leaving it behind would cause false blocking on the next execution run.
+- **Generic schema** (`tasks` not `execution_tasks`): Any skill that uses task tracking can reuse this file and the `manage-execution-tasks.sh` script without schema changes.
+- **External enforcement** over internal claims: Claude's `TaskUpdate` is invisible to hooks; the script writes to `.execution-state.json` which hooks CAN read.
+- **No-vet for workflow skills**: These skills end with explicit phase sign-off (commit + transition). The generic vet loop is unnecessary — each skill's phase structure IS the verification.
+- **Glob-pattern matching**: `skill_name` is set to the full command name by `task-start.sh` (e.g., `/superpowers:brainstorming`). Exact-match patterns silently fail; trailing-glob patterns (e.g., `*brainstorming`) handle any prefix.
 
 ## Detailed Design
 
-### State File Schema Extension
+### Execution State File: `.claude/.execution-state.json`
+
+Created by `manage-execution-tasks.sh init`. Deleted by `stop-hook.sh` on verified completion.
 
 ```json
 {
-  "execution_tasks": [
+  "session_id": "abc123",
+  "skill": "executing-plans",
+  "plan_path": "docs/plans/2026-03-25-my-plan/",
+  "tasks": [
     {
       "id": "001",
       "subject": "Setup project structure",
-      "file": "docs/plans/2026-03-25-todo-plan/task-001-setup-project-setup.md",
+      "file": "docs/plans/2026-03-25-my-plan/task-001-setup-project.md",
       "status": "pending",
       "completed_at": null
     },
     {
       "id": "002",
       "subject": "Implement auth handler",
-      "file": "docs/plans/2026-03-25-todo-plan/task-002-auth-handler-impl.md",
+      "file": "docs/plans/2026-03-25-my-plan/task-002-auth-handler.md",
       "status": "completed",
       "completed_at": "2026-03-25T10:30:00Z"
     }
@@ -54,37 +80,32 @@ Status values: `pending` | `in_progress` | `completed`
 
 | Command | Usage | Description |
 |---------|-------|-------------|
-| `init` | `manage-execution-tasks.sh init '<json-array>'` | Write initial task list to state file |
+| `init` | `manage-execution-tasks.sh init '<skill>' '<plan-path>' '<json-array>'` | Create `.claude/.execution-state.json` with task list |
 | `start` | `manage-execution-tasks.sh start <task-id>` | Mark task as `in_progress` |
 | `complete` | `manage-execution-tasks.sh complete <task-id>` | Mark task as `completed` with timestamp |
 | `status` | `manage-execution-tasks.sh status` | Print progress summary |
 
-**`init` input format:**
-```json
-[
-  {"id": "001", "subject": "Setup project", "file": "./task-001-setup-project-setup.md"},
-  {"id": "002", "subject": "Auth handler", "file": "./task-002-auth-handler-impl.md"}
-]
+**`init` invocation example:**
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/manage-execution-tasks.sh" init \
+  "executing-plans" \
+  "docs/plans/2026-03-25-my-plan/" \
+  '[{"id":"001","subject":"Setup project","file":"./task-001-setup-project.md"}]'
 ```
 
 The script:
-- Sources `lib/utils.sh` for `find_state_file`, `state_update`, `state_read`
-- Uses `CLAUDE_CODE_SESSION_ID` or finds existing state file
+- Writes to `.claude/.execution-state.json` relative to `${PWD}`
 - Validates task ID exists before `start`/`complete`
-- Refuses to `complete` a task that is still `pending` (must be `in_progress` first)
+- Refuses to `complete` a task still in `pending` state (must be `in_progress` first)
 
-### stop-hook.sh Changes
+### stop-hook.sh: Loop Completion Path
 
-**During loop iteration** (system message enhancement):
-```
-Superpower loop iteration 5 | Progress: 3/8 tasks completed | To stop: output <promise>...
-```
+When `LOOP_COMPLETE=true`, the stop-hook executes this sequence:
 
-**When promise `EXECUTION_COMPLETE` detected:**
-1. Read `execution_tasks` from state file
-2. Check if ALL tasks have `status == "completed"`
-3. If all completed: proceed normally (clear loop fields, fall through to vet)
-4. If incomplete tasks exist: **block exit**, output error listing incomplete tasks, continue loop
+**Step 1 — Task gate** (only when `.claude/.execution-state.json` exists):
+1. Read `tasks` from `.claude/.execution-state.json`
+2. If any task is NOT `completed`: block exit, show error with incomplete list, continue loop
+3. If all tasks completed (or file absent): proceed to Step 2
 
 ```
 EXECUTION BLOCKED: 2/8 tasks not completed.
@@ -94,24 +115,51 @@ Incomplete tasks:
 Do NOT output <promise>EXECUTION_COMPLETE</promise> until all tasks are genuinely complete.
 ```
 
-**When skill is NOT executing-plans** (no `execution_tasks` in state): no change to behavior.
+**Step 2 — Clear loop fields** from `superpowers.json`.
+
+**Step 3 — Delete execution state** (if `.claude/.execution-state.json` exists):
+```bash
+rm -f ".claude/.execution-state.json"
+```
+
+**Step 4 — No-vet bypass** (skill-name check):
+```bash
+# skill_name set by task-start.sh from <command-name> tag: e.g., "/superpowers:brainstorming"
+# Trailing-glob matches regardless of plugin prefix or leading slash
+SKILL_NAME=$(state_read "$SUPERPOWER_STATE_FILE" '.skill_name // ""')
+case "$SKILL_NAME" in
+  *brainstorming|*writing-plans|*executing-plans)
+    exit 0  # Built-in phase verification — skip vet
+    ;;
+esac
+# Other skills fall through to vet
+```
+
+**During loop iteration** (system message — before Step 1):
+When building the continuation system message, include task progress if the file exists:
+```
+Superpower loop iteration 5 | Progress: 3/8 tasks completed | To stop: output <promise>...
+```
 
 ### executing-plans SKILL.md Changes
 
-**Phase 2 addition** — after TaskCreate, register tasks in state file:
+**Phase 2 addition** — after TaskCreate, create execution state file:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/manage-execution-tasks.sh" init '[{"id":"001","subject":"Setup project","file":"./task-001-setup-project-setup.md"},...]'
+"${CLAUDE_PLUGIN_ROOT}/scripts/manage-execution-tasks.sh" init \
+  "executing-plans" \
+  "<plan-path>" \
+  '[{"id":"001","subject":"Setup project","file":"./task-001-setup-project.md"},...]'
 ```
 
-**Phase 3 addition** — after each task's verification gate passes:
+**Phase 3 addition** — for each task:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/manage-execution-tasks.sh" start "001"
 # ... execute task ...
 "${CLAUDE_PLUGIN_ROOT}/scripts/manage-execution-tasks.sh" complete "001"
 ```
 
-**Global anti-lying requirement** — added to SKILL.md preamble:
-> The stop-hook independently verifies task completion status. Do NOT output `<promise>EXECUTION_COMPLETE</promise>` unless all tasks are genuinely completed and marked via the tracking script. The hook will block exit if any task remains incomplete.
+**Global anti-lying requirement** added to SKILL.md preamble:
+> The stop-hook independently verifies task completion status via `.claude/.execution-state.json`. Do NOT output `<promise>EXECUTION_COMPLETE</promise>` unless all tasks are genuinely completed and marked via the tracking script. The hook will block exit if any task remains incomplete.
 
 ## Design Documents
 
