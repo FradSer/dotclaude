@@ -297,7 +297,7 @@ These are fundamentally different outcomes:
 
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m \"test\""}}' | \
-  bash ./scripts/validate-commit-pretool.sh
+  bash ./scripts/my-pretool-hook.sh
 echo "Exit: $?"
 ```
 
