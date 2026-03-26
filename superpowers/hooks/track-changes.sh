@@ -43,11 +43,6 @@ done <<< "$FILE_PATHS_RAW"
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 
-# Bypass: skip tracking if current turn has skip_turn flag
-if [[ -f "$STATE_FILE" ]] && jq -e '.skip_turn == true' "$STATE_FILE" >/dev/null 2>&1; then
-  exit 0
-fi
-
 if [[ -f "$STATE_FILE" ]]; then
   # Append all paths to existing session state (dedup via unique)
   TEMP="${STATE_FILE}.tmp.$$"

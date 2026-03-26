@@ -94,27 +94,21 @@ if [[ -f "$STATE_FILE" ]] && ! jq empty "$STATE_FILE" 2>/dev/null; then
   rm -f "$STATE_FILE"
 fi
 
-# Bypass: novet in prompt skips verification for this turn only
-# Match as whole word to avoid false positives (e.g., "innovet" won't match)
-# Skip for slash commands — novet in arguments is not a bypass intent
-# Skip when superpower loop is active — during a loop, novet is ignored
-if [[ "$IS_SLASH_COMMAND" == "false" ]] && echo "$USER_PROMPT" | grep -qwF 'novet'; then
+# Opt-in verification: needvet in prompt enables verification for this turn
+# Match as whole word to avoid false positives
+# Skip for slash commands — needvet in arguments is not a verification intent
+# Skip when superpower loop is active — during a loop, needvet is ignored
+NEED_VET=false
+if [[ "$IS_SLASH_COMMAND" == "false" ]] && echo "$USER_PROMPT" | grep -qwF 'needvet'; then
   LOOP_ACTIVE=false
   if [[ -f "$STATE_FILE" ]] && jq -e '.active == true' "$STATE_FILE" >/dev/null 2>&1; then
     LOOP_ACTIVE=true
   fi
 
   if [[ "$LOOP_ACTIVE" == "false" ]]; then
-    if [[ -f "$STATE_FILE" ]]; then
-      TEMP="${STATE_FILE}.tmp.$$"
-      jq --arg ts "$NOW" '.skip_turn = true | .updated_at = $ts' "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
-    else
-      jq -n --arg session "$SESSION_ID" --arg ts "$NOW" \
-        '{session_id: $session, skip_turn: true, created_at: $ts, updated_at: $ts}' > "$STATE_FILE"
-    fi
-    exit 0
+    NEED_VET=true
   fi
-  # Loop is active — fall through, novet ignored
+  # Loop is active — fall through, needvet ignored
 fi
 
 if [[ -f "$STATE_FILE" ]]; then
@@ -125,14 +119,16 @@ if [[ -f "$STATE_FILE" ]]; then
       jq \
         --arg prompt "$USER_PROMPT" \
         --arg skill "$SKILL_SHORT" \
+        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
-        '.pending_prompt = $prompt | .skill_name = $skill | .updated_at = $ts' \
+        '.pending_prompt = $prompt | .skill_name = $skill | .updated_at = $ts | if $vet then .need_vet = true else del(.need_vet) end' \
         "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
     else
       jq \
         --arg prompt "$USER_PROMPT" \
+        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
-        'del(.skill_name) | .pending_prompt = $prompt | .updated_at = $ts' \
+        'del(.skill_name) | .pending_prompt = $prompt | .updated_at = $ts | if $vet then .need_vet = true else del(.need_vet) end' \
         "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
     fi
   fi
@@ -144,6 +140,7 @@ else
         --arg session "$SESSION_ID" \
         --arg task "$USER_PROMPT" \
         --arg skill "$SKILL_SHORT" \
+        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
         '{
           session_id: $session,
@@ -151,34 +148,36 @@ else
           skill_name: $skill,
           created_at: $ts,
           updated_at: $ts
-        }' > "$STATE_FILE"
+        } | if $vet then .need_vet = true else . end' > "$STATE_FILE"
     else
       jq -n \
         --arg session "$SESSION_ID" \
         --arg task "$USER_PROMPT" \
+        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
         '{
           session_id: $session,
           task: $task,
           created_at: $ts,
           updated_at: $ts
-        }' > "$STATE_FILE"
+        } | if $vet then .need_vet = true else . end' > "$STATE_FILE"
     fi
   fi
 fi
 
 # Inject task clarity instructions into Claude's context
-if [[ "$IS_SLASH_COMMAND" == "false" ]]; then
-  jq -n '{
-    "systemMessage": "Before starting, classify this prompt:\n\n1. **Discussion/Question** — the user is asking why something happens, reporting a problem, seeking analysis, or exploring options. For these: analyze the problem, present your findings, and let the user decide next steps. Do NOT offer to implement a fix or ask \"shall I implement this?\" — that skips the user'\''s decision. Wait for an explicit implementation request.\n\n2. **Implementation request** — the user explicitly asks you to build, fix, change, or create something. For these: evaluate whether the task has clear enough completion criteria. If the request is vague, lacks explicit success criteria, or has key ambiguities, you MUST use the AskUserQuestion tool to resolve them before doing any work. If clear, define your done checklist and start working immediately — no \"I will...\" preamble.\n\nRegardless of type, the final deliverable must be finished and working, not a draft. If something fails or looks wrong, fix it before reporting back — do not hand problems back to the user. Once done and verified, append <verified>Fully Vetted.</verified> at the end of your response (only output this when you have genuinely verified the work — do not lie to exit)."
-  }'
-else
-  # Slash commands: skip classification, inject verified-tag instruction only.
-  # Workflow skills (brainstorming/writing-plans/executing-plans) are bypassed
-  # by stop-hook Phase 2 and never reach the tag check.
-  jq -n '{
-    "systemMessage": "Once your work is done and verified, append <verified>Fully Vetted.</verified> at the end of your response (only output this when you have genuinely verified the work — do not lie to exit)."
-  }'
+# Only inject system messages when needvet is active
+if [[ "$NEED_VET" == "true" ]]; then
+  if [[ "$IS_SLASH_COMMAND" == "false" ]]; then
+    jq -n '{
+      "systemMessage": "Before starting, classify this prompt:\n\n1. **Discussion/Question** — the user is asking why something happens, reporting a problem, seeking analysis, or exploring options. For these: analyze the problem, present your findings, and let the user decide next steps. Do NOT offer to implement a fix or ask \"shall I implement this?\" — that skips the user'\''s decision. Wait for an explicit implementation request.\n\n2. **Implementation request** — the user explicitly asks you to build, fix, change, or create something. For these: evaluate whether the task has clear enough completion criteria. If the request is vague, lacks explicit success criteria, or has key ambiguities, you MUST use the AskUserQuestion tool to resolve them before doing any work. If clear, define your done checklist and start working immediately — no \"I will...\" preamble.\n\nRegardless of type, the final deliverable must be finished and working, not a draft. If something fails or looks wrong, fix it before reporting back — do not hand problems back to the user. Once done and verified, append <verified>Fully Vetted.</verified> at the end of your response (only output this when you have genuinely verified the work — do not lie to exit)."
+    }'
+  else
+    jq -n '{
+      "systemMessage": "Once your work is done and verified, append <verified>Fully Vetted.</verified> at the end of your response (only output this when you have genuinely verified the work — do not lie to exit)."
+    }'
+  fi
 fi
+# No needvet: no system message injection
 
 exit 0

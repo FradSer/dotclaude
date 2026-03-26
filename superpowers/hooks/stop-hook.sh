@@ -201,10 +201,9 @@ fi
 # Reached when: no loop was active, OR loop just completed/errored
 # ============================================================================
 
-# Check skip_turn bypass (set by task-start.sh for novet)
-if jq -e '.skip_turn == true' "$SUPERPOWER_STATE_FILE" >/dev/null 2>&1; then
-  # Clear skip_turn flag for next turn
-  state_update "$SUPERPOWER_STATE_FILE" 'del(.skip_turn)'
+# Default: skip verification. Only run when need_vet is explicitly set.
+# need_vet is cleared only on verified-tag match or skill bypass — persistent enforcement.
+if ! jq -e '.need_vet == true' "$SUPERPOWER_STATE_FILE" >/dev/null 2>&1; then
   exit 0
 fi
 
@@ -214,6 +213,7 @@ fi
 PHASE2_SKILL=$(state_read "$SUPERPOWER_STATE_FILE" '.skill_name // ""')
 case "$PHASE2_SKILL" in
   brainstorming|writing-plans|executing-plans)
+    state_update "$SUPERPOWER_STATE_FILE" 'del(.need_vet)'
     exit 0
     ;;
 esac
@@ -221,7 +221,8 @@ esac
 # Check for verified tag in last assistant message
 VERIFIED_TEXT=$(extract_verified_text "$LAST_MSG")
 if [[ -n "$VERIFIED_TEXT" ]] && [[ "$VERIFIED_TEXT" = "$STOP_CHAR" ]]; then
-  # Verified — synthesize final task summary, keep state file
+  # Verified — clear need_vet and synthesize final task summary
+  state_update "$SUPERPOWER_STATE_FILE" 'del(.need_vet)'
   if [[ -f "$SUPERPOWER_STATE_FILE" ]]; then
     CURRENT_TASK=$(jq -r '.task // ""' "$SUPERPOWER_STATE_FILE")
     TURN_OUTPUT="${LAST_MSG:0:500}"
