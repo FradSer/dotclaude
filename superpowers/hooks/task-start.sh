@@ -168,10 +168,16 @@ else
 fi
 
 # Inject task clarity instructions into Claude's context
-# Skip for slash commands — they have their own instructions
 if [[ "$IS_SLASH_COMMAND" == "false" ]]; then
   jq -n '{
     "systemMessage": "Before starting, classify this prompt:\n\n1. **Discussion/Question** — the user is asking why something happens, reporting a problem, seeking analysis, or exploring options. For these: analyze the problem, present your findings, and let the user decide next steps. Do NOT offer to implement a fix or ask \"shall I implement this?\" — that skips the user'\''s decision. Wait for an explicit implementation request.\n\n2. **Implementation request** — the user explicitly asks you to build, fix, change, or create something. For these: evaluate whether the task has clear enough completion criteria. If the request is vague, lacks explicit success criteria, or has key ambiguities, you MUST use the AskUserQuestion tool to resolve them before doing any work. If clear, define your done checklist and start working immediately — no \"I will...\" preamble.\n\nRegardless of type, the final deliverable must be finished and working, not a draft. If something fails or looks wrong, fix it before reporting back — do not hand problems back to the user. Once done and verified, append <verified>Fully Vetted.</verified> at the end of your response (only output this when you have genuinely verified the work — do not lie to exit)."
+  }'
+else
+  # Slash commands: skip classification, inject verified-tag instruction only.
+  # Workflow skills (brainstorming/writing-plans/executing-plans) are bypassed
+  # by stop-hook Phase 2 and never reach the tag check.
+  jq -n '{
+    "systemMessage": "Once your work is done and verified, append <verified>Fully Vetted.</verified> at the end of your response (only output this when you have genuinely verified the work — do not lie to exit)."
   }'
 fi
 

@@ -208,6 +208,16 @@ if jq -e '.skip_turn == true' "$SUPERPOWER_STATE_FILE" >/dev/null 2>&1; then
   exit 0
 fi
 
+# Skill bypass: workflow skills with built-in phase verification skip vet.
+# This covers direct slash command invocations (no loop).
+# Loop-completed invocations are already handled by Phase 1 (lines 131-136).
+PHASE2_SKILL=$(state_read "$SUPERPOWER_STATE_FILE" '.skill_name // ""')
+case "$PHASE2_SKILL" in
+  brainstorming|writing-plans|executing-plans)
+    exit 0
+    ;;
+esac
+
 # Check for verified tag in last assistant message
 VERIFIED_TEXT=$(extract_verified_text "$LAST_MSG")
 if [[ -n "$VERIFIED_TEXT" ]] && [[ "$VERIFIED_TEXT" = "$STOP_CHAR" ]]; then

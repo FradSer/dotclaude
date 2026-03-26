@@ -97,36 +97,24 @@ extract_verified_text() {
 }
 
 # Send a prompt to Claude Haiku and return the text response.
-# Uses the Anthropic Messages API. Requires ANTHROPIC_API_KEY in the environment.
+# Uses Claude Code native auth via `claude --bare` (no API key env vars needed).
 # Sets SUPERPOWERS_MERGE_SESSION=1 to prevent hook recursion.
 # Usage: RESULT=$(run_haiku_merge "Synthesize a summary from: ...")
 run_haiku_merge() {
   local prompt="${1:-}"
   [[ -z "$prompt" ]] && return 0
 
+  # Guard against recursion — hooks check this var and exit immediately.
+  # --bare also skips hook loading in the sub-session.
   export SUPERPOWERS_MERGE_SESSION=1
 
-  local api_key="${ANTHROPIC_API_KEY:-}"
-  if [[ -z "$api_key" ]]; then
-    return 0
-  fi
+  # Use Claude Code native auth. --bare skips hooks/plugins to prevent recursion.
+  local result
+  result=$(claude --bare \
+    --model claude-haiku-4-5-20251001 \
+    --output-format text \
+    -p "$prompt" \
+    2>/dev/null) || return 0
 
-  local payload
-  payload=$(jq -n \
-    --arg prompt "$prompt" \
-    '{
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 256,
-      messages: [{role: "user", content: $prompt}]
-    }')
-
-  local response
-  response=$(curl -sS --max-time 10 \
-    -H "x-api-key: ${api_key}" \
-    -H "anthropic-version: 2023-06-01" \
-    -H "content-type: application/json" \
-    -d "$payload" \
-    "https://api.anthropic.com/v1/messages" 2>/dev/null) || return 0
-
-  echo "$response" | jq -r '.content[0].text // ""' 2>/dev/null
+  echo "$result"
 }
