@@ -191,15 +191,17 @@ Close the loop with structured evidence.
 
 ## Phase 5: Git Commit
 
-Commit the implementation changes to git with proper message format.
+Commit the implementation changes using git-agent (with git fallback).
+
+**Actions**:
+1. Run: `git-agent commit --intent "<feature description>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+2. On auth error, retry with `--free` flag
+3. **Fallback**: If git-agent is unavailable or fails, stage files with `git add` and use `git commit` with conventional format
 
 See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
 **Critical requirements**:
 - Commit only after Phase 4 user confirmation
-- Prefix: `feat(<scope>):` for implementation changes
-- Subject: Under 50 characters, lowercase
-- Footer: Co-Authored-By with model name
 - Commit should reflect the completed feature, not individual tasks
 - Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
 

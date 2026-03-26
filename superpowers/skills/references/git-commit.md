@@ -2,23 +2,51 @@
 
 ## Goal
 
-Commit the documentation folder to git with a proper commit message.
+Commit changes to git using git-agent (with git fallback).
 
 ## Context
 
 This guide applies to three phases of the development workflow:
 
-| Phase | Folder Type | Subject Template |
-|-------|-------------|------------------|
-| Brainstorming (Design) | `*-design/` | `docs: add design for ${topic}` |
-| Writing Plans | `*-plan/` | `docs: add implementation plan for ${topic}` |
-| Executing Plans | Implementation changes | `feat(${scope}): ${description}` |
+| Phase | Folder Type | Intent Template |
+|-------|-------------|-----------------|
+| Brainstorming (Design) | `*-design/` | `add design for ${topic}` |
+| Writing Plans | `*-plan/` | `add implementation plan for ${topic}` |
+| Executing Plans | Implementation changes | `${description}` |
 
 ## Actions
 
-### 1. Commit Folder to Git
+### 1. Commit with git-agent (Primary)
 
-**CRITICAL: You MUST commit the entire folder, not just individual files**
+**CRITICAL: For design/plan folders, stage the entire folder first, then use `--no-stage`**
+
+**Commit Pattern for Design and Plan Folders**:
+
+```bash
+git add docs/plans/${date}-${folder-type}-${topic}/
+git-agent commit --no-stage --intent "add ${type} for ${topic}" \
+  --co-author "Claude <Model> <Version> <noreply@anthropic.com>"
+```
+
+**Commit Pattern for Implementation Changes**:
+
+```bash
+git-agent commit --intent "${description}" \
+  --co-author "Claude <Model> <Version> <noreply@anthropic.com>"
+```
+
+git-agent handles staging, diff analysis, message generation, and atomic splitting automatically. For implementation changes, do NOT manually stage files -- let git-agent handle it.
+
+**On auth error (401 / missing key)**, retry with `--free` flag:
+
+```bash
+git-agent commit --intent "${description}" \
+  --co-author "Claude <Model> <Version> <noreply@anthropic.com>" --free
+```
+
+### 2. Fallback to git (when git-agent is unavailable or fails)
+
+If git-agent is not installed or all retries fail, fall back to manual git commit:
 
 **Commit Pattern for Design and Plan Folders**:
 
@@ -52,7 +80,7 @@ ${summary}
 Co-Authored-By: <Model Name> <noreply@anthropic.com>"
 ```
 
-**Commit Message Requirements**:
+**Fallback Commit Message Requirements**:
 
 - **Prefix**: `docs:` for design/plan folders, `feat(${scope}):` for implementation
 - **Subject**: Short description under 50 characters, lowercase
@@ -62,53 +90,7 @@ Co-Authored-By: <Model Name> <noreply@anthropic.com>"
   - Brief summary of the approach
 - **Footer**: `Co-Authored-By: <Model Name> <noreply@anthropic.com>` (valid: `Claude Sonnet 4.6`, `Claude Opus 4.6`, `Claude Haiku 4.5`)
 
-**Example - Design**:
-
-```bash
-git commit -m "docs: add design for user authentication
-
-Request: Implement JWT auth for API.
-
-- Explored existing auth in /admin
-- Researched JWT best practices via WebSearch
-- Created comprehensive design with BDD specs
-
-Summary: Implements stateless JWT auth using existing library with
-bearer token validation and refresh token rotation.
-
-Co-Authored-By: <Model Name> <noreply@anthropic.com>"
-```
-
-**Example - Implementation Plan**:
-
-```bash
-git commit -m "docs: add implementation plan for user authentication
-
-Implementation plan derived from design.
-
-- Decomposed BDD scenarios into 8 granular tasks
-- Defined verification steps for each task
-- Enforced Test-First (Red-Green) workflow
-
-Summary: Tasks organized in sequential batches following BDD
-principles with clear file ownership and verification commands.
-
-Co-Authored-By: <Model Name> <noreply@anthropic.com>"
-```
-
-**Example - Implementation**:
-
-```bash
-git commit -m "feat(auth): implement JWT token validation
-
-- Created TokenValidator class with HS256 algorithm
-- Added middleware for request header parsing
-- Integrated with existing user service
-
-Co-Authored-By: <Model Name> <noreply@anthropic.com>"
-```
-
-### 2. Verify Commit
+### 3. Verify Commit
 
 Run `git log -1` to confirm the commit was created:
 
@@ -119,107 +101,51 @@ git log -1
 Expected output should show:
 - The commit with correct prefix
 - Proper subject line
-- Co-Authored-By footer
+- Co-Authored-By footer(s)
 
-### 3. Inform User
+### 4. Inform User
 
 Tell the user:
 - Folder and main document location
 - Number of files or tasks created
-- Git commit completed
+- Git commit completed (note whether git-agent or fallback was used)
 - Clear next steps for the workflow phase
-
-**Example notification (Design)**:
-
-```
-Design created and committed!
-
-Location: docs/plans/${date}-${topic}-design/
-- _index.md: Main design document
-- bdd-specs.md: BDD scenarios
-- architecture.md: Architecture details
-- best-practices.md: Best practices
-
-Git commit completed: docs: add design for ${topic}
-
-Ready to proceed with implementation using superpowers:writing-plans.
-```
-
-**Example notification (Plan)**:
-
-```
-Plan created and committed!
-
-Location: docs/plans/${date}-${topic}-plan/
-- _index.md: Plan overview with task references
-- task-001-setup-project-structure.md: Task 1
-- task-002-create-base-auth-handler.md: Task 2
-- ...
-
-Total tasks: ${task_count}
-
-Git commit completed: docs: add implementation plan for ${topic}
-
-Ready to proceed with execution using superpowers:executing-plans.
-```
-
-**Example notification (Implementation)**:
-
-```
-All tasks completed!
-
-Implementation changes committed: feat(${scope}): ${description}
-
-- ${task_count} tasks executed successfully
-- All BDD scenarios passing
-- Ready for review and testing
-```
-
-## Output
-
-- Folder committed to git with proper message
-- Commit verified with `git log -1`
-- User informed and ready for next workflow phase
 
 ## Best Practices
 
 **Commit Quality**:
-- Always commit the entire folder using `git add docs/plans/${date}-${type}-${topic}/`
-- Use lowercase prefix: `docs:` not `Docs:` or `DOCS:`
-- Keep subject line under 50 characters
+- Always stage entire folders for design/plan docs before using `--no-stage`
+- Use `--intent` to keep git-agent focused on the right message
+- Keep fallback subject lines under 50 characters
 - Include Co-Authored-By footer with model name
 
-**User Communication**:
-- Provide full path to folder
-- List key documents created
-- Confirm git commit status
-- Clear next steps for the workflow
+**git-agent Advantages**:
+- Automatic conventional commit message generation
+- Atomic commit splitting (up to 5 groups)
+- Built-in hook validation
+- Auto-scope inference from git history
 
 ## Common Pitfalls to Avoid
 
-**Don't commit individual files**:
+**Don't stage manually for implementation changes**:
 ```bash
-# Wrong: Commits only _index.md
-git add docs/plans/${date}-design/_index.md
-git commit -m "docs: add design"
+# Wrong: Manual staging when git-agent handles it
+git add src/auth.ts
+git-agent commit --intent "add auth module"
 
-# Correct: Commits entire folder
-git add docs/plans/${date}-design/
-git commit -m "docs: add design"
+# Correct: Let git-agent handle staging
+git-agent commit --intent "add auth module"
+```
+
+**Do stage manually for design/plan folders** (git-agent needs `--no-stage`):
+```bash
+# Correct: Stage folder, then commit with --no-stage
+git add docs/plans/2026-03-26-auth-design/
+git-agent commit --no-stage --intent "add design for auth"
 ```
 
 **Don't skip verification**:
 ```bash
 # Always verify commit was created
 git log -1
-```
-
-**Don't use incorrect prefix**:
-```bash
-# Wrong
-git commit -m "Docs: add design"
-git commit -m "feature: add design"
-
-# Correct
-git commit -m "docs: add design"
 ```

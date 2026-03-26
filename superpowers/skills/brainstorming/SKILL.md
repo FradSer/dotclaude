@@ -223,13 +223,13 @@ See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
 ## Phase 5: Git Commit
 
-Commit the design folder to git with proper message format.
+Commit the design folder using git-agent (with git fallback).
 
-**Critical requirements**:
-- Commit the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-design/`
-- Prefix: `docs:` (lowercase)
-- Subject: Under 50 characters, lowercase
-- Footer: Co-Authored-By with model name
+**Actions**:
+1. Stage the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-design/`
+2. Run: `git-agent commit --no-stage --intent "add design for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+3. On auth error, retry with `--free` flag
+4. **Fallback**: If git-agent is unavailable or fails, use `git commit -m "docs: add design for <topic> ..."` with conventional format
 
 See `../../skills/references/git-commit.md` for detailed patterns.
 
