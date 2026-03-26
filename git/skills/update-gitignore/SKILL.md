@@ -1,9 +1,9 @@
 ---
 name: update-gitignore
-description: Creates or updates a .gitignore file using the Toptal gitignore API with OS and language detection. This skill should be used when the user asks to "update gitignore", "create gitignore", "add ignore rules", or needs to initialize ignore rules for a new project, add new technologies, or update OS-specific ignore patterns.
+description: Creates or updates a .gitignore file using git-agent AI generation. This skill should be used when the user asks to "update gitignore", "create gitignore", "add ignore rules", or needs to initialize ignore rules for a new project, add new technologies, or update OS-specific ignore patterns.
 user-invocable: true
 argument-hint: [additional-technologies]
-allowed-tools: ["Bash(curl:*)", "Bash(uname:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Task"]
 model: haiku
 context: fork
 ---
@@ -16,20 +16,21 @@ context: fork
 ```
 Execute the complete update-gitignore workflow (3 phases).
 
-## Phase 1: Technology Detection
-**Goal**: Identify operating systems and technologies to include in .gitignore
+## Phase 1: Preserve Custom Rules
+**Goal**: Back up any existing custom .gitignore rules before regeneration
 
 **Actions**:
-1. Detect operating systems and technologies from context
-2. Combine detected platforms with $ARGUMENTS into the generator request (e.g. `<os>,<language>,<tool>`)
+1. If `.gitignore` exists, read it and identify custom sections/rules (lines not from a generator)
+2. Save custom rules for re-addition after generation
 
-## Phase 2: Generate or Update .gitignore
-**Goal**: Create or update .gitignore file using Toptal API
+## Phase 2: Generate .gitignore with git-agent
+**Goal**: Create or update .gitignore file using git-agent
 
 **Actions**:
-1. Generate or update `.gitignore` using the Toptal API
-2. Preserve existing custom sections when updating `.gitignore`
-3. Retain all custom rules from existing file
+1. Run `git-agent init --gitignore --force` to generate `.gitignore` via AI
+2. On auth error (401 / missing key), retry with `--free` flag:
+   `git-agent init --gitignore --force --free`
+3. Re-add any custom rules preserved from Phase 1
 
 ## Phase 3: Confirmation
 **Goal**: Present changes for user review

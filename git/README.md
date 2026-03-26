@@ -12,9 +12,11 @@ claude plugin install git@frad-dotclaude
 
 ## Overview
 
-This plugin provides automated Git commands that ensure:
-- **Atomic Commits**: Logical units of work are committed separately.
-- **Conventional Format**: Messages follow the conventional commits specification.
+This plugin uses **git-agent** as the primary commit tool, with automatic fallback to manual git commit when git-agent is unavailable.
+
+- **Atomic Commits**: git-agent splits changes into up to 5 atomic commit groups automatically.
+- **Conventional Format**: AI-generated messages follow conventional commits specification.
+- **Auto-Scope**: Scopes are inferred from git history when not configured.
 - **Safety**: Quality gates and protections against committing secrets.
 - **Project Awareness**: Adapts to project-specific configurations.
 
@@ -23,14 +25,13 @@ This plugin provides automated Git commands that ensure:
 This plugin provides 4 user-invocable skills:
 
 ### `/commit`
-Creates atomic conventional commits following Commitizen style.
-- Validates against conventional commits specification v1.0.0
-- Enforces lowercase descriptions and imperative mood
-- Requires bullet-point body format
-- Detailed format rules in `skills/commit/references/format-rules.md`
+Creates atomic conventional commits using git-agent.
+- AI-powered commit message generation via git-agent
+- Automatic staging and atomic splitting
+- Falls back to manual git commit if git-agent is unavailable
 
 ### `/commit-and-push`
-Creates atomic commits and pushes to remote repository.
+Creates atomic commits using git-agent and pushes to remote repository.
 - All `/commit` features
 - Automatic upstream branch configuration
 
@@ -41,10 +42,9 @@ Interactive configuration setup for project-specific Git conventions.
 - Validates user identity (name/email)
 
 ### `/update-gitignore`
-Creates or updates `.gitignore` using Toptal's API.
-- Auto-detects technologies from project structure
+Creates or updates `.gitignore` using git-agent AI generation.
+- AI-powered .gitignore generation via `git-agent init --gitignore`
 - Preserves custom rules when updating
-- Supports manual technology specification
 
 ## Configuration
 
@@ -69,25 +69,10 @@ This plugin adheres to strict safety protocols:
 - NEVER commits detected secrets (`.env`, credentials).
 - ALWAYS creates new commits rather than amending pushed ones.
 
-## Hooks
-
-This plugin uses **PreToolUse hooks** to validate commit messages BEFORE execution:
-
-- **Automatic Validation**: Every `git commit` command is validated before execution
-- **Format Checking**: Ensures conventional commit format compliance
-- **Early Prevention**: Blocks invalid commits before they are created
-- **No PostToolUse**: Validation happens pre-execution only (not after commit is created)
-
-The PreToolUse hook validates:
-- Commit message format: `<type>[scope]: <description>`
-- Required bullet points in commit body
-- Lowercase descriptions
-- Title length (<50 characters)
-- Imperative mood usage
-
 ## Troubleshooting
 
-- **Pre-commit hooks failed**: Fix the issues and run `/commit` again.
+- **git-agent auth error**: Retry with `--free` flag, or configure `~/.config/git-agent/config.yml`.
+- **git-agent not installed**: The plugin falls back to manual `git commit` with conventional format.
 - **Nothing to commit**: Verify changes are not ignored.
 - **Push failed**: Check remote permissions and branch protection rules.
 

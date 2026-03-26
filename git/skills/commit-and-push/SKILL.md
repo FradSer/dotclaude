@@ -1,8 +1,8 @@
 ---
 name: commit-and-push
-description: Creates an atomic conventional git commit and pushes it to the remote repository. This skill should be used when the user asks to "commit and push", "push my changes", or wants to commit staged changes following conventional commits and immediately push to the remote branch.
+description: Creates atomic conventional git commits using git-agent and pushes to the remote repository. This skill should be used when the user asks to "commit and push", "push my changes", or wants to commit staged changes following conventional commits and immediately push to the remote branch.
 user-invocable: true
-allowed-tools: ["Bash(git:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill", "Task"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill", "Task"]
 model: haiku
 ---
 
@@ -15,10 +15,10 @@ model: haiku
 Execute the commit-and-push workflow (2 phases).
 
 ## Phase 1: Create Commits
-**Goal**: Create all commits following conventional commits format
+**Goal**: Create all commits using git-agent
 **Actions**:
 1. Load `git:commit` skill using the Skill tool
-2. Execute commit workflow to create all commits following conventional commits format
+2. Execute commit workflow (git-agent handles staging, message generation, and atomic splitting)
 
 ## Phase 2: Push to Remote
 **Goal**: Push commits to the remote repository
