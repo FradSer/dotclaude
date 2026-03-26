@@ -30,6 +30,7 @@ This skill uses Superpower Loop to enable self-referential iteration throughout 
 **CRITICAL**: Throughout the process, you MUST output `<promise>EXECUTION_COMPLETE</promise>` only when:
 - Phase 1-5 (Plan Review, Task Creation, Batch Execution, Verification, Git Commit) are all complete
 - All tasks executed and verified
+- All tasks marked `completed` (verified via TaskList — zero tasks with `in_progress` or `pending` status)
 - User approval received in Phase 4
 - Git commit completed
 
@@ -207,13 +208,13 @@ See `../../skills/references/git-commit.md` for detailed patterns, commit messag
 
 ## Phase 6: Completion
 
-Output the promise as the absolute last line.
+Verify all tasks are complete, then output the promise as the absolute last line.
 
-Output in this exact order:
-1. Summary message: "Plan execution complete. All tasks verified and committed."
-2. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
+1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
+2. Summary message: "Plan execution complete. All [N] tasks verified and committed."
+3. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
 
-**PROHIBITED**: Do NOT output any text after the promise tag.
+**PROHIBITED**: Do NOT output the promise tag if TaskList shows any non-completed tasks. Do NOT output any text after the promise tag.
 
 ## Exit Criteria
 
