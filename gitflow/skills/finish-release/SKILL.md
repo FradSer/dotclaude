@@ -1,6 +1,6 @@
 ---
 name: finish-release
-allowed-tools: ["Bash(git:*)", "Bash(gh:*)", "Read", "Write"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(gh:*)", "Read", "Write"]
 description: Finalizes a release and merges it into main and develop with a tag using git-flow. This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release.
 model: haiku
 argument-hint: [version]
@@ -37,7 +37,10 @@ Verify working tree is clean and current branch matches `release/*` per `${CLAUD
 1. Get previous tag: `git tag --sort=-v:refname | head -1`
 2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
 3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-4. Commit: `chore: update changelog for v$VERSION` with `Co-Authored-By` footer
+4. Stage CHANGELOG.md: `git add CHANGELOG.md`
+5. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for v$VERSION" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+6. On auth error, retry with `--free` flag
+7. **Fallback**: If git-agent fails, use `git commit -m "chore: update changelog for v$VERSION ..."` with conventional format and `Co-Authored-By` footer
 
 ## Phase 4: Finish Release
 

@@ -1,6 +1,6 @@
 ---
 name: finish-hotfix
-allowed-tools: ["Bash(git:*)", "Read", "Write"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write"]
 description: Finalizes a hotfix and merges it into main and develop using git-flow. This skill should be used when the user asks to "finish a hotfix", "merge hotfix branch", "complete hotfix", "git flow hotfix finish", or wants to finalize a hotfix.
 model: haiku
 argument-hint: [version]
@@ -37,7 +37,10 @@ Verify working tree is clean and current branch matches `hotfix/*` per `${CLAUDE
 1. Get previous tag: `git tag --sort=-v:refname | head -1`
 2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
 3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-4. Commit: `chore: update changelog for v$VERSION` with `Co-Authored-By` footer
+4. Stage CHANGELOG.md: `git add CHANGELOG.md`
+5. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for v$VERSION" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+6. On auth error, retry with `--free` flag
+7. **Fallback**: If git-agent fails, use `git commit -m "chore: update changelog for v$VERSION ..."` with conventional format and `Co-Authored-By` footer
 
 ## Phase 4: Finish Hotfix
 

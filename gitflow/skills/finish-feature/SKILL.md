@@ -1,6 +1,6 @@
 ---
 name: finish-feature
-allowed-tools: ["Bash(git:*)", "Read", "Write"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write"]
 description: Finalizes and merges a feature branch into develop using git-flow. This skill should be used when the user asks to "finish a feature", "merge feature branch", "complete feature", "git flow feature finish", or wants to finalize a feature branch.
 model: haiku
 argument-hint: [feature-name]
@@ -34,7 +34,10 @@ Verify working tree is clean and current branch matches `feature/*` per `${CLAUD
 
 **Actions**:
 1. Ensure changes are in `[Unreleased]` section per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-2. Commit CHANGELOG updates with `Co-Authored-By` footer
+2. Stage CHANGELOG.md: `git add CHANGELOG.md`
+3. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for feature $FEATURE_NAME" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+4. On auth error, retry with `--free` flag
+5. **Fallback**: If git-agent fails, use `git commit -m "chore: update changelog ..."` with conventional format and `Co-Authored-By` footer
 
 ## Phase 4: Finish Feature
 
