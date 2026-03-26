@@ -314,7 +314,7 @@ main() {
     log_info "建议执行以下命令提交更改:"
     echo ""
     echo "    git add office/skills/agent-browser/"
-    echo "    git commit -m \"docs(office): sync agent-browser skill from upstream\""
+    echo "    git-agent commit --no-stage --intent \"sync agent-browser skill from upstream\" --co-author \"Claude Sonnet 4.6 <noreply@anthropic.com>\""
     echo ""
 }
 
