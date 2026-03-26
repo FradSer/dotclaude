@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Agent", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Executing Plans
@@ -12,14 +12,18 @@ Execute written implementation plans efficiently using Superpower Loop for conti
 
 ## CRITICAL: First Action - Start Superpower Loop NOW
 
-**THIS MUST BE YOUR FIRST ACTION. Do NOT resolve the plan path, do NOT read files, do NOT do anything else until you have started the Superpower Loop.**
+**Resolve the plan path and start the loop immediately — do NOT read plan files, explore the codebase, or do anything else first.**
 
-1. Resolve the plan path from `$ARGUMENTS` (if provided) or by searching `docs/plans/`
+1. Resolve the plan path:
+   - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
+   - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/`
+   - If found without explicit argument, confirm with user: "Execute this plan: [path]?"
+   - If not found or user declines, ask the user for the plan folder path
 2. Immediately run:
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3 (Batch Execution) → Phase 4 (Verification) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
 ```
-3. Only after the loop is running, proceed to verify the plan folder and continue with execution
+3. Only after the loop is running, proceed with Initialization below
 
 **The loop enables self-referential iteration throughout the execution process.**
 
@@ -40,16 +44,10 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
-(The Superpower Loop was already started in the critical first action above - do NOT start it again)
+(The Superpower Loop and plan path were resolved in the first action above — do NOT start the loop again)
 
-1. **Resolve Plan Path** (must complete to build the prompt for the loop above):
-   - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it as the plan source.
-   - If no argument is provided:
-     - Search `docs/plans/` for the most recent `*-plan/` folder matching the pattern `YYYY-MM-DD-*-plan/`
-     - If found, confirm with user: "Execute this plan: [path]?"
-     - If not found or user declines, ask the user for the plan folder path.
-2. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
-3. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
+1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
+2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
@@ -186,7 +184,7 @@ Close the loop with structured evidence.
    ```
    Any task without a PASS evidence block is NOT verified. Do not proceed to confirmation until all tasks have PASS status.
 
-2. **Confirm**: Present the evidence summary to the user and ask: "All tasks in this batch verified. Proceed to the next batch?" Get explicit confirmation before continuing.
+2. **Confirm**: Use AskUserQuestion to present the evidence summary and ask: "All tasks in this batch verified. Proceed to the next batch?" AskUserQuestion pauses within the turn, ensuring the user can respond before the loop re-injects. Get explicit confirmation before continuing.
 
 3. **Loop**: Repeat Phase 3-4 until all batches complete.
 

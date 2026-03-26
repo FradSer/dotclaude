@@ -3,7 +3,7 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Writing Plans
@@ -12,14 +12,18 @@ Create executable implementation plans that reduce ambiguity for whoever execute
 
 ## CRITICAL: First Action - Start Superpower Loop NOW
 
-**THIS MUST BE YOUR FIRST ACTION. Do NOT resolve the design path, do NOT read files, do NOT do anything else until you have started the Superpower Loop.**
+**Resolve the design path and start the loop immediately — do NOT read design files, explore the codebase, or do anything else first.**
 
-1. Resolve the design path from `$ARGUMENTS` (if provided) or by searching `docs/plans/`
+1. Resolve the design path:
+   - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
+   - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/`
+   - If found without explicit argument, confirm with user: "Use this design: [path]?"
+   - If not found or user declines, ask the user for the design folder path
 2. Immediately run:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "PLAN_COMPLETE" --max-iterations 50
 ```
-3. Only after the loop is running, proceed to verify the design folder and continue with planning
+3. Only after the loop is running, proceed with Initialization below
 
 **The loop enables self-referential iteration throughout the planning process.**
 
@@ -39,16 +43,10 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 ## Initialization
 
-(The Superpower Loop was already started in the critical first action above - do NOT start it again)
+(The Superpower Loop and design path were resolved in the first action above — do NOT start the loop again)
 
-1. **Resolve Design Path** (must complete to build the prompt for the loop above):
-   - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it as the design source.
-   - If no argument is provided:
-     - Search `docs/plans/` for the most recent `*-design/` folder matching the pattern `YYYY-MM-DD-*-design/`
-     - If found, confirm with user: "Use this design: [path]?"
-     - If not found or user declines, ask the user for the design folder path.
-2. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
-3. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
+1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
+2. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
 
 The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
@@ -104,14 +102,14 @@ Break into small tasks mapped to specific BDD scenarios.
    - `<feature>`: Feature identifier (e.g., auth-handler, user-profile)
    - `<type>`: Type (test, impl, config, refactor)
    - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `002-feature-test` and `002-feature-impl`
-7. **Describe What, Not How**: **PROHIBITED**: Do not generate implementation bodies. Describe what to implement (e.g., "Create a function that validates user credentials"). **ALLOWED**: Include interface signatures to define contracts (e.g., `def validate_credentials(username: str, password: str) -> bool: ...`), but never the body logic.
+6. **Describe What, Not How**: **PROHIBITED**: Do not generate implementation bodies. Describe what to implement (e.g., "Create a function that validates user credentials"). **ALLOWED**: Include interface signatures to define contracts (e.g., `def validate_credentials(username: str, password: str) -> bool: ...`), but never the body logic.
 
 ## Phase 3: Validation & Documentation
 
 Verify completeness, confirm with user, and save.
 
 1. **Verify**: Check for valid commit boundaries and no vague tasks.
-2. **Confirm**: Get user approval on the plan.
+2. **Confirm**: Use AskUserQuestion to get user approval on the plan. AskUserQuestion pauses within the turn, ensuring the user can respond before the loop re-injects.
 3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
    - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with **inline YAML metadata** (see template in `./references/plan-structure-template.md`)
    - **CRITICAL**: `_index.md` MUST include "Task File References" section with links to full task files for detailed BDD scenarios
@@ -177,7 +175,7 @@ Before committing, verify plan quality. Scale reflection based on plan size.
 3. Update plan files to fix issues
 4. **MANDATORY**: Add dependency graph from Sub-agent 2 to `_index.md` in "Dependency Chain" section
 5. Re-verify updated sections
-6. **Confirm with user**: Present reflection summary and get approval before committing
+6. **Confirm with user**: Use AskUserQuestion to present the reflection summary and get approval before committing
 
 **Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, and user approval received.
 

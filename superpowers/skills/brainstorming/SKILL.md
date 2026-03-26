@@ -2,7 +2,7 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -215,7 +215,7 @@ Before committing, verify design quality. Scale reflection based on **complexity
 2. Prioritize issues by impact
 3. Update design documents to fix issues
 4. Re-verify updated sections
-5. **Confirm with user**: Present reflection summary and get approval before committing
+5. **Confirm with user**: Use AskUserQuestion to present the reflection summary and get approval before committing
 
 **Output**: Updated design documents with issues resolved and user approval received.
 
