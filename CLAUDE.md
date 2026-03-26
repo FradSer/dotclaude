@@ -92,7 +92,7 @@ Validation script enforces these limits with exit codes:
 
 **Format:** `type(scope): lowercase message under 50 chars`
 
-**Pre-commit validation:** The git plugin includes a PreToolUse hook (`scripts/validate-commit-pretool.sh`) that validates commit messages before execution. This ensures all commits follow conventional format with proper scope and type validation.
+**Commit tool:** git-agent CLI generates conventional commit messages via AI. When git-agent is unavailable, fall back to manual `git commit` with conventional format.
 
 ## Plugin Development Patterns
 
