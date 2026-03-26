@@ -131,6 +131,7 @@ if [[ "$IS_LOOP_ACTIVE" == "true" ]]; then
           SKILL_NAME=$(state_read "$SUPERPOWER_STATE_FILE" '.skill_name // ""')
           case "$SKILL_NAME" in
             brainstorming|writing-plans|executing-plans)
+              state_update "$SUPERPOWER_STATE_FILE" 'del(.need_vet)'
               exit 0
               ;;
           esac

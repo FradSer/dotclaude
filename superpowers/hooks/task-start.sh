@@ -124,11 +124,13 @@ if [[ -f "$STATE_FILE" ]]; then
         '.pending_prompt = $prompt | .skill_name = $skill | .updated_at = $ts | if $vet then .need_vet = true else del(.need_vet) end' \
         "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
     else
+      # Preserve skill_name when loop is active — non-slash-command prompts
+      # during a loop should not clear the skill context
       jq \
         --arg prompt "$USER_PROMPT" \
         --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
-        'del(.skill_name) | .pending_prompt = $prompt | .updated_at = $ts | if $vet then .need_vet = true else del(.need_vet) end' \
+        '(if .active == true then . else del(.skill_name) end) | .pending_prompt = $prompt | .updated_at = $ts | if $vet then .need_vet = true else del(.need_vet) end' \
         "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
     fi
   fi
