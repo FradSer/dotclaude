@@ -116,9 +116,11 @@ Full CLI reference: `${CLAUDE_PLUGIN_ROOT}/references/cli.md`
 
 ### Commit
 
-1. Derive a one-sentence intent from the conversation
-2. Use the calling model from the prompt for `--co-author` attribution
-3. `git-agent commit --intent "<intent>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+Do NOT run `git status`, `git diff`, `git log`, or any other git commands before `git-agent commit`. git-agent handles everything internally.
+
+1. Derive a one-sentence intent from the conversation context only
+2. Extract the calling model name from the prompt (e.g., "Calling model: Claude Opus 4.6")
+3. `git-agent commit --intent "<intent>" --co-author "<calling model> <noreply@anthropic.com>"`
 4. Fallback (binary unavailable): manual `git commit` with Conventional Commits format via HEREDOC
 
 ### Push
