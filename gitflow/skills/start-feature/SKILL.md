@@ -8,14 +8,21 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-## Pre-operation Checks
+## Workflow Execution
 
+**Launch a general-purpose agent** that executes all phases in a single task.
+
+**Prompt template**:
+```
+Execute the start-feature workflow.
+
+## Pre-operation Checks
 Verify working tree is clean per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
 
 ## Phase 1: Start Feature
-
 **Goal**: Create feature branch using git-flow-next CLI.
-
-**Actions**:
 1. Run `git flow feature start $ARGUMENTS`
 2. Push the branch to origin: `git push -u origin feature/$ARGUMENTS`
+```
+
+**Execute**: Launch a general-purpose agent using the prompt template above
