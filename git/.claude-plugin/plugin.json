@@ -20,7 +20,7 @@
     "./skills/config-git/",
     "./skills/update-gitignore/"
   ],
-  "skills": [
-    "./skills/use-git-agent/"
+  "agents": [
+    "./agents/git.md"
   ]
 }
