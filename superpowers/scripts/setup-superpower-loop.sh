@@ -187,7 +187,7 @@ if [[ -f "$STATE_FILE" ]]; then
     --argjson completion_promise "$PROMISE_JSON" \
     --arg started_at "$NOW" \
     --arg updated_at "$NOW" \
-    '.session_id = $session_id | .active = true | .iteration = $iteration | .max_iterations = $max_iterations | .completion_promise = $completion_promise | .prompt = $prompt | .started_at = $started_at | .updated_at = $updated_at | del(.skip_turn)'
+    '.session_id = $session_id | .active = true | .iteration = $iteration | .max_iterations = $max_iterations | .completion_promise = $completion_promise | .prompt = $prompt | .started_at = $started_at | .updated_at = $updated_at'
 else
   jq -n \
     --arg session_id "$SESSION_ID" \

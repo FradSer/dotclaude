@@ -7,7 +7,6 @@
 #   - Promise found OR max_iterations → clear loop fields, fall through to Phase 2
 #
 # Phase 2 (Vet): Require work verification before exit.
-#   - skip_turn flag → clear flag, allow exit
 #   - <verified>Fully Vetted.</verified> found → synthesize summary, allow exit
 #   - Not found → block exit with verification prompt
 #
@@ -328,13 +327,12 @@ build_system_message() {
     msg="${msg}${NL}${NL}## Modified Files${NL}\`\`\`${NL}${files}${NL}\`\`\`"
   fi
 
-  msg="${msg}${NL}${NL}## Verification Steps${NL}First, classify the task: was it a discussion/question or an implementation request?"
-  msg="${msg}${NL}${NL}**If discussion/question** (analysis, problem investigation, exploring options):${NL}- Verify your analysis is grounded in evidence (code reads, logs, docs)${NL}- Confirm you presented findings without prematurely offering to implement a fix${NL}- Skip code execution verification — this is not an implementation task"
-  msg="${msg}${NL}${NL}**If implementation request** (build, fix, change, create):${NL}- Run any code or scripts and check the output"
+  msg="${msg}${NL}${NL}## Verification Steps"
+  msg="${msg}${NL}- Run any code or scripts and check the output"
   msg="${msg}${NL}- For web apps, open the page, click through flows, confirm rendering and interactions"
   msg="${msg}${NL}- Test with real or representative input and inspect results"
   msg="${msg}${NL}- Simulate edge cases if possible"
-  msg="${msg}${NL}${NL}Once verified (or confirmed no verification needed), append \`${STOP_TAG}\` at the end of your response, then report back."
+  msg="${msg}${NL}${NL}Once verified, append \`${STOP_TAG}\` at the end of your response, then report back."
   msg="${msg}${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
 
   echo "$msg"

@@ -19,7 +19,7 @@
     "./skills/brainstorming/",
     "./skills/writing-plans/",
     "./skills/executing-plans/",
-    "./skills/vet/"
+    "./skills/need-vet/"
   ],
   "skills": [
     "./skills/agent-team-driven-development/",
