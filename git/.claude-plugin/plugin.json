@@ -19,8 +19,5 @@
     "./skills/commit-and-push/",
     "./skills/config-git/",
     "./skills/update-gitignore/"
-  ],
-  "agents": [
-    "./agents/git.md"
   ]
 }

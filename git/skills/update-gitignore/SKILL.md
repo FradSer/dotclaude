@@ -4,6 +4,13 @@ description: Creates or updates a .gitignore file using git-agent AI generation.
 user-invocable: true
 argument-hint: [additional-technologies]
 model: haiku
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write", "Edit"]
 ---
 
-Spawn the `git:git` agent with subagent_type `git:git` and prompt: "Execute the **Update .gitignore** workflow."
+1. Preserve custom rules from existing .gitignore
+2. `git-agent init --gitignore --force`
+3. On auth error (401), retry with `--free`
+4. Re-add preserved custom rules
+5. Show diff
+
+CLI reference: `${CLAUDE_PLUGIN_ROOT}/references/cli.md`
