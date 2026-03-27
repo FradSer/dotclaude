@@ -1,5 +1,22 @@
 # git-agent CLI Reference
 
+## Installation
+
+**Homebrew (macOS/Linux):**
+```bash
+brew install GitAgentHQ/brew/git-agent
+```
+
+**Go install:**
+```bash
+go install github.com/gitagenthq/git-agent@latest
+```
+
+**Pre-built binaries:**
+Download from [releases](https://github.com/GitAgentHQ/git-agent-cli/releases) (linux/darwin amd64/arm64, windows amd64).
+
+---
+
 ## Root
 
 ```
@@ -180,7 +197,7 @@ git-agent config set <key> <value> [flags]
 
 Set a configuration value in the specified scope. Keys accept both snake_case and kebab-case forms.
 
-### Key aliases (kebab-case -> snake_case)
+### Key aliases (kebab-case → snake_case)
 
 | Kebab-case | Canonical |
 |------------|-----------|
