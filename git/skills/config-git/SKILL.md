@@ -2,7 +2,7 @@
 name: config-git
 description: Interactively configures git setup for user identity and project conventions. This skill should be used when the user asks to "configure git", "setup git", "set commit scopes", or needs to set up Git for a new project, configure commit scopes and types, or create project-specific Git settings.
 user-invocable: true
-allowed-tools: ["Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Glob", "AskUserQuestion", "Skill", "Task"]
 model: sonnet
 context: fork
 ---
@@ -15,6 +15,8 @@ context: fork
 ```
 Execute the complete git configuration workflow (5 phases).
 
+Load `git:use-git-agent` skill using the Skill tool for git-agent CLI reference.
+
 ## Phase 1: Verify User Identity
 **Goal**: Ensure git user.name and user.email are configured
 
@@ -25,26 +27,23 @@ Execute the complete git configuration workflow (5 phases).
 4. Set the values globally (or locally if user specifies) using `git config`
 
 ## Phase 2: Analyze Project Context
-**Goal**: Understand project structure and existing commit patterns
+**Goal**: Detect project languages and frameworks for gitignore configuration
 
 **Actions**:
 1. Run `ls -F` or `find . -maxdepth 2 -not -path '*/.*'` to detect project languages/frameworks
-2. Run `git log --format="%s" -n 50` (if git repo exists) to analyze existing commit message patterns and scopes
 
-## Phase 3: Determine Scopes
-**Goal**: Generate appropriate commit scopes based on project structure
-
-**CRITICAL - Scope Naming Rules**:
-- ALL scopes MUST be short (single words or abbreviations only)
-- Single words: use as-is (e.g., `<word1>`, `<word2>`, `<word3>`)
-- Multi-word names: MUST convert to first letters (e.g., `<multi-word-name>` → `<mwn>`, `<another-example>` → `<ae>`)
-- MUST NOT use full multi-word names like `<multi-word-name>` or `<another-example>` as scopes
-- **MUST NOT use commit types as scopes**: types are defined in the `types:` list and must not be duplicated in `scopes:`
+## Phase 3: Generate Scopes with git-agent
+**Goal**: Auto-generate commit scopes using git-agent
 
 **Actions**:
-1. Propose a list of commit scopes based on analysis
-2. Ensure all scopes follow the naming rules above
-3. Request user input ONLY if genuine ambiguity exists
+1. Run `git-agent init --scope --force` to generate scopes from git history via AI
+2. On auth/provider error, follow the fallback chain from the use-git-agent skill
+3. Read generated scopes from `.git-agent/config.yml`
+4. Validate all scopes follow naming rules:
+   - Single words: use as-is
+   - Multi-word names: MUST convert to first letters (e.g., `multi-word-name` -> `mwn`)
+   - MUST NOT use commit types as scopes
+5. If genuine ambiguity exists, use AskUserQuestion
 
 ## Phase 4: Generate Configuration File
 **Goal**: Create `.claude/git.local.md` with complete structure from example template
@@ -59,8 +58,8 @@ Execute the complete git configuration workflow (5 phases).
 
 **Actions**:
 1. Read the example configuration file: `${CLAUDE_PLUGIN_ROOT}/examples/git.local.md`
-2. Replace the `scopes` list with determined short scopes
-3. Update `gitignore` technologies based on detected project languages/frameworks
+2. Replace the `scopes` list with validated scopes from Phase 3
+3. Update `gitignore` technologies based on detected project languages/frameworks from Phase 2
 4. Keep `types` as standard conventional commit types (unless user requests changes)
 5. Keep `branch_prefixes` as shown in example (unless user requests changes)
 6. Create or overwrite `.claude/git.local.md` in the project root

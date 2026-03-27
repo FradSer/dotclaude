@@ -14,6 +14,8 @@ model: haiku
 ```
 Execute the commit-and-push workflow (2 phases).
 
+Load `git:use-git-agent` skill using the Skill tool for git-agent CLI reference.
+
 ## Phase 1: Create Commits
 **Goal**: Create all commits using git-agent
 **Actions**:

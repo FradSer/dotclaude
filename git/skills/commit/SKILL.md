@@ -14,9 +14,11 @@ model: haiku
 ```
 Execute the complete commit workflow (3 phases) for any staged/unstaged changes.
 
+Load `git:use-git-agent` skill using the Skill tool for git-agent CLI reference.
+
 ## Phase 1: Configuration Verification
 1. Read `.claude/git.local.md` to load project configuration
-2. If file not found, **load `git:config-git` skill** using the Skill tool to create it
+2. If file not found, load `git:config-git` skill using the Skill tool to create it
 3. Extract valid scopes from YAML frontmatter
 
 ## Phase 2: AI Code Quality Check (model: sonnet)
@@ -32,13 +34,8 @@ Execute the complete commit workflow (3 phases) for any staged/unstaged changes.
 2. Determine the correct Claude model name for co-author attribution
    - Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
 3. Run: `git-agent commit --intent "<intent>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-4. On auth error (401 / missing key), retry with `--free`:
-   `git-agent commit --intent "<intent>" --co-author "..." --free`
-5. **Fallback** (git-agent unavailable): manual `git commit` with Conventional Commits format
-   - Title: `<type>(<scope>): <description>` (lowercase, <=50 chars, no period)
-   - Body: bullet points (`- ` prefix, imperative, <=72 chars) + explanation paragraph
-   - Footer: `Co-Authored-By: <Model> <noreply@anthropic.com>`
-   - Use HEREDOC: `git commit -m "$(cat <<'EOF' ... EOF)"`
+4. On auth/provider error, follow the fallback chain from the use-git-agent skill (retry with `--free`, then guide provider setup)
+5. **Git fallback** (git-agent binary unavailable): manual `git commit` with Conventional Commits format and `Co-Authored-By` footer via HEREDOC
 
 If no changes, report "No changes to commit" and exit.
 ```

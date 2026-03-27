@@ -3,7 +3,7 @@ name: update-gitignore
 description: Creates or updates a .gitignore file using git-agent AI generation. This skill should be used when the user asks to "update gitignore", "create gitignore", "add ignore rules", or needs to initialize ignore rules for a new project, add new technologies, or update OS-specific ignore patterns.
 user-invocable: true
 argument-hint: [additional-technologies]
-allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write", "Edit", "Glob", "AskUserQuestion", "Skill", "Task"]
 model: haiku
 context: fork
 ---
@@ -15,6 +15,8 @@ context: fork
 **Prompt template**:
 ```
 Execute the complete update-gitignore workflow (3 phases).
+
+Load `git:use-git-agent` skill using the Skill tool for git-agent CLI reference.
 
 ## Phase 1: Preserve Custom Rules
 **Goal**: Back up any existing custom .gitignore rules before regeneration
@@ -28,8 +30,7 @@ Execute the complete update-gitignore workflow (3 phases).
 
 **Actions**:
 1. Run `git-agent init --gitignore --force` to generate `.gitignore` via AI
-2. On auth error (401 / missing key), retry with `--free` flag:
-   `git-agent init --gitignore --force --free`
+2. On auth/provider error, follow the fallback chain from the use-git-agent skill
 3. Re-add any custom rules preserved from Phase 1
 
 ## Phase 3: Confirmation
