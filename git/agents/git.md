@@ -116,48 +116,34 @@ Full CLI reference: `${CLAUDE_PLUGIN_ROOT}/references/cli.md`
 
 ### Commit
 
-1. Read `.claude/git.local.md` for project scopes and types
-   - If not found, run the Configure workflow first
-2. Review `git diff --cached` and `git diff` for AI-generated slop and fix:
-   - Extra comments inconsistent with file style
-   - Unnecessary defensive checks or try/catch blocks
-   - Casts to `any` to bypass type issues
-   - Style inconsistent with surrounding code
-3. Derive a one-sentence intent from the changes
-4. Determine Claude model for co-author: Claude Sonnet 4.6, Claude Opus 4.6, or Claude Haiku 4.5
-5. Run: `git-agent commit --intent "<intent>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-6. On auth error (401), retry with `--free`
-7. If `--free` fails, guide user to set up provider config
-8. Git fallback (binary unavailable): manual `git commit` with Conventional Commits format via HEREDOC
+1. Derive a one-sentence intent from the conversation
+2. Use the calling model from the prompt for `--co-author` attribution
+3. `git-agent commit --intent "<intent>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+4. Fallback (binary unavailable): manual `git commit` with Conventional Commits format via HEREDOC
 
 ### Push
 
-1. Push current branch: `git push` (add `-u origin <branch>` if upstream not set)
+1. `git push` (add `-u origin <branch>` if upstream not set)
 
 ### Configure
 
-1. Verify `git config user.name` and `user.email` are set; prompt if missing
-2. Detect project languages/frameworks via `ls -F` or `find . -maxdepth 2`
-3. Generate scopes: `git-agent init --scope --force`
-4. Read generated scopes from `.git-agent/config.yml`, validate naming:
+1. Verify `git config user.name` and `user.email`; prompt if missing
+2. `git-agent init --scope --force`
+3. Read scopes from `.git-agent/config.yml`, validate naming:
    - Single words: use as-is
-   - Multi-word: convert to first letters (e.g., `multi-word` -> `mw`)
-   - Must not duplicate commit types
-5. Read template: `${CLAUDE_PLUGIN_ROOT}/examples/git.local.md`
-6. Create `.claude/git.local.md` with validated scopes, detected technologies, standard types and branch prefixes
+   - Multi-word: abbreviate to first letters (e.g., `multi-word` -> `mw`)
+4. Create `.claude/git.local.md` from `${CLAUDE_PLUGIN_ROOT}/examples/git.local.md` with validated scopes
 
 ### Update .gitignore
 
-1. Preserve existing custom .gitignore rules (non-generated sections)
-2. Run `git-agent init --gitignore --force`
-3. On auth error (401), retry with `--free`
-4. If `--free` fails, guide user to set up provider config
-5. Re-add preserved custom rules
-6. Show diff for confirmation
+1. Preserve custom rules from existing .gitignore
+2. `git-agent init --gitignore --force`
+3. Re-add preserved custom rules
+4. Show diff
 
 ## Rules
 
 - git-agent is always primary; plain git is fallback only
 - Always use `--intent` flag with `git-agent commit`
-- Follow the auth fallback chain on provider errors
+- On auth errors, follow the auth fallback chain
 - No changes to commit: report and exit
