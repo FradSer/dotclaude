@@ -2,7 +2,7 @@
 name: get-context
 description: Execute this when the user requests code context for a repository or library using DeepWiki, Context7, Exa, and/or git clone.
 user-invocable: true
-argument-hint: [repo-url-or-library-name] [--method=deepwiki|context7|exa|clone|all]
+argument-hint: "<repo-url-or-library-name> [--method=deepwiki|context7|exa|clone|all]"
 allowed-tools: ["Task"]
 ---
 
