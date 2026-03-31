@@ -1,7 +1,7 @@
 ---
 name: refactor
 description: Executes automated refactoring for specific files, directories, or semantic queries. This skill should be used when the user asks to refactor specific files or directories, simplify recently changed code, clean up dead code in a limited scope, or invokes "/refactor".
-argument-hint: [files-or-directories-or-semantic-query]
+argument-hint: "[files-or-directories-or-semantic-query]"
 allowed-tools: ["Task", "Read", "Bash(git:*)", "Grep", "Glob"]
 user-invocable: true
 ---
