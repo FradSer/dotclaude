@@ -1,6 +1,6 @@
 ---
 name: resolve-issues
-allowed-tools: Bash(gh:*), Bash(git:*), Bash(cd:*), Bash(mkdir:*), Task
+allowed-tools: Bash(gh:*), Bash(git:*), EnterWorktree, ExitWorktree, Task
 description: Resolves GitHub issues using isolated worktrees and test-driven development. This skill should be used when the user asks to "resolve an issue", "fix issue #123", or needs to implement a solution for a specific GitHub ticket using a structured workflow.
 argument-hint: [issue number or description]
 user-invocable: true
@@ -29,8 +29,8 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 **Actions**:
 1. Review open issues from context and select based on priority and `$ARGUMENTS`
 2. Check existing worktrees to determine if reuse is possible
-3. Create new worktree with descriptive branch name (see `references/workflow-details.md` for naming)
-4. Navigate to worktree directory for isolated development
+3. Use the EnterWorktree tool with a descriptive name (e.g., `fix-456-auth-redirect`) to create an isolated session
+4. Rename the auto-generated branch to match conventions: run `git branch -m <type>/<issue>-<description>` (see `references/workflow-details.md` for naming)
 5. Verify issue acceptance criteria and dependencies
 
 ## Phase 2: TDD Implementation
@@ -52,7 +52,7 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 1. Push branch to remote with `git push -u origin <branch-name>`
 2. Create PR using `gh pr create` with auto-closing keywords (e.g., "Closes #456")
 3. Report PR URL and status to user
-4. After successful merge: remove worktree and delete local branch
+4. After successful merge: use the ExitWorktree tool with action "remove" to clean up worktree and branch
 5. Document resolution and any follow-up tasks
 
 ## References

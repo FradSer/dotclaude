@@ -2,7 +2,7 @@
 
 ## Worktree and TDD Workflow
 
-- Use isolated worktrees for development and follow the protected PR workflow.
+- Use the EnterWorktree/ExitWorktree tools for isolated development and follow the protected PR workflow.
 - Apply a TDD cycle (red → green → refactor) with appropriate sub-agent support.
 - Reference resolved issues in commits and PR descriptions using auto-closing keywords.
 
