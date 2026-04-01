@@ -57,8 +57,13 @@ See `references/repository-templates.md` for template detection and compliance d
 2. Generate PR title (≤70 chars, imperative, no emojis)
 3. Assemble PR body following template in `references/pr-structure.md`
 4. Apply automated labels based on file changes
-5. Create PR using `gh pr create` with all metadata
-6. Report final PR URL and status to user
+5. Check if targeting a non-default branch (e.g. `develop`), and if so explicitly warn the user that auto-closing keywords will not trigger automatically on merge
+6. Create PR using `gh pr create` with all metadata
+   - Use `--draft` if the PR requires early feedback or is not fully complete
+   - Set reviewers with `--reviewer` and assignees with `--assignee` when requested
+   - Fill title/body automatically using `--fill` for simple changes
+7. Check remote CI status with `gh pr checks <pr-number> --watch` to ensure all checks pass remotely
+8. Report final PR URL and status to user
 
 ## References
 

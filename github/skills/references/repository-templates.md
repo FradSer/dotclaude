@@ -25,6 +25,7 @@ ls .github/ISSUE_TEMPLATE/*.md .github/ISSUE_TEMPLATE/*.yml 2>/dev/null
 
 1. **Markdown Templates** (`.md` files): YAML frontmatter with `name` and `about` keys
 2. **Issue Forms** (`.yml` files): GitHub form schema with structured inputs and validation
+3. **Template Chooser Config** (`config.yml`): Configures `blank_issues_enabled: false` and adds custom links
 
 ### Template Selection
 

@@ -41,7 +41,7 @@ Fixes #123
 
 ## Best Practices
 
-1. Keep PRs small (<400 lines when possible)
+1. Keep PRs small (<200 lines diff when possible) - Validate this rule with `git diff --stat | tail -1` before creating
 2. One logical change per PR
 3. Self-review before requesting review
 4. Include tests for new functionality

@@ -21,3 +21,4 @@
 - Security scan completed without issues
 - Related issues identified and linked
 - Proper branch naming and commit messages following standards
+- **Branch Target Validation**: Verify that the target base branch accepts auto-closing keywords (they only work for the default branch)

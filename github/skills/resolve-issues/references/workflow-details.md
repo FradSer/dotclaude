@@ -63,6 +63,6 @@ Before creating PR, run project-specific quality checks:
 ## PR Creation and Cleanup
 
 1. **Push branch**: `git push -u origin <branch-name>`
-2. **Create PR**: Use `gh pr create` with auto-closing keywords (e.g., "Closes #456")
+2. **Create PR**: Use `gh pr create` with auto-closing keywords (e.g., "Closes #456") if targeting the default branch. Warn the user if targeting a non-default branch (e.g. `develop`) that they will need to close the issue manually.
 3. **After merge**: Use the ExitWorktree tool with action "remove" to clean up the worktree and branch
    - If uncommitted changes exist, ExitWorktree will refuse; confirm with the user before setting `discard_changes: true`

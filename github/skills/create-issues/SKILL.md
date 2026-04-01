@@ -43,8 +43,11 @@ See `references/repository-templates.md` for template detection and compliance d
 **Actions**:
 1. Create or verify required priority labels exist (see `references/decision-logic.md` for commands)
 2. Draft issue following structure requirements in `references/issue-structure.md`
-3. Apply appropriate labels (priority, type)
+3. Apply appropriate labels (priority, type) using `--label`
+   - Assign owners using `--assignee`
+   - Link milestones using `--milestone` or projects using `--project` if requested
 4. Add auto-closing keywords if PR-scoped issue (NOT for epics)
+   - Note: warn user that auto-closing keywords only trigger automatically when merged into the default branch (usually `main`/`master`)
 5. Link to related issues or epics if applicable
 
 ## Phase 3: Documentation and Handoff

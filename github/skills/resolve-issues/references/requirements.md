@@ -4,7 +4,7 @@
 
 - Use the EnterWorktree/ExitWorktree tools for isolated development and follow the protected PR workflow.
 - Apply a TDD cycle (red → green → refactor) with appropriate sub-agent support.
-- Reference resolved issues in commits and PR descriptions using auto-closing keywords.
+- Reference resolved issues in commits and PR descriptions using auto-closing keywords. Be aware that auto-closing keywords **only work when merged into the default branch**. If targeting a non-default branch, the issue must be closed manually.
 
 ## Commit Message Standards
 
