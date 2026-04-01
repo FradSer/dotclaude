@@ -42,7 +42,6 @@ Scenario: Strategic pivot flag triggered by sustained low scores
   And the orchestrator decides whether to pivot based on context
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-003)
 
 ## Files to Modify/Create
 

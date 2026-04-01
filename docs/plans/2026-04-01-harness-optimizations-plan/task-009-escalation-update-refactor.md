@@ -30,7 +30,6 @@ Scenario: Evaluator escalation joins existing trigger types
   And it follows the same escalation format (trigger, evidence, user options)
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-001 Risk Assessment, Section 6 Integration Points)
 
 ## Files to Modify/Create
 

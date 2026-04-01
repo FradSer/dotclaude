@@ -62,7 +62,6 @@ Scenario: Pivot handling for sustained low scores
   And the pivot decision is logged but not automatic
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-001 Section 2.4, REQ-002, REQ-003, REQ-005)
 
 ## Files to Modify/Create
 

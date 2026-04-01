@@ -8,9 +8,6 @@
 
 **Tech Stack:** Markdown agent definitions, YAML configuration, Bash validation scripts
 
-**Design Support:**
-- [Requirements Document](../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md)
-
 ## Context
 
 The current executing-plans workflow relies on self-evaluation in Phase 4 (binary pass/fail via exit codes). Anthropic's "Harness Design for Long-Running Apps" research shows that self-evaluation bias causes agents to grade themselves too generously. This plan introduces an architecturally separate Evaluator agent with graded scoring, sprint contracts, and file-based communication to close this quality gap -- all as opt-in layers that preserve backwards compatibility.

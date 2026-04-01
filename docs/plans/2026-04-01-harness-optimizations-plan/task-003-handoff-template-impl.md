@@ -30,7 +30,6 @@ Scenario: Handoff summary is documentation only
   And TaskList remains the authoritative source of task state
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-004)
 
 ## Files to Modify/Create
 

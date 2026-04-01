@@ -38,7 +38,6 @@ Scenario: Evaluator includes few-shot calibration examples
   And each example shows Context, user message, assistant response, and commentary
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-001)
 
 ## Files to Modify/Create
 

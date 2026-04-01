@@ -37,7 +37,6 @@ Scenario: Ambiguous criteria flagged during contract negotiation
   And unresolved items are marked as "user-accepted risk"
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-002)
 
 ## Files to Modify/Create
 

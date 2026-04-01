@@ -45,7 +45,6 @@ Scenario: Handoff summary format defined with structured data
   And it includes "Blockers" list
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-006)
 
 ## Files to Modify/Create
 

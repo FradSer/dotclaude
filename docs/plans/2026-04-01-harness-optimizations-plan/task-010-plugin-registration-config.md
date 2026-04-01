@@ -29,7 +29,6 @@ Scenario: Plugin passes full validation
   And token budgets are within limits (evaluator agent body under 3k tokens)
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (Section 2.2, 2.3)
 
 ## Files to Modify/Create
 

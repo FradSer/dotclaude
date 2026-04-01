@@ -30,7 +30,6 @@ Scenario: Evaluation mode integrates with existing execution modes
   And evaluation is independent of the execution mode used for the batch
 ```
 
-**Spec Source**: `../2026-03-31-harness-optimizations-design/harness-optimizations-requirements.md` (REQ-001, Section 6 Integration Points)
 
 ## Files to Modify/Create
 
