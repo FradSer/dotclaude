@@ -17,12 +17,12 @@ find_state_file() {
   local session_id="$1"
   local dir
   dir="$(state_dir)"
-  [[ -d "$dir" ]] || return
+  [[ -d "$dir" ]] || return 0
 
   # Collect matching files; handle zero matches gracefully
   local files
-  files=$(find "$dir" -maxdepth 1 -name '*.superpowers.json' 2>/dev/null) || return
-  [[ -z "$files" ]] && return
+  files=$(find "$dir" -maxdepth 1 -name '*.superpowers.json' 2>/dev/null) || return 0
+  [[ -z "$files" ]] && return 0
 
   local candidate
   for candidate in $files; do
