@@ -163,7 +163,18 @@ docs/plans/YYYY-MM-DD-<topic>-design/
 └── diagrams/              # Visual artifacts (optional)
 ```
 
-**CRITICAL: _index.md MUST include Design Documents section with references:**
+**CRITICAL: Folder name MUST end with `-design`** (e.g., `2024-02-10-user-auth-design/`). This suffix is required, not optional.
+
+**CRITICAL: Write all Gherkin scenarios directly inside `bdd-specs.md` in full Gherkin format.** Do NOT create separate `.feature` files or `features/` directories -- those belong to the implementation phase only.
+
+**CRITICAL: `_index.md` MUST use these exact section headings in this order:**
+
+1. `## Context` -- Original request and Q&A history
+2. `## Discovery Results` -- Codebase exploration findings from Phase 1
+3. `## Requirements` -- Finalized requirements and constraints
+4. `## Rationale` -- Why this approach was chosen over alternatives
+5. `## Detailed Design` -- Components, interfaces, implementation approach
+6. `## Design Documents` -- Links to companion documents (format below)
 
 ```markdown
 ## Design Documents

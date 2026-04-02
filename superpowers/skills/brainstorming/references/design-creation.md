@@ -86,7 +86,7 @@ docs/plans/YYYY-MM-DD-<topic>-design/
     └── architecture.mmd
 ```
 
-**`_index.md` Content Structure**:
+**`_index.md` Content Structure (MUST use these exact section headings in order)**:
 
 ```markdown
 # Design: <Feature Name>
@@ -146,6 +146,8 @@ Libraries, frameworks, and patterns chosen with rationale.
 
 **`bdd-specs.md` Content Structure**:
 
+**CRITICAL**: Write all Gherkin scenarios directly in this file. Do NOT create separate `.feature` files or `features/` directories -- those are for the implementation phase only.
+
 ```markdown
 # BDD Specifications for <Feature Name>
 
@@ -153,7 +155,7 @@ Libraries, frameworks, and patterns chosen with rationale.
 
 ### Scenarios
 
-Given-When-Then scenarios covering:
+Full Gherkin scenarios (Given/When/Then) covering:
 - Happy path
 - Edge cases
 - Error conditions
@@ -189,7 +191,7 @@ Anti-patterns and mistakes to avoid.
 
 **CRITICAL: You MUST follow this exact folder structure**
 
-**Required Folder Pattern**: `docs/plans/YYYY-MM-DD-<topic>-design/`
+**Required Folder Pattern**: `docs/plans/YYYY-MM-DD-<topic>-design/` (the `-design` suffix is REQUIRED)
 
 **Folder Naming Rules**:
 - Use `YYYY-MM-DD` date prefix for chronological ordering

@@ -14,9 +14,10 @@
 ## Phase 3: Design Creation
 - [ ] Sub-agents completed per complexity level (or main agent for Simple)
 - [ ] Results integrated, conflicts resolved
-- [ ] Design folder created: `docs/plans/YYYY-MM-DD-<topic>-design/`
+- [ ] Design folder created: `docs/plans/YYYY-MM-DD-<topic>-design/` (MUST end with `-design`)
 - [ ] All required documents: `_index.md`, `bdd-specs.md`, `architecture.md`, `best-practices.md`
-- [ ] `_index.md` includes Design Documents section with links
+- [ ] `_index.md` uses required section headings: Context, Discovery Results, Requirements, Rationale, Detailed Design, Design Documents
+- [ ] `bdd-specs.md` contains full Gherkin scenarios directly (no separate `.feature` files)
 
 ## Phase 4: Design Reflection
 - [ ] Reflection completed per complexity level
