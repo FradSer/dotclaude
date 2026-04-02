@@ -1,10 +1,4 @@
-# Writing Plans Details (1/2)
-
-# Detailed Guidance
-
-This file preserves the previously detailed SKILL.md guidance for deeper reference.
-
-# Writing Plans
+# Plan Structure Template
 
 ## Overview
 

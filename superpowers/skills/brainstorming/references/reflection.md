@@ -1,4 +1,4 @@
-# Phase 4: Design Reflection - Detailed Guidance
+# Design Reflection
 
 ## Goal
 

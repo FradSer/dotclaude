@@ -1,4 +1,4 @@
-# Phase 4: Plan Reflection - Detailed Guidance
+# Plan Reflection
 
 ## Goal
 

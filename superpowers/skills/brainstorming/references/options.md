@@ -1,4 +1,4 @@
-# Phase 2: Option Analysis - Detailed Guidance
+# Option Analysis
 
 ## Goal
 

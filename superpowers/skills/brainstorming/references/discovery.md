@@ -1,4 +1,4 @@
-# Phase 1: Discovery - Detailed Guidance
+# Discovery
 
 ## Goal
 

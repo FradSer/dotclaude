@@ -1,4 +1,4 @@
-# Executing Plans Details (2/2)
+# Blocker Detection & Escalation
 
 ## Remember
 - Review plan critically first

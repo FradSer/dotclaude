@@ -1,4 +1,4 @@
-# Phase 3: Design Creation - Detailed Guidance
+# Design Creation
 
 ## Goal
 
