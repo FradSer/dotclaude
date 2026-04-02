@@ -103,6 +103,45 @@ Before calling any task done:
 - [ ] No `TODO`/`FIXME` comments as only block content
 - [ ] Tests execute real logic (not just `assert True`)
 
+## Evaluation Mode
+
+When the evaluator is enabled, an independent assessment step runs after each batch passes the Verification Gate.
+
+### Evaluator Invocation
+
+The superpowers-evaluator is a **sub-agent** (not a teammate). Spawn it via the Agent tool after batch verification completes:
+
+1. Pass context to the superpowers-evaluator:
+   - Sprint contract file path: `sprint-contract-batch-{N}.md`
+   - List of modified/created files from the batch
+   - Plan directory path
+2. The superpowers-evaluator reads the sprint contract, inspects artifacts, runs verification commands, and scores against rubrics
+3. The superpowers-evaluator writes an evaluation report: `evaluation-round-{N}-batch-{M}.md` in the plan directory
+
+**Independence**: The superpowers-evaluator runs as a sub-agent regardless of the execution mode used for the batch (Parallel, Linear, Red-Green). It is never added as a teammate to an Agent Team.
+
+### Reading Evaluation Results
+
+After the superpowers-evaluator completes:
+
+1. Read the evaluation report from the plan directory
+2. Check the per-task verdicts:
+   - **PASS**: All tasks accepted. Proceed to mark tasks complete and move to Phase 4 evidence.
+   - **REWORK**: Read rework items (file:line references + issue descriptions). Fix the identified issues, re-run verification, then re-spawn superpowers-evaluator for another round.
+   - **FAIL / Pivot**: Present the superpowers-evaluator's pivot recommendation to the user via AskUserQuestion.
+
+### Rework Loop
+
+| Round | Action |
+|-------|--------|
+| 1 | Fix rework items, re-verify, re-evaluate |
+| 2 | Fix remaining items, re-verify, re-evaluate |
+| 3+ | Escalate to user per `blocker-and-escalation.md` |
+
+Maximum 2 evaluation-rework rounds before escalation. The superpowers-evaluator scores independently each round -- it does not inherit previous round assessments.
+
+See `evaluation-file-formats.md` for report format details and `evaluation-rubrics.md` for scoring criteria.
+
 ## Agent Prompt Template
 
 Every agent/teammate prompt MUST include all three sections:

@@ -48,6 +48,12 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
+3. **Evaluator Configuration** (optional): If `_index.md` contains an `evaluator:` YAML block in the plan metadata, parse it:
+   - `mode`: `on` | `off` | `auto` (default: `auto`)
+   - `intensity`: `thorough` | `standard` | `light` (default: `standard`)
+   - Precedence: skill argument > plan metadata > defaults
+   - **Auto mode**: Activate superpowers-evaluator if plan has 5+ tasks or any task has 3+ BDD scenarios; otherwise skip superpowers-evaluator and use existing Phase 4 self-verification
+   - See `./references/evaluation-rubrics.md` for threshold configuration
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
@@ -120,6 +126,13 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
 
 **For Each Batch**:
 
+0. **Sprint Contract** (if evaluator enabled):
+   - Spawn `superpowers:superpowers-evaluator` sub-agent to produce `sprint-contract-batch-{N}.md` in the plan directory
+   - Contract defines per-task acceptance criteria and Red-Green pair expectations
+   - Execution MUST NOT start until the contract file exists
+   - See `./references/sprint-contract-template.md` for format
+   - Skip this step if evaluator is disabled or intensity is `light` (uses plan-level summary instead)
+
 1. **Choose Execution Mode** (decision tree):
    - **Red-Green Pair**: If the batch contains a Red-Green pair (same NNN prefix, one `test` + one `impl`), assign exactly two dedicated agents — one per task. The test agent runs first and confirms Red state; then the impl agent starts. Multiple pairs run in parallel. Non-negotiable for any test+impl pair.
    - **Parallel** (default for all other multi-task batches): Use Agent Team for 3+ tasks, or plain subagents for exactly 2 tasks. If agents edit overlapping files, use worktree isolation (`isolation: "worktree"`) as an option within this mode — not a separate mode. File conflicts within a batch should be resolved by splitting the batch further when possible.
@@ -167,6 +180,17 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
 
    e. **Mark Task Complete**: Only after ALL verification steps in 2d pass, use TaskUpdate to set status to `completed`. Include in the update: which verification commands ran and that they passed.
 
+   f. **Evaluator Assessment** (if evaluator enabled):
+      - After all tasks in batch pass the Verification Gate, spawn `superpowers:superpowers-evaluator` sub-agent
+      - The superpowers-evaluator reads sprint contract + produced artifacts, scores against rubrics
+      - Writes `evaluation-round-{N}-batch-{M}.md` in plan directory
+      - If verdict is REWORK: generator reads rework items from the superpowers-evaluator, fixes issues, re-runs verification (max 2 evaluation-rework rounds, then escalate per `./references/blocker-and-escalation.md`)
+      - If verdict is PASS: proceed to step 2e (mark complete) for remaining tasks
+      - If **pivot flag** is set: log the superpowers-evaluator recommendation, present to user via AskUserQuestion
+      - See `./references/evaluation-rubrics.md` for scoring criteria
+      - See `./references/evaluation-file-formats.md` for report format
+      - **Intensity modifiers**: `thorough` = per-task evaluation; `standard` = per-batch (default); `light` = end-of-plan only
+
 3. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
 
 See `./references/batch-execution-playbook.md` for detailed execution patterns.
@@ -187,6 +211,8 @@ Close the loop with structured evidence.
 2. **Confirm**: Use AskUserQuestion to present the evidence summary and ask: "All tasks in this batch verified. Proceed to the next batch?" AskUserQuestion pauses within the turn, ensuring the user can respond before the loop re-injects. Get explicit confirmation before continuing.
 
 3. **Loop**: Repeat Phase 3-4 until all batches complete.
+
+4. **Handoff Summary** (if evaluator enabled and plan has 16+ tasks): Produce `handoff-summary-{N}.md` at configured boundaries (default: every 3 batches). See `./references/handoff-template.md` for format. This is a documentation artifact only -- it does NOT modify conversation context.
 
 ## Phase 5: Git Commit
 
@@ -224,3 +250,7 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
+- `./references/evaluation-file-formats.md` - Evaluation file format definitions (sprint contract, evaluation report, handoff summary)
+- `./references/evaluation-rubrics.md` - Graded 1-5 scoring rubrics and task type weighting
+- `./references/sprint-contract-template.md` - Sprint contract template and negotiation protocol
+- `./references/handoff-template.md` - Handoff summary template for long plans

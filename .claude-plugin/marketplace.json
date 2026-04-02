@@ -95,7 +95,7 @@
     },
     {
       "name": "superpowers",
-      "version": "2.1.0",
+      "version": "2.3.0",
       "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop and work verification",
       "author": {
         "name": "Frad LEE",

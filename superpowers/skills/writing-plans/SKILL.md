@@ -181,6 +181,23 @@ Before committing, verify plan quality. Scale reflection based on plan size.
 
 See `./references/plan-reflection.md` for sub-agent prompts and integration workflow.
 
+### Evaluator Mode (Large Plans)
+
+For **large plans** (16+ tasks), spawn the `superpowers:superpowers-evaluator` agent (plan mode) instead of ad-hoc reflection sub-agents. The evaluator provides formal, rubric-based assessment with system-enforced read-only tools.
+
+**When to use**: Auto-activated for plans with 16+ tasks. Smaller plans continue using the existing ad-hoc sub-agent approach above.
+
+**Process**:
+1. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path]. Read rubrics from [skill-root]/references/plan-evaluation-rubrics.md."
+2. Evaluator reads _index.md and all task files, scores against 5 dimensions (BDD Coverage, Dependency Correctness, Task Completeness, Verification Quality, Granularity)
+3. Evaluator produces a plan evaluation report in the plan folder
+4. Main agent reads the report:
+   - **PASS**: Proceed to user confirmation
+   - **REWORK**: Fix identified issues (add missing tasks, fix dependencies, complete sections), then re-submit to user
+5. Present reflection summary (including evaluator scores if applicable) to user via AskUserQuestion
+
+See `./references/plan-evaluation-rubrics.md` for scoring criteria and calibration examples.
+
 ## Phase 5: Git Commit
 
 Commit the plan folder using git-agent (with git fallback).
@@ -214,3 +231,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/plan-reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
+- `./references/plan-evaluation-rubrics.md` - Plan evaluation rubrics for superpowers-evaluator (plan mode)

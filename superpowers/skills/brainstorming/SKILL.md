@@ -221,6 +221,23 @@ Before committing, verify design quality. Scale reflection based on **complexity
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
+### Evaluator Mode (Complex Designs)
+
+For **complex** designs, spawn the `superpowers:superpowers-evaluator` agent (design mode) instead of ad-hoc reflection sub-agents. The evaluator provides formal, rubric-based assessment with system-enforced read-only tools.
+
+**When to use**: Auto-activated for complex designs (3+ sub-agents in Phase 3). Simple and medium designs continue using the existing ad-hoc sub-agent approach above.
+
+**Process**:
+1. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the design at [design-folder-path]. Read rubrics from [skill-root]/references/design-evaluation-rubrics.md."
+2. Evaluator reads design documents, scores against 5 dimensions (Requirements Traceability, BDD Completeness, Document Consistency, Architecture Soundness, Risk Coverage)
+3. Evaluator produces a design evaluation report in the design folder
+4. Main agent reads the report:
+   - **PASS**: Proceed to user confirmation
+   - **REWORK**: Fix identified issues, then re-submit to user for approval
+5. Present reflection summary (including evaluator scores if applicable) to user via AskUserQuestion
+
+See `./references/design-evaluation-rubrics.md` for scoring criteria and calibration examples.
+
 ## Phase 5: Git Commit
 
 Commit the design folder using git-agent (with git fallback).
@@ -253,3 +270,4 @@ Output in this exact order:
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
+- `./references/design-evaluation-rubrics.md` - Design evaluation rubrics for superpowers-evaluator (design mode)
