@@ -38,22 +38,22 @@ Look for `CHANGELOG.md` (case-insensitive) in the project root.
 
 ### 3. Build version sections from git history
 
-For each pair of adjacent tags (newest to oldest), extract commits:
+For each pair of adjacent tags (newest to oldest), extract commits with their full messages:
 
 ```bash
-git log --oneline <older-tag>..<newer-tag>
+git log --format="%h %s%n%b" <older-tag>..<newer-tag>
 ```
 
-For the oldest tag, extract all commits up to that tag:
+For the oldest tag:
 
 ```bash
-git log --oneline <oldest-tag>
+git log --format="%h %s%n%b" <oldest-tag>
 ```
 
 For unreleased changes (commits after the latest tag):
 
 ```bash
-git log --oneline <latest-tag>..HEAD
+git log --format="%h %s%n%b" <latest-tag>..HEAD
 ```
 
 Get the tag date for each version:
@@ -62,26 +62,43 @@ Get the tag date for each version:
 git log -1 --format=%ai <tag>
 ```
 
-### 4. Classify commits into change types
+### 4. Synthesize meaningful changelog entries
 
-Read each commit message and classify it into exactly one of these categories (in this order of precedence):
+Do NOT copy commit messages verbatim. Changelogs are for humans -- readers who care about what changed and why, not how the code was modified.
 
-| Category | Commit indicators |
+Analyze the full commit messages gathered in step 3 (subject lines and bodies) to understand the intent and impact of each change. Group related commits into logical changes. Multiple commits that together implement one feature become a single entry. A refactor that splits one file into three is one change, not three.
+
+Classify each logical change into exactly one category (in this order of precedence):
+
+| Category | What belongs here |
 |----------|-------------------|
-| **Added** | `feat`, new files, new functionality |
-| **Changed** | `refactor`, `perf`, modifications to existing behavior |
-| **Deprecated** | Explicit deprecation notices |
-| **Removed** | Deletions, removals |
-| **Fixed** | `fix`, bug corrections |
-| **Security** | Security patches, vulnerability fixes |
+| **Added** | New capabilities users can now do |
+| **Changed** | Existing behavior that now works differently |
+| **Deprecated** | Capabilities that will be removed in a future version |
+| **Removed** | Capabilities that no longer exist |
+| **Fixed** | Broken behavior that now works correctly |
+| **Security** | Vulnerabilities that have been addressed |
 
-Other commits (`docs`, `chore`, `test`, `ci`, `style`) go into the category that best reflects their user-facing impact. If a commit has no user-facing impact, omit it.
+Omit changes with no user-facing impact (internal refactors, CI tweaks, test additions, doc typo fixes) unless they substantially affect the development experience for contributors.
 
-Rewrite commit messages into human-readable changelog entries:
-- Strip conventional commit prefixes (`feat(scope):` becomes a plain sentence).
-- Start each entry with a capital letter.
-- Describe the change from a user's perspective, not the implementation.
+Write each entry as a clear, meaningful description:
+- Describe **what the user can now do** or **what changed for them**, not what files were touched.
+- Provide enough context that a reader unfamiliar with the codebase understands the significance.
+- Consolidate: 5 commits fixing the same parser become one entry like "Fix CSV parser failing on quoted fields with newlines".
 - One entry per line, prefixed with `- `.
+
+**Bad** (git log copy-paste):
+```
+- Update auth middleware
+- Fix bug in login
+- Refactor token validation
+```
+
+**Good** (meaningful for readers):
+```
+- Session tokens now refresh automatically 5 minutes before expiry, eliminating unexpected logouts during long sessions
+- Fix login failing silently when the email contains uppercase characters
+```
 
 ### 5. Assemble the changelog
 
