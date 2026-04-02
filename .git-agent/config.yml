@@ -1,17 +1,31 @@
 hook:
     - conventional
 scopes:
-    - acpx
-    - cldc
-    - cod
-    - git
-    - gitflow
-    - github
-    - mve
-    - devtools
-    - office
-    - po
-    - shadcn
-    - sp
-    - swiftui
-    - utils
+    - name: acpx
+      description: Plugin for agent-to-agent communication via acpx protocol.
+    - name: cconfig
+      description: 'Claude config plugin: manages configuration fragments and templates.'
+    - name: cctx
+      description: 'Code-context plugin: provides context and code analysis skills.'
+    - name: git
+      description: 'Git skillset: commit, config, ignore, and branch workflows.'
+    - name: gitflow
+      description: 'Gitflow skillset: feature, hotfix, release branching strategies.'
+    - name: github
+      description: 'GitHub skills: issue, PR, and repository automation.'
+    - name: meeseeks
+      description: 'Meeseeks‑vetted plugin: verification and task automation hooks.'
+    - name: next
+      description: 'Next.js devtools: guide and utilities for Next.js projects.'
+    - name: office
+      description: 'Office skills: browser, patents, and documentation automation.'
+    - name: po
+      description: 'Plugin optimizer: improves plugin performance and best practices.'
+    - name: shadcn
+      description: 'Shadcn plugin: UI component management and customization.'
+    - name: sp
+      description: 'Superpowers plugin: advanced agent planning and execution.'
+    - name: swiftui
+      description: 'SwiftUI review plugin: UI review and architecture guidelines.'
+    - name: utls
+      description: 'Utility plugin: shared helper scripts and functions.'
