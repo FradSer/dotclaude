@@ -46,3 +46,12 @@ See `./references/initiate-team-workflow.md` and `./references/manage-team-workf
 - Monitor frequently; unattended teams risk wasted effort
 
 For architecture, capabilities, and limitations, see `./references/official-documentation.md`.
+
+## References
+
+- `./references/initiate-team-workflow.md` - Process for starting agent team workflows
+- `./references/manage-team-workflow.md` - Process for managing ongoing team workflows
+- `./references/implementer-role.md` - Implementer role guidelines and responsibilities
+- `./references/reviewer-role.md` - Reviewer role guidelines and responsibilities
+- `./references/architect-role.md` - Architect role guidelines and responsibilities
+- `./references/official-documentation.md` - Architecture, capabilities, and limitations
