@@ -1,6 +1,6 @@
 {
   "name": "utils",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "General-purpose utility skills for documentation, writing, and project maintenance",
   "author": {
     "name": "Frad LEE",
@@ -11,9 +11,11 @@
     "utils",
     "documentation",
     "readme",
+    "changelog",
     "productivity"
   ],
   "commands": [
-    "./skills/update-readme/"
+    "./skills/update-readme/",
+    "./skills/update-changelog/"
   ]
 }
