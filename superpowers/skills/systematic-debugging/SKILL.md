@@ -313,18 +313,16 @@ If systematic investigation reveals issue is environmental, timing-dependent, or
 
 **Note:** 95% of "no root cause" cases represent incomplete investigation.
 
-## Supporting Techniques
+## References
 
-These techniques are part of systematic debugging:
-
-- **`./references/root-cause-tracing.md`** - Trace bugs backward through call stack to find original trigger
-- **`./references/defense-in-depth.md`** - Add validation at multiple layers after finding root cause
-- **`./references/condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
-- **`./references/condition-based-waiting-example.ts`** - Example implementation of condition-based waiting
-- **`./find-polluter.sh`** - Bisect test suite to identify which test pollutes shared state
+- `./references/root-cause-tracing.md` - Trace bugs backward through call stack to find original trigger
+- `./references/defense-in-depth.md` - Add validation at multiple layers after finding root cause
+- `./references/condition-based-waiting.md` - Replace arbitrary timeouts with condition polling
+- `./references/condition-based-waiting-example.ts` - Example implementation of condition-based waiting
+- `./find-polluter.sh` - Bisect test suite to identify which test pollutes shared state
 
 **Related skills:**
-- **superpowers:behavior-driven-development** - BDD principles including Gherkin scenarios for test design
+- `superpowers:behavior-driven-development` - BDD principles including Gherkin scenarios for test design
 
 ## Real-World Impact
 
