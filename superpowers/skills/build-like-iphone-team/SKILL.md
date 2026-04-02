@@ -112,14 +112,12 @@ Don't apply when:
 | Hardware-software mismatch | Integration: Design Together |
 | Need commitment to vision | All principles together |
 
-## Reference Files
+Remember: iPhone wasn't better because of more features. It was better because it rejected all assumptions and built something from first principles. The multi-touch display was invented for a tablet, then pivoted to phone when Jobs realized "My God, we can build a phone with this."
 
-Detailed guidance for each principle:
+## References
 
 - `./references/first-principles.md` - Questioning assumptions, zero-based approach
 - `./references/breakthrough-research.md` - Multi-touch, Gorilla Glass, iOS, Capacitive Display
 - `./references/experience-specs.md` - Writing specs in human moments
 - `./references/internal-competition.md` - P1 vs P2, winner-takes-all selection
 - `./references/purple-dorm.md` - Extreme isolation, Fight Club poster, pressure cooker culture
-
-Remember: iPhone wasn't better because of more features. It was better because it rejected all assumptions and built something from first principles. The multi-touch display was invented for a tablet, then pivoted to phone when Jobs realized "My God, we can build a phone with this."
