@@ -24,7 +24,7 @@ The process flows from requirements to code:
 *   **Formulation:** Write these examples as specific scenarios (Given/When/Then).
 *   **Automation:** Implement using TDD.
 
-See [BDD Best Practices](./references/bdd-best-practices.md) for a detailed guide.
+See `./references/bdd-best-practices.md` for a detailed guide.
 
 ### 2. Writing Scenarios (Gherkin)
 Scenarios are your "Executable Specifications".
@@ -33,7 +33,7 @@ Scenarios are your "Executable Specifications".
 *   One behavior per scenario.
 *   **Store in .feature files, NOT as code comments** - this makes them executable and accessible to non-technical stakeholders.
 
-See [Cucumber Gherkin Guide](./references/gherkin-guide.md) for syntax and storage structure.
+See `./references/gherkin-guide.md` for syntax and storage structure.
 
 ### 3. Red-Green-Refactor (TDD)
 The engine of implementation:
@@ -49,3 +49,8 @@ If you write code before the test:
 1.  You don't know if the test is capable of failing (false positives).
 2.  You are biased by your implementation.
 3.  You are writing legacy code from day one.
+
+## References
+
+- `./references/bdd-best-practices.md` - BDD methodology, discovery, formulation, and automation
+- `./references/gherkin-guide.md` - Gherkin scenario syntax, storage structure, and examples
