@@ -1,372 +1,295 @@
-# BDD Specifications: Eval Harness System
+# BDD Specifications: Executable Verification Eval Harness
 
-Comprehensive Gherkin scenarios for the eval harness pipeline:
-`orchestrator → evaluator (per golden artifact) → bias-analyzer → rubric-optimizer`
-
-Plus score trend tracking in executing-plans for multi-iteration optimization.
+Gherkin scenarios for the binary checklist evaluation pipeline and continuous evolution process.
 
 ---
 
-## Research Summary (informs scenario design)
-
-**Evaluator Calibration Techniques**
-Production LLM systems calibrate judges via pilot rounds against human-annotated gold standards, measuring inter-annotator agreement (Cohen's kappa >= 0.7 is the accepted threshold). The Rubric-Reasoning-Result pattern forces judges to justify scores before outputting them, reducing anchoring bias. Few-shot calibration with 3-5 gold examples in the prompt achieves ~80% agreement with human baselines. Calibration sweep: test evaluator against 20+ gold artifacts, measure mean absolute error (MAE) against human scores; accept if MAE <= 0.5 on a 1-5 scale.
-
-**Evaluator Bias Detection**
-Research identifies two primary systematic biases: leniency bias and harshness bias. Detection method: compute per-dimension mean delta = mean(evaluator_score - human_score) across all gold artifacts. Research-based MAE threshold is <= 0.5; however, the **design threshold for optimization triggers is mean_delta > 1.0** (see `architecture.md` Canonical Bias Thresholds table). Research thresholds are informational only — all scenario Then clauses use the design threshold of 1.0. Dimension-specific bias is more insidious than global bias: an evaluator may be well-calibrated overall but systematically lenient on one dimension. The CALM framework categorizes 12 bias types; leniency/harshness and dimension-anchoring are the highest-priority cases.
-
-**Score Trend Analysis**
-ScoreFlow and similar frameworks use decimal convergence criteria (± 0.2 for plateau). Superpowers uses **integer rubric scores (1-5)**, so trend classification uses integer deltas: `improving` = at least one dimension increased by >= 1 integer point with no dimension decreasing; `plateau` = all applicable dimension scores identical to prior round; `declining` = at least one dimension score decreased. After 2 plateau rounds without PASS, the executing-plans skill escalates per `blocker-and-escalation.md`. Research maximum of 5 rounds aligns with the executing-plans limit.
-
-**Golden Dataset Design**
-Gold artifacts must be: accurate (human-verified correct/incorrect), complete (cover edge cases and boundary conditions), consistent (uniform format and metadata), and adversarial (include intentionally flawed examples to test evaluator rejection). 20-30 artifacts per mode (design/plan/code) is sufficient for a stable baseline. Each artifact needs: the artifact itself, a human baseline score per dimension, a rationale for each score, and a verdict (PASS/REWORK/FAIL). Silver-to-gold promotion requires at least two independent human raters with agreement >= 80%.
-
----
-
-## Feature: Evaluator Calibration
+## Feature: Binary Checklist Evaluation — Design Mode
 
 ```gherkin
-Feature: Evaluator Calibration Against Golden Artifacts
-  As an orchestrator running the eval harness
-  I want to verify the superpowers-evaluator is well-calibrated against human baselines
-  So that evaluation scores are reliable and unbiased before use in production pipelines
+Feature: Binary PASS/FAIL Checklist Evaluation for Design Artifacts
+  As the superpowers-evaluator in design mode
+  I want to apply binary PASS/FAIL checks against design artifacts
+  So that evaluation results are concrete, actionable, and not subject to score drift
 
   Background:
-    Given a golden artifact set containing 20 design artifacts
-    And each artifact has human baseline scores for all 5 dimensions
-    And each artifact has a human verdict (PASS or REWORK)
-    And the rubric file is readable at "superpowers/skills/brainstorming/references/evaluation-rubrics.md"
+    Given a design folder containing _index.md, bdd-specs.md, architecture.md, best-practices.md
+    And the design checklist at docs/retros/checklists/design-v1.md is loaded from the spawn context path
 
-  # --- PASS CASES ---
+  Scenario: All checklist items pass produces PASS verdict with no rework items
+    Given all design artifacts satisfy every checklist item in design-v1.md
+    When the evaluator applies the design checklist
+    Then every row in the checklist results table shows PASS
+    And the verdict is PASS
+    And no rework items are produced
+    And the report contains no numeric score fields
 
-  Scenario: All golden artifacts produce scores within acceptable delta of human baseline
-    Given the evaluator is invoked on each golden artifact in design mode
-    When all 20 evaluation reports are collected
-    Then the mean absolute error (MAE) between evaluator scores and human scores is <= 0.5 per dimension
-    And no individual artifact has a per-dimension delta > 1.5 from its human baseline
-    And the calibration report records "CALIBRATED" status
+  Scenario: Vague Given clause triggers SCEN-CONC-01 FAIL with file and line evidence
+    Given bdd-specs.md line 23 contains "Given some valid user data"
+    And checklist item SCEN-CONC-01 requires all Given clauses to use specific data values
+    When the evaluator applies SCEN-CONC-01
+    Then SCEN-CONC-01 result is FAIL
+    And the evidence field states: "bdd-specs.md:23 — 'some valid user data' is a vague placeholder"
+    And the rework item states: "bdd-specs.md line 23: replace 'some valid user data' with concrete field values (e.g., email='user@example.com', password='hunter2')"
+    And the verdict is REWORK
 
-  Scenario: Verdict agreement rate meets threshold
-    Given the evaluator has produced verdicts for all 20 golden artifacts
-    When verdict agreement is computed against human verdicts
-    Then the agreement rate is >= 85%
-    And the calibration report records verdict_agreement: 0.85 or higher
-    And the calibration report records "CALIBRATED" status
+  Scenario: Requirement with no mapped scenario triggers REQ-TRACE-01 FAIL
+    Given _index.md Requirements section lists "REQ-005: Rate limiting on login attempts"
+    And bdd-specs.md contains no scenario mentioning "rate limit" or "REQ-005"
+    When the evaluator applies REQ-TRACE-01
+    Then REQ-TRACE-01 result is FAIL
+    And evidence states: "REQ-005 appears in _index.md but no scenario references it"
+    And rework item directs: "add BDD scenario for REQ-005 rate limiting behavior"
+    And no other checklist item fails because of this gap
 
-  Scenario: Calibration passes with few-shot gold examples injected
-    Given the evaluator prompt includes 3 few-shot gold examples from the golden set
-    And the remaining 17 artifacts are used as the test set
-    When the evaluator scores all 17 test artifacts
-    Then the MAE across all dimensions is <= 0.4
-    And the calibration report notes "few-shot calibration used"
+  Scenario: Inner-to-outer layer dependency described in architecture triggers ARCH-01 FAIL
+    Given architecture.md line 47 states "domain service imports from ../../infra/database"
+    And checklist item ARCH-01 requires no imports described from inner to outer layer
+    When the evaluator applies ARCH-01
+    Then ARCH-01 result is FAIL
+    And evidence cites: "architecture.md:47 — describes domain→infrastructure import"
+    And rework item states: "remove or invert the dependency described at architecture.md:47"
 
-  # --- FAIL CASES ---
+  Scenario: Risk section with vague mitigations triggers RISK-02 FAIL
+    Given _index.md contains risk entry "Risk: API downtime — Mitigation: monitor closely"
+    And checklist item RISK-02 requires each mitigation to be concrete
+    When the evaluator applies RISK-02
+    Then RISK-02 result is FAIL
+    And evidence cites: "_index.md — mitigation 'monitor closely' specifies no action"
+    And rework item directs: "replace 'monitor closely' with a concrete mitigation (e.g., circuit breaker with 30s timeout, fallback to cached data)"
 
-  Scenario: Leniency bias detected when evaluator scores are consistently higher than human
-    Given a golden artifact set where human scores average 3.2 across all dimensions
-    And the evaluator consistently scores 1.2 points higher than human on every artifact
-    When the bias-analyzer computes per-dimension mean delta
-    Then the bias report flags "LENIENCY_BIAS" for all 5 dimensions
-    And the bias report records mean_delta > 1.0 for each dimension
-    And the calibration report records "BIAS_DETECTED" status
-    And no "CALIBRATED" status is issued
-
-  Scenario: Harshness bias detected when evaluator scores are consistently lower than human
-    Given a golden artifact set where human scores average 3.8 across all dimensions
-    And the evaluator consistently scores 1.1 points lower than human on every artifact
-    When the bias-analyzer computes per-dimension mean delta
-    Then the bias report flags "HARSHNESS_BIAS" for all 5 dimensions
-    And the bias report records mean_delta < -1.0 for each dimension
-    And the calibration report records "BIAS_DETECTED" status
-    And the rubric-optimizer is triggered automatically
-
-  Scenario: Systematic bias detected in a single dimension only
-    Given the evaluator is well-calibrated on 4 of 5 dimensions (|mean_delta| <= 0.75)
-    And the evaluator scores RiskCoverage 1.5 points higher than human on average
-    When the bias-analyzer computes per-dimension mean delta
-    Then the bias report flags "LENIENCY_BIAS" for dimension "RiskCoverage" only
-    And the other 4 dimensions are recorded as "CALIBRATED"
-    And the calibration report records "DIMENSION_BIAS_DETECTED" status
-    And the rubric-optimizer is triggered with scope: ["RiskCoverage"]
+  Scenario: Evaluator produces no numeric scores in any field
+    Given any design artifact combination is evaluated
+    When the evaluator produces the evaluation report
+    Then the report contains no "score" column or score values (1-5 range)
+    And every assessment is expressed as PASS or FAIL with a reason
+    And the verdict line states "PASS" or "REWORK" with a count of FAIL items
 ```
 
 ---
 
-## Feature: Rubric Optimization
+## Feature: Binary Checklist Evaluation — Plan Mode
 
 ```gherkin
-Feature: Rubric Optimization After Bias Detection
-  As the eval harness pipeline
-  I want to automatically update rubric language when bias is detected
-  So that the evaluator re-calibrates toward human baseline without overcorrecting
+Feature: Binary PASS/FAIL Checklist Evaluation for Plan Artifacts
+  As the superpowers-evaluator in plan mode
+  I want to verify plan structural integrity using binary checks
+  So that plan gaps are reported with precise file and task references
 
   Background:
-    Given bias has been detected in the previous calibration run
-    And the bias-analyzer has produced a bias report with flagged dimensions
-    And the rubric-optimizer has read the current rubric file
+    Given a plan folder with _index.md and all task files
+    And the plan checklist at docs/retros/checklists/plan-v1.md is loaded
 
-  Scenario: Bias detected triggers rubric update and recalibration improves
-    Given the bias report flags LENIENCY_BIAS on "RiskCoverage" with mean_delta = 1.5
-    When the rubric-optimizer updates the RiskCoverage dimension rubric
-    And stricter language is injected for score levels 4 and 5 (e.g., "all significant risks must have concrete mitigations with rollback procedures")
-    And recalibration is run against the same golden artifact set
-    Then the new mean_delta for RiskCoverage is in range [-0.75, 0.75]
-    And the bias report records "RECALIBRATION_IMPROVED"
+  Scenario: BDD scenario with no mapped task triggers PLAN-COV-01 FAIL
+    Given the design has scenario "Given user is unauthenticated, When accessing /profile, Then redirect to /login"
+    And no task in the plan references this scenario
+    When the evaluator applies PLAN-COV-01
+    Then PLAN-COV-01 result is FAIL
+    And evidence states: "Scenario 'unauthenticated profile access redirect' has no mapped task"
+    And rework item directs: "add a task covering the unauthenticated redirect scenario"
 
-  Scenario: Rubric update does not overcorrect into harshness
-    Given the bias report flags LENIENCY_BIAS on "BDD Completeness" with mean_delta = 1.2
-    When the rubric-optimizer applies correction to BDD Completeness
-    And recalibration is run
-    Then the new mean_delta for BDD Completeness is in range [-0.75, 0.75]
-    And no HARSHNESS_BIAS is introduced on any previously-calibrated dimension
-    And the calibration report records "NO_OSCILLATION_DETECTED"
+  Scenario: Task with descriptive verification command triggers TASK-COMP-03 FAIL
+    Given task-005-rate-limit-impl.md has verification: "Verify that rate limiting works correctly"
+    And checklist item TASK-COMP-03 requires verification commands to be executable
+    When the evaluator applies TASK-COMP-03 to task-005
+    Then TASK-COMP-03 result is FAIL
+    And evidence states: "task-005-rate-limit-impl.md — 'Verify that rate limiting works correctly' is a description, not a command"
+    And rework item directs: "replace with an executable command (e.g., 'pnpm test rate-limit.spec.ts')"
 
-  Scenario: Prior rubric content is snapshotted before amendment is applied
-    Given the rubric-optimizer is about to apply an amendment to the "RiskCoverage" dimension
-    When the orchestrator writes the calibration report
-    Then the calibration report contains a "prior_rubric_snapshot" field with the full current text of the rubric section
-    And the snapshot is written before any rubric file modification occurs
-    And the snapshot enables manual rollback by copying the prior_rubric_snapshot content back to the file
+  Scenario: Circular dependency in task graph triggers DEP-01 FAIL
+    Given task 003 depends on task 005
+    And task 005 depends on task 003
+    When the evaluator walks the dependency graph
+    Then DEP-01 result is FAIL
+    And evidence states: "Cycle detected: task-003 → task-005 → task-003"
+    And rework item directs: "break the cycle by removing or reversing one dependency edge"
 
-  Scenario: Repeated bias after two rubric updates triggers escalation
-    Given the rubric-optimizer has updated the rubric twice for "ArchitectureSoundness"
-    And recalibration still shows mean_delta = 0.6 after both updates
-    When the third recalibration completes
-    Then the pipeline does not attempt a third automatic rubric update
-    And the harness writes a "MANUAL_REVIEW_REQUIRED" flag to the calibration report
-    And the escalation note lists: affected dimension, current mean_delta, attempts made
+  Scenario: Impl task without a test task triggers TEST-01 FAIL
+    Given task-007-payment-impl.md exists
+    And no task with prefix "007" and type "test" exists in the plan
+    And no explicit absence justification is present in task-007
+    When the evaluator applies TEST-01
+    Then TEST-01 result is FAIL
+    And evidence states: "task-007-payment-impl.md has no corresponding test task (no task-007-*-test.md)"
+    And rework item directs: "add test task for payment implementation or add justification for absence"
 
-  Scenario: Rubric update preserves all unaffected dimensions
-    Given the bias report flags only "DocumentConsistency" for correction
-    When the rubric-optimizer modifies the DocumentConsistency rubric
-    And recalibration runs on all 20 golden artifacts
-    Then scores for RequirementsTraceability, BDDCompleteness, ArchitectureSoundness, and RiskCoverage are unchanged (within ±0.1 MAE vs previous run)
-    And no new bias flags appear on previously-calibrated dimensions
+  Scenario: Structurally complete plan with all items passing produces PASS verdict
+    Given all tasks have acceptance criteria and executable verification commands
+    And all BDD scenarios are mapped to at least one task
+    And no circular dependencies exist
+    And every impl task has a corresponding test task
+    When the evaluator applies the plan checklist
+    Then all items PASS
+    And the verdict is PASS
 ```
 
 ---
 
-## Feature: Score Trend Tracking in Executing Plans
+## Feature: Verification Command Execution as Evaluation — Code Mode
 
 ```gherkin
-Feature: Score Trend Tracking for Multi-Iteration Optimization
-  As the executing-plans skill
-  I want to track evaluator scores across rounds and inject trend context into the generator
-  So that the generator can adapt its strategy based on whether scores are improving, plateauing, or declining
+Feature: Command Exit Code as the Sole Verdict Basis in Code Mode
+  As the superpowers-evaluator in code mode
+  I want to determine task verdict from verification command exit codes only
+  So that code quality judgment is objective and does not depend on LLM assessment
 
   Background:
-    Given a plan with evaluator mode "on"
-    And evaluation-history.json exists in the plan directory
-    And the file records per-task scores across evaluation rounds
+    Given docs/plans/2026-04-01-auth-evals/sprint-contract-batch-2.md lists tasks 003, 004, 005
+    And the code checklist at docs/retros/checklists/code-v1.md is loaded
 
-  Scenario: Improving trend causes generator to continue with refinement prompt
-    Given evaluation-history.json contains for task 003:
-      | round | Correctness | Completeness | verdict |
-      | 1     | 2           | 3            | REWORK  |
-      | 2     | 3           | 4            | REWORK  |
-    When the executing-plans skill reads the trend for task 003
-    Then the computed trend is "IMPROVING" (Correctness increased by 1, Completeness increased by 1, no decreases)
-    And the generator's next prompt includes: "Scores are improving (round 1 → 2). Continue refining the same approach."
-    And execution proceeds to round 3
+  Scenario: All verification commands pass and no prohibited patterns produce PASS verdict
+    Given task 003 verification commands: "pnpm test auth.spec.ts" and "tsc --noEmit"
+    And both commands exit with code 0
+    And auth/handler.ts contains no TODO, FIXME, or stub patterns
+    When the evaluator runs verification for task 003
+    Then CODE-VER-01 result is PASS
+    And the evidence block records: command, exit code 0, last 10 lines of output
+    And task 003 verdict is PASS
 
-  Scenario: Plateau trend after 2 rounds with identical scores triggers escalation
-    Given evaluation-history.json contains for task 005:
-      | round | Correctness | Completeness | verdict |
-      | 1     | 3           | 2            | REWORK  |
-      | 2     | 3           | 2            | REWORK  |
-    When the executing-plans skill reads the trend for task 005 after round 2
-    Then the computed trend is "PLATEAU" (all dimension scores identical across 2 consecutive rounds)
-    And plateau_count for task 005 is recorded as 2
-    And the task is added to "escalated_tasks" in evaluation-history.json
-    And execution does not proceed to a third rework round for task 005
+  Scenario: Non-zero exit code produces REWORK with command output as evidence
+    Given task 004 verification command: "pnpm test user.spec.ts"
+    And "pnpm test user.spec.ts" exits with code 1
+    And the output contains "AssertionError: expected 403 but got 200 at auth.test.ts:45"
+    When the evaluator runs verification for task 004
+    Then CODE-VER-01 result is FAIL
+    And the rework item states: "'pnpm test user.spec.ts' exited with code 1"
+    And the rework item includes the failing test output (last 30 lines)
+    And the rework item does not contain subjective quality assessments
 
-  Scenario: Declining trend triggers immediate pivot recommendation
-    Given evaluation-history.json contains for task 007:
-      | round | Correctness | Completeness | verdict |
-      | 1     | 4           | 3            | REWORK  |
-      | 2     | 3           | 2            | REWORK  |
-    When the executing-plans skill reads the trend for task 007
-    Then the computed trend is "DECLINING" (Correctness decreased by 1, Completeness decreased by 1)
-    And the generator's next prompt includes: "Scores are declining. Pivot required — review the implementation strategy."
-    And the pivot flag in the evaluation report is set to true
-    And execution pauses for user review before proceeding
+  Scenario: Evaluator re-runs commands independently when generator claims success
+    Given the generator's completion message states "all tests pass"
+    And the evaluator runs "pnpm test" independently
+    And "pnpm test" exits with code 1 (contradicting the generator report)
+    When the evaluator records the result
+    Then the verdict is REWORK based on the independent run result
+    And the rework item notes: "generator claimed tests pass; independent run produced exit code 1"
 
-  Scenario: Max rounds reached without PASS triggers escalation
-    Given evaluation-history.json contains 5 rounds for task 009
-    And task 009 has not achieved PASS verdict in any round
-    When the executing-plans skill checks whether max rounds have been reached
-    Then execution does not attempt a 6th evaluation round
-    And the harness writes a blocker entry: "Task 009: max evaluation rounds (5) reached without PASS"
-    And the escalation procedure in blocker-and-escalation.md is triggered
-    And the user is notified via AskUserQuestion with the blocker details
+  Scenario: TODO placeholder in produced file triggers CODE-QUAL-01 FAIL
+    Given task 005 produced auth/handler.ts
+    And auth/handler.ts line 28 contains "// TODO: implement rate limiting"
+    And checklist item CODE-QUAL-01 prohibits TODO comments in produced files
+    When the evaluator applies CODE-QUAL-01 to task 005 produced files
+    Then CODE-QUAL-01 result is FAIL
+    And evidence states: "auth/handler.ts:28 — TODO comment present"
+    And rework item states: "implement rate limiting at auth/handler.ts:28 or remove the placeholder"
 
-  Scenario: First round has no trend (baseline only)
-    Given evaluation-history.json is empty for task 002
-    When the evaluator completes the first evaluation round for task 002
-    Then the trend is recorded as "BASELINE" (not IMPROVING/PLATEAU/DECLINING)
-    And no trend context is injected into the generator's prompt
-    And the score is written to evaluation-history.json as round 1
-
-  Scenario: Score delta below integer threshold treated as plateau not improvement
-    Given evaluation-history.json contains for task 004:
-      | round | Correctness | Completeness | verdict |
-      | 1     | 3           | 3            | REWORK  |
-      | 2     | 3           | 3            | REWORK  |
-    When the executing-plans skill reads the trend for task 004
-    Then the computed trend is "PLATEAU" (all dimension scores identical — no integer-point change)
-    And the generator receives a plateau-context prompt
+  Scenario: Pivot flag set when same task fails verification in 2 consecutive rounds
+    Given task 006 is REWORK in docs/plans/2026-04-01-auth-evals/evaluation-round-1-batch-2.md (CODE-VER-01 FAIL, exit 1)
+    And task 006 is REWORK in docs/plans/2026-04-01-auth-evals/evaluation-round-2-batch-2.md (CODE-VER-01 FAIL, exit 1, same error)
+    When the evaluator assesses the pivot flag for round 2
+    Then pivot is set to true
+    And pivot rationale states: "task-006 has failed the same verification command with the same error in 2 consecutive rounds — implementation approach may be architecturally blocked"
+    And the recommended action is to review the task specification, not retry the same implementation
 ```
 
 ---
 
-## Feature: Golden Artifact Validation
+## Feature: Retrospective Failure Pattern Analysis
 
 ```gherkin
-Feature: Golden Artifact Validation Before Calibration
-  As the eval harness orchestrator
-  I want to validate golden artifact structure before running calibration
-  So that calibration fails fast on malformed input rather than producing invalid results
+Feature: Retrospective Analysis of Failure Patterns Across Plans
+  As the retrospective skill
+  I want to identify recurring checklist failures and never-failing items across plans
+  So that the checklist evolves toward items that reliably detect real problems
 
   Background:
-    Given the golden artifact set directory is "eval-harness/golden/design/"
-    And the harness reads artifact metadata from each artifact's "human-scores.json" (authoritative source for expected_verdict and human baseline scores)
-    And the harness reads artifact type metadata from each artifact's "manifest.json" (name, mode, quality tier only)
+    Given retrospective skill is invoked with 3 plan directories
+    And each plan has 3+ evaluation reports (design + plan + at least 1 code batch)
 
-  Scenario: Well-formed artifact with all required files is accepted
-    Given a golden artifact "design-high-001" contains:
-      | file               | present |
-      | _index.md          | yes     |
-      | bdd-specs.md       | yes     |
-      | architecture.md    | yes     |
-      | best-practices.md  | yes     |
-      | human-scores.json  | yes     |
-      | manifest.json      | yes     |
-    And "human-scores.json" includes scores for all 5 design dimensions
-    And "human-scores.json" includes expected_verdict: "PASS"
-    When the harness validates the artifact
-    Then validation reports "VALID" for "design-high-001"
-    And the artifact is included in the calibration run
+  Scenario: Item failing in 2+ plans generates ADD proposal for missing coverage
+    Given SCEN-CONC-01 failed in plan-1 (tasks 002, 005) and plan-2 (task 007)
+    And the failing evidence consistently shows vague HTTP error conditions in Given clauses
+    And no checklist item currently targets HTTP status code specificity
+    When retrospective skill aggregates failure patterns
+    Then SCEN-CONC-01 appears in the failure frequency table with count 2 (2 distinct plans)
+    And the analyzer proposes: ADD design/SCEN-CONC-03 "Error scenarios must name specific HTTP status codes"
+    And the proposal rationale cites: "plan-1 tasks 002, 005 — plan-2 task 007 — all missing concrete status codes"
 
-  Scenario: Malformed artifact missing _index.md is rejected with clear error
-    Given a golden artifact "design-bad-001" contains only "bdd-specs.md" and "architecture.md"
-    And "_index.md" is absent
-    When the harness validates the artifact
-    Then validation reports "INVALID" for "design-bad-001"
-    And the error message states: "Missing required file: _index.md"
-    And the artifact is excluded from the calibration run
-    And the calibration report lists "design-bad-001" in the "excluded_artifacts" section
+  Scenario: Item with 0 failures across 10+ reports generates REMOVE candidate proposal
+    Given PLAN-GRAN-01 has PASS in 12 evaluation reports across 4 plans
+    When retrospective skill aggregates the data
+    Then PLAN-GRAN-01 appears in the never-failing items section with count 12
+    And the analyzer proposes: REMOVE plan/PLAN-GRAN-01
+    And the rationale states: "0 failures across 12 reports in 4 plans; check may not be detecting genuine issues"
+    And the proposal notes: "user should confirm this pattern is no longer a real failure mode before removing"
 
-  Scenario: Artifact without human-scores.json is rejected before calibration runs
-    Given a golden artifact "design-no-scores-001" has all required design files
-    But "human-scores.json" is absent
-    When the harness validates the artifact
-    Then validation reports "INVALID" for "design-no-scores-001"
-    And the error message states: "Missing required file: human-scores.json"
-    And calibration does not run until all artifacts pass validation
+  Scenario: Plateau task reveals gap in existing checklist coverage
+    Given task-004 in plan-2 was REWORK in docs/plans/2026-04-01-auth-evals/evaluation-round-1-batch-2.md
+    And task-004 was REWORK in docs/plans/2026-04-01-auth-evals/evaluation-round-2-batch-2.md
+    And both rework items cite: "verification command is descriptive, not executable"
+    And no checklist item currently checks for executable command syntax
+    When retrospective skill identifies plateau tasks
+    Then task-004 appears in the plateau task analysis with 2 consecutive REWORK rounds
+    And root cause is stated: "verification command syntax not enforced by any checklist item"
+    And the analyzer proposes: ADD plan/TASK-COMP-04 "Verification commands must begin with an executable binary name, not a description verb"
 
-  Scenario: Artifact with partial human baseline scores is rejected
-    Given a golden artifact "design-partial-001" has human-scores.json with scores for 3 of 5 dimensions
-    And dimensions "ArchitectureSoundness" and "RiskCoverage" are absent from human-scores.json
-    When the harness validates the artifact
-    Then validation reports "INVALID" for "design-partial-001"
-    And the error message lists the specific missing dimensions
-    And the artifact is excluded from calibration
+  Scenario: Retrospective with insufficient data produces no proposals
+    Given only 1 plan directory is provided
+    And it contains 2 evaluation reports
+    When retrospective skill runs
+    Then the retrospective report states: "insufficient data — need 3+ plans or 10+ per-item evaluations for reliable pattern detection"
+    And no evolution proposals are generated
+    And the report recommends: "run retrospective again after 2+ additional plan executions"
 
-  Scenario: All artifacts pass validation and calibration proceeds
-    Given 20 golden artifacts all pass individual validation
-    When the harness completes the validation phase
-    Then the validation report records 20 valid artifacts and 0 invalid artifacts
-    And the calibration phase begins immediately
-    And no manual intervention is required
+  Scenario: Retrospective enforces evolution rate limit per mode
+    Given pattern analysis produces 5 valid ADD proposals for design mode
+    When the retrospective report is finalized
+    Then only 3 proposals are surfaced for design mode (rate limit: EVO-6)
+    And the report notes: "2 proposals deferred — rerun retrospective after applying current approvals"
+    And the deferred proposals are listed with their evidence for future reference
 ```
 
 ---
 
-## Feature: Full Pipeline Integration
+## Feature: Evolution Proposal Review and Checklist Update
 
 ```gherkin
-Feature: End-to-End Eval Harness Pipeline Execution
-  As a developer running the eval harness skill
-  I want the full pipeline to execute without manual intervention
-  So that evaluator calibration, bias detection, and rubric optimization run atomically
+Feature: User-Gated Checklist Evolution with Version Tracking
+  As the retrospective skill
+  I want to present each evolution proposal for explicit user approval
+  So that checklist changes are deliberately considered and auditable
 
   Background:
-    Given the eval-harness skill is invoked
-    And 20 validated golden artifacts are available in design mode
-    And the rubric file exists at the configured path
-    And evaluation-history.json is initialized (empty or pre-existing)
+    Given retrospective skill has produced 2 evolution proposals
+    And the current design checklist is docs/retros/checklists/design-v1.md
 
-  Scenario: Full pipeline succeeds when evaluator is well-calibrated
-    Given all golden artifacts pass validation
-    When the orchestrator spawns the evaluator on each artifact
-    And the bias-analyzer receives all 20 evaluation reports
-    Then bias-analyzer computes mean_delta per dimension
-    And no dimension has |mean_delta| > 1.0
-    And the calibration report records "CALIBRATED"
-    And the rubric-optimizer is NOT invoked
-    And the pipeline completes with status "HARNESS_READY"
+  Scenario: User approves ADD proposal — new version file created and event logged
+    Given proposal: ADD design/SCEN-CONC-03 "Error scenarios must name specific HTTP status codes"
+    When the user approves the proposal
+    Then docs/retros/checklists/design-v2.md is created with SCEN-CONC-03 appended
+    And docs/retros/checklists/design-v1.md is preserved unchanged
+    And an event is appended to evolution-log.jsonl:
+      timestamp, event:"item_added", mode:"design", item_id:"SCEN-CONC-03", rationale, driving_plans
+    And the retrospective report records "SCEN-CONC-03: APPROVED — design-v2.md created"
 
-  Scenario: Full pipeline runs bias correction cycle when leniency bias is found
-    Given calibration reveals leniency bias on "RiskCoverage" (mean_delta = 1.5)
-    When the bias-analyzer writes the bias report
-    Then the rubric-optimizer is triggered automatically
-    And the rubric-optimizer updates the RiskCoverage rubric
-    And recalibration runs on the same 20 artifacts
-    And the new mean_delta for RiskCoverage is in range [-0.75, 0.75]
-    And the pipeline records "BIAS_CORRECTED" in the final calibration report
-    And the pipeline completes with status "HARNESS_READY"
+  Scenario: User rejects REMOVE proposal — checklist unchanged, rejection recorded
+    Given proposal: REMOVE plan/PLAN-GRAN-01 "0 failures across 12 reports"
+    When the user rejects the proposal
+    Then plan-v1.md is unchanged
+    And no evolution event is logged for PLAN-GRAN-01
+    And the retrospective report records "PLAN-GRAN-01: REJECTED — user declined removal"
 
-  Scenario: Pipeline halts at bias analysis when --dry-run flag is provided
-    Given the eval-harness skill is invoked with "--dry-run" flag
-    And calibration reveals leniency bias on "ArchitectureSoundness" (mean_delta = 1.2)
-    When the bias-analyzer completes analysis
-    Then the calibration report is written with bias findings
-    And the rubric-optimizer is NOT invoked
-    And no rubric file is modified
-    And the pipeline completes with status "DRY_RUN_COMPLETE: bias detected, rubric changes NOT applied"
+  Scenario: Pre-edit snapshot written to report before any checklist file is modified
+    Given any evolution proposal is about to be applied
+    When the retrospective skill prepares to write the checklist update
+    Then the current full content of the target checklist is written to the retrospective report under "pre-edit snapshot"
+    And the snapshot precedes any file edit in the execution sequence
+    And the retrospective report notes: "rollback: copy pre-edit snapshot content to design-v1.md"
 
-  Scenario: Pipeline writes rubric amendments only when --apply-rubric-changes flag is provided
-    Given the eval-harness skill is invoked with "--apply-rubric-changes" flag
-    And the rubric-optimizer has produced amendment proposals for "RiskCoverage"
-    When the user approves the proposals via AskUserQuestion
-    Then the rubric-optimizer writes the amendments to the rubric file
-    And the calibration report records the prior rubric content in "prior_rubric_snapshot"
-    And the pipeline completes with status "RUBRIC_AMENDED"
+  Scenario: Version counter increments once per retrospective run regardless of approval count
+    Given 3 proposals are approved in a single retrospective run for design mode
+    When all 3 are applied
+    Then design-v2.md is created containing all 3 changes (not design-v4.md)
+    And the evolution-log.jsonl records 3 item_added events each referencing design-v2.md
+    And design-v1.md is preserved for audit purposes
 
-  Scenario: Pipeline writes rubric amendments only when --apply-rubric-changes flag is NOT provided
-    Given the eval-harness skill is invoked WITHOUT "--apply-rubric-changes" flag
-    And bias has been detected and rubric-optimizer has produced proposals
-    When the orchestrator presents proposals to the user
-    Then no rubric file is modified regardless of user response
-    And the proposals are written to the calibration report for review
-    And the pipeline completes with status "PROPOSALS_GENERATED: rerun with --apply-rubric-changes to apply"
-
-  Scenario: Pipeline writes evaluation-history.json on first calibration run
-    Given evaluation-history.json does not exist
-    When calibration completes successfully
-    Then evaluation-history.json is created in the plan directory
-    And it records: calibration_timestamp, per-artifact scores, per-dimension MAE, verdict_agreement_rate
-    And subsequent runs append to the history rather than overwriting
-
-  Scenario: Pipeline produces deterministic output when run twice on same artifacts
-    Given calibration run 1 has completed and produced a calibration report
-    When calibration run 2 is executed on the same artifacts with the same rubric
-    Then the per-artifact scores differ by no more than ±0.1 from run 1
-    And both runs produce the same "CALIBRATED" or "BIAS_DETECTED" status
-    And the calibration report notes "DETERMINISM_CHECK: PASS"
-
-  Scenario: Pipeline handles mixed artifact modes (design + plan + code)
-    Given the golden artifact set contains:
-      | mode   | count |
-      | design | 10    |
-      | plan   | 5     |
-      | code   | 5     |
-    When the orchestrator dispatches evaluators with mode-appropriate rubrics
-    Then design artifacts are evaluated using design mode rubrics
-    And plan artifacts are evaluated using plan mode rubrics
-    And code artifacts are evaluated using code mode rubrics
-    And the bias-analyzer computes bias separately per mode
-    And the calibration report contains a per-mode summary
+  Scenario: Second retrospective run with prior evolution history proposes against new version
+    Given design-v2.md exists with SCEN-CONC-03 added
+    And a new retrospective run identifies SCEN-CONC-03 as a failure source in 2 more plans
+    When retrospective skill runs
+    Then the never-failing candidate analysis uses design-v2.md as the current checklist
+    And SCEN-CONC-03 is not proposed for removal (it has failed, not passed in all reports)
+    And any new proposals reference design-v2.md as the base for the next version
 ```
 
 ---
@@ -375,16 +298,15 @@ Feature: End-to-End Eval Harness Pipeline Execution
 
 | Feature | Scenarios |
 |---------|-----------|
-| Evaluator Calibration | 6 |
-| Rubric Optimization | 5 (+ snapshot/rollback) |
-| Score Trend Tracking | 6 |
-| Golden Artifact Validation | 5 |
-| Full Pipeline Integration | 8 (+ dry-run, apply-rubric-changes x2) |
-| **Total** | **30** |
+| Binary Checklist — Design Mode | 6 |
+| Binary Checklist — Plan Mode | 5 |
+| Command Exit Code — Code Mode | 5 |
+| Retrospective Failure Pattern Analysis | 5 |
+| Evolution Proposal Review | 5 |
+| **Total** | **26** |
 
-All scenarios meet the following criteria:
-- Each scenario tests exactly one rule or behavior (single responsibility)
-- Every Then clause is specific and verifiable (no vague assertions)
-- Scenarios are independent of each other (no shared mutable state)
-- Business language used throughout (no implementation-specific terms like "JSON key", "function call")
-- Given/When/Then structure is preserved with And for multi-step clauses
+All scenarios meet:
+- Single responsibility: each scenario tests exactly one rule or behavior
+- Verifiable Then clauses: no vague assertions ("should be correct", "should work well")
+- Business language: no implementation terms (no "JSON key", "function call", "regex")
+- Independence: no shared mutable state between scenarios; each has explicit Given setup

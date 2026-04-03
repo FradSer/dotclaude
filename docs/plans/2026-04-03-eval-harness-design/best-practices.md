@@ -1,142 +1,124 @@
 # Best Practices
 
-## Golden Artifact Authoring
+## Writing Effective Checklist Items
 
-### What makes a good "high-quality" artifact
+### The binary test
 
-A high-quality (expected PASS) golden artifact must meet the rubric thresholds for its mode — but should NOT be trivially perfect. Perfect artifacts inflate agreement rate artificially and don't stress-test evaluator discrimination near the PASS/REWORK boundary.
+Every checklist item must pass a binary test: can you determine PASS or FAIL without a judgment call?
 
-Target scores for high-quality artifacts: all dimensions at 4 or 5, with at least one dimension at exactly 4. This tests whether the evaluator correctly identifies a near-perfect but imperfect artifact as PASS.
+"Architecture is well-structured" — fails the binary test. "No import described from domain layer to infrastructure layer" — passes.
 
-### What makes a good "low-quality" artifact
+For each proposed item, ask: "If I give this checklist to a fresh evaluator with only the artifacts, will two independent evaluators always produce the same PASS/FAIL result?" If the answer is "it depends on interpretation," the item is too subjective. Rewrite it as a search pattern or a structural query.
 
-A low-quality (expected REWORK/FAIL) artifact must have at least one dimension below 3 — triggering REWORK under the standard threshold rules. The failure mode should be realistic: not obviously broken, but genuinely missing requirements in a way that matters.
+### Evidence requirement
 
-Avoid "obviously bad" artifacts where every dimension scores 1. These are too easy for the evaluator and don't test discrimination near the boundary. Target: 2-3 dimensions at 2, rest at 3-4, with a clear REWORK verdict.
+Every FAIL result must name file, location, and the exact text or pattern that violated the check. An evaluator that produces "FAIL — scenario not concrete enough" with no file and line reference has produced an unactionable rework item.
 
-### Synthetic content requirement
+The checklist item itself should specify how to find evidence: "grep for 'some', 'valid input', 'appropriate', or 'relevant' in Given clauses" is specific. "Assess Given clause concreteness" is not.
 
-Golden artifact content must be synthetic — not derived from real project work. Two reasons:
-1. **Familiarity bias**: if the evaluator has seen real project patterns before, it may rate familiar artifacts more charitably
-2. **Drift**: real project artifacts change; golden artifacts must be stable baselines
+### Item granularity
 
-Good synthetic domains: a fictional "notification service", a "user preference manager", a "rate limiter library". Avoid domains that touch known codebase components.
+One item, one concern. "Scenarios are complete and concrete" covers two concerns. Split it:
+- "All Given clauses use specific data values" (concreteness)
+- "All error paths have at least one scenario" (completeness)
 
-### Human scoring protocol
+A single FAIL covering two concerns gives the generator ambiguous feedback. Two separate FAIL items give precise rework targets.
 
-Before adding an artifact to the golden set:
-1. Score it independently (no rubric open during scoring; apply rubric after)
-2. Re-read the rubric after scoring; adjust if needed
-3. Write a rationale for each dimension below 4
-4. For any score of 3 or below, write a rationale that names the specific missing element
+### Negative checks vs. positive checks
 
-Do NOT score an artifact you authored. Wait at least 24 hours before scoring your own artifacts.
+Negative checks ("no import from X to Y") are generally more reliable than positive checks ("all requirements have scenarios"). Negative checks find violations. Positive checks require comprehensiveness, which is harder to verify mechanically.
 
-### Minimum viable golden set
+For comprehensiveness checks, use cross-referencing with counts: "every requirement ID in _index.md appears in at least one scenario" is checkable by comparing two explicit lists. "Scenarios are comprehensive" is not.
 
-Per mode, minimum for a calibration run:
-- 2 high-quality artifacts (different failure modes at dimension 4)
-- 2 low-quality artifacts (different REWORK triggers)
-- Total: 4 artifacts per mode, 12 for `--mode all`
+### Executable check specification
 
-Silver-to-gold promotion (for shared calibration sets): 2 independent scorers with >= 80% agreement rate (defined as: all dimensions within 1 point AND same verdict).
+Each checklist item should include, in a comment or annotation, the grep pattern or structural query used to confirm it. This prevents two evaluators from applying the same item differently:
 
-## Bias Detection and Thresholds
+```
+- [ ] SCEN-CONC-01: All Given clauses use specific data values
+  # Check: grep for "some ", "valid ", "appropriate ", "relevant " in Given clauses of bdd-specs.md
+  # Evidence format: file:line — quoted text
+```
 
-### Leniency bias is more dangerous than severity bias
+## Managing Checklist Evolution
 
-A lenient evaluator causes false PASSes — work that should be reworked gets accepted. A severe evaluator causes false REWORKs — work gets rejected unnecessarily. False PASSes compound: they let low-quality code proceed to the next phase, where it causes harder-to-detect problems. Severity bias causes friction but is caught quickly by the user.
+### Add only from multi-plan evidence
 
-This means: leniency bias amendments take priority over severity bias amendments. If both are present, fix leniency first.
+A single failure is noise. Failures in 2+ distinct plans with the same root cause are signal. EVO-5 enforces this. Do not override it for a single dramatic failure — investigate whether the failing plan was anomalous.
 
-### Threshold calibration: don't over-tighten
+The key question: "Would this item have caught a FAIL in at least 2 of my last 5 plans?" If yes, it belongs in the checklist. If uncertain, wait for one more plan.
 
-After a rubric amendment, run recalibration before applying further amendments. Rubric descriptions interact non-linearly — tightening `risk_coverage` can shift evaluator behavior on `bdd_completeness` if the evaluator uses holistic reasoning. One amendment at a time, then verify.
+### Remove conservatively
 
-Target: per-dimension mean_delta <= 0.75 (well within the 1.0 threshold). Aiming for exactly 0.0 is over-engineering — the evaluator is a reasoning agent, not a deterministic scorer.
+A never-failing item might reflect a failure mode that models now reliably avoid — which is success, not irrelevance. Or it might reflect a check that was always too easy to pass.
 
-### Evaluator variance across runs
+Before approving a REMOVE proposal:
+1. Can you construct a concrete example where this item would fail?
+2. If yes: has the check been too permissive in how it's applied? Consider MODIFY before REMOVE.
+3. If no: the check is either solved or the item was never meaningful. Approve the removal.
 
-The same evaluator run twice on the same artifact may produce scores ± 1 per dimension due to sampling variance. This is expected. Calibration should be run 2-3 times to establish a stable mean before attributing a delta to bias.
+Never-failing items after 10+ plans that you cannot construct a failing example for are clear removal candidates. Retain the removal event in the evolution log for future reference.
 
-Consider a dimension biased only if `mean_delta > threshold` across **multiple** calibration runs, not just one.
+### Version files, do not mutate them
 
-## Pipeline Execution Safety
+When any item is added, modified, or removed, create `design-v2.md` rather than overwriting `design-v1.md`. Evaluation reports already written reference the checklist version used. Mutating a versioned file makes historical reports uninterpretable.
 
-### Dry-run first
+File naming: always increment the numeric suffix. `design-v1.md → design-v2.md`, not `design-v1-updated.md` or `design-latest.md`.
 
-Always run `--dry-run` before `--apply-rubric-changes`. The dry-run output shows which amendments would be proposed; review them before applying. The rubric optimizer cannot undo its changes automatically.
+### Cross-mode contamination
 
-### Rubric backups
+Code mode failures do not automatically justify design checklist changes. If code tasks repeatedly fail due to missing error handling, the root cause might be in the code, not the design.
 
-Before any rubric amendment run, the `eval-orchestrator` reads and stores the current rubric content in `calibration-report.json` under a `prior_rubric_snapshot` field. This enables manual rollback if an amendment causes regression.
+However, if code failures consistently trace back to vague error scenarios in BDD specs (visible in design evaluation reports), that IS evidence for a design checklist addition — because the root cause is in the design documentation. The trace must be explicit in the retrospective analysis: the code failure → the design gap must be documented as the causal chain.
 
-### Regression check protocol
+After amending a design checklist, check whether the same failure mode also appears in plan evaluation reports. Cross-mode patterns that share a single root cause should be addressed in both checklists in the same retrospective run.
 
-After applying rubric amendments:
-1. Re-run calibration on the same golden set
-2. Verify all `expected_verdict` values still match evaluator verdicts (zero regression requirement — see Success Criteria SC-7 in `_index.md`)
-3. If regression detected: rollback the amendment using the prior_rubric_snapshot and investigate
+## Retrospective Cadence
 
-### Pipeline idempotency
+### When to run
 
-Running `eval-harness` twice on the same golden set should produce the same calibration-report structure (modulo evaluator variance). If proposals differ significantly across runs, the golden set may be under-specified. Add more artifacts to reduce variance.
+Run retrospective after 3+ plans have been executed, not after every plan. Single-plan retros produce noise proposals from insufficient data.
 
-## Score Trend Tracking
+Exception: if a plan has an unusually high failure rate (more than half of checklist items failing in the code evaluation), run retrospective immediately after that plan — it may indicate a systemic gap.
 
-### evaluation-history.json is ephemeral
+### Working with the rate limit
 
-Like sprint contracts, `evaluation-history.json` is a working artifact — it lives in the plan directory during execution and is NOT committed. It serves as inter-round communication between the evaluator and the generator. After plan execution completes, it can be deleted or retained for audit purposes.
+The rate limit (max 3 changes per mode per retrospective run, EVO-6) exists to prevent rapid oscillation. If analysis produces 7 valid proposals, the top 3 by failure frequency are surfaced; the rest are deferred.
 
-### Trend classification edge cases
+Do not try to manually apply deferred proposals between retros. Wait for the next run — if the evidence base has grown, deferred proposals will reappear and may then be within the rate limit.
 
-**First round**: trend is always `null`. Do not inject trend context in the first rework cycle — there is no baseline to compare against.
+### Across-plan retrospective value
 
-**Mixed improvement/decline**: If task "003" improves on Correctness but declines on Completeness, classify as `declining` (any decline takes precedence over improvement). This is conservative: avoid continuing when signals are mixed.
+Single-plan: useful for identifying idiosyncratic failures from a specific domain or team pattern.
+Multi-plan: necessary for reliable evolution proposals. Failure patterns visible across 3+ plans are the strongest signal for ADD proposals. Never-failing items visible across 4+ plans are the strongest signal for REMOVE proposals.
 
-**Single-dimension tasks**: `config` and `setup` tasks are scored on fewer dimensions. `plateau` detection should only compare the applicable dimensions (N/A dimensions do not count as "unchanged").
+For your first retrospective run, use all available plans. Subsequent runs can use a rolling window of the 5 most recent plans.
 
-### Plateau escalation is not failure
+## Code Mode Verification Ground Truth
 
-When a task hits `plateau` for 2 consecutive rounds and escalates, this is not a task failure — it is a signal to rethink the approach. The escalation path (per `blocker-and-escalation.md`) asks: is the issue in the implementation, the plan, or the design? Answer that before retrying.
+### Command exit codes are the verdict
 
-## Rubric Optimization Guardrails
+If verification commands pass, the task passes. If they fail, the task fails. Code quality reasoning does not override a passing exit code, and a visually "correct" implementation does not override a failing exit code.
 
-### Threshold invariant
+The corollary: if verification commands are poorly designed (too permissive, testing the wrong behavior), the evaluation is compromised. Verification command quality is enforced by the plan checklist (TASK-COMP-02 and TASK-COMP-03), not by the code evaluator. The chain of quality is: plan checklist → good verification commands → reliable code evaluation.
 
-Every rubric has implicit thresholds: FAIL = score 1, REWORK = score 2-3, PASS = score 4-5 (default). Amendments MUST NOT move a score description into a different threshold tier. For example: do not rewrite the score-3 description to describe what was previously score-2 behavior. This would silently shift the PASS/REWORK boundary.
+### Independent execution is mandatory
 
-Before proposing any amendment, the optimizer checks: does this amendment maintain the ordering `fail <= rework floor < pass`? If not, reject the amendment.
+The evaluator MUST run commands itself. A generator that claims "all tests pass" followed by the evaluator running tests and finding a failure should produce REWORK — and the rework item should note the discrepancy explicitly. This discrepancy is itself a signal: the generator may be misreporting results.
 
-### Scope isolation
+### No quality scoring in code mode
 
-Rubric amendments affect only the mode being calibrated. Do NOT amend the design rubric based on code-mode calibration findings — the dimensions are different, and cross-mode amendments have unpredictable effects.
+The evaluator no longer scores "Code Quality" or "Spec Compliance" on a 1-5 scale. If code passes tests, type checks, linter, and the prohibited patterns check, it passes. Code that passes tests but is aesthetically poor is a candidate for a refactor task — not for REWORK in the current evaluation.
 
-After amending a plan rubric, re-run design and code calibration to verify no unexpected cross-mode impact (via shared evaluator reasoning patterns).
+The evaluation question is: does the code do what the sprint contract says? The verification commands answer that question. The evaluator does not supplement that answer with subjective assessment.
 
-### Amendment rationale is mandatory
+## Evolution Log Integrity
 
-Every proposed amendment must include:
-- Which artifact showed the bias (artifact_id)
-- Which dimension and what delta
-- The specific sentence in the rubric that creates the scoring window
+The `evolution-log.jsonl` file is append-only. Never remove or edit past entries — they are the audit trail for every checklist decision. If a change was a mistake, log a corrective event:
 
-Amendments without this evidence should be rejected. "The rubric seems lenient" is not a valid rationale.
+```json
+{"timestamp":"2026-06-01T10:00:00Z","event":"item_removed","mode":"design","item_id":"SCEN-CONC-03","rationale":"Added prematurely — item ID was correct but check description was ambiguous; re-adding corrected version as SCEN-CONC-04"}
+{"timestamp":"2026-06-01T10:01:00Z","event":"item_added","mode":"design","item_id":"SCEN-CONC-04","rationale":"Corrected version of SCEN-CONC-03: specifies HTTP status codes only, not all concrete values"}
+```
 
-## Cost Considerations
-
-### Calibration frequency
-
-Full calibration (`--mode all`, 12 artifacts) invokes the evaluator 12 times plus bias analysis and potentially rubric optimization. This is expensive. Recommended cadence:
-- Run after any change to rubric files
-- Run after any change to evaluator agent definition
-- Run monthly if no changes (drift detection)
-- Do NOT run as part of every development workflow
-
-### Targeted calibration
-
-If you change only the plan rubric, run `--mode plan` only. This reduces cost by 2/3 while still validating the changed rubric.
-
-### Session limits
-
-A full `--mode all` run with 12 artifacts is estimated at 12-15 evaluator invocations (some code artifacts need 2 invocations: sprint contract + evaluation). This should complete within a single Claude Code session. If context limits are approached, use `--mode design`, `--mode plan`, `--mode code` in separate sessions.
+The rationale field in each event must be understandable 6 months later without surrounding context. "Caught too many false positives" is insufficient. "Triggered on 'Given a valid session' — session validity is domain-appropriate specificity; check was too strict for authentication Given clauses" is sufficient.

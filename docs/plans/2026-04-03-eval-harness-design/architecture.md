@@ -2,226 +2,220 @@
 
 ## System Overview
 
-The eval harness is a pure agent pipeline that calibrates the `superpowers-evaluator` and tracks score trends across executing-plans rework rounds. Two independent subsystems share a common rubric file target:
+Three subsystems at different scopes. A and B run in-band during every plan execution. C runs out-of-band, user-triggered, across multiple completed plans.
 
 ```
-Subsystem A: Calibration Pipeline (one-shot, user-triggered)
-  /superpowers:eval-harness
-    → eval-orchestrator
-      → superpowers-evaluator (per golden artifact)
-      → eval-bias-analyzer
-      → eval-rubric-optimizer (optional, user-approved)
+Subsystem A: Verification-Based Evaluation  (per batch, Phase 3f)
 
-Subsystem B: Score Trend Tracking (continuous, in executing-plans)
-  executing-plans Phase 3f
-    → append to evaluation-history.json
-    → compute trend label per task
-  executing-plans Phase 4
-    → surface trend in evidence block
-    → plateau x2 → escalation
+  executing-plans Phase 3f (spawn context includes checklist path):
+    → superpowers-evaluator (updated)
+        design mode: read design checklist → apply each check → PASS/FAIL per item
+        plan mode:   read plan checklist   → apply each check → PASS/FAIL per item
+        code mode:   run verification commands → exit code 0 = PASS, non-zero = FAIL
+    ← returns: checklist results table + rework items (no numeric scores)
+
+Subsystem B: Intra-Plan Learning  (per batch, Phase 4 enhancement)
+
+  executing-plans Phase 4 (after evaluator, before user confirmation):
+    reads: all evaluation-round-*-batch-*.md written so far in current *-evals/
+    identifies: checklist items failing across multiple batches in this plan
+    injects: pattern context into next batch sprint contract and generator prompt
+    surfaces: pattern summary in Phase 4 evidence block to user
+
+Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
+
+  /superpowers:retrospective [plan-path...]
+    reads: *-evals/ from multiple completed plans
+    reads: current checklists for never-failing item detection
+    computes: per-item failure frequency across plans, plateau task patterns
+    proposes: ADD / MODIFY / REMOVE per checklist item
+    → AskUserQuestion: user approves/rejects each proposal
+    → [approved] Edit checklist file (version increment) + Write evolution-log.jsonl entry
+    → writes: docs/retros/{topic}.md (knowledge extracted from patterns)
 ```
 
 ## Component Specifications
 
-### eval-harness skill
+### superpowers-evaluator (updated)
 
-**Role**: Entry point. Validates prerequisites, parses arguments, spawns `eval-orchestrator`.
+**What changes**: Rubric scoring (Steps 2-4 in design/plan mode, Step 4 in code mode) replaced by checklist execution. Output format changes: scores table removed, checklist results table added.
 
-**Arguments**: `[--mode design|plan|code|all] [--dry-run] [--apply-rubric-changes]`
-
-**Pre-flight checks** (performed before spawning orchestrator):
-1. Verify `eval-harness/golden/{mode}/` directory exists and contains at least one artifact
-2. Verify each artifact directory contains `manifest.json` and `human-scores.json`
-3. Verify each rubric file path is resolvable
-4. If any check fails: report setup error with path, link to calibration protocol
-
-**Allowed tools**: `Read`, `Glob`, `Grep`, `Agent`
+**What is unchanged**: Separate evaluator agent architecture, read-only enforcement, skeptical-by-default standard, all tool permissions, pivot flag logic (code mode), structural integrity checks (plan mode).
 
 ---
 
-### eval-orchestrator agent
+**Design mode process (updated)**:
 
-**Role**: Coordinates the full calibration pipeline. Decides whether to invoke rubric-optimizer based on bias analysis results. Presents amendment proposals to user. Writes calibration report.
+1. Read design artifacts: `_index.md`, `bdd-specs.md`, `architecture.md`, `best-practices.md`
+2. Read design checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/design-v1.md`)
+3. For each checklist item:
+   - Determine check method (grep pattern, structural cross-reference, or content scan)
+   - Execute check against design artifacts
+   - Record: item ID, PASS or FAIL, evidence (file:line or explicit absence note)
+4. Produce rework items from all FAIL results: file path, location, exact issue
+5. Verdict: PASS if all items PASS; REWORK if any item FAIL
+
+**Plan mode process (updated)**:
+
+1. Read `_index.md` and all task files
+2. Read plan checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/plan-v1.md`)
+3. For each checklist item:
+   - Execute structural check (dependency graph walk, task field presence, command syntax scan)
+   - Record: item ID, PASS or FAIL, evidence
+4. Run structural integrity checks independently of checklist: cycle detection, orphan tasks, unmapped scenarios
+5. Produce rework items from all FAIL results
+6. Verdict: PASS if all items PASS; REWORK if any item FAIL
+
+**Code mode process (updated)**:
+
+1. Read sprint contract (unchanged)
+2. Read produced artifacts (unchanged)
+3. Run verification commands per task (unchanged) — exit codes determine task PASS/FAIL
+4. Read code checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/code-v1.md`)
+5. Apply prohibited pattern checks from code checklist against produced files
+6. Produce rework items from: failed verification commands + FAIL code checklist items
+7. Assess pivot flag (logic unchanged — see existing evaluator definition)
+8. Write evaluation report to plan directory using updated format (no scores table)
+
+**Updated output format (all modes)**:
+
+```markdown
+## Checklist Results
+
+| Item ID       | Check                                   | Result | Evidence                                        |
+|---------------|-----------------------------------------|--------|-------------------------------------------------|
+| REQ-TRACE-01  | All requirements map to ≥1 scenario     | PASS   | 7/7 requirements traced                         |
+| SCEN-CONC-01  | Given clauses use specific data         | FAIL   | bdd-specs.md:23 — "some valid user data"        |
+
+## Rework Items
+
+| Item ID      | File         | Location | Issue                                                                   |
+|--------------|--------------|----------|-------------------------------------------------------------------------|
+| SCEN-CONC-01 | bdd-specs.md | line 23  | Replace "some valid user data" with concrete values (email, password)   |
+
+## Verdict: REWORK
+1 item FAIL: SCEN-CONC-01
+```
+
+---
+
+### retrospective skill
+
+**Role**: Reads evaluation reports directly, performs pattern analysis, presents proposals, applies approved changes. No sub-agent spawning.
+
+**Arguments**: `[plan-path...] [--across-all]`
 
 **Process**:
-1. Read all artifact directories for the specified mode
-2. For each artifact: spawn `superpowers-evaluator` with spawn context format:
-   - Design: `"Evaluate the design at [artifact-path]. Read rubrics from [brainstorming-rubric-path]."`
-   - Plan: `"Evaluate the plan at [artifact-path]. Read rubrics from [writing-plans-rubric-path]."`
-   - Code: `"Evaluate the batch with sprint contract at [contract-path]. Read rubrics from [executing-plans-rubric-path]."`
-3. Collect evaluator scores from each report file written to artifact directory
-4. Spawn `eval-bias-analyzer` with paths to all evaluator reports and `human-scores.json` files
-5. Receive bias analysis results
-6. Write `calibration-report.json` to `eval-harness/runs/YYYY-MM-DD-HH-MM/`
-7. If `bias_detected == true` AND NOT `--dry-run`:
-   - Spawn `eval-rubric-optimizer` with calibration report path + rubric file paths
-   - Receive amendment proposals
-   - Present proposals to user via AskUserQuestion
-   - If approved AND `--apply-rubric-changes`: instruct optimizer to write rubric files
 
-**Allowed tools**: `Read`, `Glob`, `Grep`, `Agent`, `Write`
+1. Resolve evals folder: derive `YYYY-MM-DD-{topic}-evals/` from the given plan path (`YYYY-MM-DD-{topic}-plan/`); abort with setup error if evals folder does not exist or contains no `evaluation-round-*-batch-*.md` files
+2. Read current checklist versions from `docs/retros/checklists/`
+3. For each evals folder:
+   - Read all `evaluation-round-{N}-batch-{M}.md` files
+   - Extract per-report: checklist item results (PASS/FAIL), rework items, pivot flags
+4. Aggregate across all plans:
+   - Compute failure frequency per item: count of distinct plans where item FAILed
+   - Identify plateau tasks: tasks in REWORK across 2+ consecutive rounds in any plan
+   - Identify never-failing items: items with 0 failures across 10+ evaluation reports
+5. Formulate evolution proposals (up to rate limit EVO-6: max 3 per mode):
+   - ADD: failure source in ≥2 distinct plans with no existing checklist item
+   - REMOVE: item with 0 failures across 10+ reports with explicit rationale
+   - MODIFY: item producing false positives identifiable from rework analysis
+6. Write best practices document to `docs/retros/{topic}.md`
+   - Topic derived from the dominant failure pattern (e.g., `bdd-scenario-concreteness.md`, `async-error-coverage.md`)
+   - Include: pattern description, evidence from plans, checklist items affected, actionable guidance
+   - This file is the human-readable record of why the checklist evolved; it is produced by retrospective and attributed to it
+7. For each proposal:
+   - Present via AskUserQuestion with rationale and driving plan evidence
+   - If approved: create new checklist version file, append event to evolution-log.jsonl
+   - If rejected: record rejection in report; do not modify checklist
+8. Report summary: N proposals approved, M rejected, checklists updated to version X
 
-**Evaluator spawn context format** (critical — mode detection depends on exact keywords):
-
-| Mode | Spawn context must contain |
-|------|---------------------------|
-| design | `"design"` + absolute path to artifact folder |
-| plan | `"plan"` + absolute path to artifact folder |
-| code | `"batch"` + absolute path to `sprint-contract-batch-{N}.md` |
-
----
-
-### eval-bias-analyzer agent
-
-**Role**: Read-only. Computes score deltas between evaluator output and human baseline. Classifies bias patterns. Returns structured analysis.
-
-**Process**:
-1. For each artifact: read `human-scores.json` and the evaluator's output report
-2. Compute delta per (artifact × dimension): `delta = evaluator_score - human_score`
-3. Compute per-dimension summary across all artifacts: `mean_delta`, `classification`
-4. Classify each dimension:
-   - `leniency`: mean_delta > 1.0
-   - `borderline_leniency`: mean_delta in (0.75, 1.0]
-   - `calibrated`: |mean_delta| <= 0.75
-   - `borderline_severity`: mean_delta in [-1.0, -0.75)
-   - `severity`: mean_delta < -1.0
-5. Compute verdict accuracy: count verdicts matching `expected_verdict` / total artifacts
-6. Compute overall agreement rate: pairs with |delta| <= 1.0 / total pairs
-7. Output structured bias analysis (not a file write — returned to orchestrator)
-
-**Allowed tools**: `Read`, `Grep`, `Glob`
-
-**Canonical bias thresholds** (authoritative — `_index.md` CAL-3 and `bdd-specs.md` scenarios must use these values):
-
-| Delta range (mean_delta) | Classification | Optimization triggered? |
-|--------------------------|---------------|------------------------|
-| > 1.0 | `leniency` | Yes |
-| (0.75, 1.0] | `borderline_leniency` | No (advisory only) |
-| [-0.75, 0.75] | `calibrated` | No |
-| [-1.0, -0.75) | `borderline_severity` | No (advisory only) |
-| < -1.0 | `severity` | Yes |
-
-Bias optimization triggers only for full `leniency` or `severity` classification (mean_delta > 1.0 or < -1.0). Borderline classifications are reported but do not trigger rubric changes.
-
-**Bias detection precedence**: Dimension-specific bias takes precedence over global calibration. An evaluator that is globally well-calibrated but systematically lenient on `risk_coverage` MUST be flagged.
+**Allowed tools**: Read, Glob, Grep, Write, Edit
 
 ---
 
-### eval-rubric-optimizer agent
+### executing-plans skill (Phase 3f + Phase 4 updates)
 
-**Role**: Proposes concrete rubric amendments based on bias analysis. Writes files only after user approval is confirmed by orchestrator.
+**Phase 3f — spawn context change** (minor):
 
-**Process**:
-1. Read `calibration-report.json` (proposals input)
-2. For each dimension classified as `leniency` or `severity`:
-   a. Read the relevant rubric file section for that dimension
-   b. Identify which score-level description creates the scoring window that enables the bias
-   c. Propose a concrete amendment: rewrite the score-N description to tighten or loosen the boundary
-3. Validate each amendment preserves `fail-ceiling < rework-floor <= pass` invariant
-4. Present amendment proposals (not yet written to disk)
-5. After orchestrator confirms user approval: write amendments to rubric files via Edit tool
+The spawn context for `superpowers-evaluator` changes from rubric path to checklist path:
 
-**Amendment format** (per dimension):
-```
-Dimension: risk_coverage (design mode)
-Current score-3 description: "Some risks identified but mitigations are vague or incomplete"
-Proposed score-3 description: "At least 3 key risks identified; at least 2 have concrete mitigations; remaining risks acknowledged without mitigation"
-Rationale: Evaluator mean_delta = 1.5 on risk_coverage; current description is too permissive — adds "or incomplete" qualifier that allows partial mitigations to reach score 3
-Driving artifact: design-low-001 (human=1, evaluator=3, delta=+2)
-```
+| Mode   | Checklist path                                         |
+|--------|--------------------------------------------------------|
+| design | `superpowers/docs/retros/checklists/design-v{N}.md`   |
+| plan   | `superpowers/docs/retros/checklists/plan-v{N}.md`     |
+| code   | `superpowers/docs/retros/checklists/code-v{N}.md`     |
 
-**Allowed tools**: `Read`, `Grep`, `Glob`, `Edit` (Edit only activated after user approval)
-
-**Anti-oscillation rule**: If a dimension was amended in a prior calibration run (detectable via run history), require `mean_delta > 1.25` before proposing another amendment to the same dimension. This prevents overcorrection.
+The skill reads the latest checklist version from the checklists directory before spawning. No hardcoded version in the skill definition.
 
 ---
 
-### Score Trend Tracking (executing-plans augmentation)
+**Phase 4 — intra-plan learning injection** (new):
 
-**Where it fits**: Phase 3, step 2f (post-evaluation, after evaluator writes report).
+After `superpowers-evaluator` writes its report and before the user confirmation AskUserQuestion, executing-plans performs a lightweight pattern scan:
 
-**How it works**:
-1. After evaluator writes `evaluation-round-{N}-batch-{M}.md`, read per-task scores from that report
-2. Parse `evaluation-history.json` if it exists in plan directory; create if not
-3. For each task in current round:
-   - Find prior round entry for same task (if any)
-   - Compute trend label (see rules in _index.md)
-   - Append new round entry with trend label
-4. Write updated `evaluation-history.json`
+1. Read all `evaluation-round-*-batch-*.md` files written so far in the current `*-evals/` directory
+2. Identify checklist items that FAILed in 2+ distinct batches within this plan
+3. If patterns found:
+   - Inject a "Recurring failures" context block into the next batch's sprint contract preamble
+   - Add a "Pattern detected" note to the Phase 4 evidence block presented to the user
+4. If a pattern persists across 3+ batches for the same item: surface as a potential plan-level issue in the evidence block (not automatically a pivot — user decides)
 
-**Trend injection into generator prompt** (Phase 3f, before next rework cycle):
-
-When evaluator returns REWORK and trend data is available, inject structured context:
+**Context injection format** (added to next sprint contract preamble):
 
 ```
-## Evaluation Round {N} Results
+## Recurring Failure Patterns (from prior batches)
 
-| Task | Verdict | Trend | Dimensions scoring below 3 |
-|------|---------|-------|---------------------------|
-| 003  | REWORK  | improving | Completeness (2→3), Spec Compliance (2→3) |
-| 005  | REWORK  | plateau | Completeness (2=2), Spec Compliance (2=2) |
+| Checklist Item | FAILed in batches | Issue seen |
+|----------------|-------------------|------------|
+| SCEN-CONC-01   | 1, 2              | Given clauses use vague placeholders |
 
-Strategy recommendation:
-- Task 003: continue refinement — scores are improving
-- Task 005: PLATEAU detected — consider architectural change (see rework items)
+Generator note: tasks in this batch must address the above patterns proactively.
 ```
 
-**Escalation logic** (Phase 3f):
-- Task verdict == REWORK AND trend == `plateau` AND plateau_count >= 2:
-  → Log task_id to `escalated_tasks` array in `evaluation-history.json`
-  → Do NOT attempt rework round 3; proceed to escalation per `blocker-and-escalation.md`
+This injection is additive — it does not modify task acceptance criteria, only provides context.
 
 ## Agent Interaction Diagram
 
 ```
-User prompt: /superpowers:eval-harness --mode design
-    │
-    ▼
-eval-harness skill
-  pre-flight: check golden/design/ exists
-    │ PASS
-    ▼
-eval-orchestrator agent
-  reads: golden/design/*/manifest.json
-  reads: golden/design/*/human-scores.json
-    │
-    │ for each artifact (sequential):
-    ▼
-  superpowers-evaluator agent (existing)
-    reads: artifact files
-    runs: rubric scoring
-    writes: evaluation report to artifact dir
-    returns: (control back to orchestrator)
-    │
-    │ all artifacts evaluated
-    ▼
-  eval-bias-analyzer agent
-    reads: all evaluator reports + human-scores.json
-    computes: deltas, classifications, agreement rate
-    returns: bias_analysis struct
-    │
-    ▼
-  eval-orchestrator: writes calibration-report.json
-    │
-    │ bias_detected == true?
-    │ YES
-    ▼
-  eval-rubric-optimizer agent (proposals only)
-    reads: calibration-report.json
-    reads: brainstorming/references/evaluation-rubrics.md
-    proposes: amendments (no file writes)
-    returns: amendment_proposals[]
-    │
-    ▼
-  AskUserQuestion: display proposals, request approval
-    │
-    │ approved + --apply-rubric-changes?
-    │ YES
-    ▼
-  eval-rubric-optimizer: writes rubric file amendments
-    │
-    ▼
-  eval-orchestrator: report summary to user
+User: /superpowers:retrospective docs/plans/2026-04-01-auth-plan/ docs/plans/2026-03-22-api-plan/
+  │
+  ▼
+retrospective skill
+  resolves: 2026-04-01-auth-plan/ → 2026-04-01-auth-evals/
+  resolves: 2026-03-22-api-plan/ → 2026-03-22-api-evals/
+  reads: evaluation-round-*-batch-*.md from each evals/ folder
+  reads: docs/retros/checklists/design-v1.md (for never-failing detection)
+  computes: SCEN-CONC-01 failed in 2 plans; PLAN-GRAN-01 never failed in 8 reports
+  writes: docs/retros/bdd-scenario-concreteness.md
+  │
+  │ proposal 1:
+  ▼
+AskUserQuestion:
+  "ADD design/SCEN-CONC-03: Error scenarios must name specific HTTP status codes
+   Evidence: auth-plan tasks 002, 005 — api-plan task 007
+   All failed with vague error conditions in Given clauses.
+   Approve? (yes/no)"
+  │ approved
+  ▼
+retrospective skill
+  creates: docs/retros/checklists/design-v2.md (copy of v1 + new item)
+  appends: evolution-log.jsonl entry {event:"item_added", item_id:"SCEN-CONC-03", ...}
+  │
+  │ proposal 2:
+  ▼
+AskUserQuestion:
+  "REMOVE plan/PLAN-GRAN-01: 0 failures across 8 evaluation reports
+   This item has never detected a real issue. Remove?
+   (The item will be preserved in plan-v1.md if rejected)"
+  │ rejected
+  ▼
+retrospective skill
+  records rejection in retrospective report
+  no checklist file modification
+  │
+  ▼
+summary: "1 proposal approved (design-v2.md created), 1 rejected"
 ```
 
 ## File Layout
@@ -229,45 +223,38 @@ eval-orchestrator agent
 ```
 superpowers/
 ├── .claude-plugin/
-│   └── plugin.json                          # +eval-harness in commands, +3 agents in agents
+│   └── plugin.json                           # +retrospective in commands
 ├── agents/
-│   ├── superpowers-evaluator.md             # unchanged
-│   ├── eval-orchestrator.md                 # NEW
-│   ├── eval-bias-analyzer.md                # NEW
-│   └── eval-rubric-optimizer.md             # NEW
-├── eval-harness/
-│   ├── golden/
-│   │   ├── design/
-│   │   │   ├── design-high-001/
-│   │   │   │   ├── _index.md                # synthetic design document
-│   │   │   │   ├── bdd-specs.md
-│   │   │   │   ├── architecture.md
-│   │   │   │   ├── best-practices.md
-│   │   │   │   ├── manifest.json
-│   │   │   │   └── human-scores.json
-│   │   │   └── design-low-001/
-│   │   │       └── [same structure, lower-quality content]
-│   │   ├── plan/
-│   │   │   ├── plan-high-001/
-│   │   │   └── plan-low-001/
-│   │   └── code/
-│   │       ├── code-high-001/
-│   │       └── code-low-001/
-│   └── runs/
-│       └── YYYY-MM-DD-HH-MM/
-│           └── calibration-report.json
+│   └── superpowers-evaluator.md              # UPDATED: checklist format, no rubric scoring
 └── skills/
-    ├── eval-harness/
-    │   ├── SKILL.md                         # NEW
-    │   └── references/
-    │       └── calibration-protocol.md      # NEW: golden artifact authoring guide
+    ├── retrospective/                        # NEW
+    │   └── SKILL.md
     └── executing-plans/
         └── references/
-            └── evaluation-file-formats.md   # augmented: evaluation-history.json section
+            ├── evaluation-rubrics.md         # REMOVED
+            └── evaluation-file-formats.md   # UPDATED: checklist format replaces scores table
 
-In plan directories (docs/plans/*/):
-  evaluation-history.json                    # NEW: per-round score tracking
+docs/plans/YYYY-MM-DD-{topic}-plan/           # writing-plans output (unchanged)
+  _index.md
+  task-{ID}-{slug}-{type}.md
+
+docs/plans/YYYY-MM-DD-{topic}-evals/          # NEW: executing-plans evaluation artifacts
+  sprint-contract-batch-{N}.md
+  evaluation-round-{N}-batch-{M}.md           # format updated (no scores table)
+
+docs/retros/                          # NEW: ALL /superpowers:retrospective output
+  checklists/
+    design-v1.md                              # NEW: initial binary design checklist
+    plan-v1.md                                # NEW: initial binary plan checklist
+    code-v1.md                                # NEW: code verification checklist
+  evolution-log.jsonl                         # NEW: append-only change log
+  {topic}.md                                  # knowledge document per dominant failure pattern
 ```
+
+**Directories eliminated vs. original v1 design**:
+- `eval-harness/golden/` — no golden artifacts
+- `eval-harness/runs/` — no calibration run history
+- `eval-harness/` — no data files inside the plugin; all output lives in `docs/`
 
 ## Plugin.json Changes
 
@@ -278,51 +265,32 @@ In plan directories (docs/plans/*/):
     "./skills/writing-plans/",
     "./skills/executing-plans/",
     "./skills/need-vet/",
-    "./skills/eval-harness/"
+    "./skills/retrospective/"
   ],
   "agents": [
-    "./agents/superpowers-evaluator.md",
-    "./agents/eval-orchestrator.md",
-    "./agents/eval-bias-analyzer.md",
-    "./agents/eval-rubric-optimizer.md"
+    "./agents/superpowers-evaluator.md"
   ]
 }
 ```
 
-## Rubric File Paths (per mode)
-
-| Mode | Rubric path |
-|------|-------------|
-| design | `skills/brainstorming/references/evaluation-rubrics.md` |
-| plan | `skills/writing-plans/references/evaluation-rubrics.md` |
-| code | `skills/executing-plans/references/evaluation-rubrics.md` |
-
-These paths are injected by `eval-orchestrator` into each evaluator spawn context and each rubric-optimizer invocation. They are NOT hardcoded in the agent definitions.
-
 ## Dependency Map
 
 ```
-eval-harness skill
-  └── depends on: eval-orchestrator agent
+retrospective skill
+  └── reads: docs/retros/checklists/ (current versions)
+  └── reads: docs/plans/{topic}-evals/evaluation-round-*-batch-*.md (multiple plans)
+  └── writes: docs/retros/{topic}.md (knowledge layer — attributed to this skill)
+  └── appends: docs/retros/evolution-log.jsonl
+  └── edits: docs/retros/checklists/ (creates new version file on approval)
 
-eval-orchestrator agent
-  └── depends on: superpowers-evaluator (existing)
-  └── depends on: eval-bias-analyzer (new)
-  └── depends on: eval-rubric-optimizer (new, conditional)
-  └── depends on: eval-harness/golden/* (test data)
-  └── writes to: eval-harness/runs/*/calibration-report.json
+superpowers-evaluator (updated)
+  └── reads: checklists/{mode}-v{N}.md (path from spawn context)
+  └── runs: verification commands in task files (code mode, unchanged)
+  └── writes: docs/plans/{topic}-evals/sprint-contract-batch-{N}.md
+  └── writes: docs/plans/{topic}-evals/evaluation-round-{N}-batch-{M}.md (updated format)
 
-eval-bias-analyzer agent
-  └── depends on: evaluator output (in artifact dirs)
-  └── depends on: human-scores.json (in artifact dirs)
-
-eval-rubric-optimizer agent
-  └── depends on: calibration-report.json
-  └── depends on: rubric files (3 paths)
-  └── writes to: rubric files (only after user approval)
-
-executing-plans skill (augmented)
-  └── depends on: superpowers-evaluator (existing, unchanged)
-  └── writes to: evaluation-history.json (new, in plan dir)
-  └── reads from: evaluation-history.json (for trend labels)
+executing-plans skill (Phase 3f + Phase 4 update)
+  └── spawns: superpowers-evaluator with checklist path (Phase 3f)
+  └── reads: docs/plans/{topic}-evals/evaluation-round-*-batch-*.md (Phase 4 pattern scan)
+  └── injects: recurring failure context into next sprint contract preamble (Phase 4)
 ```
