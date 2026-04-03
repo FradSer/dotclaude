@@ -205,21 +205,7 @@ Before committing, verify design quality. Scale reflection based on **complexity
 - Focus: Cross-document terminology, references, component names, and key risks
 - Output: Inconsistencies, broken references, unaddressed risks
 
-**Complex** (3+ reflection sub-agents):
-
-**Sub-agent 1: Requirements Traceability Review**
-- Focus: Verify every Phase 1 requirement is addressed in design
-- Output: Traceability matrix, orphaned requirements list
-
-**Sub-agent 2: BDD Completeness Review**
-- Focus: Check BDD scenarios cover happy path, edge cases, and error conditions
-- Output: Missing scenarios list, coverage gaps
-
-**Sub-agent 3: Cross-Document Consistency Review**
-- Focus: Verify terminology, references, and component names are consistent
-- Output: Inconsistencies list, terminology conflicts
-
-**Additional sub-agents (launch as needed)**: Security Review, Risk Assessment.
+**Complex**: **CRITICAL -- MUST use Evaluator Mode below.** Do NOT use ad-hoc reflection sub-agents for complex designs.
 
 **Integrate and Update**:
 1. Collect all sub-agent findings
@@ -232,11 +218,9 @@ Before committing, verify design quality. Scale reflection based on **complexity
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
-### Evaluator Mode (Complex Designs)
+### Evaluator Mode (Complex Designs -- MUST use)
 
-For **complex** designs, spawn the `superpowers:superpowers-evaluator` agent (design mode) instead of ad-hoc reflection sub-agents. The evaluator provides formal, rubric-based assessment with system-enforced read-only tools.
-
-**When to use**: Auto-activated for complex designs (3+ sub-agents in Phase 3). Simple and medium designs continue using the existing ad-hoc sub-agent approach above.
+**CRITICAL**: For **complex** designs (3+ sub-agents in Phase 3), you MUST spawn the `superpowers:superpowers-evaluator` agent (design mode). This replaces the ad-hoc sub-agent approach entirely. Skipping the evaluator for complex designs is a process violation.
 
 **Process**:
 1. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the design at [design-folder-path]. Read rubrics from [skill-root]/references/evaluation-rubrics.md."

@@ -38,9 +38,11 @@ Launch two sub-agents in parallel using the Agent tool with `subagent_type=gener
 
 **Sub-agent 2: Consistency & Risk Review** — Combine the cross-document consistency and risk checks into one agent. Verify terminology, references, component names, and identify key unaddressed risks.
 
-### Complex Complexity (3+ sub-agents)
+### Complex Complexity (MUST use Evaluator)
 
-Launch these three sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`:
+**CRITICAL**: For complex designs, spawn `superpowers:superpowers-evaluator` agent (design mode) instead of ad-hoc sub-agents. See SKILL.md Phase 4 and `evaluation-rubrics.md` for the scoring process and verdict rules.
+
+The sub-agent prompts below are retained as reference for the evaluator's assessment dimensions, NOT as an alternative approach:
 
 **Sub-agent 1: Requirements Traceability Review**
 

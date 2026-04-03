@@ -21,6 +21,7 @@
 
 ## Phase 4: Design Reflection
 - [ ] Reflection completed per complexity level
+- [ ] **Complex designs**: `superpowers-evaluator` spawned and verdict obtained (MUST, not optional)
 - [ ] Findings prioritized (High/Medium/Low)
 - [ ] Documents updated with gaps filled
 - [ ] User approval received
