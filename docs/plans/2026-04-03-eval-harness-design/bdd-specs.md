@@ -223,13 +223,21 @@ Feature: Retrospective Analysis of Failure Patterns Across Plans
     And root cause is stated: "verification command syntax not enforced by any checklist item"
     And the analyzer proposes: ADD plan/TASK-COMP-04 "Verification commands must begin with an executable binary name, not a description verb"
 
-  Scenario: Retrospective with insufficient data produces no proposals
+  Scenario: Retrospective with only 1 plan produces no ADD proposals
     Given only 1 plan directory is provided
-    And it contains 2 evaluation reports
+    And it contains 3 evaluation reports
     When retrospective skill runs
-    Then the retrospective report states: "insufficient data — need 3+ plans or 10+ per-item evaluations for reliable pattern detection"
-    And no evolution proposals are generated
-    And the report recommends: "run retrospective again after 2+ additional plan executions"
+    Then the retrospective report states: "ADD proposals require failures in 2+ distinct plans; only 1 plan provided"
+    And no ADD evolution proposals are generated
+    And the report recommends: "provide 2+ plan directories to enable ADD proposal analysis"
+
+  Scenario: Retrospective with fewer than 10 reports per item produces no REMOVE proposals
+    Given 2 plan directories are provided
+    And the item with the most evaluation reports across both plans has fewer than 10 reports
+    When retrospective skill runs
+    Then the retrospective report states: "REMOVE proposals require 10+ evaluation reports per item; current maximum is N reports"
+    And no REMOVE evolution proposals are generated
+    And the report recommends: "run retrospective again after additional plan executions reach the 10-report threshold per item"
 
   Scenario: Retrospective enforces evolution rate limit per mode
     Given pattern analysis produces 5 valid ADD proposals for design mode
@@ -301,9 +309,9 @@ Feature: User-Gated Checklist Evolution with Version Tracking
 | Binary Checklist — Design Mode | 6 |
 | Binary Checklist — Plan Mode | 5 |
 | Command Exit Code — Code Mode | 5 |
-| Retrospective Failure Pattern Analysis | 5 |
+| Retrospective Failure Pattern Analysis | 6 |
 | Evolution Proposal Review | 5 |
-| **Total** | **26** |
+| **Total** | **27** |
 
 All scenarios meet:
 - Single responsibility: each scenario tests exactly one rule or behavior

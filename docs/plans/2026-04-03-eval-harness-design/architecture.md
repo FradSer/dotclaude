@@ -60,11 +60,11 @@ Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
 1. Read `_index.md` and all task files
 2. Read plan checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/plan-v1.md`)
 3. For each checklist item:
-   - Execute structural check (dependency graph walk, task field presence, command syntax scan)
+   - Execute the check method specified in the item annotation (dependency graph walk, task field presence, command syntax scan, etc.)
    - Record: item ID, PASS or FAIL, evidence
-4. Run structural integrity checks independently of checklist: cycle detection, orphan tasks, unmapped scenarios
-5. Produce rework items from all FAIL results
-6. Verdict: PASS if all items PASS; REWORK if any item FAIL
+   - Note: DEP-01 and DEP-02 perform cycle detection and ID resolution; PLAN-COV-01 detects unmapped scenarios — no separate structural sweep is performed outside the checklist
+4. Produce rework items from all FAIL results
+5. Verdict: PASS if all items PASS; REWORK if any item FAIL
 
 **Code mode process (updated)**:
 
@@ -146,7 +146,7 @@ The spawn context for `superpowers-evaluator` changes from rubric path to checkl
 | plan   | `superpowers/docs/retros/checklists/plan-v{N}.md`     |
 | code   | `superpowers/docs/retros/checklists/code-v{N}.md`     |
 
-The skill reads the latest checklist version from the checklists directory before spawning. No hardcoded version in the skill definition.
+The skill reads the latest checklist version from the checklists directory before spawning. Version selection: scan `docs/retros/checklists/` for files matching `{mode}-v{N}.md` (e.g., `design-v1.md`, `design-v2.md`); extract the numeric suffix N from each matching filename; select the file with the highest N. Files not matching the pattern `{mode}-v\d+\.md` (drafts, backups, etc.) are ignored. No hardcoded version in the skill definition.
 
 ---
 
@@ -159,7 +159,7 @@ After `superpowers-evaluator` writes its report and before the user confirmation
 3. If patterns found:
    - Inject a "Recurring failures" context block into the next batch's sprint contract preamble
    - Add a "Pattern detected" note to the Phase 4 evidence block presented to the user
-4. If a pattern persists across 3+ batches for the same item: surface as a potential plan-level issue in the evidence block (not automatically a pivot — user decides)
+4. If a pattern persists across 3+ batches for the same item: elevate to the first item in the Phase 4 user confirmation AskUserQuestion with an explicit recommendation to pause execution and review the task specification before proceeding — execution is not auto-blocked, but the prompt makes the escalation prominent so it cannot be easily dismissed
 
 **Context injection format** (added to next sprint contract preamble):
 

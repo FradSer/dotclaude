@@ -140,20 +140,38 @@ Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
 
 ## Requirements Traceability
 - [ ] REQ-TRACE-01: Every requirement in _index.md maps to at least one BDD scenario
+  # Check: list requirement IDs from _index.md Requirements section; grep each ID in bdd-specs.md
+  # Evidence format: "REQ-XXX appears in _index.md:L but no scenario references it"
 - [ ] REQ-TRACE-02: Every BDD scenario references a requirement (no orphan scenarios)
+  # Check: list scenario titles from bdd-specs.md; verify each cites a requirement ID from _index.md
+  # Evidence format: "Scenario 'XYZ' in bdd-specs.md:L cites no requirement ID"
 
 ## Scenario Concreteness
 - [ ] SCEN-CONC-01: All Given clauses use specific data values, not vague placeholders
+  # Check: grep Given clauses in bdd-specs.md for "some ", "valid ", "appropriate ", "relevant ", "any "
+  # Evidence format: "bdd-specs.md:L — 'Given <quoted text>' contains vague placeholder"
 - [ ] SCEN-CONC-02: All Then clauses state observable outcomes (not "should work" or "should be correct")
+  # Check: grep Then clauses in bdd-specs.md for "should work", "should be correct", "correctly", "properly"
+  # Evidence format: "bdd-specs.md:L — 'Then <quoted text>' is not an observable outcome"
 
 ## Architecture Validity
 - [ ] ARCH-01: No import described from inner layer to outer layer
+  # Check: scan architecture.md for import/dependency descriptions; flag any inner→outer direction
+  # Evidence format: "architecture.md:L — describes <inner> importing from <outer>"
 - [ ] ARCH-02: All external dependencies named in _index.md Constraints section
+  # Check: grep architecture.md for library/service names; verify each appears in _index.md Constraints
+  # Evidence format: "<name> referenced in architecture.md:L not listed in _index.md Constraints"
 - [ ] ARCH-03: No circular component dependencies described
+  # Check: build dependency graph from architecture.md component list; walk all paths for cycles
+  # Evidence format: "Cycle: <A> → <B> → <A> in architecture.md"
 
 ## Risk Identification
 - [ ] RISK-01: Design includes at least 3 identified risks with mitigation strategies
+  # Check: count risk entries in _index.md Risks section; FAIL if count < 3
+  # Evidence format: "_index.md Risks section: N risks found (minimum 3 required)"
 - [ ] RISK-02: Each risk mitigation is concrete (not "monitor closely" or "handle carefully")
+  # Check: grep mitigations for "monitor", "handle carefully", "watch", "be careful", "ensure", "check"
+  # Evidence format: "_index.md — mitigation '<quoted text>' specifies no concrete action or mechanism"
 ```
 
 **`docs/retros/checklists/plan-v1.md`** — binary plan checklist:
@@ -162,19 +180,35 @@ Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
 
 ## Scenario Coverage
 - [ ] PLAN-COV-01: Every BDD scenario from design maps to at least one task
+  # Check: list scenario names from design bdd-specs.md; grep each in all task files
+  # Evidence format: "Scenario '<name>' in bdd-specs.md has no referencing task file"
 - [ ] PLAN-COV-02: No BDD scenario is unassigned in batch planning
+  # Check: list scenarios referenced across all batch sprint contracts; flag any design scenario absent
+  # Evidence format: "Scenario '<name>' is unassigned in all batches"
 
 ## Task Completeness
 - [ ] TASK-COMP-01: Every task has an acceptance criteria section
+  # Check: grep each task file for "## Acceptance Criteria" heading
+  # Evidence format: "task-{ID}-{slug}.md: no '## Acceptance Criteria' section"
 - [ ] TASK-COMP-02: Every task has verification commands
+  # Check: grep each task file for "## Verification" heading with non-empty content following it
+  # Evidence format: "task-{ID}-{slug}.md: no '## Verification' section or section is empty"
 - [ ] TASK-COMP-03: No verification command is descriptive ("verify manually", "check that it works")
+  # Check: grep verification sections for "verify that", "check that", "ensure that", "manually", "confirm that"
+  # Evidence format: "task-{ID}-{slug}.md:L — '<quoted text>' is a description, not an executable command"
 
 ## Dependency Validity
 - [ ] DEP-01: No circular dependencies in task dependency graph
+  # Check: build directed graph from depends-on fields across all task files; walk for cycles
+  # Evidence format: "Cycle detected: task-{A} → task-{B} → task-{A}"
 - [ ] DEP-02: All task IDs in depends-on fields exist in the plan
+  # Check: collect all task file IDs; verify each depends-on value matches a collected ID
+  # Evidence format: "task-{ID}.md depends-on task-{X}, which does not exist in this plan"
 
 ## Test Coverage
 - [ ] TEST-01: Every impl task has a corresponding test task or explicit absence justification
+  # Check: for each *-impl.md, verify a file with matching numeric prefix and "-test" suffix exists, or grep the impl task for "no test" or "absence justification"
+  # Evidence format: "task-{ID}-{slug}-impl.md: no test task and no absence justification"
 ```
 
 **`docs/retros/checklists/code-v1.md`** — code verification checklist:
@@ -183,13 +217,25 @@ Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
 
 ## Verification Gate
 - [ ] CODE-VER-01: All task verification commands exit with code 0
+  # Check: run each command from task verification sections independently; record exit code and output
+  # Evidence format: "'<command>' exited with code N; last 30 lines: <output>"
 - [ ] CODE-VER-02: Type checker exits 0 (if applicable)
+  # Check: if tsconfig.json or pyproject.toml present, run tsc --noEmit or mypy; record exit code
+  # Evidence format: "tsc --noEmit exited with code 1; errors: <output>"
 - [ ] CODE-VER-03: Linter exits 0 (if applicable)
+  # Check: if biome.json or .eslintrc present, run biome check or eslint; record exit code
+  # Evidence format: "biome check exited with code 1; violations: <output>"
 
 ## Prohibited Patterns
 - [ ] CODE-QUAL-01: No TODO/FIXME/placeholder comments in produced files
+  # Check: grep produced files for "TODO", "FIXME", "HACK", "XXX", "placeholder"
+  # Evidence format: "<file>:L — '<quoted line>' contains prohibited placeholder comment"
 - [ ] CODE-QUAL-02: No stub function bodies (pass, ..., raise NotImplementedError)
+  # Check: grep produced files for "^\s*pass$", "^\s*\.\.\.$", "raise NotImplementedError", "throw new Error.*not implemented"
+  # Evidence format: "<file>:L — stub body '<quoted line>'"
 - [ ] CODE-QUAL-03: No hardcoded return values substituting real logic
+  # Check: grep produced files for "return True  #", "return \[\]  #", "return {}  #", "return None  # TODO"
+  # Evidence format: "<file>:L — hardcoded return substituting real logic: '<quoted line>'"
 ```
 
 **`docs/retros/evolution-log.jsonl`** — append-only change log:
@@ -297,9 +343,13 @@ Original design: 3 new agents + golden artifact directories + human-scores.json 
 
 This design: 0 new agents + 1 new skill + 3 checklist files + evolution log.
 
-**Why the Anthropic article validates this direction?**
+**How this design relates to the Anthropic harness article**
 
-The article's Playwright evaluator never asks "is this good?" — it asks "does this work?" Pass/fail is determined by user action completion, not by rubric scoring. The article explicitly states harness components are "load-bearing only until capability advances obsolete them." Checklist-based verification ages better than rubric calibration because tests that no longer trigger failures are simply removed — no recalibration required.
+The article's code evaluator uses Playwright MCP to run the application and observe whether user actions complete — pass/fail is determined by behavior, not by scoring. This design applies the same principle to code mode: command exit codes are the verdict.
+
+The article does use numeric criteria (Design Quality, Originality, Craft, Functionality) for frontend aesthetic evaluation. That approach is appropriate for subjective visual judgment. This design covers structural code and document compliance, where binary checks are more appropriate: "no import from domain to infrastructure" is true or false, not 3/5.
+
+The article observes that every harness component encodes an assumption about what the model cannot do on its own, and those assumptions go stale as models improve. The checklist evolution mechanism (EVO-4: never-failing items are removal candidates) operationalizes this directly: checks that no longer catch real failures are removed rather than retained indefinitely.
 
 ## Design Documents
 
