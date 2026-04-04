@@ -17,6 +17,19 @@
 
 The current evaluator uses 1-5 rubric scoring across 5 dimensions (Correctness, Completeness, Code Quality, Test Coverage, Spec Compliance). This approach suffers from score drift, subjective interpretation, and unactionable feedback. The design replaces it with binary checklist evaluation that produces concrete, file-referenced PASS/FAIL results with specific rework items.
 
+### Industry Best Practices Integration
+
+This plan incorporates findings from Anthropic (harness design, evals), Boeckeler/Martin Fowler (harness engineering), Agent Factory (binary graders), and Scale AI (agentic rubrics). Five enhancements address gaps identified against 2026 state-of-the-art:
+
+| Enhancement | Source | Integrated In |
+|-------------|--------|---------------|
+| Check-type classification (computational vs inferential) + multi-trial for inferential | Boeckeler/Martin Fowler, Anthropic | tasks 002-004, 008 |
+| Category tagging (capability vs regression) | Anthropic evals guide | tasks 002-004, 008, 012 |
+| Evaluator calibration protocol (few-shot PASS/FAIL examples) | Anthropic, Scale AI | tasks 002-004, 008 |
+| Transcript/trajectory analysis for pivot detection | Anthropic harness design | tasks 007, 011 |
+| Feedforward: checklists shared with generator + evaluator | Anthropic harness design | task 010 |
+| Harness structural self-evaluation cycle | Anthropic (Opus 4.5->4.6 lesson) | task 012 |
+
 | Aspect | Current State | Target State |
 |--------|--------------|--------------|
 | Evaluation approach | 1-5 rubric scoring across 5 dimensions | Binary PASS/FAIL checklist per item |

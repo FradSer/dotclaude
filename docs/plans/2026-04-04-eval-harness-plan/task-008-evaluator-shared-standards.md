@@ -74,6 +74,31 @@ Keep references to:
 - Precision over speed
 - Progressive disclosure
 
+### Step 3b: Add multi-trial protocol for inferential checks
+
+Add a "Check Execution Protocol" subsection to Shared Standards:
+
+- **Computational checks** (check-type: computational): execute once, result is deterministic
+- **Inferential checks** (check-type: inferential): execute 3 trials, majority result wins (2/3 PASS = PASS, 2/3 FAIL = FAIL)
+- For inferential checks, the evaluator must read the item's calibration examples before each trial to anchor judgment
+- Record trial-level results in evidence: "3 trials: PASS, FAIL, PASS -> majority PASS"
+- If all 3 trials disagree (impossible with binary, but edge: 2 FAIL + 1 PASS with low confidence), note "borderline" in evidence
+
+### Step 3c: Add category-aware verdict signaling
+
+Add to verdict rules:
+- **Regression items** (category: regression) that FAIL produce a stronger signal -- the rework item is prefixed with "[REGRESSION]" to indicate this was a previously-stable check
+- **Capability items** (category: capability) that FAIL are expected during early adoption -- no special prefix
+- Verdict remains binary (PASS/REWORK) regardless of category, but the evidence section notes the regression/capability distribution: "N regression FAIL, M capability FAIL"
+
+### Step 3d: Add evaluator calibration protocol
+
+Add a "Calibration" subsection:
+- Before evaluating any inferential checklist item, the evaluator must read the item's calibration examples
+- Calibration examples are embedded in the checklist file under each inferential item
+- The evaluator must explicitly reference the calibration example when making a PASS/FAIL judgment on an inferential item
+- Format: "Per calibration: [item matches PASS/FAIL example because...]"
+
 ### Step 4: Remove scoring scale and type-aware weighting
 
 Remove the "Scoring Scale" legend (1-5 definitions) and "Task Type Weighting" table from the file.
@@ -98,6 +123,19 @@ grep -c "PASS.*REWORK\|REWORK.*PASS" superpowers/agents/superpowers-evaluator.md
 python3 plugin-optimizer/scripts/validate-plugin.py superpowers/ --check=frontmatter
 ```
 
+## Verification Commands
+
+```bash
+# Multi-trial protocol present
+grep -c "inferential\|multi-trial\|3 trials\|majority" superpowers/agents/superpowers-evaluator.md | xargs test 0 -lt && echo "PASS: multi-trial protocol"
+
+# Category-aware signaling present
+grep -c "regression.*FAIL\|capability.*FAIL\|\[REGRESSION\]" superpowers/agents/superpowers-evaluator.md | xargs test 0 -lt && echo "PASS: category signaling"
+
+# Calibration protocol present
+grep -c "calibration" superpowers/agents/superpowers-evaluator.md | xargs test 0 -lt && echo "PASS: calibration protocol"
+```
+
 ## Success Criteria
 
 - Verdict rules use binary PASS/FAIL (not score thresholds)
@@ -105,3 +143,6 @@ python3 plugin-optimizer/scripts/validate-plugin.py superpowers/ --check=frontma
 - No 1-5 scoring scale, dimension tables, or configurable thresholds
 - Shared standards retain skeptical-by-default and read-only enforcement
 - All three modes reference the same output format
+- Multi-trial protocol defined for inferential checks (3 trials, majority wins)
+- Category-aware verdict signaling: regression FAIL marked as [REGRESSION]
+- Evaluator calibration protocol: must read and reference calibration examples for inferential items

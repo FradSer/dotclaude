@@ -50,17 +50,30 @@ Feature: Command Exit Code as the Sole Verdict Basis in Code Mode
 
 ### Step 1: Define checklist items
 
-Create `code-v1.md` with these minimum items:
+Create `code-v1.md` with these minimum items. Each item includes metadata:
+
+- **check-type**: `computational` (deterministic command/grep) or `inferential` (requires semantic judgment)
+- **category**: `regression` (established, expected to always pass) or `capability` (stretch goal)
+
+Items:
 
 - **CODE-VER-01**: All verification commands from the task file exit with code 0
   - Check: run each verification command independently; record exit code
+  - check-type: computational
+  - category: regression
   - Evidence: command text, exit code, last 10 lines of output
 - **CODE-QUAL-01**: No TODO, FIXME, HACK, XXX, or stub patterns in produced files
   - Check: grep for prohibited patterns in all files created/modified by the task
+  - check-type: computational
+  - category: regression
   - Evidence: file:line -- pattern found
 - **CODE-QUAL-02**: No `NotImplementedError`, `pass` as sole function body, or `...` as implementation
   - Check: grep for stub implementation patterns
+  - check-type: computational
+  - category: regression
   - Evidence: file:line -- stub pattern found
+
+Note: All code checklist items are computational. No calibration examples needed.
 
 ### Step 2: Add file header and format
 
@@ -88,5 +101,6 @@ grep -c "CODE-QUAL-01" docs/retros/checklists/code-v1.md && echo "PASS: CODE-QUA
 
 - `code-v1.md` exists with all 3+ checklist items
 - Each item has ID, description, check method annotation, and evidence format
+- Each item classified with check-type and category
 - CODE-VER-01 specifies independent command execution (not trusting generator reports)
 - CODE-QUAL-01 specifies concrete grep patterns for prohibited content

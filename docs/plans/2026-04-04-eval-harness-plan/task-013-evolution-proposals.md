@@ -78,6 +78,7 @@ After the pattern analysis phase, formulate evolution proposals:
 - **ADD**: failure source in 2+ distinct plans with no existing checklist item covering the pattern
 - **REMOVE**: item with 0 failures across 10+ reports
 - **MODIFY**: item producing false positives identifiable from rework analysis
+- **PROMOTE**: capability item with pass rate improving across 3+ successive plans (>80% in latest plan) -- propose reclassifying to regression category
 - Apply rate limit EVO-6: max 3 per mode per run; defer excess with evidence
 
 ### Step 2: Add user approval flow
@@ -141,7 +142,8 @@ grep -c "snapshot\|pre-edit\|rollback" superpowers/skills/retrospective/SKILL.md
 
 ## Success Criteria
 
-- Proposal types defined: ADD, REMOVE, MODIFY
+- Proposal types defined: ADD, REMOVE, MODIFY, PROMOTE
+- PROMOTE proposals reclassify capability items to regression when pass rate >80% across 3+ plans
 - Each proposal presented via AskUserQuestion with evidence
 - Approved proposals create new version file (never mutate existing)
 - Version counter increments once per run (not per proposal)

@@ -41,19 +41,20 @@ Replace the Per-Task Scores table example with the Checklist Results format from
 ```markdown
 ## Checklist Results
 
-| Item ID       | Check                                   | Result | Evidence                                        |
-|---------------|-----------------------------------------|--------|-------------------------------------------------|
-| REQ-TRACE-01  | All requirements map to >=1 scenario    | PASS   | 7/7 requirements traced                         |
-| SCEN-CONC-01  | Given clauses use specific data         | FAIL   | bdd-specs.md:23 -- "some valid user data"       |
+| Item ID       | Check                                   | Type          | Category   | Result | Evidence                                        |
+|---------------|-----------------------------------------|---------------|------------|--------|-------------------------------------------------|
+| REQ-TRACE-01  | All requirements map to >=1 scenario    | computational | regression | PASS   | 7/7 requirements traced                         |
+| SCEN-CONC-01  | Given clauses use specific data         | computational | regression | FAIL   | bdd-specs.md:23 -- "some valid user data"       |
+| RISK-02       | Mitigations specify concrete actions    | inferential   | capability | PASS   | 3 trials: PASS, PASS, FAIL -> majority PASS     |
 
 ## Rework Items
 
 | Item ID      | File         | Location | Issue                                                                 |
 |--------------|--------------|----------|-----------------------------------------------------------------------|
-| SCEN-CONC-01 | bdd-specs.md | line 23  | Replace "some valid user data" with concrete values (email, password) |
+| SCEN-CONC-01 | bdd-specs.md | line 23  | [REGRESSION] Replace "some valid user data" with concrete values (email, password) |
 
 ## Verdict: REWORK
-1 item FAIL: SCEN-CONC-01
+1 item FAIL (1 regression, 0 capability): SCEN-CONC-01
 ```
 
 ### Step 2: Remove scoring artifacts
@@ -102,9 +103,10 @@ grep -c "evals" superpowers/skills/executing-plans/references/evaluation-file-fo
 
 ## Success Criteria
 
-- Evaluation report format uses Checklist Results table
+- Evaluation report format uses Checklist Results table with Type and Category columns
 - No Per-Task Scores table, scoring scale, or type-aware weighting
-- Rework Items table uses Item ID, File, Location, Issue columns
-- Verdict line format: "PASS" or "REWORK" with FAIL count
-- Sprint contract format unchanged (or minimally updated)
+- Rework Items table uses Item ID, File, Location, Issue columns; regression FAILs prefixed with [REGRESSION]
+- Verdict line format: "PASS" or "REWORK" with FAIL count and regression/capability distribution
+- Inferential items show trial results in evidence (e.g., "3 trials: PASS, PASS, FAIL -> majority PASS")
+- Sprint contract format includes "Evaluation Criteria Preview" section (feedforward from task-010)
 - Evals directory convention documented

@@ -61,6 +61,27 @@ Replace the rubric path references in the evaluator spawn context:
 
 Update the Initialization section to reference checklists instead of rubrics. Remove or update references to `evaluation-rubrics.md`.
 
+### Step 3b: Add feedforward -- share checklist with generator
+
+Per Anthropic's harness design finding that giving grading criteria to both generator AND evaluator improves first-iteration output quality:
+
+1. When constructing the sprint contract for a batch, include a "Checklist Preview" section that lists the checklist items (ID + description) the evaluator will apply
+2. This is informational only -- the generator is not required to self-evaluate, but awareness of evaluation criteria helps it produce better first-pass output
+3. Format in sprint contract:
+
+```markdown
+## Evaluation Criteria Preview
+
+The evaluator will apply the following checks after task completion:
+
+| Item ID | Check |
+|---------|-------|
+| CODE-VER-01 | All verification commands exit with code 0 |
+| CODE-QUAL-01 | No TODO/FIXME/HACK/XXX in produced files |
+```
+
+4. The preview is derived from the same checklist version passed to the evaluator -- no separate maintenance
+
 ### Step 4: Verify spawn context change
 
 Confirm the skill references checklist paths and not rubric paths.
@@ -85,3 +106,5 @@ grep -c "v{N}\|highest.*version\|latest.*version" superpowers/skills/executing-p
 - Checklist path table documents all three modes
 - No hardcoded version numbers in skill definition
 - Evaluation-rubrics.md no longer referenced for spawning
+- Sprint contract includes "Evaluation Criteria Preview" section (feedforward)
+- Preview derived from same checklist version used by evaluator

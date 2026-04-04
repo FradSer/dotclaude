@@ -117,6 +117,25 @@ The skill body must include:
 - Rate limit EVO-6: max 3 proposals per mode per retrospective run
 - Deferred proposals listed with evidence for future reference
 
+### Step 3b: Add category-aware analysis
+
+Analyze failure patterns with awareness of item categories:
+
+- **Regression items that FAIL**: strong signal -- these were previously-stable checks. Surface these first in the retrospective report with "[REGRESSION BREAK]" label. A regression item failing in 2+ plans is a high-priority indicator.
+- **Capability items that FAIL**: expected during adoption. Track the pass rate trend across plans -- if a capability item's pass rate improves over successive plans, note it as a candidate for PROMOTE (capability -> regression).
+- **Category distribution**: include a summary showing "N regression items, M capability items, X% regression pass rate, Y% capability pass rate" to help the user understand checklist maturity.
+
+### Step 3c: Add harness structural self-evaluation
+
+Per Anthropic's lesson (sprint decomposition dropped from Opus 4.5 to 4.6): every harness component encodes an assumption about what the model cannot do alone. Add a "Harness Structure Review" section to the retrospective output:
+
+1. List the structural components of the harness: three-mode evaluation, sprint contracts, batch-based execution, checklist versioning, intra-plan learning
+2. For each component, check if evaluation data suggests the component is still load-bearing:
+   - If all tasks in recent plans pass on first round (no REWORK), the evaluator overhead may exceed its value -- recommend reducing evaluation frequency
+   - If sprint contract "Recurring Failure Patterns" injections never produce improvement (same failures persist despite injection), the intra-plan learning mechanism may need revision
+   - If a mode's checklist has only regression items and all pass consistently, recommend reducing that mode's evaluation to spot-check (every 3rd batch)
+3. Output as a "Harness Health" section with recommendations -- never auto-remove components, only surface recommendations for user review
+
 ### Step 4: Define best practices document output
 
 The skill writes `docs/retros/{topic}.md`:
@@ -143,6 +162,16 @@ grep -c "failure frequency\|plateau\|never-failing" superpowers/skills/retrospec
 grep -c "2.*plan\|10.*report\|EVO-6\|rate limit" superpowers/skills/retrospective/SKILL.md | xargs test 0 -lt && echo "PASS: thresholds"
 ```
 
+## Verification Commands
+
+```bash
+# Category-aware analysis present
+grep -c "regression\|capability\|PROMOTE\|category" superpowers/skills/retrospective/SKILL.md | xargs test 0 -lt && echo "PASS: category analysis"
+
+# Harness self-evaluation present
+grep -c "Harness.*Health\|Harness.*Review\|load-bearing\|structural" superpowers/skills/retrospective/SKILL.md | xargs test 0 -lt && echo "PASS: harness self-eval"
+```
+
 ## Success Criteria
 
 - `retrospective/SKILL.md` exists with valid frontmatter
@@ -152,3 +181,6 @@ grep -c "2.*plan\|10.*report\|EVO-6\|rate limit" superpowers/skills/retrospectiv
 - REMOVE proposal threshold: 10+ reports
 - Rate limit: max 3 per mode (EVO-6)
 - Best practices document output to `docs/retros/{topic}.md`
+- Category-aware analysis: regression breaks surfaced first, capability pass rate trends tracked
+- Harness structural self-evaluation: reviews whether each harness component is still load-bearing
+- PROMOTE candidates identified: capability items with improving pass rates

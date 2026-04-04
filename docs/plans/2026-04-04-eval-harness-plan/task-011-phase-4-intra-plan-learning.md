@@ -74,6 +74,25 @@ If a pattern persists across 3+ batches for the same item:
 
 Include a "Pattern detected" note in the Phase 4 evidence block presented to the user.
 
+### Step 4b: Add trajectory metrics to pattern analysis
+
+Beyond checklist PASS/FAIL results, analyze generator trajectory data from evaluation reports:
+
+1. Extract trajectory metrics per task from evaluation reports: tool call count, distinct file edit count, revert-and-retry count (if recorded by the code mode evaluator per task-007)
+2. If a task's trajectory metrics are anomalous compared to peer tasks in the same batch (e.g., 3x average tool calls), flag it in the pattern summary
+3. Include trajectory patterns in the "Recurring Failure Patterns" context injection when they correlate with checklist failures:
+
+```markdown
+## Recurring Failure Patterns (from prior batches)
+
+| Checklist Item | FAILed in batches | Issue seen | Trajectory signal |
+|----------------|-------------------|------------|-------------------|
+| SCEN-CONC-01   | 1, 2              | Vague Given clauses | N/A |
+| CODE-VER-01    | 2, 3              | Test failures | High thrashing (avg 25 tool calls) |
+```
+
+4. Trajectory data is supplementary -- it never overrides checklist PASS/FAIL results but provides additional context for the generator
+
 ### Step 5: Verify Phase 4 changes
 
 Confirm the pattern scan logic, context injection format, and escalation rules are in the skill.
@@ -99,3 +118,5 @@ grep -c "3.*batch\|persist\|escalat" superpowers/skills/executing-plans/SKILL.md
 - Elevates patterns persisting 3+ batches to prominent user notification
 - Context injection is additive (does not modify acceptance criteria)
 - Pattern summary included in Phase 4 evidence block
+- Trajectory metrics (tool calls, file edits, thrashing) extracted and included when correlated with failures
+- Recurring Failure Patterns table includes optional Trajectory signal column

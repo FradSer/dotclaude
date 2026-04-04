@@ -70,22 +70,39 @@ Feature: Binary PASS/FAIL Checklist Evaluation for Design Artifacts
 
 ### Step 1: Define checklist items
 
-Create `design-v1.md` with these minimum items derived from BDD scenarios:
+Create `design-v1.md` with these minimum items derived from BDD scenarios. Each item must include three metadata fields:
+
+- **check-type**: `computational` (deterministic grep/structural query) or `inferential` (requires LLM semantic judgment)
+- **category**: `regression` (established check, expected to always pass) or `capability` (stretch goal, may fail initially)
+- **calibration** (inferential items only): one PASS example + one FAIL example showing correct judgment
+
+Items:
 
 - **SCEN-CONC-01**: All Given clauses use specific data values (no "some", "valid", "appropriate", "relevant")
   - Check: grep for vague placeholders in Given clauses of bdd-specs.md
+  - check-type: computational
+  - category: regression
   - Evidence format: file:line -- quoted text
 - **REQ-TRACE-01**: Every requirement ID in _index.md appears in at least one scenario in bdd-specs.md
   - Check: cross-reference requirement IDs between files
+  - check-type: computational
+  - category: regression
   - Evidence format: requirement ID + absence note
 - **ARCH-01**: No imports or dependencies described from inner layer to outer layer
   - Check: scan architecture.md for dependency direction violations
+  - check-type: computational
+  - category: regression
   - Evidence format: file:line -- dependency description
 - **RISK-02**: Each risk mitigation in _index.md specifies a concrete action
   - Check: scan risk/mitigation entries for vague verbs ("monitor", "handle", "manage")
+  - check-type: inferential
+  - category: capability
   - Evidence format: file -- quoted mitigation text
+  - Calibration:
+    - PASS example: "Mitigation: circuit breaker with 30s timeout, fallback to cached response"
+    - FAIL example: "Mitigation: monitor closely and handle appropriately"
 
-Each item must include an executable check annotation specifying the grep pattern or structural query.
+Each item must include an executable check annotation specifying the grep pattern or structural query. Inferential items must include calibration examples.
 
 ### Step 2: Add file header and format
 
@@ -115,5 +132,7 @@ grep -c "RISK-02" docs/retros/checklists/design-v1.md && echo "PASS: RISK-02 pre
 
 - `design-v1.md` exists with all 4+ checklist items
 - Each item has ID, description, check method annotation, and evidence format
+- Each item classified with check-type (computational/inferential) and category (regression/capability)
+- Inferential items include calibration examples (one PASS, one FAIL)
 - No numeric scoring or rubric language present
 - File follows the binary test: two evaluators would produce the same result
