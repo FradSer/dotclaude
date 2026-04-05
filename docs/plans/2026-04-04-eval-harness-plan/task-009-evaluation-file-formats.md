@@ -8,7 +8,7 @@ Update `evaluation-file-formats.md` to replace the scores-based evaluation repor
 
 ## Execution Context
 
-**Task Number**: 009 of 015
+**Task Number**: 009 of 013
 **Phase**: Integration
 **Prerequisites**: Evaluator fully updated with checklist approach (task-008)
 
@@ -41,20 +41,20 @@ Replace the Per-Task Scores table example with the Checklist Results format from
 ```markdown
 ## Checklist Results
 
-| Item ID       | Check                                   | Type          | Category   | Result | Evidence                                        |
-|---------------|-----------------------------------------|---------------|------------|--------|-------------------------------------------------|
-| REQ-TRACE-01  | All requirements map to >=1 scenario    | computational | regression | PASS   | 7/7 requirements traced                         |
-| SCEN-CONC-01  | Given clauses use specific data         | computational | regression | FAIL   | bdd-specs.md:23 -- "some valid user data"       |
-| RISK-02       | Mitigations specify concrete actions    | inferential   | capability | PASS   | 3 trials: PASS, PASS, FAIL -> majority PASS     |
+| Item ID       | Check                                   | Result | Evidence                                        |
+|---------------|-----------------------------------------|--------|-------------------------------------------------|
+| REQ-TRACE-01  | All requirements map to >=1 scenario    | PASS   | 7/7 requirements traced                         |
+| SCEN-CONC-01  | Given clauses use specific data         | FAIL   | bdd-specs.md:23 -- "some valid user data"       |
+| RISK-02       | Mitigations specify concrete actions    | PASS   | All 3 mitigations specify concrete mechanisms   |
 
 ## Rework Items
 
 | Item ID      | File         | Location | Issue                                                                 |
 |--------------|--------------|----------|-----------------------------------------------------------------------|
-| SCEN-CONC-01 | bdd-specs.md | line 23  | [REGRESSION] Replace "some valid user data" with concrete values (email, password) |
+| SCEN-CONC-01 | bdd-specs.md | line 23  | Replace "some valid user data" with concrete values (email, password) |
 
 ## Verdict: REWORK
-1 item FAIL (1 regression, 0 capability): SCEN-CONC-01
+1 item FAIL: SCEN-CONC-01
 ```
 
 ### Step 2: Remove scoring artifacts
@@ -81,25 +81,25 @@ Add a note that evaluation artifacts are stored in `docs/plans/YYYY-MM-DD-{topic
 
 The sprint contract format remains largely unchanged. Ensure the Red-Green Pairs section references PASS/FAIL instead of score expectations.
 
-### Step 5b: Add cost tracking fields to evaluation report
+### Step 5b: Add cost tracking fields to evaluation report (best-effort)
 
-Per Anthropic's harness design practice of tracking cost/duration for ROI assessment, add a "Run Metrics" section to the evaluation report format:
+Add a "Run Metrics" section to the evaluation report format. This is best-effort -- token counts may not be available in all Claude Code spawning contexts (the parent agent receives the sub-agent's text response, not raw API usage metadata).
 
 ```markdown
 ## Run Metrics
 
 | Metric | Value |
 |--------|-------|
-| Evaluator input tokens | {N} |
-| Evaluator output tokens | {N} |
+| Evaluator input tokens | {N or "N/A"} |
+| Evaluator output tokens | {N or "N/A"} |
 | Evaluation duration | {N}s |
 | Checklist version | {mode}-v{N} |
 ```
 
-- Token counts are extracted from the API response `usage` field by the parent agent after the evaluator completes
+- Token counts are best-effort: extracted from API response `usage` field if available
 - Duration is wall-clock time from evaluator spawn to completion
 - This section is informational only -- it does not affect the verdict
-- Over time, these metrics enable answering: "Is the evaluator overhead justified for this plan size?"
+- Absence of token data does not block evaluation or rework
 
 ### Step 6: Verify format consistency
 
@@ -123,12 +123,9 @@ grep -c "evals" superpowers/skills/executing-plans/references/evaluation-file-fo
 
 ## Success Criteria
 
-- Evaluation report format uses Checklist Results table with Type and Category columns
+- Evaluation report format uses Checklist Results table (Item ID, Check, Result, Evidence)
 - No Per-Task Scores table, scoring scale, or type-aware weighting
-- Rework Items table uses Item ID, File, Location, Issue columns; regression FAILs prefixed with [REGRESSION]
-- Verdict line format: "PASS" or "REWORK" with FAIL count and regression/capability distribution
-- Inferential items show trial results in evidence (e.g., "3 trials: PASS, PASS, FAIL -> majority PASS")
-- Sprint contract format includes "Evaluation Criteria Preview" section (feedforward from task-010)
+- Rework Items table uses Item ID, File, Location, Issue columns
+- Verdict line format: "PASS" or "REWORK" with FAIL count
 - Evals directory convention documented
-- Run Metrics section added to evaluation report (input/output tokens, duration, checklist version)
-- Cost tracking enables harness ROI assessment per Anthropic's practice
+- Run Metrics section added to evaluation report (best-effort token counts, duration, checklist version)

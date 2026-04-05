@@ -4,11 +4,11 @@
 
 ## Description
 
-Create the `docs/retros/` directory structure that houses versioned checklists and the evolution log. This is the foundational infrastructure for the entire eval harness system.
+Create the `docs/retros/` directory structure that houses versioned checklists. This is the foundational infrastructure for the entire eval harness system.
 
 ## Execution Context
 
-**Task Number**: 001 of 015
+**Task Number**: 001 of 013
 **Phase**: Setup
 **Prerequisites**: None
 
@@ -16,10 +16,9 @@ Create the `docs/retros/` directory structure that houses versioned checklists a
 
 ```gherkin
 Scenario: Checklist infrastructure directory exists with required files
-  Given the eval harness design requires versioned checklists and an evolution log
+  Given the eval harness design requires versioned checklists
   When the setup task completes
   Then docs/retros/checklists/ directory exists
-  And docs/retros/evolution-log.jsonl exists as an empty file
   And the directory structure supports future checklist version files
 ```
 
@@ -28,7 +27,6 @@ Scenario: Checklist infrastructure directory exists with required files
 ## Files to Modify/Create
 
 - Create: `docs/retros/checklists/` (directory)
-- Create: `docs/retros/evolution-log.jsonl` (empty file)
 
 ## Steps
 
@@ -36,26 +34,18 @@ Scenario: Checklist infrastructure directory exists with required files
 
 Create the `docs/retros/checklists/` directory hierarchy.
 
-### Step 2: Create evolution log file
+### Step 2: Verify structure
 
-Create `docs/retros/evolution-log.jsonl` as an empty file. This file is append-only and will store one JSON object per line recording checklist evolution events.
-
-### Step 3: Verify structure
-
-Confirm both the directory and the evolution log file exist.
+Confirm the directory exists.
 
 ## Verification Commands
 
 ```bash
 # Verify directory exists
 test -d docs/retros/checklists/ && echo "PASS: checklists directory exists"
-
-# Verify evolution log exists
-test -f docs/retros/evolution-log.jsonl && echo "PASS: evolution-log.jsonl exists"
 ```
 
 ## Success Criteria
 
 - `docs/retros/checklists/` directory exists
-- `docs/retros/evolution-log.jsonl` exists
 - No other files created (checklists are created in subsequent tasks)

@@ -8,7 +8,7 @@ Update the evaluator's code mode to integrate binary checklist evaluation alongs
 
 ## Execution Context
 
-**Task Number**: 007 of 015
+**Task Number**: 007 of 013
 **Phase**: Core Features
 **Prerequisites**: code-v1.md exists (task-004)
 
@@ -90,17 +90,12 @@ Replace Steps 3-4 (Run Verification + Score Against Rubrics) with:
 7. Assess pivot flag (updated logic: consecutive FAIL rounds with same error)
 8. Write evaluation report using updated format (no scores table)
 
-### Step 2: Update pivot flag logic with trajectory analysis
+### Step 2: Update pivot flag logic
 
-Change pivot trigger from score-based (dimensions <= 2 across rounds) to binary-based with transcript analysis:
+Change pivot trigger from score-based (dimensions <= 2 across rounds) to binary-based:
 - Same task has REWORK verdict (same CODE-VER-01 FAIL, same error) in 2 consecutive rounds
 - Pivot rationale must reference the specific error pattern
 - Recommended action: review task spec, not retry implementation
-
-Additionally, detect "thrashing" patterns from generator trajectory:
-- If the generator oscillated between approaches (>3 distinct implementation attempts within a single round), flag as a pivot candidate even before 2 consecutive failures
-- Record trajectory metrics per task: tool call count, distinct file edit count, revert-and-retry count
-- If trajectory metrics exceed thresholds (e.g., >20 tool calls for a task estimated at <10), include in pivot rationale as supporting evidence
 
 ### Step 3: Remove scoring dimensions
 
@@ -136,7 +131,5 @@ python3 plugin-optimizer/scripts/validate-plugin.py superpowers/ --check=frontma
 - Code checklist adds prohibited pattern checks (CODE-QUAL-01)
 - Independent re-run explicitly required (generator claims not trusted)
 - Pivot flag uses consecutive FAIL rounds (not score thresholds)
-- Pivot flag enhanced with trajectory thrashing detection (oscillation, excessive tool calls)
-- Trajectory metrics recorded per task: tool call count, file edit count, revert-and-retry count
 - No dimension scoring, rubric references, or type-aware weighting
 - Rework items reference command output, not subjective assessments

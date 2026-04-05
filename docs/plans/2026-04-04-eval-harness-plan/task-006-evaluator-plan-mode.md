@@ -8,7 +8,7 @@ Replace the rubric-based scoring in the evaluator's plan mode with binary checkl
 
 ## Execution Context
 
-**Task Number**: 006 of 015
+**Task Number**: 006 of 013
 **Phase**: Core Features
 **Prerequisites**: plan-v1.md exists (task-003)
 

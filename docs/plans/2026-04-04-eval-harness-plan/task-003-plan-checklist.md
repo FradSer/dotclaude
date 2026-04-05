@@ -8,7 +8,7 @@ Create `docs/retros/checklists/plan-v1.md` containing binary PASS/FAIL checklist
 
 ## Execution Context
 
-**Task Number**: 003 of 015
+**Task Number**: 003 of 013
 **Phase**: Foundation
 **Prerequisites**: docs/retros/checklists/ directory exists (task-001)
 
@@ -74,40 +74,23 @@ Feature: Binary PASS/FAIL Checklist Evaluation for Plan Artifacts
 
 ### Step 1: Define checklist items
 
-Create `plan-v1.md` with these minimum items. Each item includes metadata:
-
-- **check-type**: `computational` (deterministic graph walk/pattern scan) or `inferential` (requires semantic judgment)
-- **category**: `regression` (established, expected to always pass) or `capability` (stretch goal)
-
-Items:
+Create `plan-v1.md` with these minimum items:
 
 - **PLAN-COV-01**: Every BDD scenario from the design has at least one mapped task
   - Check: cross-reference design bdd-specs.md scenarios with task file BDD sections
-  - check-type: computational
-  - category: regression
   - Evidence: scenario title + absence note
 - **TASK-COMP-03**: All verification commands are executable (begin with a binary name, not a description verb)
   - Check: scan verification command sections for non-executable patterns
-  - check-type: computational
-  - category: regression
   - Evidence: task file -- quoted command text
 - **DEP-01**: No circular dependencies in the task dependency graph
   - Check: walk the dependency graph from depends-on fields; detect cycles
-  - check-type: computational
-  - category: regression
   - Evidence: cycle path (task-A -> task-B -> task-A)
 - **DEP-02**: All depends-on references resolve to existing task IDs
   - Check: extract all depends-on IDs and verify each matches a task file
-  - check-type: computational
-  - category: regression
   - Evidence: task file -- unresolved ID
 - **TEST-01**: Every impl task has a corresponding test task (same NNN prefix) or explicit absence justification
   - Check: match task filenames by NNN prefix; check for test+impl pairs
-  - check-type: computational
-  - category: capability
   - Evidence: task file -- missing test counterpart
-
-Note: All plan checklist items are computational. No calibration examples needed.
 
 ### Step 2: Add file header and format
 
@@ -137,6 +120,5 @@ grep -c "TEST-01" docs/retros/checklists/plan-v1.md && echo "PASS: TEST-01 prese
 
 - `plan-v1.md` exists with all 5+ checklist items
 - Each item has ID, description, check method annotation, and evidence format
-- Each item classified with check-type and category
 - Check methods are mechanically executable (graph walks, pattern scans, cross-references)
 - No numeric scoring or rubric language present

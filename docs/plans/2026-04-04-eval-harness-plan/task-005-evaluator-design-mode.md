@@ -8,7 +8,7 @@ Replace the rubric-based scoring in the evaluator's design mode with binary chec
 
 ## Execution Context
 
-**Task Number**: 005 of 015
+**Task Number**: 005 of 013
 **Phase**: Core Features
 **Prerequisites**: design-v1.md exists (task-002)
 

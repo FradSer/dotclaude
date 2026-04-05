@@ -23,15 +23,17 @@ This plan incorporates findings from Anthropic (harness design, evals), Boeckele
 
 | Enhancement | Source | Integrated In |
 |-------------|--------|---------------|
-| Check-type classification (computational vs inferential) + multi-trial for inferential | Boeckeler/Martin Fowler, Anthropic | tasks 002-004, 008 |
-| Category tagging (capability vs regression) | Anthropic evals guide | tasks 002-004, 008 |
-| Evaluator calibration protocol (few-shot PASS/FAIL examples) | Anthropic, Scale AI | tasks 002-004, 008 |
-| Transcript/trajectory analysis for pivot detection | Anthropic harness design | tasks 007, 011 |
 | Feedforward: checklists shared with generator + evaluator | Anthropic harness design | task 010 |
 | Context resets outperform context compaction | Anthropic harness design | task 011 (batch-boundary handoff) |
-| Cost/duration tracking for harness ROI | Anthropic harness design | task 009 (report format) |
+| Cost/duration tracking for harness ROI (best-effort) | Anthropic harness design | task 009 (report format) |
 | Evaluator output responsibility protocol | Anthropic (generator/evaluator separation) | task 008 |
 | Harness structural self-evaluation cycle | Anthropic (Opus 4.5->4.6 lesson) | out of scope (manual review when models upgrade) |
+
+**Deferred to future versions (when v1 checklists evolve to include inferential items):**
+- Check-type classification (computational vs inferential) + multi-trial protocol (Boeckeler/Martin Fowler, Anthropic)
+- Category tagging (capability vs regression) (Anthropic evals guide)
+- Evaluator calibration protocol for inferential items (Anthropic, Scale AI)
+- Trajectory analysis for pivot detection (Anthropic harness design) -- deferred because code mode evaluator does not produce trajectory metrics in v1
 
 | Aspect | Current State | Target State |
 |--------|--------------|--------------|
@@ -43,7 +45,7 @@ This plan incorporates findings from Anthropic (harness design, evals), Boeckele
 | Intra-plan learning | None | Phase 4: recurring failure injection into sprint contracts |
 | Checklist management | N/A (static rubrics) | Version-tracked files, manual evolution via git |
 | Context management | None — Superpower Loop uses context compaction (same session) | Batch-boundary handoff summaries for context pressure reduction |
-| Cost tracking | None | Token usage summary in evaluation reports for harness ROI assessment |
+| Cost tracking | None | Token usage summary in evaluation reports (best-effort, may not be available in all contexts) |
 
 ## Execution Plan
 

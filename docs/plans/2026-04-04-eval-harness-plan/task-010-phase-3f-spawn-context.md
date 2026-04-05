@@ -8,7 +8,7 @@ Update the executing-plans skill to pass a checklist path (instead of a rubric p
 
 ## Execution Context
 
-**Task Number**: 010 of 015
+**Task Number**: 010 of 013
 **Phase**: Integration
 **Prerequisites**: Evaluation file formats updated (task-009)
 
@@ -19,7 +19,7 @@ Scenario: Executing-plans spawns evaluator with latest checklist version
   Given docs/retros/checklists/ contains design-v1.md and design-v2.md
   When executing-plans prepares to spawn the evaluator in design mode
   Then it selects design-v2.md (highest version N=2)
-  And the spawn context includes the path "superpowers/docs/retros/checklists/design-v2.md"
+  And the spawn context includes the path "docs/retros/checklists/design-v2.md"
   And files not matching {mode}-v{N}.md pattern are ignored (drafts, backups)
 
 Scenario: Spawn context uses checklist path not rubric path
@@ -53,9 +53,9 @@ Replace the rubric path references in the evaluator spawn context:
 
 | Mode   | Checklist path pattern                               |
 |--------|------------------------------------------------------|
-| design | `superpowers/docs/retros/checklists/design-v{N}.md` |
-| plan   | `superpowers/docs/retros/checklists/plan-v{N}.md`   |
-| code   | `superpowers/docs/retros/checklists/code-v{N}.md`   |
+| design | `docs/retros/checklists/design-v{N}.md` |
+| plan   | `docs/retros/checklists/plan-v{N}.md`   |
+| code   | `docs/retros/checklists/code-v{N}.md`   |
 
 ### Step 3: Update evaluator configuration section
 
@@ -82,7 +82,11 @@ The evaluator will apply the following checks after task completion:
 
 4. The preview is derived from the same checklist version passed to the evaluator -- no separate maintenance
 
-### Step 4: Verify spawn context change
+### Step 4: Add evals directory creation
+
+Ensure executing-plans creates the `docs/plans/YYYY-MM-DD-{topic}-evals/` directory (derived from the plan path by replacing `-plan/` with `-evals/`) before writing any evaluation artifacts. This directory is created on first use if it does not exist.
+
+### Step 5: Verify spawn context change
 
 Confirm the skill references checklist paths and not rubric paths.
 
@@ -108,3 +112,4 @@ grep -c "v{N}\|highest.*version\|latest.*version" superpowers/skills/executing-p
 - Evaluation-rubrics.md no longer referenced for spawning
 - Sprint contract includes "Evaluation Criteria Preview" section (feedforward)
 - Preview derived from same checklist version used by evaluator
+- Evals directory created on first use (`*-evals/` sibling to `*-plan/`)

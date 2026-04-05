@@ -62,7 +62,6 @@ Update Phase 4 (Plan Reflection) references:
 This file is used by writing-plans Phase 4 for large plan reflection via the evaluator. Update it to describe the new binary checklist approach:
 - Replace 1-5 scoring dimensions with references to plan checklist items
 - Update the verdict rules to PASS/FAIL (not score-based)
-- Update the calibration example to use checklist format
 - Rename the file content to reflect "Plan Evaluation Checklist Reference" (keep the filename for backward compatibility, or rename if references are updated)
 
 ### Step 5: Update brainstorming/SKILL.md evaluator references
@@ -79,9 +78,16 @@ Update this file to describe the new binary checklist approach:
 - Update the verdict rules to PASS/FAIL (not score-based)
 - Rename content to reflect "Design Evaluation Checklist Reference"
 
-### Step 7: Verify all references updated
+### Step 7: Update output responsibility in writing-plans and brainstorming
 
-Scan ALL THREE skills (executing-plans, writing-plans, brainstorming) for any remaining references to rubric scoring.
+Both writing-plans/SKILL.md and brainstorming/SKILL.md currently imply the evaluator produces and writes report files directly. Update these to match the output responsibility protocol from task-008:
+- The evaluator outputs report content as text in its response
+- The parent skill (writing-plans or brainstorming) is responsible for writing the evaluator's output to disk
+- Update any language like "evaluator produces a report in the folder" to "evaluator produces report content; the skill writes it to disk"
+
+### Step 8: Verify all references updated
+
+Scan ALL THREE skills (executing-plans, writing-plans, brainstorming) for any remaining references to rubric scoring or incorrect output responsibility.
 
 ## Verification Commands
 
