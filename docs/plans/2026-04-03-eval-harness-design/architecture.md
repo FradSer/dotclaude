@@ -41,7 +41,7 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 **Design mode process (updated)**:
 
 1. Read design artifacts: `_index.md`, `bdd-specs.md`, `architecture.md`, `best-practices.md`
-2. Read design checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/design-v1.md`)
+2. Read design checklist from path in spawn context (e.g., `docs/retros/checklists/design-v1.md`)
 3. For each checklist item:
    - Determine check method (grep pattern, structural cross-reference, or content scan)
    - Execute check against design artifacts
@@ -52,7 +52,7 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 **Plan mode process (updated)**:
 
 1. Read `_index.md` and all task files
-2. Read plan checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/plan-v1.md`)
+2. Read plan checklist from path in spawn context (e.g., `docs/retros/checklists/plan-v1.md`)
 3. For each checklist item:
    - Execute the check method specified in the item annotation (dependency graph walk, task field presence, command syntax scan, etc.)
    - Record: item ID, PASS or FAIL, evidence
@@ -65,7 +65,7 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 1. Read sprint contract (unchanged)
 2. Read produced artifacts (unchanged)
 3. Run verification commands per task (unchanged) -- exit codes determine task PASS/FAIL
-4. Read code checklist from path in spawn context (e.g., `superpowers/docs/retros/checklists/code-v1.md`)
+4. Read code checklist from path in spawn context (e.g., `docs/retros/checklists/code-v1.md`)
 5. Apply prohibited pattern checks from code checklist against produced files
 6. Produce rework items from: failed verification commands + FAIL code checklist items
 7. Assess pivot flag (logic unchanged -- see existing evaluator definition)
@@ -101,9 +101,9 @@ The spawn context for `superpowers-evaluator` changes from rubric path to checkl
 
 | Mode   | Checklist path                                         |
 |--------|--------------------------------------------------------|
-| design | `superpowers/docs/retros/checklists/design-v{N}.md`   |
-| plan   | `superpowers/docs/retros/checklists/plan-v{N}.md`     |
-| code   | `superpowers/docs/retros/checklists/code-v{N}.md`     |
+| design | `docs/retros/checklists/design-v{N}.md`   |
+| plan   | `docs/retros/checklists/plan-v{N}.md`     |
+| code   | `docs/retros/checklists/code-v{N}.md`     |
 
 The skill reads the latest checklist version from the checklists directory before spawning. Version selection: scan `docs/retros/checklists/` for files matching `{mode}-v{N}.md` (e.g., `design-v1.md`, `design-v2.md`); extract the numeric suffix N from each matching filename; select the file with the highest N. Files not matching the pattern `{mode}-v\d+\.md` (drafts, backups, etc.) are ignored. No hardcoded version in the skill definition.
 
@@ -175,7 +175,7 @@ Each evaluation report includes a "Run Metrics" section:
 | Checklist version | {mode}-v{N} |
 ```
 
-Token counts are extracted from the API response `usage` field by the parent agent. Metrics are informational only -- they never affect verdicts.
+Token counts are best-effort: extracted from the API response `usage` field if available (may not be accessible in all Claude Code spawning contexts). Metrics are informational only -- they never affect verdicts. Absence of token data does not block evaluation.
 
 ## File Layout
 

@@ -123,7 +123,7 @@ The handoff is a navigation aid, not a context dump. Keep it under 30 lines.
 
 Anthropic's article observes that the evaluator is "essential when task exceeds model baseline capability, overhead otherwise." The shift from Opus 4.5 to 4.6 changed what the evaluator caught: fewer basic issues, more subtle interaction bugs.
 
-Without cost data, you cannot make this judgment. The "Run Metrics" section in each evaluation report captures: evaluator input/output tokens, evaluation duration, and checklist version. Over 3+ plans, these metrics answer:
+Without cost data, you cannot make this judgment. The "Run Metrics" section in each evaluation report captures: evaluation duration, checklist version, and token counts (best-effort -- may not be available in all Claude Code spawning contexts). Over 3+ plans, these metrics answer:
 
 - What is the average token cost per evaluation round?
 - Does the evaluator cost scale linearly with task count, or is there a fixed overhead?
@@ -157,13 +157,10 @@ The evaluator no longer scores "Code Quality" or "Spec Compliance" on a 1-5 scal
 
 The evaluation question is: does the code do what the sprint contract says? The verification commands answer that question. The evaluator does not supplement that answer with subjective assessment.
 
-## Evolution Log Integrity
+## Checklist Evolution Audit Trail
 
-The `evolution-log.jsonl` file is append-only. Never remove or edit past entries — they are the audit trail for every checklist decision. If a change was a mistake, log a corrective event:
+Checklist evolution is tracked via git history (version files, commit messages). No separate evolution log file is maintained in v1 -- git provides the audit trail.
 
-```json
-{"timestamp":"2026-06-01T10:00:00Z","event":"item_removed","mode":"design","item_id":"SCEN-CONC-03","rationale":"Added prematurely — item ID was correct but check description was ambiguous; re-adding corrected version as SCEN-CONC-04"}
-{"timestamp":"2026-06-01T10:01:00Z","event":"item_added","mode":"design","item_id":"SCEN-CONC-04","rationale":"Corrected version of SCEN-CONC-03: specifies HTTP status codes only, not all concrete values"}
-```
+When evolving checklists, write commit messages that would be understandable 6 months later: "Caught too many false positives" is insufficient. "Remove SCEN-CONC-03: triggered on 'Given a valid session' -- session validity is domain-appropriate specificity; check was too strict for authentication Given clauses" is sufficient.
 
-The rationale field in each event must be understandable 6 months later without surrounding context. "Caught too many false positives" is insufficient. "Triggered on 'Given a valid session' — session validity is domain-appropriate specificity; check was too strict for authentication Given clauses" is sufficient.
+If a future version needs a structured evolution log (e.g., for automated analysis of checklist drift), introduce `evolution-log.jsonl` as an append-only file at that point.

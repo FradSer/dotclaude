@@ -54,7 +54,7 @@
 - **CHK-2** (plan checklist): Covers scenario→task traceability, task completeness (all required sections present), dependency validity (no cycles, no missing IDs), verification command quality (concrete and executable)
 - **CHK-3** (code checklist): Test suite exits 0, type checker exits 0, linter exits 0, no prohibited patterns (stubs/TODOs) in produced files
 - **CHK-4**: Each checklist item is: binary (not "partially met"), concrete (references specific file paths or grep patterns), actionable (a FAIL result tells the generator exactly what to change)
-- **CHK-5**: Checklists stored at `superpowers/docs/retros/checklists/{mode}-v{N}.md`; sprint contracts reference the checklist version in use
+- **CHK-5**: Checklists stored at `docs/retros/checklists/{mode}-v{N}.md`; sprint contracts reference the checklist version in use
 - **CHK-6**: Checklist version increments when any item is added, modified, or removed; prior version files are preserved
 
 ### CTX — Context Management
@@ -67,7 +67,7 @@
 ### CST — Cost Tracking
 
 - **CST-1**: Each evaluation report includes a "Run Metrics" section: evaluator input/output tokens, evaluation duration, checklist version
-- **CST-2**: Token counts extracted from API response `usage` field by parent agent after evaluator completes
+- **CST-2**: Token counts are best-effort: extracted from API response `usage` field if available (may not be accessible in all Claude Code spawning contexts)
 - **CST-3**: Metrics are informational only — they do not affect verdicts
 - **CST-4**: Per Anthropic's practice of tracking cost ($200/6hr run) and comparing solo vs harness ROI
 
@@ -131,37 +131,37 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 ## Requirements Traceability
 - [ ] REQ-TRACE-01: Every requirement in _index.md maps to at least one BDD scenario
   # Check: list requirement IDs from _index.md Requirements section; grep each ID in bdd-specs.md
-  # Evidence format: "REQ-XXX appears in _index.md:L but no scenario references it"
+  # Evidence: "REQ-XXX appears in _index.md:L but no scenario references it"
 - [ ] REQ-TRACE-02: Every BDD scenario references a requirement (no orphan scenarios)
   # Check: list scenario titles from bdd-specs.md; verify each cites a requirement ID from _index.md
-  # Evidence format: "Scenario 'XYZ' in bdd-specs.md:L cites no requirement ID"
+  # Evidence: "Scenario 'XYZ' in bdd-specs.md:L cites no requirement ID"
 
 ## Scenario Concreteness
 - [ ] SCEN-CONC-01: All Given clauses use specific data values, not vague placeholders
   # Check: grep Given clauses in bdd-specs.md for "some ", "valid ", "appropriate ", "relevant ", "any "
-  # Evidence format: "bdd-specs.md:L — 'Given <quoted text>' contains vague placeholder"
+  # Evidence: "bdd-specs.md:L -- 'Given <quoted text>' contains vague placeholder"
 - [ ] SCEN-CONC-02: All Then clauses state observable outcomes (not "should work" or "should be correct")
   # Check: grep Then clauses in bdd-specs.md for "should work", "should be correct", "correctly", "properly"
-  # Evidence format: "bdd-specs.md:L — 'Then <quoted text>' is not an observable outcome"
+  # Evidence: "bdd-specs.md:L -- 'Then <quoted text>' is not an observable outcome"
 
 ## Architecture Validity
 - [ ] ARCH-01: No import described from inner layer to outer layer
-  # Check: scan architecture.md for import/dependency descriptions; flag any inner→outer direction
-  # Evidence format: "architecture.md:L — describes <inner> importing from <outer>"
+  # Check: scan architecture.md for import/dependency descriptions; flag any inner-to-outer direction
+  # Evidence: "architecture.md:L -- describes <inner> importing from <outer>"
 - [ ] ARCH-02: All external dependencies named in _index.md Constraints section
   # Check: grep architecture.md for library/service names; verify each appears in _index.md Constraints
-  # Evidence format: "<name> referenced in architecture.md:L not listed in _index.md Constraints"
+  # Evidence: "<name> referenced in architecture.md:L not listed in _index.md Constraints"
 - [ ] ARCH-03: No circular component dependencies described
   # Check: build dependency graph from architecture.md component list; walk all paths for cycles
-  # Evidence format: "Cycle: <A> → <B> → <A> in architecture.md"
+  # Evidence: "Cycle: <A> -> <B> -> <A> in architecture.md"
 
 ## Risk Identification
 - [ ] RISK-01: Design includes at least 3 identified risks with mitigation strategies
   # Check: count risk entries in _index.md Risks section; FAIL if count < 3
-  # Evidence format: "_index.md Risks section: N risks found (minimum 3 required)"
+  # Evidence: "_index.md Risks section: N risks found (minimum 3 required)"
 - [ ] RISK-02: Each risk mitigation is concrete (not "monitor closely" or "handle carefully")
   # Check: grep mitigations for "monitor", "handle carefully", "watch", "be careful", "ensure", "check"
-  # Evidence format: "_index.md — mitigation '<quoted text>' specifies no concrete action or mechanism"
+  # Evidence: "_index.md -- mitigation '<quoted text>' specifies no concrete action or mechanism"
 ```
 
 **`docs/retros/checklists/plan-v1.md`** — binary plan checklist:
@@ -309,9 +309,9 @@ The article observes that every harness component encodes an assumption about wh
 
 The article explicitly states "context resets outperform context compaction." The Superpower Loop architecture is context compaction — same session, growing context. For long plan executions, this creates the "context anxiety" the article describes (premature completion as perceived limits approach). Batch-boundary handoffs are a pragmatic middle ground: they don't break the loop architecture but provide structured checkpoints that reduce the model's need to retain full prior-batch details.
 
-**Why add cost tracking?**
+**Why add cost tracking (best-effort)?**
 
-The article compares "solo agent 20 min/$9 vs full harness." Without cost data, we cannot answer "is the evaluator overhead justified for this plan size?" — which is essential for the evaluator activation threshold decision (auto mode: 5+ tasks threshold). Minimal metrics (input/output tokens, duration) per evaluation report enable this assessment over time.
+The article compares "solo agent 20 min/$9 vs full harness." Without cost data, we cannot answer "is the evaluator overhead justified for this plan size?" Minimal metrics (duration, token counts if available) per evaluation report enable this assessment over time. Token counts are best-effort because Claude Code's Agent spawning model may not expose raw API usage metadata to the parent agent.
 
 ## Design Documents
 
