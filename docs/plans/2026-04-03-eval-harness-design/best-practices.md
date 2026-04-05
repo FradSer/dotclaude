@@ -42,6 +42,8 @@ Each checklist item should include, in a comment or annotation, the grep pattern
 
 ## Managing Checklist Evolution
 
+Checklists are manually evolved via git. The practices below guide when and how to add, modify, or remove items.
+
 ### Add only from multi-plan evidence
 
 A single failure is noise. Failures in 2+ distinct plans with the same root cause are signal. EVO-5 enforces this. Do not override it for a single dramatic failure — investigate whether the failing plan was anomalous.
@@ -69,30 +71,73 @@ File naming: always increment the numeric suffix. `design-v1.md → design-v2.md
 
 Code mode failures do not automatically justify design checklist changes. If code tasks repeatedly fail due to missing error handling, the root cause might be in the code, not the design.
 
-However, if code failures consistently trace back to vague error scenarios in BDD specs (visible in design evaluation reports), that IS evidence for a design checklist addition — because the root cause is in the design documentation. The trace must be explicit in the retrospective analysis: the code failure → the design gap must be documented as the causal chain.
+However, if code failures consistently trace back to vague error scenarios in BDD specs (visible in design evaluation reports), that IS evidence for a design checklist addition — because the root cause is in the design documentation. The trace must be explicit: the code failure -> the design gap must be documented as the causal chain.
 
-After amending a design checklist, check whether the same failure mode also appears in plan evaluation reports. Cross-mode patterns that share a single root cause should be addressed in both checklists in the same retrospective run.
+After amending a design checklist, check whether the same failure mode also appears in plan evaluation reports. Cross-mode patterns that share a single root cause should be addressed in both checklists.
 
-## Retrospective Cadence
+## Review Cadence
 
-### When to run
+### When to review checklists
 
-Run retrospective after 3+ plans have been executed, not after every plan. Single-plan retros produce noise proposals from insufficient data.
+Review checklists after 3+ plans have been executed, not after every plan. Single-plan reviews produce noisy conclusions from insufficient data.
 
-Exception: if a plan has an unusually high failure rate (more than half of checklist items failing in the code evaluation), run retrospective immediately after that plan — it may indicate a systemic gap.
+Exception: if a plan has an unusually high failure rate (more than half of checklist items failing in the code evaluation), review immediately — it may indicate a systemic gap.
 
-### Working with the rate limit
+### Rate of change
 
-The rate limit (max 3 changes per mode per retrospective run, EVO-6) exists to prevent rapid oscillation. If analysis produces 7 valid proposals, the top 3 by failure frequency are surfaced; the rest are deferred.
+Limit to max 3 item changes per mode per review session to prevent rapid oscillation. If you identify 7 valid changes, apply the top 3 by failure frequency; defer the rest until the next review cycle.
 
-Do not try to manually apply deferred proposals between retros. Wait for the next run — if the evidence base has grown, deferred proposals will reappear and may then be within the rate limit.
-
-### Across-plan retrospective value
+### Across-plan review value
 
 Single-plan: useful for identifying idiosyncratic failures from a specific domain or team pattern.
-Multi-plan: necessary for reliable evolution proposals. Failure patterns visible across 3+ plans are the strongest signal for ADD proposals. Never-failing items visible across 4+ plans are the strongest signal for REMOVE proposals.
+Multi-plan: necessary for reliable evolution decisions. Failure patterns visible across 3+ plans are the strongest signal for adding items. Never-failing items visible across 4+ plans are the strongest signal for removal.
 
-For your first retrospective run, use all available plans. Subsequent runs can use a rolling window of the 5 most recent plans.
+For your first review, examine all available plan evaluation reports. Subsequent reviews can use a rolling window of the 5 most recent plans.
+
+## Context Management at Batch Boundaries
+
+### Why batch handoffs matter
+
+Anthropic's harness design article finds that "context resets outperform context compaction" for long-running tasks. The Superpower Loop architecture is context compaction — the same session accumulates context across all batches. For plans with 5+ batches, this creates two risks:
+
+1. **Context anxiety**: The model perceives context limits approaching and rushes to complete, producing lower-quality output in later batches.
+2. **Detail loss**: Earlier batch details become less accessible as newer information fills the context window, leading to repeated mistakes or inconsistent decisions.
+
+### Batch handoff as pragmatic middle ground
+
+A full context reset would require breaking out of the Superpower Loop and starting a new session per batch — a significant architectural change. Batch handoffs are the simpler alternative: emit a structured summary at each batch boundary that serves as a compressed checkpoint.
+
+The key principle: the handoff must contain enough information for the model to continue effectively even if it "forgets" the details of prior batches. This means: completed task list, cumulative progress, active failure patterns, modified files, and next batch scope.
+
+### What NOT to include in batch handoffs
+
+- Full task file content (the model can re-read task files on demand)
+- Evaluation report content (reference the file path instead)
+- Implementation details from completed tasks (the code is in the files)
+
+The handoff is a navigation aid, not a context dump. Keep it under 30 lines.
+
+## Cost Awareness and Harness ROI
+
+### When the evaluator is overhead vs essential
+
+Anthropic's article observes that the evaluator is "essential when task exceeds model baseline capability, overhead otherwise." The shift from Opus 4.5 to 4.6 changed what the evaluator caught: fewer basic issues, more subtle interaction bugs.
+
+Without cost data, you cannot make this judgment. The "Run Metrics" section in each evaluation report captures: evaluator input/output tokens, evaluation duration, and checklist version. Over 3+ plans, these metrics answer:
+
+- What is the average token cost per evaluation round?
+- Does the evaluator cost scale linearly with task count, or is there a fixed overhead?
+- At what plan size does the evaluator ROI become positive (evaluation cost < rework cost avoided)?
+
+### Adjusting evaluator activation
+
+The current auto mode threshold (5+ tasks or 3+ BDD scenarios) is a starting estimate. After running 3+ plans with cost tracking:
+
+- If evaluator-on plans have similar rework rates to evaluator-off plans, raise the threshold
+- If evaluator catches failures that would have cost more to fix post-hoc, lower the threshold
+- If a specific mode (design/plan/code) rarely produces FAIL results, reduce that mode to spot-check frequency
+
+These adjustments are manual and informed by the cost data — not automated. Per Anthropic's principle: "re-examine harnesses when new models release."
 
 ## Code Mode Verification Ground Truth
 

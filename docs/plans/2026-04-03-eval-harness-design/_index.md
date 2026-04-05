@@ -1,4 +1,4 @@
-# Eval Harness Design v2: Executable Verification
+# Eval Harness Design: Executable Verification
 
 ## Context
 
@@ -34,8 +34,7 @@
 **What replaces them:**
 
 - Binary checklists (`docs/retros/checklists/{mode}-v{N}.md`) — PASS/FAIL per item
-- Retrospective process — evolves checklists from actual execution failures
-- Evolution log — append-only audit trail of checklist changes
+- Manual checklist evolution via git — version files, do not mutate
 
 ## Requirements
 
@@ -58,37 +57,33 @@
 - **CHK-5**: Checklists stored at `superpowers/docs/retros/checklists/{mode}-v{N}.md`; sprint contracts reference the checklist version in use
 - **CHK-6**: Checklist version increments when any item is added, modified, or removed; prior version files are preserved
 
-### EVO — Evolution Tracking
+### CTX — Context Management
 
-- **EVO-1**: Every checklist change (item added/modified/removed) is logged to `docs/retros/evolution-log.jsonl` as a structured JSON line
-- **EVO-2**: Each evolution event records: timestamp, event type, mode, item ID, rationale, driving plan IDs
-- **EVO-3**: Evolution proposals require explicit user approval via AskUserQuestion before any checklist file is modified
-- **EVO-4**: Items with 0 failures across 10+ plan evaluations are flagged as removal candidates — not automatically removed
-- **EVO-5**: Items proposed for addition must have appeared as a real failure source in at least 2 distinct plans
-- **EVO-6**: Max 3 item changes per mode per retrospective run, to prevent rapid oscillation
+- **CTX-1**: At each batch boundary in executing-plans, emit a structured batch handoff summary to the conversation context
+- **CTX-2**: Batch handoff includes: completed tasks, cumulative progress, active failure patterns, modified files, next batch scope
+- **CTX-3**: Batch handoff serves as compressed checkpoint — reduces context pressure from Superpower Loop's compaction model
+- **CTX-4**: Per Anthropic's finding: "context resets outperform context compaction" — batch handoffs are a pragmatic middle ground that doesn't require breaking the Superpower Loop architecture
 
-### RTR — Retrospective Process
+### CST — Cost Tracking
 
-- **RTR-1**: Retrospective is triggered manually via `/superpowers:retrospective [plan-path...]` after plan execution; not automatic
-- **RTR-2**: Retrospective skill reads all evaluation reports from provided plan directories directly; identifies recurring FAIL items, plateau tasks, and never-failing items
-- **RTR-3**: Best practices document written to `docs/retros/{topic}.md`; topic is derived from the dominant failure pattern; this file is the human-readable rationale for checklist evolution and is attributed to the retrospective skill that produced it
-- **RTR-4**: Report includes: failure frequency table (by checklist item), plateau task analysis, proposed evolution items with rationale
-- **RTR-5**: User approves or rejects each proposed evolution item; approved items are applied to the checklist file; evolution log is appended
-- **RTR-6**: Retrospective can span multiple plans — the skill accepts a list of plan directories for cross-plan pattern detection
+- **CST-1**: Each evaluation report includes a "Run Metrics" section: evaluator input/output tokens, evaluation duration, checklist version
+- **CST-2**: Token counts extracted from API response `usage` field by parent agent after evaluator completes
+- **CST-3**: Metrics are informational only — they do not affect verdicts
+- **CST-4**: Per Anthropic's practice of tracking cost ($200/6hr run) and comparing solo vs harness ROI
 
 ### PLG — Plugin Integration
 
-- **PLG-1**: Add `retrospective` skill to `superpowers/.claude-plugin/plugin.json` commands → `/superpowers:retrospective`
-- **PLG-2**: `superpowers-evaluator` updated in-place to use binary checklists instead of rubric scoring — agent structure and tool permissions unchanged
-- **PLG-4**: Checklist file path is injected into evaluator spawn context by executing-plans (not hardcoded in agent definition)
-- **PLG-5**: Never modify checklist files without user approval; enforced by retrospective skill flow
+- **PLG-1**: `superpowers-evaluator` updated in-place to use binary checklists instead of rubric scoring — agent structure and tool permissions unchanged
+- **PLG-2**: Evaluator output responsibility protocol: evaluator outputs report content as text; parent agent writes files. Evaluator remains read-only (no Write/Edit tools).
+- **PLG-3**: Checklist file path is injected into evaluator spawn context by executing-plans (not hardcoded in agent definition)
+- **PLG-4**: Rubric reference cleanup covers ALL three skills (executing-plans, writing-plans, brainstorming)
 
 ### Constraints and Non-Goals
 
 **Constraints (MUST)**:
 - `superpowers-evaluator` is updated, not replaced — separate evaluator agent architecture from the Anthropic article remains
 - No numeric rubric scores (1-5) in any evaluation output
-- Checklist evolution requires user approval — no auto-apply
+- Checklist evolution is manual via git; version files, do not mutate
 - Code mode ground truth is command exit codes — never subjective assessment
 - Evaluator runs commands independently; never trusts generator-reported results
 
@@ -96,8 +91,10 @@
 - Calibration against human baselines
 - Golden artifact management
 - CI/CD integration
-- Automated checklist generation (items are manually authored or retrospective-proposed)
+- Automated checklist generation or evolution (items are manually authored, evolved via git)
 - Cross-plugin checklist sharing
+- Interactive UI testing via Playwright MCP (future enhancement when web app development is primary use case)
+- Automated harness component stress-testing (manual simplification per Anthropic's methodical removal approach)
 
 ## Architecture
 
@@ -121,16 +118,9 @@ Subsystem B: Intra-Plan Learning  (per batch, Phase 4 enhancement)
     injects: pattern context into next batch sprint contract preamble
     surfaces: pattern summary in evidence block to user
 
-Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
-
-  /superpowers:retrospective [plan-path...]
-    reads: *-evals/ from multiple completed plans
-    identifies: recurring FAILs, plateau patterns, never-failing items
-    proposes: checklist additions/modifications/removals
-    → AskUserQuestion: user approves/rejects each proposal
-    → [approved] write checklist updates + append to evolution-log.jsonl
-    → writes: docs/retros/{topic}.md
 ```
+
+Checklist evolution is manual: edit files in `docs/retros/checklists/`, version via git.
 
 ### Data Structures
 
@@ -238,38 +228,6 @@ Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
   # Evidence format: "<file>:L — hardcoded return substituting real logic: '<quoted line>'"
 ```
 
-**`docs/retros/evolution-log.jsonl`** — append-only change log:
-```jsonl
-{"timestamp":"2026-04-10T09:15:00Z","event":"item_added","mode":"design","item_id":"SCEN-CONC-03","rationale":"Error scenarios missing concrete status codes in 3/4 plans","driving_plans":["2026-03-15-auth","2026-03-22-api","2026-04-01-notif"]}
-{"timestamp":"2026-05-02T14:30:00Z","event":"item_removed","mode":"plan","item_id":"PLAN-GRAN-01","rationale":"0 failures across 12 plans; check never triggered in practice","driving_plans":[]}
-```
-
-**Best practices document** `docs/retros/{topic}.md` (written by `/superpowers:retrospective`):
-```markdown
-# Retrospective: 2026-04-03-auth-plan
-
-## Failure Frequency
-
-| Checklist Item | Failures | Plans |
-|----------------|----------|-------|
-| SCEN-CONC-01   | 3        | 2     |
-| ARCH-01        | 1        | 1     |
-| PLAN-COV-01    | 0        | —     |
-
-## Plateau Task Analysis
-
-| Task | Consecutive REWORK Rounds | Failing Check |
-|------|---------------------------|---------------|
-| 004  | 2                         | TASK-COMP-03: verification command is descriptive |
-
-## Evolution Proposals (requires approval)
-
-1. ADD design/SCEN-CONC-03: "Error scenarios must name specific HTTP status codes"
-   Evidence: caught in tasks 002, 005 (auth-plan), task 007 (api-plan)
-2. ADD plan/TASK-COMP-04: "Verification commands must begin with a binary name, not a description verb"
-   Evidence: plateau task 004 (auth-plan) traced to this gap
-```
-
 **Evaluator output format** (all modes, replaces scores table):
 ```markdown
 ## Checklist Results
@@ -295,16 +253,20 @@ Subsystem C: Cross-Plan Evolution  (out-of-band, user-triggered)
 ```
 superpowers/
 ├── .claude-plugin/
-│   └── plugin.json                       # add retrospective to commands
+│   └── plugin.json                       # unchanged
 ├── agents/
 │   └── superpowers-evaluator.md          # UPDATED: binary checklists, no rubric scoring
 └── skills/
-    ├── retrospective/                    # NEW
-    │   └── SKILL.md
+    ├── brainstorming/
+    │   ├── SKILL.md                      # UPDATED: evaluator refs → checklist terminology
+    │   └── references/evaluation-rubrics.md  # UPDATED: checklist approach
+    ├── writing-plans/
+    │   ├── SKILL.md                      # UPDATED: evaluator refs → checklist terminology
+    │   └── references/evaluation-rubrics.md  # UPDATED: checklist approach
     └── executing-plans/
         └── references/
             ├── evaluation-rubrics.md     # REMOVED
-            └── evaluation-file-formats.md  # UPDATED: checklist format replaces scores table
+            └── evaluation-file-formats.md  # UPDATED: checklist format + cost tracking
 
 docs/plans/YYYY-MM-DD-{topic}-plan/       # writing-plans output (unchanged)
   _index.md
@@ -314,13 +276,11 @@ docs/plans/YYYY-MM-DD-{topic}-evals/      # NEW: executing-plans evaluation arti
   sprint-contract-batch-{N}.md
   evaluation-round-{N}-batch-{M}.md
 
-docs/retros/                      # NEW: ALL /superpowers:retrospective output
+docs/retros/                              # NEW: checklist storage
   checklists/
-    design-v1.md                          # NEW: binary design checklist
-    plan-v1.md                            # NEW: binary plan checklist
-    code-v1.md                            # NEW: code verification checklist
-  evolution-log.jsonl                     # NEW: append-only change log
-  {topic}.md                              # knowledge document per dominant failure pattern
+    design-v1.md                          # binary design checklist
+    plan-v1.md                            # binary plan checklist
+    code-v1.md                            # code verification checklist
 ```
 
 ## Rationale
@@ -331,17 +291,11 @@ Rubric scores drift because LLMs are sycophantic — the same artifact scored tw
 
 "Architecture Soundness: 3/5" gives the generator nothing concrete to fix. "[FAIL] architecture.md describes domain service importing from infra layer — domain must not depend on infra" gives the generator exactly what to change.
 
-**Why retrospective over calibration?**
-
-Calibration requires a stable human baseline created by manually scoring golden artifacts — which is expensive, goes stale when rubrics change, and encodes one person's biases as ground truth.
-
-Retrospective evolves from actual execution outcomes. If a checklist item catches real problems in multiple plans, it earns its place. If it never fails, it may not be detecting genuine issues. This is the same logic that governs which tests survive in a mature test suite.
-
 **Why this is simpler than the original design?**
 
 Original design: 3 new agents + golden artifact directories + human-scores.json curation + calibration runs + run history management + rubric version tracking.
 
-This design: 0 new agents + 1 new skill + 3 checklist files + evolution log.
+This design: 0 new agents + 0 new skills + 3 checklist files. Checklist evolution is manual via git.
 
 **How this design relates to the Anthropic harness article**
 
@@ -349,7 +303,15 @@ The article's code evaluator uses Playwright MCP to run the application and obse
 
 The article does use numeric criteria (Design Quality, Originality, Craft, Functionality) for frontend aesthetic evaluation. That approach is appropriate for subjective visual judgment. This design covers structural code and document compliance, where binary checks are more appropriate: "no import from domain to infrastructure" is true or false, not 3/5.
 
-The article observes that every harness component encodes an assumption about what the model cannot do on its own, and those assumptions go stale as models improve. The checklist evolution mechanism (EVO-4: never-failing items are removal candidates) operationalizes this directly: checks that no longer catch real failures are removed rather than retained indefinitely.
+The article observes that every harness component encodes an assumption about what the model cannot do on its own, and those assumptions go stale as models improve. Checklist items that never catch failures should be manually reviewed and removed — checks that no longer detect genuine issues are dead weight.
+
+**Why add context management?**
+
+The article explicitly states "context resets outperform context compaction." The Superpower Loop architecture is context compaction — same session, growing context. For long plan executions, this creates the "context anxiety" the article describes (premature completion as perceived limits approach). Batch-boundary handoffs are a pragmatic middle ground: they don't break the loop architecture but provide structured checkpoints that reduce the model's need to retain full prior-batch details.
+
+**Why add cost tracking?**
+
+The article compares "solo agent 20 min/$9 vs full harness." Without cost data, we cannot answer "is the evaluator overhead justified for this plan size?" — which is essential for the evaluator activation threshold decision (auto mode: 5+ tasks threshold). Minimal metrics (input/output tokens, duration) per evaluation report enable this assessment over time.
 
 ## Design Documents
 
