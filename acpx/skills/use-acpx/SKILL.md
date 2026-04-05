@@ -1,7 +1,7 @@
 ---
 name: use-acpx
 description: Provides knowledge about acpx CLI for agent-to-agent communication. Use when user asks about acpx commands, ACP protocol, agent sessions, prompt queueing, or scriptable agent workflows.
-user-invocable: false
+user-invocable: true
 ---
 
 # acpx
