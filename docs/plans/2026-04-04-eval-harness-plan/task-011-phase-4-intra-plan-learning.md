@@ -4,7 +4,7 @@
 
 ## Description
 
-Add intra-plan learning to executing-plans Phase 4. After the evaluator writes its report and before the user confirmation, the skill performs a pattern scan: reads all evaluation reports in the current evals directory, identifies checklist items that FAILed in 2+ distinct batches, and injects a "Recurring failures" context block into the next batch's sprint contract preamble. If a pattern persists across 3+ batches, it is elevated to a prominent position in the Phase 4 user confirmation prompt.
+Add intra-plan learning to executing-plans Phase 4 and batch-boundary context management. After the evaluator writes its report and before the user confirmation, the skill performs a pattern scan: reads all evaluation reports in the current evals directory, identifies checklist items that FAILed in 2+ distinct batches, and injects a "Recurring failures" context block into the next batch's sprint contract preamble. If a pattern persists across 3+ batches, it is elevated to a prominent position in the Phase 4 user confirmation prompt. Additionally, at each batch boundary, emit a structured handoff summary to reduce context pressure — per Anthropic's finding that context resets outperform context compaction for long-running tasks.
 
 ## Execution Context
 
@@ -93,9 +93,35 @@ Beyond checklist PASS/FAIL results, analyze generator trajectory data from evalu
 
 4. Trajectory data is supplementary -- it never overrides checklist PASS/FAIL results but provides additional context for the generator
 
-### Step 5: Verify Phase 4 changes
+### Step 5: Add batch-boundary context management
 
-Confirm the pattern scan logic, context injection format, and escalation rules are in the skill.
+Per Anthropic's finding that "context resets outperform context compaction" for long-running tasks, add a batch-boundary handoff mechanism to Phase 4:
+
+1. **After each batch completes** (all tasks verified, before user confirmation), emit a structured "Batch Handoff" block summarizing:
+   - Completed tasks in this batch (IDs, subjects, verdict)
+   - Cumulative progress (N of M tasks complete)
+   - Active failure patterns (from pattern scan above)
+   - Files modified in this batch
+   - Any outstanding rework items
+
+2. **Lower the handoff summary threshold**: Current executing-plans only produces full handoff summaries for 16+ task plans every 3 batches. Change to: produce a lightweight batch handoff after every batch regardless of plan size. Full handoff summary (with file ownership, key decisions) remains at the existing threshold.
+
+3. **Batch handoff format**:
+```markdown
+## Batch {N} Handoff
+
+**Progress**: {completed}/{total} tasks complete
+**This batch**: tasks {IDs} -- all PASS
+**Recurring patterns**: {pattern list or "none detected"}
+**Modified files**: {file list}
+**Next batch**: tasks {IDs} -- {brief scope}
+```
+
+4. The batch handoff is written to the conversation context (not a file) to reduce the need for the model to retain full details of prior batches. It serves as a compressed checkpoint that the Superpower Loop's prompt injection can reference.
+
+### Step 6: Verify Phase 4 changes
+
+Confirm the pattern scan logic, context injection format, escalation rules, and batch handoff are in the skill.
 
 ## Verification Commands
 
@@ -120,3 +146,6 @@ grep -c "3.*batch\|persist\|escalat" superpowers/skills/executing-plans/SKILL.md
 - Pattern summary included in Phase 4 evidence block
 - Trajectory metrics (tool calls, file edits, thrashing) extracted and included when correlated with failures
 - Recurring Failure Patterns table includes optional Trajectory signal column
+- Batch handoff emitted after every batch (lightweight progress checkpoint)
+- Full handoff summary threshold unchanged (16+ tasks, every 3 batches)
+- Batch handoff serves as compressed context checkpoint for Superpower Loop continuations

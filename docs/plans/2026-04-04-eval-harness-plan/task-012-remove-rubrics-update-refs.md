@@ -1,14 +1,14 @@
-# Task 014: Remove old rubrics and update cross-references
+# Task 012: Remove old rubrics and update cross-references
 
 **depends-on**: task-010
 
 ## Description
 
-Remove the now-obsolete `evaluation-rubrics.md` from executing-plans references and update all cross-references in executing-plans and writing-plans skills. The writing-plans evaluation rubrics file should be updated to reflect the new binary checklist approach used by the evaluator in plan mode.
+Remove the now-obsolete `evaluation-rubrics.md` from executing-plans references and update all cross-references in executing-plans, writing-plans, AND brainstorming skills. The writing-plans and brainstorming evaluation rubrics files should be updated to reflect the new binary checklist approach used by the evaluator. Scope covers ALL three skills that reference rubrics -- not just executing-plans and writing-plans.
 
 ## Execution Context
 
-**Task Number**: 014 of 015
+**Task Number**: 012 of 013
 **Phase**: Refinement
 **Prerequisites**: Phase 3f spawn context updated with checklist paths (task-010)
 
@@ -33,6 +33,8 @@ Scenario: Old rubrics file removed and references updated
 - Modify: `superpowers/skills/executing-plans/SKILL.md` (update references)
 - Modify: `superpowers/skills/writing-plans/SKILL.md` (update evaluator references)
 - Modify: `superpowers/skills/writing-plans/references/evaluation-rubrics.md` (update content for checklist approach)
+- Modify: `superpowers/skills/brainstorming/SKILL.md` (update evaluator references in Phase 4)
+- Modify: `superpowers/skills/brainstorming/references/evaluation-rubrics.md` (update content for checklist approach)
 
 ## Steps
 
@@ -63,9 +65,23 @@ This file is used by writing-plans Phase 4 for large plan reflection via the eva
 - Update the calibration example to use checklist format
 - Rename the file content to reflect "Plan Evaluation Checklist Reference" (keep the filename for backward compatibility, or rename if references are updated)
 
-### Step 5: Verify all references updated
+### Step 5: Update brainstorming/SKILL.md evaluator references
 
-Scan both skills for any remaining references to the removed file or rubric scoring.
+Update Phase 4 (Design Reflection) references:
+- Replace "scoring criteria" with "checklist evaluation"
+- Update references to evaluation-rubrics.md to point to checklist documentation
+- Ensure the evaluator spawn description in Evaluator Mode section mentions checklist path
+
+### Step 6: Update brainstorming/references/evaluation-rubrics.md
+
+Update this file to describe the new binary checklist approach:
+- Replace 1-5 scoring dimensions with references to design checklist items
+- Update the verdict rules to PASS/FAIL (not score-based)
+- Rename content to reflect "Design Evaluation Checklist Reference"
+
+### Step 7: Verify all references updated
+
+Scan ALL THREE skills (executing-plans, writing-plans, brainstorming) for any remaining references to rubric scoring.
 
 ## Verification Commands
 
@@ -81,6 +97,15 @@ grep -c "checklist" superpowers/skills/writing-plans/SKILL.md | xargs test 0 -lt
 
 # Writing-plans rubrics file updated
 grep -c "checklist\|PASS.*FAIL\|binary" superpowers/skills/writing-plans/references/evaluation-rubrics.md | xargs test 0 -lt && echo "PASS: writing-plans rubrics updated"
+
+# Brainstorming references updated
+grep -c "checklist" superpowers/skills/brainstorming/SKILL.md | xargs test 0 -lt && echo "PASS: brainstorming uses checklist"
+
+# Brainstorming rubrics file updated
+grep -c "checklist\|PASS.*FAIL\|binary" superpowers/skills/brainstorming/references/evaluation-rubrics.md | xargs test 0 -lt && echo "PASS: brainstorming rubrics updated"
+
+# No rubric scoring language in any of the three skills
+! grep -r "1-5\|rubric.*scor\|dimension.*score" superpowers/skills/{executing-plans,writing-plans,brainstorming}/SKILL.md && echo "PASS: no rubric scoring in any skill"
 ```
 
 ## Success Criteria
@@ -90,3 +115,6 @@ grep -c "checklist\|PASS.*FAIL\|binary" superpowers/skills/writing-plans/referen
 - executing-plans/SKILL.md uses "checklist" terminology
 - writing-plans/SKILL.md evaluator references updated for checklist approach
 - writing-plans/references/evaluation-rubrics.md content updated (binary checklist, not 1-5 scoring)
+- brainstorming/SKILL.md evaluator references updated for checklist approach
+- brainstorming/references/evaluation-rubrics.md content updated (binary checklist, not 1-5 scoring)
+- No rubric scoring language remains in any of the three skills

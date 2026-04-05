@@ -81,6 +81,26 @@ Add a note that evaluation artifacts are stored in `docs/plans/YYYY-MM-DD-{topic
 
 The sprint contract format remains largely unchanged. Ensure the Red-Green Pairs section references PASS/FAIL instead of score expectations.
 
+### Step 5b: Add cost tracking fields to evaluation report
+
+Per Anthropic's harness design practice of tracking cost/duration for ROI assessment, add a "Run Metrics" section to the evaluation report format:
+
+```markdown
+## Run Metrics
+
+| Metric | Value |
+|--------|-------|
+| Evaluator input tokens | {N} |
+| Evaluator output tokens | {N} |
+| Evaluation duration | {N}s |
+| Checklist version | {mode}-v{N} |
+```
+
+- Token counts are extracted from the API response `usage` field by the parent agent after the evaluator completes
+- Duration is wall-clock time from evaluator spawn to completion
+- This section is informational only -- it does not affect the verdict
+- Over time, these metrics enable answering: "Is the evaluator overhead justified for this plan size?"
+
 ### Step 6: Verify format consistency
 
 Confirm the updated file contains no scoring language and matches the architecture specification.
@@ -110,3 +130,5 @@ grep -c "evals" superpowers/skills/executing-plans/references/evaluation-file-fo
 - Inferential items show trial results in evidence (e.g., "3 trials: PASS, PASS, FAIL -> majority PASS")
 - Sprint contract format includes "Evaluation Criteria Preview" section (feedforward from task-010)
 - Evals directory convention documented
+- Run Metrics section added to evaluation report (input/output tokens, duration, checklist version)
+- Cost tracking enables harness ROI assessment per Anthropic's practice

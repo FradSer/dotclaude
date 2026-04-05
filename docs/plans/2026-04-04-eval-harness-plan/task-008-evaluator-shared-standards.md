@@ -74,6 +74,21 @@ Keep references to:
 - Precision over speed
 - Progressive disclosure
 
+### Step 3a: Add evaluator output responsibility protocol
+
+Add a "Output Responsibility" subsection to Shared Standards that resolves the read-only vs file-write contradiction:
+
+- The evaluator agent remains **read-only** — it does not have Write or Edit tools
+- The evaluator produces report content as structured text in its response
+- The **parent agent** (executing-plans, brainstorming, or writing-plans) is responsible for writing the evaluator's output to disk as the evaluation report file
+- Sprint contracts follow the same protocol: evaluator outputs contract content, parent agent writes the file
+- This separation ensures the evaluator cannot accidentally modify artifacts it is evaluating
+
+Add to the evaluator definition:
+```
+**Output protocol**: This agent outputs report content as text. The spawning agent writes the content to the evaluation report file. This agent never writes files directly.
+```
+
 ### Step 3b: Add multi-trial protocol for inferential checks
 
 Add a "Check Execution Protocol" subsection to Shared Standards:
@@ -146,3 +161,5 @@ grep -c "calibration" superpowers/agents/superpowers-evaluator.md | xargs test 0
 - Multi-trial protocol defined for inferential checks (3 trials, majority wins)
 - Category-aware verdict signaling: regression FAIL marked as [REGRESSION]
 - Evaluator calibration protocol: must read and reference calibration examples for inferential items
+- Output responsibility protocol: evaluator outputs text, parent agent writes files
+- No Write/Edit tools in evaluator — read-only enforcement preserved
