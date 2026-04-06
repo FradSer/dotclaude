@@ -46,7 +46,9 @@
 - **VER-4** (plan mode): `superpowers-evaluator` applies the binary checklist from `docs/retros/checklists/plan-v{N}.md`; each item is PASS or FAIL with specific evidence
 - **VER-5**: Rework items are produced only from FAIL checklist results; each item must name the exact file, location, and violated check — "code quality could be improved" is not a valid rework item
 - **VER-6**: Evaluator output format: checklist results table (item, result, evidence) + rework items list + overall verdict — no scores table
-- **VER-7**: Each checklist check is independently verifiable — a third party can confirm the result by reading the cited file or running the cited command without judgment calls
+- **VER-7a**: Each computational checklist check is independently verifiable — a third party can confirm the PASS/FAIL result by reading the cited file or running the cited command without judgment calls
+- **VER-7b**: Each inferential checklist check is verifiable with reference to the check method annotation — two independent evaluators applying the same check method to the same artifact reach the same PASS/FAIL result in the majority of cases; borderline results are noted but do not affect verdict
+- **VER-8**: In design and plan mode, if the same checklist item FAILs with the same evidence pattern in 2 consecutive rework rounds for the same evaluation, the rework item notes the repeated failure and recommends reviewing the task specification or scope for an underlying blocker
 
 ### CHK — Checklist Design
 
@@ -72,6 +74,7 @@
 - **EVO-2**: When all checklist items PASS for a batch but the batch required 2+ rework rounds, the plan completion summary notes a "potential checklist gap" — the evaluator may lack items that would have caught the initial failure earlier (variety amplification signal per Ashby's Law of Requisite Variety)
 - **EVO-3**: Evolution candidate signals are informational only — they provide explicit entry points for manual checklist review but do not auto-modify checklist files
 - **EVO-4**: Evolution candidates bridge the gap between intra-plan learning (immediate tactical feedback, Subsystem B) and checklist evolution (strategic manual review) — this addresses the ultra-stability transition (Ashby) between control levels
+- **EVO-5**: When code evaluation identifies persistent FAILs (same checklist item failing across 2+ batches), the plan completion retrospective checks whether the related design or plan evaluation covered the upstream root cause — uncovered upstream gaps are flagged as cross-mode gaps alongside evolution candidates
 
 ### CST — Cost Tracking
 
@@ -130,6 +133,7 @@ Subsystem B: Intra-Plan Learning  (per batch, Phase 4 enhancement)
   On plan completion (after final batch):
     flags: items FAILing 3+ batches or requiring 3+ rework rounds as evolution candidates
     flags: batches where all PASS but 2+ rework rounds as potential checklist gaps
+    traces: persistent code FAILs back to design/plan evaluation coverage as cross-mode gaps
     emits: "Checklist Evolution Candidates" section in plan completion summary
 
 ```
@@ -346,7 +350,7 @@ The article observes that every harness component encodes an assumption about wh
 
 The eval harness is a negative feedback control system: checklists define the setpoint, the evaluator is the sensor, PASS/FAIL is the comparator, and rework items are the error signal. Binary checks produce a 1-bit signal per item — lower nominal precision than 1-5 scores (~2.3 bits), but higher effective channel capacity because the signal is reliable and does not drift (Shannon's channel capacity = precision x reliability).
 
-Check type annotations (CHK-7, CHK-8) address a second-order cybernetics concern: the evaluator (an LLM) is part of the system it observes. Computational checks eliminate observer bias entirely; inferential checks reduce it by anchoring judgment to explicit methods, but some noise remains. Annotating the type makes this noise budget visible rather than hidden.
+Check type annotations (CHK-7, CHK-8) address a second-order cybernetics concern: the evaluator (an LLM) is part of the system it observes. Computational checks eliminate observer bias entirely; inferential checks reduce it by anchoring judgment to explicit methods, but some noise remains. Annotating the type makes this noise budget visible rather than hidden. Note: the reliability advantage of binary over rubric is established for computational items (deterministic) and assumed for inferential items -- v1 annotation is a prerequisite for v2 measurement via multi-trial protocol, which will provide empirical data on inferential check agreement rates.
 
 The three-level control hierarchy — immediate feedback (PASS/FAIL per batch), intra-plan learning (Phase 4 pattern injection), and checklist evolution (manual review) — maps to Ashby's ultra-stability: when first-order feedback fails to restore stability, the system changes its own parameters. EVO-1 through EVO-4 strengthen the transition between levels 2 and 3 by providing explicit signals (evolution candidates, variety gap detection) rather than relying solely on periodic manual review.
 

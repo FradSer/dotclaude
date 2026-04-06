@@ -60,6 +60,8 @@ Annotating `# Type: inferential` makes the noise budget visible. It does not cha
 2. Surfaces borderline results (informational notes that do not affect verdict) for checklist evolution review
 3. Prepares for v2's multi-trial protocol: run inferential checks multiple times and flag disagreements
 
+**Reliability assumption**: The claim that binary checks are more reliable than rubric scores is established for computational items (deterministic by construction) and assumed for inferential items. v1 treats this as a reasonable default -- binary format constrains the output space and the check method anchor reduces interpretive freedom. v2's multi-trial protocol will provide empirical data: if two evaluator runs on the same artifact produce different PASS/FAIL results for an inferential item, the item's check method needs tightening or the item needs to be split into narrower checks.
+
 ### Writing good inferential checks
 
 Minimize interpretive freedom by providing concrete anchors:
@@ -82,7 +84,7 @@ The checklist evolution process (add/modify/remove items after multi-plan review
 
 Two observable signals suggest a checklist gap:
 
-1. **Rework-despite-PASS**: A batch where all checklist items PASS but the batch required 2+ rework rounds before passing. The initial evaluation missed something the generator struggled with — the checklist may need a new item.
+1. **Repeated-rework convergence**: A batch that required 3+ evaluation rounds before all checklist items PASS. The checklist caught different issues each round, but the generator's repeated failures on different items suggest a common root cause that the checklist does not directly test for -- the failing items are symptoms, not the underlying issue. The checklist may need an item targeting the root cause.
 
 2. **Persistent rework on inferential items**: An inferential check that produces PASS on first evaluation but FAIL on re-evaluation after rework (or vice versa) suggests the check method is too ambiguous — the item may need to be split or its check method refined.
 
@@ -90,7 +92,7 @@ These signals are surfaced in the plan completion summary as "Potential Checklis
 
 ### When to act on gap signals
 
-A single rework-despite-PASS event is noise — the rework may have been caused by a generator error unrelated to checklist coverage. Rework-despite-PASS events in 2+ distinct plans with similar root causes are signal. Apply the same multi-plan evidence threshold as checklist item additions (see "Add only from multi-plan evidence" below).
+A single repeated-rework convergence event is noise -- the repeated failures may have been caused by generator errors unrelated to checklist coverage. Repeated-rework convergence in 2+ distinct plans with similar root causes is signal. Apply the same multi-plan evidence threshold as checklist item additions (see "Add only from multi-plan evidence" below).
 
 ## Managing Checklist Evolution
 
@@ -184,7 +186,9 @@ Without cost data, you cannot make this judgment. The "Run Metrics" section in e
 
 - What is the average token cost per evaluation round?
 - Does the evaluator cost scale linearly with task count, or is there a fixed overhead?
-- At what plan size does the evaluator ROI become positive (evaluation cost < rework cost avoided)?
+- What is the evaluation overhead as a fraction of total plan execution cost?
+
+**Counterfactual limitation**: ROI = (cost of rework avoided) / (cost of evaluation). Cost tracking measures the denominator directly, but the numerator is a counterfactual — you cannot directly observe what would have happened without the evaluator. To approximate ROI, compare rework rates and final quality between evaluator-on and evaluator-off plan executions (see "Adjusting evaluator activation" below). Single-plan comparisons are unreliable; accumulate data across 3+ plans before drawing conclusions.
 
 ### Adjusting evaluator activation
 

@@ -26,6 +26,7 @@ Subsystem B: Intra-Plan Learning  (per batch, Phase 4 enhancement)
   On plan completion (after final batch):
     flags: items FAILing 3+ batches or requiring 3+ rework rounds -> evolution candidates
     flags: batches where all PASS but 2+ rework rounds -> potential checklist gaps (variety amplification)
+    traces: persistent code FAILs back to design/plan evaluation coverage -> cross-mode gaps
     emits: "Checklist Evolution Candidates" section in plan completion summary
 ```
 
@@ -55,6 +56,7 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
    - Record: item ID, PASS or FAIL, evidence (file:line or explicit absence note)
 4. Produce rework items from all FAIL results: file path, location, exact issue
 5. Verdict: PASS if all items PASS; REWORK if any item FAIL
+6. Rework round tracking: if this is round N (N >= 2) for the same evaluation and any item that FAILed in round N also FAILed in round N-1 with the same evidence pattern, append to that item's rework note: "repeated failure (rounds N-1, N) -- review task specification for underlying blocker"
 
 **Plan mode process (updated)**:
 
@@ -66,6 +68,7 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
    - Note: DEP-01 and DEP-02 perform cycle detection and ID resolution; PLAN-COV-01 detects unmapped scenarios -- no separate structural sweep is performed outside the checklist
 4. Produce rework items from all FAIL results
 5. Verdict: PASS if all items PASS; REWORK if any item FAIL
+6. Rework round tracking: same as design mode step 6 -- flag items failing with the same evidence pattern in consecutive rework rounds
 
 **Code mode process (updated)**:
 
@@ -141,6 +144,14 @@ Generator note: tasks in this batch must address the above patterns proactively.
 
 This injection is additive -- it does not modify task acceptance criteria, only provides context.
 
+**Injection format validation** (L3 judgment control): The executing-plans skill validates injection content before including it in the sprint contract:
+- Each row's Checklist Item field must match an item ID in the current checklist version
+- FAILed in batches must be comma-separated integers referencing actual batch numbers
+- Issue seen must be quoted from evaluation report evidence, not paraphrased by the orchestrator
+- Injection content that fails validation is omitted with a note in the Phase 4 evidence block ("injection for {item ID} omitted: {reason}") rather than included in malformed state
+
+This validation constrains the orchestration layer's judgment when constructing injections, preventing paraphrased or fabricated pattern descriptions from reaching the generator.
+
 ---
 
 ### Checklist Evolution Candidate Signal (plan completion)
@@ -170,6 +181,30 @@ Recommendation: review `docs/retros/checklists/{mode}-v{N}.md` for items above.
 ```
 
 This signal is informational only — it does not auto-modify checklist files. It provides an explicit entry point for human reviewers to decide whether to ADD, MODIFY, or REMOVE checklist items.
+
+---
+
+### Cross-Mode Causal Tracing (plan completion)
+
+**Motivation**: In a hierarchical system (design -> plan -> code), an upstream design gap can manifest as a downstream code failure. The code evaluator sees the symptom (test failure); the root cause (e.g., missing error scenario in BDD specs) lives in the design. Without cross-mode tracing, this causal chain is invisible -- code evolution candidates only propose code checklist changes, missing the upstream fix.
+
+**On plan completion**, when code evaluation identifies persistent FAILs (same CODE-VER or CODE-QUAL item failing across 2+ batches), the retrospective checks whether the related design or plan evaluation covered the upstream requirement:
+
+1. For each persistent code FAIL, identify the requirement or scenario it relates to (from the task's acceptance criteria or sprint contract)
+2. Check whether the design evaluation's REQ-TRACE or SCEN-CONC items covered that requirement
+3. If the design evaluation shows PASS for the related requirement but the code repeatedly fails on its implementation, flag as a cross-mode gap
+
+```markdown
+### Cross-Mode Gaps
+
+| Code FAIL | Batches | Related Requirement | Design Coverage | Note |
+|-----------|---------|--------------------|--------------------|------|
+| CODE-VER-01 (task-007) | 2, 3 | REQ-005: Rate limiting | REQ-TRACE-01: PASS | Design traced requirement but no scenario tested error path |
+
+Recommendation: review design checklist for items covering the upstream root cause.
+```
+
+This signal is informational and appended to the "Checklist Evolution Candidates" section. It does not auto-modify design checklists.
 
 ---
 

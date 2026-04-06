@@ -203,13 +203,13 @@ Feature: Plan Completion Signals for Checklist Evolution
     And a root cause hypothesis is provided
     And the section recommends reviewing the relevant checklist file
 
-  Scenario: All-PASS batch with multiple rework rounds flagged as potential gap
-    Given batch 3 evaluation shows all checklist items PASS
-    But batch 3 required 3 rework rounds before reaching all-PASS
+  Scenario: Batch requiring 3+ evaluation rounds to reach all-PASS flagged as potential gap
+    Given batch 3 took 3 evaluation rounds: round 1 had 2 FAIL items, round 2 had 1 different FAIL item, round 3 shows all items PASS
+    And each round's failures were on different checklist items
     When the plan completes and executing-plans produces the plan completion summary
     Then the summary includes a "Potential Checklist Gaps" section
-    And batch 3 is listed with "3 rework rounds, all items PASS"
-    And a note states: "checklist may not cover the failure mode that caused initial rework"
+    And batch 3 is listed with "3 evaluation rounds, all items PASS on final round"
+    And a note states: "repeated failures on different items suggest a root cause the checklist does not directly target"
 
   Scenario: Clean plan with no evolution candidates produces no evolution section
     Given all batches completed with all checklist items PASS on first evaluation
@@ -256,6 +256,95 @@ Feature: Evaluator Handles Computational and Inferential Checks Differently
 
 ---
 
+## Feature: Batch-Boundary Context Management
+
+```gherkin
+Feature: Structured Batch Handoff at Context Boundaries
+  As the executing-plans skill at batch boundaries
+  I want to emit structured handoff summaries
+  So that context pressure is reduced and prior-batch details are recoverable
+
+  Scenario: Batch handoff emitted after successful batch with correct structure
+    Given batch 2 completes with tasks 003, 004, all PASS
+    And 5 of 13 total tasks are now complete
+    And no recurring failure patterns were detected in this plan
+    When executing-plans emits the batch handoff
+    Then the handoff contains progress "5/13 tasks complete"
+    And the handoff lists completed task IDs for this batch: 003, 004
+    And the handoff lists modified files from this batch
+    And the handoff states next batch scope with task IDs
+    And the handoff is under 30 lines
+
+  Scenario: Batch handoff includes active failure patterns when present
+    Given batch 3 completes with tasks 005, 006, all PASS after rework
+    And SCEN-CONC-01 failed in batches 1 and 2 of this plan
+    When executing-plans emits the batch handoff
+    Then the handoff "Recurring patterns" field lists SCEN-CONC-01
+    And the handoff is under 30 lines
+
+  Scenario: Batch handoff excludes full content and implementation details
+    Given batch 4 completes with tasks 007, 008, all PASS
+    When executing-plans emits the batch handoff
+    Then the handoff does not contain full task file content
+    And the handoff does not contain evaluation report content
+    And the handoff does not contain implementation details from completed tasks
+    And the handoff references file paths instead of inlining content
+```
+
+---
+
+## Feature: Evaluation Run Metrics
+
+```gherkin
+Feature: Cost and Duration Tracking in Evaluation Reports
+  As the evaluation report consumer
+  I want to see run metrics in each evaluation report
+  So that I can measure evaluator overhead over time
+
+  Scenario: Evaluation report includes run metrics with available token data
+    Given the evaluator completes a design mode evaluation
+    And the API response includes usage metadata
+    When the evaluation report is produced
+    Then the report contains a "Run Metrics" section
+    And the section includes the checklist version used
+    And the section includes evaluation duration
+    And the section includes evaluator input and output token counts
+
+  Scenario: Missing token data does not block evaluation or affect verdict
+    Given the evaluator completes a code mode evaluation
+    And the API response does not include usage metadata
+    When the evaluation report is produced
+    Then the "Run Metrics" section shows "N/A" for token counts
+    And the verdict is produced normally
+    And no error or warning is raised about missing token data
+```
+
+---
+
+## Feature: Evaluator Output Responsibility Protocol
+
+```gherkin
+Feature: Evaluator Produces Content Without Writing Files
+  As the superpowers-evaluator agent
+  I want to produce report content as structured text without writing files
+  So that I cannot accidentally modify artifacts I am evaluating
+
+  Scenario: Evaluator returns structured text and parent writes to disk
+    Given the evaluator completes a code mode evaluation
+    When the evaluator produces its response
+    Then the response contains the full evaluation report as structured markdown
+    And the evaluator has not invoked Write or Edit tools during the evaluation
+    And the parent agent writes the report to the evaluation file path
+
+  Scenario: Evaluator reads checklist from spawn context path
+    Given executing-plans spawns the evaluator with checklist path "docs/retros/checklists/design-v2.md"
+    When the evaluator begins evaluation
+    Then the evaluator reads the checklist from the provided path
+    And the evaluator does not search for or select checklist versions independently
+```
+
+---
+
 ## Scenario Count Summary
 
 | Feature | Scenarios |
@@ -265,7 +354,10 @@ Feature: Evaluator Handles Computational and Inferential Checks Differently
 | Command Exit Code -- Code Mode | 5 |
 | Checklist Evolution Candidate Signal | 3 |
 | Check Type Awareness in Evaluation | 3 |
-| **Total** | **22** |
+| Batch-Boundary Context Management | 3 |
+| Evaluation Run Metrics | 2 |
+| Evaluator Output Responsibility Protocol | 2 |
+| **Total** | **29** |
 
 All scenarios meet:
 - Single responsibility: each scenario tests exactly one rule or behavior
@@ -273,4 +365,4 @@ All scenarios meet:
 - Business language: no implementation terms (no "JSON key", "function call", "regex")
 - Independence: no shared mutable state between scenarios; each has explicit Given setup
 
-New scenarios (Checklist Evolution, Check Type Awareness) cover the cybernetic control enhancements: ultra-stability transition signals and second-order observer bias management.
+New scenarios cover: cybernetic control enhancements (Checklist Evolution, Check Type Awareness), context management at batch boundaries (Batch-Boundary), cost observability (Run Metrics), and separation of concerns (Output Responsibility Protocol).
