@@ -74,6 +74,9 @@ Keep references to:
 - Precision over speed
 - Progressive disclosure
 
+Add new standard:
+- **Check type awareness**: Each checklist item is annotated as `computational` (deterministic -- grep, exit code, graph walk) or `inferential` (requires evaluator judgment -- semantic mapping, architectural context). For inferential checks, the evaluator must anchor its judgment to the explicit check method in the item annotation and note when a result is borderline (e.g., "PASS -- borderline: scenario references the requirement implicitly via feature name, not by ID"). Borderline notes are informational and do not affect the PASS/FAIL result, but they surface for checklist evolution review.
+
 ### Step 3a: Add evaluator output responsibility protocol
 
 Add a "Output Responsibility" subsection to Shared Standards that resolves the read-only vs file-write contradiction:
@@ -122,3 +125,4 @@ python3 plugin-optimizer/scripts/validate-plugin.py superpowers/ --check=frontma
 - All three modes reference the same output format
 - Output responsibility protocol: evaluator outputs text, parent agent writes files
 - No Write/Edit tools in evaluator -- read-only enforcement preserved
+- Check type awareness standard: evaluator anchors inferential checks to explicit check methods and notes borderline results

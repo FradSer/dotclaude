@@ -79,18 +79,23 @@ Create `plan-v1.md` with these minimum items:
 - **PLAN-COV-01**: Every BDD scenario from the design has at least one mapped task
   - Check: cross-reference design bdd-specs.md scenarios with task file BDD sections
   - Evidence: scenario title + absence note
+  - `# Type: inferential` -- "mapped to" requires semantic matching between scenario text and task scope
 - **TASK-COMP-03**: All verification commands are executable (begin with a binary name, not a description verb)
-  - Check: scan verification command sections for non-executable patterns
+  - Check: scan verification command sections for non-executable patterns ("verify that", "check that", "ensure that", "manually")
   - Evidence: task file -- quoted command text
+  - `# Type: computational` -- grep for description verbs produces deterministic result
 - **DEP-01**: No circular dependencies in the task dependency graph
   - Check: walk the dependency graph from depends-on fields; detect cycles
   - Evidence: cycle path (task-A -> task-B -> task-A)
+  - `# Type: computational` -- graph cycle detection is algorithmic
 - **DEP-02**: All depends-on references resolve to existing task IDs
   - Check: extract all depends-on IDs and verify each matches a task file
   - Evidence: task file -- unresolved ID
+  - `# Type: computational` -- ID existence check is deterministic
 - **TEST-01**: Every impl task has a corresponding test task (same NNN prefix) or explicit absence justification
   - Check: match task filenames by NNN prefix; check for test+impl pairs
   - Evidence: task file -- missing test counterpart
+  - `# Type: computational` -- filename pattern matching is deterministic
 
 ### Step 2: Add file header and format
 
@@ -119,6 +124,7 @@ grep -c "TEST-01" docs/retros/checklists/plan-v1.md && echo "PASS: TEST-01 prese
 ## Success Criteria
 
 - `plan-v1.md` exists with all 5+ checklist items
-- Each item has ID, description, check method annotation, and evidence format
-- Check methods are mechanically executable (graph walks, pattern scans, cross-references)
+- Each item has ID, description, check method annotation, evidence format, and `# Type:` annotation
+- Computational items have deterministic check methods (graph walks, pattern scans, ID matching)
+- Inferential items have explicit anchors that minimize interpretive freedom
 - No numeric scoring or rubric language present

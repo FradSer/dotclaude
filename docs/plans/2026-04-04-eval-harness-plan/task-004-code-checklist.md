@@ -55,12 +55,15 @@ Create `code-v1.md` with these minimum items:
 - **CODE-VER-01**: All verification commands from the task file exit with code 0
   - Check: run each verification command independently; record exit code
   - Evidence: command text, exit code, last 10 lines of output
+  - `# Type: computational` -- exit code is deterministic ground truth
 - **CODE-QUAL-01**: No TODO, FIXME, HACK, XXX, or stub patterns in produced files
   - Check: grep for prohibited patterns in all files created/modified by the task
   - Evidence: file:line -- pattern found
+  - `# Type: computational` -- grep for exact strings produces deterministic result
 - **CODE-QUAL-02**: No `NotImplementedError`, `pass` as sole function body, or `...` as implementation
   - Check: grep for stub implementation patterns
   - Evidence: file:line -- stub pattern found
+  - `# Type: computational` -- grep for exact patterns produces deterministic result
 
 ### Step 2: Add file header and format
 
@@ -87,6 +90,7 @@ grep -c "CODE-QUAL-01" docs/retros/checklists/code-v1.md && echo "PASS: CODE-QUA
 ## Success Criteria
 
 - `code-v1.md` exists with all 3+ checklist items
-- Each item has ID, description, check method annotation, and evidence format
+- Each item has ID, description, check method annotation, evidence format, and `# Type:` annotation
+- All code checklist items are `# Type: computational` (exit codes, grep patterns)
 - CODE-VER-01 specifies independent command execution (not trusting generator reports)
 - CODE-QUAL-01 specifies concrete grep patterns for prohibited content

@@ -77,17 +77,21 @@ Items:
 - **SCEN-CONC-01**: All Given clauses use specific data values (no "some", "valid", "appropriate", "relevant")
   - Check: grep for vague placeholders in Given clauses of bdd-specs.md
   - Evidence format: file:line -- quoted text
+  - `# Type: computational` -- grep pattern produces deterministic result
 - **REQ-TRACE-01**: Every requirement ID in _index.md appears in at least one scenario in bdd-specs.md
   - Check: cross-reference requirement IDs between files
   - Evidence format: requirement ID + absence note
+  - `# Type: inferential` -- "maps to" requires semantic understanding of whether a scenario covers a requirement
 - **ARCH-01**: No imports or dependencies described from inner layer to outer layer
   - Check: scan architecture.md for dependency direction violations
   - Evidence format: file:line -- dependency description
+  - `# Type: inferential` -- layer boundary identification requires architectural context understanding
 - **RISK-02**: Each risk mitigation in _index.md specifies a concrete action
   - Check: scan risk/mitigation entries for vague verbs ("monitor", "handle", "manage")
   - Evidence format: file -- quoted mitigation text
+  - `# Type: inferential` -- "concrete action" is a judgment call despite grep assistance
 
-Each item must include an executable check annotation specifying the grep pattern or structural query.
+Each item must include an executable check annotation specifying the grep pattern or structural query. Each item must also include a `# Type: computational|inferential` annotation indicating whether the check produces a deterministic result (computational) or requires evaluator judgment (inferential). Inferential checks should minimize interpretive freedom by providing explicit grep patterns or structural queries as anchors.
 
 ### Step 2: Add file header and format
 
@@ -116,6 +120,8 @@ grep -c "RISK-02" docs/retros/checklists/design-v1.md && echo "PASS: RISK-02 pre
 ## Success Criteria
 
 - `design-v1.md` exists with all 4+ checklist items
-- Each item has ID, description, check method annotation, and evidence format
+- Each item has ID, description, check method annotation, evidence format, and `# Type:` annotation
+- Computational items have deterministic check methods (grep patterns, counts)
+- Inferential items have explicit anchors that minimize interpretive freedom
 - No numeric scoring or rubric language present
 - File follows the binary test: two evaluators would produce the same result

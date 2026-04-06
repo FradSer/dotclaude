@@ -27,10 +27,12 @@ This plan incorporates findings from Anthropic (harness design, evals), Boeckele
 | Context resets outperform context compaction | Anthropic harness design | task 011 (batch-boundary handoff) |
 | Cost/duration tracking for harness ROI (best-effort) | Anthropic harness design | task 009 (report format) |
 | Evaluator output responsibility protocol | Anthropic (generator/evaluator separation) | task 008 |
+| Check type annotation (computational vs inferential) | Cybernetics (second-order, Ashby requisite variety) | task 002-004 (item annotations), task 008 (evaluator awareness) |
+| Checklist evolution candidate signal | Cybernetics (Ashby ultra-stability, Beer VSM S4-S5) | task 011 (Phase 4 flagging) |
 | Harness structural self-evaluation cycle | Anthropic (Opus 4.5->4.6 lesson) | out of scope (manual review when models upgrade) |
 
-**Deferred to future versions (when v1 checklists evolve to include inferential items):**
-- Check-type classification (computational vs inferential) + multi-trial protocol (Boeckeler/Martin Fowler, Anthropic)
+**Deferred to future versions:**
+- Multi-trial protocol for inferential checks (Boeckeler/Martin Fowler, Anthropic) -- v1 annotates check types; multi-trial deferred until inferential items demonstrate evaluator disagreement
 - Category tagging (capability vs regression) (Anthropic evals guide)
 - Evaluator calibration protocol for inferential items (Anthropic, Scale AI)
 - Trajectory analysis for pivot detection (Anthropic harness design) -- deferred because code mode evaluator does not produce trajectory metrics in v1
@@ -44,6 +46,8 @@ This plan incorporates findings from Anthropic (harness design, evals), Boeckele
 | Rework guidance | Score-derived issues with severity levels | Checklist-specific rework with exact location |
 | Intra-plan learning | None | Phase 4: recurring failure injection into sprint contracts |
 | Checklist management | N/A (static rubrics) | Version-tracked files, manual evolution via git |
+| Check type awareness | N/A | Computational vs inferential annotation per item; evaluator notes borderline inferential results |
+| Evolution candidate signal | N/A | Phase 4 flags persistent patterns as checklist evolution candidates for manual review |
 | Context management | None — Superpower Loop uses context compaction (same session) | Batch-boundary handoff summaries for context pressure reduction |
 | Cost tracking | None | Token usage summary in evaluation reports (best-effort, may not be available in all contexts) |
 
@@ -140,15 +144,17 @@ tasks:
 
 ## BDD Coverage
 
-All 16 BDD scenarios from the design are covered by these tasks:
+All 22 BDD scenarios from the design are covered by these tasks:
 
 | Feature | Scenarios | Covering Tasks |
 |---------|-----------|----------------|
 | Binary Checklist -- Design Mode | 6 | 002 (Background), 005 (all 6 scenarios) |
 | Binary Checklist -- Plan Mode | 5 | 003 (Background), 006 (all 5 scenarios) |
 | Command Exit Code -- Code Mode | 5 | 004 (Background), 007 (all 5 scenarios) |
+| Checklist Evolution Candidate Signal | 3 | 011 (all 3 scenarios) |
+| Check Type Awareness in Evaluation | 3 | 002-004 (annotations), 008 (evaluator awareness) |
 
-Architecture-driven tasks without direct BDD scenarios: 001, 008, 009, 010, 011, 012, 013.
+Architecture-driven tasks without direct BDD scenarios: 001, 009, 010, 012, 013.
 
 ## Dependency Chain
 
