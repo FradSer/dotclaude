@@ -144,7 +144,7 @@ tasks:
 
 ## BDD Coverage
 
-All 22 BDD scenarios from the design are covered by these tasks:
+All 29 BDD scenarios from the design are covered by these tasks:
 
 | Feature | Scenarios | Covering Tasks |
 |---------|-----------|----------------|
@@ -153,8 +153,11 @@ All 22 BDD scenarios from the design are covered by these tasks:
 | Command Exit Code -- Code Mode | 5 | 004 (Background), 007 (all 5 scenarios) |
 | Checklist Evolution Candidate Signal | 3 | 011 (all 3 scenarios) |
 | Check Type Awareness in Evaluation | 3 | 002-004 (annotations), 008 (evaluator awareness) |
+| Batch-Boundary Context Management | 3 | 010 (handoff format), 011 (pattern integration) |
+| Evaluation Run Metrics | 2 | 009 (report format) |
+| Evaluator Output Responsibility Protocol | 2 | 008 (output protocol) |
 
-Architecture-driven tasks without direct BDD scenarios: 001, 009, 010, 012, 013.
+Architecture-driven tasks without direct BDD scenarios: 001, 012, 013.
 
 ## Dependency Chain
 
