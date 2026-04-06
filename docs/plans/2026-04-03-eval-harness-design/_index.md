@@ -56,6 +56,8 @@
 - **CHK-4**: Each checklist item is: binary (not "partially met"), concrete (references specific file paths or grep patterns), actionable (a FAIL result tells the generator exactly what to change)
 - **CHK-5**: Checklists stored at `docs/retros/checklists/{mode}-v{N}.md`; sprint contracts reference the checklist version in use
 - **CHK-6**: Checklist version increments when any item is added, modified, or removed; prior version files are preserved
+- **CHK-7**: Each checklist item is annotated as `computational` (deterministic result from grep, exit code, graph walk) or `inferential` (requires evaluator judgment for semantic matching, architectural context, or domain understanding)
+- **CHK-8**: Inferential checklist items must include an explicit check method (grep pattern, structural query) that anchors the evaluator's judgment and minimizes interpretive freedom — the annotation reduces but does not eliminate observer variability
 
 ### CTX — Context Management
 
@@ -63,6 +65,13 @@
 - **CTX-2**: Batch handoff includes: completed tasks, cumulative progress, active failure patterns, modified files, next batch scope
 - **CTX-3**: Batch handoff serves as compressed checkpoint — reduces context pressure from Superpower Loop's compaction model
 - **CTX-4**: Per Anthropic's finding: "context resets outperform context compaction" — batch handoffs are a pragmatic middle ground that doesn't require breaking the Superpower Loop architecture
+
+### EVO — Checklist Evolution Signals
+
+- **EVO-1**: When a checklist item FAILs in 3+ batches within a single plan OR requires 3+ rework rounds before resolving, the plan completion summary flags it as a "checklist evolution candidate" with root cause hypothesis
+- **EVO-2**: When all checklist items PASS for a batch but the batch required 2+ rework rounds, the plan completion summary notes a "potential checklist gap" — the evaluator may lack items that would have caught the initial failure earlier (variety amplification signal per Ashby's Law of Requisite Variety)
+- **EVO-3**: Evolution candidate signals are informational only — they provide explicit entry points for manual checklist review but do not auto-modify checklist files
+- **EVO-4**: Evolution candidates bridge the gap between intra-plan learning (immediate tactical feedback, Subsystem B) and checklist evolution (strategic manual review) — this addresses the ultra-stability transition (Ashby) between control levels
 
 ### CST — Cost Tracking
 
@@ -118,6 +127,11 @@ Subsystem B: Intra-Plan Learning  (per batch, Phase 4 enhancement)
     injects: pattern context into next batch sprint contract preamble
     surfaces: pattern summary in evidence block to user
 
+  On plan completion (after final batch):
+    flags: items FAILing 3+ batches or requiring 3+ rework rounds as evolution candidates
+    flags: batches where all PASS but 2+ rework rounds as potential checklist gaps
+    emits: "Checklist Evolution Candidates" section in plan completion summary
+
 ```
 
 Checklist evolution is manual: edit files in `docs/retros/checklists/`, version via git.
@@ -130,36 +144,45 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 
 ## Requirements Traceability
 - [ ] REQ-TRACE-01: Every requirement in _index.md maps to at least one BDD scenario
+  # Type: inferential -- "maps to" requires semantic understanding of requirement-scenario coverage
   # Check: list requirement IDs from _index.md Requirements section; grep each ID in bdd-specs.md
   # Evidence: "REQ-XXX appears in _index.md:L but no scenario references it"
 - [ ] REQ-TRACE-02: Every BDD scenario references a requirement (no orphan scenarios)
+  # Type: inferential -- "references" may be by ID or by semantic content
   # Check: list scenario titles from bdd-specs.md; verify each cites a requirement ID from _index.md
   # Evidence: "Scenario 'XYZ' in bdd-specs.md:L cites no requirement ID"
 
 ## Scenario Concreteness
 - [ ] SCEN-CONC-01: All Given clauses use specific data values, not vague placeholders
+  # Type: computational -- grep for specific vague words produces deterministic result
   # Check: grep Given clauses in bdd-specs.md for "some ", "valid ", "appropriate ", "relevant ", "any "
   # Evidence: "bdd-specs.md:L -- 'Given <quoted text>' contains vague placeholder"
 - [ ] SCEN-CONC-02: All Then clauses state observable outcomes (not "should work" or "should be correct")
+  # Type: computational -- grep for specific non-observable terms produces deterministic result
   # Check: grep Then clauses in bdd-specs.md for "should work", "should be correct", "correctly", "properly"
   # Evidence: "bdd-specs.md:L -- 'Then <quoted text>' is not an observable outcome"
 
 ## Architecture Validity
 - [ ] ARCH-01: No import described from inner layer to outer layer
+  # Type: inferential -- layer boundary identification requires architectural context understanding
   # Check: scan architecture.md for import/dependency descriptions; flag any inner-to-outer direction
   # Evidence: "architecture.md:L -- describes <inner> importing from <outer>"
 - [ ] ARCH-02: All external dependencies named in _index.md Constraints section
+  # Type: inferential -- identifying "external dependency" requires domain judgment
   # Check: grep architecture.md for library/service names; verify each appears in _index.md Constraints
   # Evidence: "<name> referenced in architecture.md:L not listed in _index.md Constraints"
 - [ ] ARCH-03: No circular component dependencies described
+  # Type: computational -- cycle detection in a dependency graph is algorithmic
   # Check: build dependency graph from architecture.md component list; walk all paths for cycles
   # Evidence: "Cycle: <A> -> <B> -> <A> in architecture.md"
 
 ## Risk Identification
 - [ ] RISK-01: Design includes at least 3 identified risks with mitigation strategies
+  # Type: computational -- counting is mechanical
   # Check: count risk entries in _index.md Risks section; FAIL if count < 3
   # Evidence: "_index.md Risks section: N risks found (minimum 3 required)"
 - [ ] RISK-02: Each risk mitigation is concrete (not "monitor closely" or "handle carefully")
+  # Type: inferential -- "concrete" is a judgment call despite grep assistance for known vague patterns
   # Check: grep mitigations for "monitor", "handle carefully", "watch", "be careful", "ensure", "check"
   # Evidence: "_index.md -- mitigation '<quoted text>' specifies no concrete action or mechanism"
 ```
@@ -170,33 +193,41 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 
 ## Scenario Coverage
 - [ ] PLAN-COV-01: Every BDD scenario from design maps to at least one task
+  # Type: inferential -- "maps to" requires semantic matching between scenario text and task scope
   # Check: list scenario names from design bdd-specs.md; grep each in all task files
   # Evidence format: "Scenario '<name>' in bdd-specs.md has no referencing task file"
 - [ ] PLAN-COV-02: No BDD scenario is unassigned in batch planning
+  # Type: inferential -- scenario assignment may be implicit via task grouping
   # Check: list scenarios referenced across all batch sprint contracts; flag any design scenario absent
   # Evidence format: "Scenario '<name>' is unassigned in all batches"
 
 ## Task Completeness
 - [ ] TASK-COMP-01: Every task has an acceptance criteria section
+  # Type: computational -- heading presence check is deterministic
   # Check: grep each task file for "## Acceptance Criteria" heading
   # Evidence format: "task-{ID}-{slug}.md: no '## Acceptance Criteria' section"
 - [ ] TASK-COMP-02: Every task has verification commands
+  # Type: computational -- heading presence + non-empty content check is deterministic
   # Check: grep each task file for "## Verification" heading with non-empty content following it
   # Evidence format: "task-{ID}-{slug}.md: no '## Verification' section or section is empty"
 - [ ] TASK-COMP-03: No verification command is descriptive ("verify manually", "check that it works")
+  # Type: computational -- grep for description verbs produces deterministic result
   # Check: grep verification sections for "verify that", "check that", "ensure that", "manually", "confirm that"
   # Evidence format: "task-{ID}-{slug}.md:L — '<quoted text>' is a description, not an executable command"
 
 ## Dependency Validity
 - [ ] DEP-01: No circular dependencies in task dependency graph
+  # Type: computational -- graph cycle detection is algorithmic
   # Check: build directed graph from depends-on fields across all task files; walk for cycles
   # Evidence format: "Cycle detected: task-{A} → task-{B} → task-{A}"
 - [ ] DEP-02: All task IDs in depends-on fields exist in the plan
+  # Type: computational -- ID existence check is deterministic
   # Check: collect all task file IDs; verify each depends-on value matches a collected ID
   # Evidence format: "task-{ID}.md depends-on task-{X}, which does not exist in this plan"
 
 ## Test Coverage
 - [ ] TEST-01: Every impl task has a corresponding test task or explicit absence justification
+  # Type: computational -- filename pattern matching is deterministic
   # Check: for each *-impl.md, verify a file with matching numeric prefix and "-test" suffix exists, or grep the impl task for "no test" or "absence justification"
   # Evidence format: "task-{ID}-{slug}-impl.md: no test task and no absence justification"
 ```
@@ -207,23 +238,29 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 
 ## Verification Gate
 - [ ] CODE-VER-01: All task verification commands exit with code 0
+  # Type: computational -- exit code is deterministic ground truth
   # Check: run each command from task verification sections independently; record exit code and output
   # Evidence format: "'<command>' exited with code N; last 30 lines: <output>"
 - [ ] CODE-VER-02: Type checker exits 0 (if applicable)
+  # Type: computational -- exit code is deterministic
   # Check: if tsconfig.json or pyproject.toml present, run tsc --noEmit or mypy; record exit code
   # Evidence format: "tsc --noEmit exited with code 1; errors: <output>"
 - [ ] CODE-VER-03: Linter exits 0 (if applicable)
+  # Type: computational -- exit code is deterministic
   # Check: if biome.json or .eslintrc present, run biome check or eslint; record exit code
   # Evidence format: "biome check exited with code 1; violations: <output>"
 
 ## Prohibited Patterns
 - [ ] CODE-QUAL-01: No TODO/FIXME/placeholder comments in produced files
+  # Type: computational -- grep for exact strings produces deterministic result
   # Check: grep produced files for "TODO", "FIXME", "HACK", "XXX", "placeholder"
   # Evidence format: "<file>:L — '<quoted line>' contains prohibited placeholder comment"
 - [ ] CODE-QUAL-02: No stub function bodies (pass, ..., raise NotImplementedError)
+  # Type: computational -- grep for exact patterns produces deterministic result
   # Check: grep produced files for "^\s*pass$", "^\s*\.\.\.$", "raise NotImplementedError", "throw new Error.*not implemented"
   # Evidence format: "<file>:L — stub body '<quoted line>'"
 - [ ] CODE-QUAL-03: No hardcoded return values substituting real logic
+  # Type: computational -- grep for exact patterns produces deterministic result
   # Check: grep produced files for "return True  #", "return \[\]  #", "return {}  #", "return None  # TODO"
   # Evidence format: "<file>:L — hardcoded return substituting real logic: '<quoted line>'"
 ```
@@ -304,6 +341,14 @@ The article's code evaluator uses Playwright MCP to run the application and obse
 The article does use numeric criteria (Design Quality, Originality, Craft, Functionality) for frontend aesthetic evaluation. That approach is appropriate for subjective visual judgment. This design covers structural code and document compliance, where binary checks are more appropriate: "no import from domain to infrastructure" is true or false, not 3/5.
 
 The article observes that every harness component encodes an assumption about what the model cannot do on its own, and those assumptions go stale as models improve. Checklist items that never catch failures should be manually reviewed and removed — checks that no longer detect genuine issues are dead weight.
+
+**How this design relates to cybernetic control theory**
+
+The eval harness is a negative feedback control system: checklists define the setpoint, the evaluator is the sensor, PASS/FAIL is the comparator, and rework items are the error signal. Binary checks produce a 1-bit signal per item — lower nominal precision than 1-5 scores (~2.3 bits), but higher effective channel capacity because the signal is reliable and does not drift (Shannon's channel capacity = precision x reliability).
+
+Check type annotations (CHK-7, CHK-8) address a second-order cybernetics concern: the evaluator (an LLM) is part of the system it observes. Computational checks eliminate observer bias entirely; inferential checks reduce it by anchoring judgment to explicit methods, but some noise remains. Annotating the type makes this noise budget visible rather than hidden.
+
+The three-level control hierarchy — immediate feedback (PASS/FAIL per batch), intra-plan learning (Phase 4 pattern injection), and checklist evolution (manual review) — maps to Ashby's ultra-stability: when first-order feedback fails to restore stability, the system changes its own parameters. EVO-1 through EVO-4 strengthen the transition between levels 2 and 3 by providing explicit signals (evolution candidates, variety gap detection) rather than relying solely on periodic manual review.
 
 **Why add context management?**
 

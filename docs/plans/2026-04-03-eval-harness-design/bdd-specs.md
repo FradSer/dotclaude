@@ -184,6 +184,78 @@ Feature: Command Exit Code as the Sole Verdict Basis in Code Mode
 
 ---
 
+---
+
+## Feature: Checklist Evolution Candidate Signal
+
+```gherkin
+Feature: Plan Completion Signals for Checklist Evolution
+  As the executing-plans skill on plan completion
+  I want to identify persistent failure patterns and checklist gaps
+  So that manual checklist review has explicit, data-driven entry points
+
+  Scenario: Persistent FAIL across 3+ batches flagged as evolution candidate
+    Given evaluation reports show SCEN-CONC-01 FAIL in batches 1, 2, and 3
+    And SCEN-CONC-01 resolved in batch 4 after rework
+    When the plan completes and executing-plans produces the plan completion summary
+    Then the summary includes a "Checklist Evolution Candidates" section
+    And SCEN-CONC-01 is listed with "FAILed in batches: 1, 2, 3" and "Resolved: Yes (round 4)"
+    And a root cause hypothesis is provided
+    And the section recommends reviewing the relevant checklist file
+
+  Scenario: All-PASS batch with multiple rework rounds flagged as potential gap
+    Given batch 3 evaluation shows all checklist items PASS
+    But batch 3 required 3 rework rounds before reaching all-PASS
+    When the plan completes and executing-plans produces the plan completion summary
+    Then the summary includes a "Potential Checklist Gaps" section
+    And batch 3 is listed with "3 rework rounds, all items PASS"
+    And a note states: "checklist may not cover the failure mode that caused initial rework"
+
+  Scenario: Clean plan with no evolution candidates produces no evolution section
+    Given all batches completed with all checklist items PASS on first evaluation
+    And no batch required more than 1 rework round
+    When the plan completes
+    Then the plan completion summary does not include a "Checklist Evolution Candidates" section
+    And the plan completion summary does not include a "Potential Checklist Gaps" section
+```
+
+---
+
+## Feature: Check Type Awareness in Evaluation
+
+```gherkin
+Feature: Evaluator Handles Computational and Inferential Checks Differently
+  As the superpowers-evaluator
+  I want to read check type annotations and anchor inferential judgments explicitly
+  So that observer variability is visible and minimized
+
+  Scenario: Computational check produces deterministic result with no borderline note
+    Given checklist item CODE-QUAL-01 is annotated "# Type: computational"
+    And auth/handler.ts line 28 contains "// TODO: implement rate limiting"
+    When the evaluator applies CODE-QUAL-01
+    Then the result is FAIL with evidence "auth/handler.ts:28 -- TODO comment present"
+    And no borderline note is included
+
+  Scenario: Inferential check with clear match produces PASS with no borderline note
+    Given checklist item REQ-TRACE-01 is annotated "# Type: inferential"
+    And _index.md lists "REQ-005: Rate limiting"
+    And bdd-specs.md contains a scenario with "REQ-005" in its Given clause
+    When the evaluator applies REQ-TRACE-01
+    Then the result is PASS
+    And no borderline note is included (explicit ID match is unambiguous)
+
+  Scenario: Inferential check with implicit match produces PASS with borderline note
+    Given checklist item REQ-TRACE-01 is annotated "# Type: inferential"
+    And _index.md lists "REQ-005: Rate limiting on login attempts"
+    And bdd-specs.md contains a scenario titled "Login rate limiting" that does not cite "REQ-005" by ID
+    When the evaluator applies REQ-TRACE-01
+    Then the result is PASS
+    And a borderline note states: "scenario covers REQ-005 semantically via feature name, not by explicit ID"
+    And the borderline note does not affect the PASS/FAIL verdict
+```
+
+---
+
 ## Scenario Count Summary
 
 | Feature | Scenarios |
@@ -191,10 +263,14 @@ Feature: Command Exit Code as the Sole Verdict Basis in Code Mode
 | Binary Checklist -- Design Mode | 6 |
 | Binary Checklist -- Plan Mode | 5 |
 | Command Exit Code -- Code Mode | 5 |
-| **Total** | **16** |
+| Checklist Evolution Candidate Signal | 3 |
+| Check Type Awareness in Evaluation | 3 |
+| **Total** | **22** |
 
 All scenarios meet:
 - Single responsibility: each scenario tests exactly one rule or behavior
 - Verifiable Then clauses: no vague assertions ("should be correct", "should work well")
 - Business language: no implementation terms (no "JSON key", "function call", "regex")
 - Independence: no shared mutable state between scenarios; each has explicit Given setup
+
+New scenarios (Checklist Evolution, Check Type Awareness) cover the cybernetic control enhancements: ultra-stability transition signals and second-order observer bias management.

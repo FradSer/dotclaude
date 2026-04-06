@@ -40,6 +40,58 @@ Each checklist item should include, in a comment or annotation, the grep pattern
   # Evidence format: file:line — quoted text
 ```
 
+## Computational vs Inferential Checks
+
+### The distinction
+
+Each checklist item falls into one of two types based on whether its result is deterministic:
+
+- **Computational**: The check produces the same PASS/FAIL result regardless of who (or what) runs it. Examples: `grep "TODO"` (pattern match), `tsc --noEmit` (exit code), cycle detection in a dependency graph (algorithm). These checks have zero observer variability.
+
+- **Inferential**: The check requires judgment to apply, even with an explicit check method. Examples: "every requirement maps to at least one scenario" (what counts as "maps to"?), "no inner-to-outer layer imports" (which layer is which?). These checks have non-zero observer variability, reduced but not eliminated by the check method annotation.
+
+### Why annotate
+
+The evaluator is an LLM evaluating LLM output — in cybernetic terms, the observer is part of the system (second-order cybernetics). For computational checks, this is irrelevant: the result is deterministic. For inferential checks, evaluator bias (sycophancy, anchoring, context-dependent interpretation) can produce different results on the same artifact.
+
+Annotating `# Type: inferential` makes the noise budget visible. It does not change the PASS/FAIL behavior in v1, but it:
+
+1. Signals to the evaluator to anchor judgment explicitly to the check method
+2. Surfaces borderline results (informational notes that do not affect verdict) for checklist evolution review
+3. Prepares for v2's multi-trial protocol: run inferential checks multiple times and flag disagreements
+
+### Writing good inferential checks
+
+Minimize interpretive freedom by providing concrete anchors:
+
+- **Weak**: "Every requirement maps to at least one scenario" — "maps to" is vague
+- **Better**: "Every requirement ID from _index.md Requirements section appears as text in at least one scenario in bdd-specs.md" — check method is grep for exact ID string
+- **Best**: Same as above, plus: "If a scenario covers a requirement semantically but does not cite the ID, result is PASS with borderline note citing the implicit coverage"
+
+The goal is not to eliminate judgment — some checks inherently require it. The goal is to constrain the judgment space so two evaluators reach the same conclusion in >90% of cases.
+
+## Detecting Checklist Gaps (Variety Amplification)
+
+### The problem
+
+Ashby's Law of Requisite Variety states that a controller must have at least as much variety as the system it controls. Checklists are manually authored — their variety is limited by human observation and experience. If the generator produces a novel failure mode not covered by any checklist item, the evaluator is blind to it.
+
+The checklist evolution process (add/modify/remove items after multi-plan review) is a variety attenuator: it removes items that never fail. But there is no corresponding variety amplifier: no mechanism to detect items that should exist but do not.
+
+### Signals for potential gaps
+
+Two observable signals suggest a checklist gap:
+
+1. **Rework-despite-PASS**: A batch where all checklist items PASS but the batch required 2+ rework rounds before passing. The initial evaluation missed something the generator struggled with — the checklist may need a new item.
+
+2. **Persistent rework on inferential items**: An inferential check that produces PASS on first evaluation but FAIL on re-evaluation after rework (or vice versa) suggests the check method is too ambiguous — the item may need to be split or its check method refined.
+
+These signals are surfaced in the plan completion summary as "Potential Checklist Gaps" alongside evolution candidates. They do not trigger automatic changes.
+
+### When to act on gap signals
+
+A single rework-despite-PASS event is noise — the rework may have been caused by a generator error unrelated to checklist coverage. Rework-despite-PASS events in 2+ distinct plans with similar root causes are signal. Apply the same multi-plan evidence threshold as checklist item additions (see "Add only from multi-plan evidence" below).
+
 ## Managing Checklist Evolution
 
 Checklists are manually evolved via git. The practices below guide when and how to add, modify, or remove items.
@@ -81,7 +133,12 @@ After amending a design checklist, check whether the same failure mode also appe
 
 Review checklists after 3+ plans have been executed, not after every plan. Single-plan reviews produce noisy conclusions from insufficient data.
 
-Exception: if a plan has an unusually high failure rate (more than half of checklist items failing in the code evaluation), review immediately — it may indicate a systemic gap.
+**Explicit triggers for immediate review** (do not wait for 3-plan cadence):
+- A plan's completion summary lists 2+ evolution candidates (items FAILing 3+ batches or requiring 3+ rework rounds)
+- A plan's completion summary lists 2+ potential checklist gaps (batches with all-PASS but 2+ rework rounds)
+- More than half of checklist items failing in the code evaluation of a single plan (systemic gap)
+
+These triggers bridge the gap between intra-plan learning and checklist evolution — the ultra-stability transition in the control hierarchy.
 
 ### Rate of change
 

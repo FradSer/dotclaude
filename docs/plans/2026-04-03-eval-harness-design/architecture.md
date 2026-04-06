@@ -22,6 +22,11 @@ Subsystem B: Intra-Plan Learning  (per batch, Phase 4 enhancement)
     injects: pattern context into next batch sprint contract and generator prompt
     surfaces: pattern summary in Phase 4 evidence block to user
     emits: batch handoff summary for context pressure reduction
+
+  On plan completion (after final batch):
+    flags: items FAILing 3+ batches or requiring 3+ rework rounds -> evolution candidates
+    flags: batches where all PASS but 2+ rework rounds -> potential checklist gaps (variety amplification)
+    emits: "Checklist Evolution Candidates" section in plan completion summary
 ```
 
 Checklist evolution is manual: edit files in `docs/retros/checklists/`, version via git.
@@ -43,8 +48,10 @@ Checklist evolution is manual: edit files in `docs/retros/checklists/`, version 
 1. Read design artifacts: `_index.md`, `bdd-specs.md`, `architecture.md`, `best-practices.md`
 2. Read design checklist from path in spawn context (e.g., `docs/retros/checklists/design-v1.md`)
 3. For each checklist item:
+   - Read check type annotation (`# Type: computational` or `# Type: inferential`)
    - Determine check method (grep pattern, structural cross-reference, or content scan)
    - Execute check against design artifacts
+   - For inferential checks: anchor judgment to the explicit check method; note borderline results
    - Record: item ID, PASS or FAIL, evidence (file:line or explicit absence note)
 4. Produce rework items from all FAIL results: file path, location, exact issue
 5. Verdict: PASS if all items PASS; REWORK if any item FAIL
@@ -133,6 +140,36 @@ Generator note: tasks in this batch must address the above patterns proactively.
 ```
 
 This injection is additive -- it does not modify task acceptance criteria, only provides context.
+
+---
+
+### Checklist Evolution Candidate Signal (plan completion)
+
+**Motivation**: Ashby's ultra-stability principle requires that when first-order feedback fails to restore stability, the system changes its own parameters. Intra-plan learning (above) provides immediate tactical feedback within a plan. But when patterns persist despite that feedback, the signal must bridge to the strategic level: manual checklist evolution. Without an explicit bridge, this transition relies on periodic human review — which may miss patterns or be delayed.
+
+**On plan completion** (after final batch), executing-plans performs a plan-level retrospective:
+
+1. Identify checklist items that FAILed in 3+ batches within this plan OR required 3+ rework rounds before resolving
+2. Identify batches where all checklist items PASS but the batch required 2+ rework rounds (variety gap — the checklist may lack items that would have caught the initial failure)
+3. Emit a "Checklist Evolution Candidates" section in the plan completion summary:
+
+```markdown
+## Checklist Evolution Candidates
+
+| Item ID | FAILed in batches | Resolved? | Root cause hypothesis |
+|---------|-------------------|-----------|-----------------------|
+| SCEN-CONC-01 | 1, 2, 3 | Yes (round 4) | Generator defaults to vague Given clauses for auth scenarios |
+
+### Potential Checklist Gaps
+
+| Batch | Rework rounds | All items PASS? | Note |
+|-------|--------------|----------------|------|
+| 3     | 3            | Yes (final)    | Checklist may not cover the failure mode that caused initial rework |
+
+Recommendation: review `docs/retros/checklists/{mode}-v{N}.md` for items above.
+```
+
+This signal is informational only — it does not auto-modify checklist files. It provides an explicit entry point for human reviewers to decide whether to ADD, MODIFY, or REMOVE checklist items.
 
 ---
 
