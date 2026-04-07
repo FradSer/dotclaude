@@ -138,9 +138,9 @@ After the superpowers-evaluator completes:
 | 2 | Fix remaining items, re-verify, re-evaluate |
 | 3+ | Escalate to user per `blocker-and-escalation.md` |
 
-Maximum 2 evaluation-rework rounds before escalation. The superpowers-evaluator scores independently each round -- it does not inherit previous round assessments.
+Maximum 2 evaluation-rework rounds before escalation. The superpowers-evaluator assesses independently each round -- it does not inherit previous round results.
 
-See `evaluation-file-formats.md` for report format details and `evaluation-rubrics.md` for scoring criteria.
+See `evaluation-file-formats.md` for report format details.
 
 ## Agent Prompt Template
 

@@ -22,6 +22,7 @@
     "./skills/brainstorming/",
     "./skills/writing-plans/",
     "./skills/executing-plans/",
+    "./skills/retrospective/",
     "./skills/need-vet/"
   ],
   "skills": [

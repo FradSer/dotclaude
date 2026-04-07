@@ -47,17 +47,17 @@ Table of all tasks marked `completed` up to this boundary.
 ```markdown
 ## Completed Tasks
 
-| ID | Subject | Scores | Batch |
-|----|---------|--------|-------|
-| 001 | Set up project structure | C:5 Cm:5 Q:4 T:N/A S:5 | 1 |
-| 002 | Write auth handler tests | C:4 Cm:4 Q:5 T:5 S:4 | 1 |
-| 003 | Implement auth handler | C:5 Cm:5 Q:4 T:5 S:5 | 1 |
+| ID | Subject | Checklist Result | Batch |
+|----|---------|------------------|-------|
+| 001 | Set up project structure | PASS (all items) | 1 |
+| 002 | Write auth handler tests | PASS (all items) | 1 |
+| 003 | Implement auth handler | PASS (all items) | 1 |
 ```
 
 **Column definitions:**
 - **ID**: Task identifier from the plan
 - **Subject**: Brief imperative title from the task
-- **Scores**: Evaluation dimension scores (Correctness, Completeness, code Quality, Test coverage, Spec compliance). Use `N/A` for dimensions not applicable to the task type. Omit the Scores column entirely if evaluation mode is not active.
+- **Checklist Result**: Binary PASS/FAIL result from checklist evaluation. Omit this column entirely if evaluation mode is not active.
 - **Batch**: Batch number in which the task was executed
 
 ### Section 2: Remaining Tasks

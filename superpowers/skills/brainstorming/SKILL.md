@@ -232,7 +232,7 @@ See `./references/reflection.md` for sub-agent prompts and integration workflow.
    - **REWORK**: Fix identified issues, then re-submit to user for approval
 6. Present reflection summary (including checklist results if applicable) to user via AskUserQuestion
 
-See `./references/evaluation-rubrics.md` for checklist reference details and calibration examples.
+See `./references/evaluation-checklist-reference.md` for checklist reference details and calibration examples.
 
 ## Phase 5: Git Commit
 
@@ -266,4 +266,4 @@ Output in this exact order:
 - `./references/exit-criteria.md` - Validation checklists, success indicators, common pitfalls
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
-- `./references/evaluation-rubrics.md` - Design evaluation checklist reference for superpowers-evaluator (design mode)
+- `./references/evaluation-checklist-reference.md` - Design evaluation checklist reference for superpowers-evaluator (design mode)

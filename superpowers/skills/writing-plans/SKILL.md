@@ -197,7 +197,7 @@ For **large plans** (16+ tasks), spawn the `superpowers:superpowers-evaluator` a
    - **REWORK**: Fix identified issues (add missing tasks, fix dependencies, complete sections), then re-submit to user
 6. Present reflection summary (including checklist results if applicable) to user via AskUserQuestion
 
-See `./references/evaluation-rubrics.md` for checklist reference details and calibration examples.
+See `./references/evaluation-checklist-reference.md` for checklist reference details and calibration examples.
 
 ## Phase 5: Git Commit
 
@@ -232,4 +232,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
-- `./references/evaluation-rubrics.md` - Plan evaluation checklist reference for superpowers-evaluator (plan mode)
+- `./references/evaluation-checklist-reference.md` - Plan evaluation checklist reference for superpowers-evaluator (plan mode)

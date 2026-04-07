@@ -40,7 +40,7 @@ Launch two sub-agents in parallel using the Agent tool with `subagent_type=gener
 
 ### Complex Complexity (MUST use Evaluator)
 
-**CRITICAL**: For complex designs, spawn `superpowers:superpowers-evaluator` agent (design mode) instead of ad-hoc sub-agents. See SKILL.md Phase 4 and `evaluation-rubrics.md` for the scoring process and verdict rules.
+**CRITICAL**: For complex designs, spawn `superpowers:superpowers-evaluator` agent (design mode) instead of ad-hoc sub-agents. See SKILL.md Phase 4 for the checklist evaluation process and verdict rules.
 
 The sub-agent prompts below are retained as reference for the evaluator's assessment dimensions, NOT as an alternative approach:
 
