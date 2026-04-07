@@ -53,7 +53,7 @@ Consider whether the check method needs tightening (MODIFY) or a new item is nee
 
 **Variety gap detection**: If all checklist items PASS for a batch but the batch required 2+ rework rounds, note: `"Batch {N}: all items PASS after {M} rework rounds -- checklist may not cover the failure mode that caused initial rework"`
 
-This signal provides an explicit entry point for manual checklist review. It does not auto-modify checklists.
+This signal feeds into the retrospective skill (`/superpowers:retrospective`) for cross-plan analysis and user-approved checklist evolution. It does not auto-modify checklists -- evolution requires explicit user approval via the retrospective flow.
 
 ## Escalation for Persistent Patterns
 
