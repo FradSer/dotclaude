@@ -81,57 +81,28 @@ Tasks not part of a Red-Green pair have no Red state expectation.
 
 **File naming:** `evaluation-round-{N}-batch-{M}.md` (e.g., `evaluation-round-1-batch-2.md`)
 
-**Purpose:** Score completed work against the sprint contract. Identifies rework items, recommendations, and whether execution should pivot.
+**Purpose:** Assess completed work against the sprint contract using binary checklist evaluation. Identifies rework items, recommendations, and whether execution should pivot.
+
+**Location convention:** Evaluation artifacts are stored in the plan directory (e.g., `docs/plans/YYYY-MM-DD-{topic}-plan/`). When a separate evals directory is used, derive the path by replacing `-plan/` with `-evals/` in the plan path.
 
 ### Format
 
 ```markdown
 # Evaluation Round {N} -- Batch {M}
 
-## Per-Task Scores
+## Checklist Results
 
-| Task ID | Correctness | Completeness | Code Quality | Test Coverage | Spec Compliance | Verdict |
-|---------|-------------|--------------|--------------|---------------|-----------------|---------|
-| 003 | 4 | 5 | 3 | N/A | 5 | PASS |
-| 004 | 5 | 4 | 4 | N/A | 4 | PASS |
-| 005 | 5 | 3 | 4 | 5 | 4 | REWORK |
-
-### Scoring Scale
-
-- **5** = Excellent, no issues
-- **4** = Good, minor issues only
-- **3** = Acceptable, some issues to address
-- **2** = Below standard, significant rework needed
-- **1** = Failing, major rework or rewrite needed
-- **N/A** = Dimension not applicable to this task type
-
-### Task Type Weighting
-
-| Dimension | test | impl | setup | config | refactor |
-|-----------|------|------|-------|--------|----------|
-| Correctness | Yes | Yes | Yes | Yes | Yes |
-| Completeness | Yes | Yes | Yes | Yes | Yes |
-| Code Quality | Yes | Yes | N/A | N/A | Yes |
-| Test Coverage | Yes | N/A | N/A | N/A | N/A |
-| Spec Compliance | Yes | Yes | Yes | Yes | Yes |
-
-### Verdict Rules
-
-- **PASS**: All applicable dimensions >= 3 AND no dimension == 1
-- **REWORK**: Any applicable dimension < 3 OR any dimension == 1
+| Item ID       | Check                                   | Result | Evidence                                        |
+|---------------|-----------------------------------------|--------|-------------------------------------------------|
+| REQ-TRACE-01  | All requirements map to >=1 scenario    | PASS   | 7/7 requirements traced                         |
+| SCEN-CONC-01  | Given clauses use specific data         | FAIL   | bdd-specs.md:23 -- "some valid user data"       |
+| RISK-02       | Mitigations specify concrete actions    | PASS   | All 3 mitigations specify concrete mechanisms   |
 
 ## Rework Items
 
-| # | File Path | Line Range | Issue | Dimension | Severity |
-|---|-----------|------------|-------|-----------|----------|
-| 1 | src/auth/handler.ts | 42-58 | Missing error handling for expired tokens | Correctness | HIGH |
-| 2 | src/middleware/validate.ts | 15-20 | Sanitization does not cover script tags in attributes | Completeness | MEDIUM |
-
-### Severity Levels
-
-- **HIGH**: Blocks acceptance, must fix before next evaluation round
-- **MEDIUM**: Should fix, may defer to next batch if isolated
-- **LOW**: Improvement opportunity, does not block acceptance
+| Item ID      | File         | Location | Issue                                                                 |
+|--------------|--------------|----------|-----------------------------------------------------------------------|
+| SCEN-CONC-01 | bdd-specs.md | line 23  | Replace "some valid user data" with concrete values (email, password) |
 
 ## Recommendations
 
@@ -146,19 +117,34 @@ Non-blocking observations that improve quality but do not require rework:
 - **Rationale:** All tasks on track. Rework items are localized fixes, not architectural issues.
 
 When pivot is `true`, include:
-- Root cause of the pivot decision
+- Root cause referencing the specific repeated error pattern
 - Suggested plan modifications
 - Tasks to cancel or re-scope
+
+## Run Metrics
+
+| Metric | Value |
+|--------|-------|
+| Evaluator input tokens | {N or "N/A"} |
+| Evaluator output tokens | {N or "N/A"} |
+| Evaluation duration | {N}s |
+| Checklist version | {mode}-v{N} |
+
+Token counts are best-effort: extracted from API response `usage` field if available. Duration is wall-clock time from evaluator spawn to completion. This section is informational only -- it does not affect the verdict. Absence of token data does not block evaluation or rework.
+
+## Verdict: REWORK
+1 item FAIL: SCEN-CONC-01
 ```
 
 ### Field Definitions
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| Per-Task Scores | Yes | One row per task, all applicable dimensions scored |
-| Rework Items | Yes | Empty table if no rework needed; keep the section |
+| Checklist Results | Yes | One row per checklist item with PASS/FAIL result and evidence |
+| Rework Items | Yes | Empty table if no FAIL items; keep the section |
 | Recommendations | Yes | Empty list if none; keep the section |
 | Pivot Flag | Yes | Always present with true/false and rationale |
+| Run Metrics | Yes | Best-effort token/duration tracking; use "N/A" when unavailable |
 
 ## 3. Handoff Summary
 
@@ -173,11 +159,11 @@ When pivot is `true`, include:
 
 ## Completed Tasks
 
-| ID | Subject | Scores (Corr/Comp/Qual/Test/Spec) | Batch |
-|----|---------|-----------------------------------|-------|
-| 001 | Set up project scaffolding | 5/5/N/A/N/A/5 | 1 |
-| 002 | Configure CI pipeline | 5/4/N/A/N/A/4 | 1 |
-| 003 | Create user authentication handler | 4/5/4/N/A/5 | 2 |
+| ID | Subject | Checklist Result | Batch |
+|----|---------|------------------|-------|
+| 001 | Set up project scaffolding | PASS (all items) | 1 |
+| 002 | Configure CI pipeline | PASS (all items) | 1 |
+| 003 | Create user authentication handler | PASS (all items) | 2 |
 
 ## Remaining Tasks
 

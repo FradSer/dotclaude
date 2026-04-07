@@ -183,20 +183,21 @@ See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
 ### Evaluator Mode (Large Plans)
 
-For **large plans** (16+ tasks), spawn the `superpowers:superpowers-evaluator` agent (plan mode) instead of ad-hoc reflection sub-agents. The evaluator provides formal, rubric-based assessment with system-enforced read-only tools.
+For **large plans** (16+ tasks), spawn the `superpowers:superpowers-evaluator` agent (plan mode) instead of ad-hoc reflection sub-agents. The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
 
 **When to use**: Auto-activated for plans with 16+ tasks. Smaller plans continue using the existing ad-hoc sub-agent approach above.
 
 **Process**:
-1. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path]. Read rubrics from [skill-root]/references/evaluation-rubrics.md."
-2. Evaluator reads _index.md and all task files, scores against 5 dimensions (BDD Coverage, Dependency Correctness, Task Completeness, Verification Quality, Granularity)
-3. Evaluator produces a plan evaluation report in the plan folder
-4. Main agent reads the report:
+1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N
+2. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path] using the plan checklist at docs/retros/checklists/plan-v{N}.md."
+3. Evaluator reads _index.md and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
+4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as the evaluation report
+5. Main agent reads the report:
    - **PASS**: Proceed to user confirmation
    - **REWORK**: Fix identified issues (add missing tasks, fix dependencies, complete sections), then re-submit to user
-5. Present reflection summary (including evaluator scores if applicable) to user via AskUserQuestion
+6. Present reflection summary (including checklist results if applicable) to user via AskUserQuestion
 
-See `./references/evaluation-rubrics.md` for scoring criteria and calibration examples.
+See `./references/evaluation-rubrics.md` for checklist reference details and calibration examples.
 
 ## Phase 5: Git Commit
 
@@ -231,4 +232,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
-- `./references/evaluation-rubrics.md` - Plan evaluation rubrics for superpowers-evaluator (plan mode)
+- `./references/evaluation-rubrics.md` - Plan evaluation checklist reference for superpowers-evaluator (plan mode)

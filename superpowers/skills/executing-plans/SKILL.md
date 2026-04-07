@@ -53,7 +53,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
    - `intensity`: `thorough` | `standard` | `light` (default: `standard`)
    - Precedence: skill argument > plan metadata > defaults
    - **Auto mode**: Activate superpowers-evaluator if plan has 5+ tasks or any task has 3+ BDD scenarios; otherwise skip superpowers-evaluator and use existing Phase 4 self-verification
-   - See `./references/evaluation-rubrics.md` for threshold configuration
+   - **Checklist resolution**: Before spawning the evaluator, resolve the latest checklist version by scanning `docs/retros/checklists/` for files matching `{mode}-v{N}.md` and selecting the highest N. Pass the resolved path in the spawn context.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
@@ -127,11 +127,19 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
 **For Each Batch**:
 
 0. **Sprint Contract** (if evaluator enabled):
-   - Spawn `superpowers:superpowers-evaluator` sub-agent to produce `sprint-contract-batch-{N}.md` in the plan directory
-   - Contract defines per-task acceptance criteria and Red-Green pair expectations
+   - Resolve the latest checklist version: scan `docs/retros/checklists/` for `{mode}-v{N}.md`, select the highest N
+   - Spawn `superpowers:superpowers-evaluator` sub-agent with the checklist path in spawn context to produce `sprint-contract-batch-{N}.md` in the plan directory
+   - Contract defines per-task acceptance criteria, Red-Green pair expectations, and an **Evaluation Criteria Preview** section listing the checklist items (ID + description) the evaluator will apply -- this feedforward helps the generator produce better first-pass output
    - Execution MUST NOT start until the contract file exists
    - See `./references/sprint-contract-template.md` for format
    - Skip this step if evaluator is disabled or intensity is `light` (uses plan-level summary instead)
+   - Checklist path table:
+
+     | Mode   | Checklist path pattern             |
+     |--------|------------------------------------|
+     | design | `docs/retros/checklists/design-v{N}.md` |
+     | plan   | `docs/retros/checklists/plan-v{N}.md`   |
+     | code   | `docs/retros/checklists/code-v{N}.md`   |
 
 1. **Choose Execution Mode** (decision tree):
    - **Red-Green Pair**: If the batch contains a Red-Green pair (same NNN prefix, one `test` + one `impl`), assign exactly two dedicated agents — one per task. The test agent runs first and confirms Red state; then the impl agent starts. Multiple pairs run in parallel. Non-negotiable for any test+impl pair.
@@ -181,13 +189,12 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
    e. **Mark Task Complete**: Only after ALL verification steps in 2d pass, use TaskUpdate to set status to `completed`. Include in the update: which verification commands ran and that they passed.
 
    f. **Evaluator Assessment** (if evaluator enabled):
-      - After all tasks in batch pass the Verification Gate, spawn `superpowers:superpowers-evaluator` sub-agent
-      - The superpowers-evaluator reads sprint contract + produced artifacts, scores against rubrics
-      - Writes `evaluation-round-{N}-batch-{M}.md` in plan directory
+      - After all tasks in batch pass the Verification Gate, spawn `superpowers:superpowers-evaluator` sub-agent with the resolved checklist path in spawn context
+      - The superpowers-evaluator reads sprint contract + produced artifacts, applies binary checklist evaluation
+      - Evaluator outputs report content as text; the executing-plans skill writes it to `evaluation-round-{N}-batch-{M}.md` in the plan directory
       - If verdict is REWORK: generator reads rework items from the superpowers-evaluator, fixes issues, re-runs verification (max 2 evaluation-rework rounds, then escalate per `./references/blocker-and-escalation.md`)
       - If verdict is PASS: proceed to step 2e (mark complete) for remaining tasks
       - If **pivot flag** is set: log the superpowers-evaluator recommendation, present to user via AskUserQuestion
-      - See `./references/evaluation-rubrics.md` for scoring criteria
       - See `./references/evaluation-file-formats.md` for report format
       - **Intensity modifiers**: `thorough` = per-task evaluation; `standard` = per-batch (default); `light` = end-of-plan only
 
@@ -197,7 +204,7 @@ See `./references/batch-execution-playbook.md` for detailed execution patterns.
 
 ## Phase 4: Verification & Feedback
 
-Close the loop with structured evidence.
+Close the loop with structured evidence and intra-plan learning.
 
 1. **Publish Evidence**: For each completed task in the batch, output a structured evidence block:
    ```
@@ -208,11 +215,19 @@ Close the loop with structured evidence.
    ```
    Any task without a PASS evidence block is NOT verified. Do not proceed to confirmation until all tasks have PASS status.
 
-2. **Confirm**: Use AskUserQuestion to present the evidence summary and ask: "All tasks in this batch verified. Proceed to the next batch?" AskUserQuestion pauses within the turn, ensuring the user can respond before the loop re-injects. Get explicit confirmation before continuing.
+2. **Pattern Scan** (if evaluator enabled): Read all evaluation reports in the plan directory, identify checklist items that FAILed in 2+ distinct batches, and inject a "Recurring Failure Patterns" block into the next sprint contract preamble. See `./references/intra-plan-learning.md` for format.
 
-3. **Loop**: Repeat Phase 3-4 until all batches complete.
+3. **Escalation for Persistent Patterns**: If a checklist item FAILed in 3+ batches, elevate to the first item in the user confirmation prompt with a recommendation to pause and review the task specification. See `./references/intra-plan-learning.md` for details.
 
-4. **Handoff Summary** (if evaluator enabled and plan has 16+ tasks): Produce `handoff-summary-{N}.md` at configured boundaries (default: every 3 batches). See `./references/handoff-template.md` for format. This is a documentation artifact only -- it does NOT modify conversation context.
+4. **Batch Handoff**: After each batch completes, emit a lightweight handoff block to conversation context (progress, patterns, modified files, next batch scope). See `./references/intra-plan-learning.md` for format.
+
+5. **Confirm**: Use AskUserQuestion to present evidence summary (with pattern notes if any). Get explicit confirmation before continuing.
+
+6. **Loop**: Repeat Phase 3-4 until all batches complete.
+
+7. **Handoff Summary** (if evaluator enabled and plan has 16+ tasks): Produce `handoff-summary-{N}.md` at configured boundaries (default: every 3 batches). See `./references/handoff-template.md` for format. The lightweight batch handoff (step 4) is emitted for every batch regardless of plan size.
+
+8. **Checklist Evolution Candidates** (on plan completion): Scan for checklist items that FAILed in 3+ batches or required 3+ rework rounds. Emit evolution candidates and variety gap notes in the plan completion summary. See `./references/intra-plan-learning.md` for format.
 
 ## Phase 5: Git Commit
 
@@ -251,6 +266,6 @@ All tasks executed and verified, evidence captured, no blockers, user approval r
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
 - `./references/evaluation-file-formats.md` - Evaluation file format definitions (sprint contract, evaluation report, handoff summary)
-- `./references/evaluation-rubrics.md` - Graded 1-5 scoring rubrics and task type weighting
 - `./references/sprint-contract-template.md` - Sprint contract template and negotiation protocol
 - `./references/handoff-template.md` - Handoff summary template for long plans
+- `./references/intra-plan-learning.md` - Pattern scan, batch handoff, and checklist evolution formats

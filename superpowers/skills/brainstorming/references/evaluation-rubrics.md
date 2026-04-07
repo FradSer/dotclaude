@@ -1,116 +1,62 @@
-# Design Evaluation Rubrics
+# Design Evaluation Checklist Reference
 
-## Goal
+## Purpose
 
-Provide a standardized scoring framework for evaluating design document quality before committing. Apply these rubrics during Phase 4 (Design Reflection) to determine whether documents meet the bar for implementation.
+Reference for the superpowers-evaluator when operating in design mode. The evaluator applies binary PASS/FAIL checklist items from `docs/retros/checklists/design-v{N}.md` to determine whether design documents meet the bar for implementation planning.
 
-## Evaluation Dimensions
+## Checklist Source
 
-Score every dimension on a 1-5 scale. Record each score and cite the evidence that justifies it.
+The canonical checklist lives at `docs/retros/checklists/design-v{N}.md` (latest version). The evaluator reads this file at spawn time via the path provided in the spawn context. This reference file provides context on how the checklist items map to design quality dimensions.
 
-### 1. Requirements Traceability
+## Checklist Item Categories
 
-Does the design cover all identified requirements?
-
-| Score | Description |
-|-------|-------------|
-| 5 | Every Phase 1 requirement traced to a specific design section; bidirectional traceability matrix complete |
-| 4 | All requirements addressed; minor traceability gaps (requirement mentioned but not in a specific section) |
-| 3 | Most requirements addressed; 1-2 requirements only partially covered |
-| 2 | Multiple requirements missing or only superficially addressed |
-| 1 | Significant requirements gaps; design does not reflect discovered needs |
-
-### 2. BDD Completeness
-
-Do scenarios cover happy path, edge cases, and errors?
-
-| Score | Description |
-|-------|-------------|
-| 5 | All happy paths, error paths, and edge cases covered; scenarios are specific and testable |
-| 4 | Happy paths and main error paths covered; minor edge cases missing |
-| 3 | Happy paths covered; some error paths missing or vague |
-| 2 | Only happy paths covered; error and edge cases largely absent |
-| 1 | BDD scenarios missing or too vague to be testable |
-
-### 3. Document Consistency
-
-Are terminology, references, and component names consistent?
-
-| Score | Description |
-|-------|-------------|
-| 5 | All terms, references, and component names consistent across all documents; no ambiguity |
-| 4 | Consistent with minor variations that do not cause confusion |
-| 3 | Generally consistent but 1-2 terminology conflicts between documents |
-| 2 | Multiple inconsistencies; same concept called different names in different documents |
-| 1 | Pervasive inconsistencies; documents appear to describe different systems |
-
-### 4. Architecture Soundness
-
-Is the proposed architecture viable and maintainable?
-
-| Score | Description |
-|-------|-------------|
-| 5 | Architecture is clearly viable, well-justified, follows established patterns; separation of concerns correct |
-| 4 | Architecture is sound with minor concerns about specific component boundaries |
-| 3 | Architecture is workable but has questionable decisions that may cause problems during implementation |
-| 2 | Architecture has significant design flaws that will likely require rework |
-| 1 | Architecture is fundamentally flawed or contradicts project constraints |
-
-### 5. Risk Coverage
-
-Are key risks identified and mitigated?
-
-| Score | Description |
-|-------|-------------|
-| 5 | All significant risks identified with concrete mitigation strategies documented |
-| 4 | Key risks identified; most have mitigations; minor risks acknowledged |
-| 3 | Some risks identified but mitigations are vague or incomplete |
-| 2 | Few risks documented; critical risks unaddressed |
-| 1 | No risk assessment; design ignores potential failure modes |
+| Category | Example Items | What They Check |
+|----------|---------------|-----------------|
+| BDD Concreteness | SCEN-CONC-01 | Given clauses use specific data values (no vague placeholders) |
+| Requirements Traceability | REQ-TRACE-01 | Every requirement ID mapped to at least one scenario |
+| Architecture Soundness | ARCH-01 | No inner-to-outer layer dependencies described |
+| Risk Coverage | RISK-02 | Each risk mitigation specifies a concrete action |
 
 ## Verdict Rules
 
-Compute the verdict after scoring all five dimensions.
-
 | Verdict | Condition |
 |---------|-----------|
-| **PASS** | All dimensions >= 3 AND no dimension == 1 |
-| **REWORK** | Any dimension < 3 OR any dimension == 1 |
+| **PASS** | All checklist items PASS |
+| **REWORK** | Any checklist item FAIL (include count and IDs of failing items) |
 
-When the verdict is REWORK, list each failing dimension with its score and the specific gaps that must be addressed before re-evaluation.
+When the verdict is REWORK, produce rework items for each FAIL with: item ID, file, location, issue, and rework action.
+
+## Check Types
+
+Each checklist item is annotated with a type:
+
+- **Computational** (`# Type: computational`): Deterministic check (grep patterns, structural queries). Two evaluators always produce the same result.
+- **Inferential** (`# Type: inferential`): Requires evaluator judgment anchored to explicit check methods. The evaluator must follow the item's anchor constraint and note borderline results.
+
+## Output Responsibility
+
+The evaluator outputs report content as text. The parent skill (brainstorming) is responsible for writing the report to disk. The evaluator never writes files directly.
 
 ## Calibration Example
 
-### Scenario: Plugin Notification System Design
+### Design: `docs/plans/2026-03-15-plugin-notifications-design/`
 
-A design folder `docs/plans/2026-03-15-plugin-notifications-design/` contains four documents: `_index.md`, `bdd-specs.md`, `architecture.md`, `best-practices.md`. Phase 1 identified six requirements:
+A design for a plugin notification system with 6 requirements and 8 BDD scenarios.
 
-1. Send notifications when a plugin update is available
-2. Support email and in-app notification channels
-3. Allow users to configure notification preferences
-4. Rate-limit notifications to prevent spam
-5. Log all sent notifications for auditing
-6. Handle notification delivery failures gracefully
+**Checklist Evaluation:**
 
-**Evaluation:**
+| Item ID | Check | Result | Evidence |
+|---------|-------|--------|----------|
+| SCEN-CONC-01 | Given clauses use specific data | PASS | no vague placeholders found |
+| REQ-TRACE-01 | Requirement IDs in scenarios | FAIL | REQ-006 not referenced in bdd-specs.md |
+| ARCH-01 | No inner-to-outer dependencies | PASS | no violations found |
+| RISK-02 | Concrete risk mitigations | FAIL | "monitor closely" specifies no action |
 
-| Dimension | Score | Evidence |
-|-----------|-------|----------|
-| Requirements Traceability | 4 | Requirements 1-5 each traced to specific sections in `_index.md` and `architecture.md`. Requirement 6 (delivery failures) mentioned in `best-practices.md` but not linked in the traceability section of `_index.md`. |
-| BDD Completeness | 3 | `bdd-specs.md` has 8 scenarios covering happy paths for both channels and preference configuration. Error scenarios exist for invalid preferences and missing email. No scenarios for rate-limit edge cases (burst at boundary) or partial delivery failure (email succeeds, in-app fails). |
-| Document Consistency | 5 | Terminology is uniform: "notification channel" used everywhere, component names (`NotificationService`, `PreferenceStore`, `DeliveryQueue`) match across all four documents, cross-references resolve correctly. |
-| Architecture Soundness | 4 | Clean separation between preference management, delivery orchestration, and channel adapters. Minor concern: `DeliveryQueue` couples retry logic with rate-limiting in a single component -- these could be separated for testability. |
-| Risk Coverage | 2 | Only one risk documented (email provider downtime with fallback to retry queue). No mention of rate-limit bypass risk, preference data migration risk, or notification volume scaling risk. |
+**Verdict:** REWORK (2 items FAIL: REQ-TRACE-01, RISK-02)
 
-**Scores:** 4, 3, 5, 4, 2
+**Rework Items:**
 
-**Verdict:** REWORK
-
-**Reason:** Risk Coverage scored 2 (below threshold of 3).
-
-**Required actions before re-evaluation:**
-
-1. Add risk entries for rate-limit bypass, preference data migration, and notification volume scaling
-2. Document concrete mitigation strategies for each identified risk in `best-practices.md`
-3. Add BDD scenarios for rate-limit boundary conditions and partial delivery failure
-4. Link requirement 6 (delivery failures) to a specific design section in the `_index.md` traceability section
+| Item ID | File | Location | Issue |
+|---------|------|----------|-------|
+| REQ-TRACE-01 | bdd-specs.md | -- | Add scenario referencing REQ-006 |
+| RISK-02 | _index.md | Risks | Replace "monitor closely" with concrete mitigation |
