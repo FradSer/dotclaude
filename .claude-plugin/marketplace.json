@@ -187,6 +187,18 @@
       "source": "./meeseeks-vetted",
       "category": "productivity",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/meeseeks-vetted"
+    },
+    {
+      "name": "solar-db",
+      "version": "0.1.0",
+      "description": "PostgreSQL CRUD operations and reporting for solar company data",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./solar-db",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/solar-db"
     }
   ]
 }

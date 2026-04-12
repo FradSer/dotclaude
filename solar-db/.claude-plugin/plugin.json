@@ -1,0 +1,16 @@
+{
+  "name": "solar-db",
+  "version": "0.1.0",
+  "description": "PostgreSQL CRUD operations and reporting for solar company data",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["postgresql", "database", "solar", "crud", "energy"],
+  "commands": [
+    "./skills/setup/",
+    "./skills/manage/",
+    "./skills/report/"
+  ]
+}
