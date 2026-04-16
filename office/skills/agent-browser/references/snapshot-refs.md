@@ -1,21 +1,29 @@
-# Snapshot + Refs Workflow
+# Snapshot and Refs
 
-The core innovation of agent-browser: compact element references that reduce context usage dramatically for AI agents.
+Compact element references that reduce context usage dramatically for AI agents.
 
-## How It Works
+**Related**: [commands.md](commands.md) for full command reference, [SKILL.md](../SKILL.md) for quick start.
 
-### The Problem
-Traditional browser automation sends full DOM to AI agents:
+## Contents
+
+- [How Refs Work](#how-refs-work)
+- [Snapshot Command](#the-snapshot-command)
+- [Using Refs](#using-refs)
+- [Ref Lifecycle](#ref-lifecycle)
+- [Best Practices](#best-practices)
+- [Ref Notation Details](#ref-notation-details)
+- [Troubleshooting](#troubleshooting)
+
+## How Refs Work
+
+Traditional approach:
 ```
-Full DOM/HTML sent → AI parses → Generates CSS selector → Executes action
-~3000-5000 tokens per interaction
+Full DOM/HTML → AI parses → CSS selector → Action (~3000-5000 tokens)
 ```
 
-### The Solution
-agent-browser uses compact snapshots with refs:
+agent-browser approach:
 ```
-Compact snapshot → @refs assigned → Direct ref interaction
-~200-400 tokens per interaction
+Compact snapshot → @refs assigned → Direct interaction (~200-400 tokens)
 ```
 
 ## The Snapshot Command
@@ -154,6 +162,31 @@ agent-browser snapshot @e9
 @e10 [radio] selected                    # Selected radio
 ```
 
+## Iframes
+
+Snapshots automatically detect and inline iframe content. When the main-frame snapshot runs, each `Iframe` node is resolved and its child accessibility tree is included directly beneath it in the output. Refs assigned to elements inside iframes carry frame context, so interactions like `click`, `fill`, and `type` work without manually switching frames.
+
+```bash
+agent-browser snapshot -i
+# @e1 [heading] "Checkout"
+# @e2 [Iframe] "payment-frame"
+#   @e3 [input] "Card number"
+#   @e4 [input] "Expiry"
+#   @e5 [button] "Pay"
+# @e6 [button] "Cancel"
+
+# Interact with iframe elements directly using their refs
+agent-browser fill @e3 "4111111111111111"
+agent-browser fill @e4 "12/28"
+agent-browser click @e5
+```
+
+**Key details:**
+- Only one level of iframe nesting is expanded (iframes within iframes are not recursed)
+- Cross-origin iframes that block accessibility tree access are silently skipped
+- Empty iframes or iframes with no interactive content are omitted from the output
+- To scope a snapshot to a single iframe, use `frame @ref` then `snapshot -i`
+
 ## Troubleshooting
 
 ### "Ref not found" Error
@@ -166,8 +199,8 @@ agent-browser snapshot -i
 ### Element Not Visible in Snapshot
 
 ```bash
-# Scroll to reveal element
-agent-browser scroll --bottom
+# Scroll down to reveal element
+agent-browser scroll down 1000
 agent-browser snapshot -i
 
 # Or wait for dynamic content

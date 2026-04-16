@@ -308,8 +308,8 @@ main() {
     clone_upstream
 
     # 检查差异
-    check_diff
-    local has_diff=$?
+    local has_diff=0
+    check_diff || has_diff=$?
 
     # 如果只是检查模式
     if [ "$check_only" = true ]; then

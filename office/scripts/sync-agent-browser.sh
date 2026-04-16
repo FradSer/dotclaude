@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Agent-Browser Skill 同步脚本
-# 从 vercel-labs/agent-browser 仓库同步整个 skill 文件夹到本地
+# 从 vercel-labs/agent-browser 仓库同步 skills/agent-browser 目录到本地
 #
 
 set -euo pipefail
@@ -14,23 +14,16 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 配置
-UPSTREAM_BASE="https://raw.githubusercontent.com/vercel-labs/agent-browser/main/skills/agent-browser"
+UPSTREAM_REPO="https://github.com/vercel-labs/agent-browser.git"
+UPSTREAM_BRANCH="main"
+UPSTREAM_PATH="skills/agent-browser"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="$SCRIPT_DIR/../skills/agent-browser"
-BACKUP_DIR="$SCRIPT_DIR/../skills/agent-browser/.backup"
+BACKUP_DIR="$TARGET_DIR/.backup"
+TEMP_DIR="/tmp/agent-browser-sync-$$"
 
-# 需要同步的文件列表
-declare -a FILES=(
-    "SKILL.md"
-    "references/authentication.md"
-    "references/proxy-support.md"
-    "references/session-management.md"
-    "references/snapshot-refs.md"
-    "references/video-recording.md"
-    "templates/authenticated-session.sh"
-    "templates/capture-workflow.sh"
-    "templates/form-automation.sh"
-)
+# 本地文件（不被覆盖）
+LOCAL_FILES=("SYNC.md")
 
 # 帮助信息
 show_help() {
@@ -50,6 +43,9 @@ ${GREEN}示例:${NC}
     $0                  # 同步并备份现有文件
     $0 --check          # 仅检查更新
     $0 --force          # 强制同步,跳过确认
+
+${GREEN}上游仓库:${NC}
+    $UPSTREAM_REPO (branch: $UPSTREAM_BRANCH)
 
 EOF
 }
@@ -75,7 +71,7 @@ log_error() {
 check_requirements() {
     local missing_tools=()
 
-    for tool in curl diff; do
+    for tool in git diff; do
         if ! command -v "$tool" &> /dev/null; then
             missing_tools+=("$tool")
         fi
@@ -87,6 +83,36 @@ check_requirements() {
     fi
 }
 
+# 清理临时文件
+cleanup() {
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+}
+trap cleanup EXIT
+
+# 克隆上游 skills/agent-browser 目录（sparse checkout）
+clone_upstream() {
+    log_info "正在从上游仓库获取 $UPSTREAM_PATH 目录..."
+
+    mkdir -p "$TEMP_DIR"
+
+    git clone --depth 1 --filter=blob:none --sparse \
+        "$UPSTREAM_REPO" "$TEMP_DIR/repo" 2>/dev/null
+
+    cd "$TEMP_DIR/repo"
+    git sparse-checkout set "$UPSTREAM_PATH" 2>/dev/null
+    cd - > /dev/null
+
+    if [ ! -d "$TEMP_DIR/repo/$UPSTREAM_PATH" ]; then
+        log_error "上游仓库中未找到 $UPSTREAM_PATH 目录"
+        return 1
+    fi
+
+    log_success "上游文件获取完成"
+    return 0
+}
+
 # 创建备份
 create_backup() {
     if [ ! -d "$TARGET_DIR" ]; then
@@ -94,69 +120,48 @@ create_backup() {
         return 0
     fi
 
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
     local backup_path="$BACKUP_DIR/$timestamp"
 
     mkdir -p "$backup_path"
 
-    # 备份所有现有文件
-    for file in "${FILES[@]}"; do
-        local target_file="$TARGET_DIR/$file"
-        if [ -f "$target_file" ]; then
-            local backup_file="$backup_path/$file"
-            mkdir -p "$(dirname "$backup_file")"
-            cp "$target_file" "$backup_file"
-        fi
-    done
+    # 备份所有子目录和文件（排除 .backup 和本地文件）
+    local count=0
+    while IFS= read -r -d '' item; do
+        local basename
+        basename=$(basename "$item")
 
-    log_success "已备份到: $backup_path"
-}
+        # 跳过本地文件和备份目录
+        local skip=false
+        for local_file in "${LOCAL_FILES[@]}"; do
+            if [ "$basename" = "$local_file" ]; then
+                skip=true
+                break
+            fi
+        done
+        [ "$basename" = ".backup" ] && skip=true
+        [ "$skip" = true ] && continue
 
-# 下载单个文件
-download_file() {
-    local file="$1"
-    local temp_dir="$2"
-    local url="$UPSTREAM_BASE/$file"
-    local temp_file="$temp_dir/$file"
+        cp -R "$item" "$backup_path/"
+        count=$((count + 1))
+    done < <(find "$TARGET_DIR" -maxdepth 1 -mindepth 1 -print0)
 
-    mkdir -p "$(dirname "$temp_file")"
-
-    if curl -fsSL "$url" -o "$temp_file"; then
-        return 0
+    if [ $count -gt 0 ]; then
+        log_success "已备份 $count 个项目到: $backup_path"
     else
-        log_error "下载失败: $file" >&2
-        return 1
+        log_info "没有需要备份的内容"
+        rmdir "$backup_path" 2>/dev/null || true
     fi
-}
-
-# 下载所有上游文件
-download_upstream() {
-    local temp_dir="/tmp/agent-browser-skill-$$"
-    mkdir -p "$temp_dir"
-
-    log_info "正在下载上游文件..."
-
-    local failed_files=()
-    for file in "${FILES[@]}"; do
-        if ! download_file "$file" "$temp_dir"; then
-            failed_files+=("$file")
-        fi
-    done
-
-    if [ ${#failed_files[@]} -ne 0 ]; then
-        log_error "以下文件下载失败: ${failed_files[*]}"
-        rm -rf "$temp_dir"
-        return 1
-    fi
-
-    echo "$temp_dir"
-    return 0
 }
 
 # 检查差异
 check_diff() {
-    local temp_dir="$1"
+    local upstream_skills="$TEMP_DIR/repo/$UPSTREAM_PATH"
     local has_changes=false
+    local new_count=0
+    local changed_count=0
+    local deleted_count=0
 
     if [ ! -d "$TARGET_DIR" ]; then
         log_warning "本地目录不存在,将创建新文件"
@@ -165,56 +170,94 @@ check_diff() {
 
     log_info "检查文件差异..."
 
-    for file in "${FILES[@]}"; do
-        local target_file="$TARGET_DIR/$file"
-        local temp_file="$temp_dir/$file"
+    # 检查新增和变更的文件
+    while IFS= read -r -d '' upstream_file; do
+        local rel_path="${upstream_file#$upstream_skills/}"
+        local local_file="$TARGET_DIR/$rel_path"
 
-        if [ ! -f "$target_file" ]; then
-            log_info "  新增: $file"
+        if [ ! -f "$local_file" ]; then
+            new_count=$((new_count + 1))
             has_changes=true
-        elif ! diff -q "$target_file" "$temp_file" &> /dev/null; then
-            log_info "  变更: $file"
+        elif ! diff -q "$local_file" "$upstream_file" &> /dev/null; then
+            changed_count=$((changed_count + 1))
             has_changes=true
         fi
-    done
+    done < <(find "$upstream_skills" -type f -print0)
 
-    if [ "$has_changes" = false ]; then
+    # 检查本地已删除的上游文件
+    while IFS= read -r -d '' local_file; do
+        local rel_path="${local_file#$TARGET_DIR/}"
+        local basename
+        basename=$(basename "$rel_path")
+        local dirname
+        dirname=$(dirname "$rel_path")
+
+        # 跳过本地文件和备份目录
+        local skip=false
+        for lf in "${LOCAL_FILES[@]}"; do
+            [ "$basename" = "$lf" ] && [ "$dirname" = "." ] && skip=true && break
+        done
+        [[ "$rel_path" == .backup* ]] && skip=true
+        [ "$skip" = true ] && continue
+
+        local upstream_file="$upstream_skills/$rel_path"
+        if [ ! -f "$upstream_file" ]; then
+            deleted_count=$((deleted_count + 1))
+            has_changes=true
+        fi
+    done < <(find "$TARGET_DIR" -type f -print0)
+
+    if [ "$has_changes" = true ]; then
+        [ $new_count -gt 0 ] && log_info "  新增: $new_count 个文件"
+        [ $changed_count -gt 0 ] && log_info "  变更: $changed_count 个文件"
+        [ $deleted_count -gt 0 ] && log_info "  删除: $deleted_count 个文件(上游已移除)"
+        return 1
+    else
         log_success "所有文件已是最新版本"
         return 0
-    else
-        return 1
     fi
 }
 
 # 执行同步
 sync_files() {
-    local temp_dir="$1"
-    local no_backup="$2"
+    local no_backup="$1"
+    local upstream_skills="$TEMP_DIR/repo/$UPSTREAM_PATH"
 
     # 创建备份
     if [ "$no_backup" != "true" ]; then
         create_backup
     fi
 
-    # 同步所有文件
     log_info "正在同步文件..."
 
-    for file in "${FILES[@]}"; do
-        local target_file="$TARGET_DIR/$file"
-        local temp_file="$temp_dir/$file"
+    # 删除旧的上游内容（保留本地文件和备份）
+    while IFS= read -r -d '' item; do
+        local basename
+        basename=$(basename "$item")
 
-        mkdir -p "$(dirname "$target_file")"
-        cp "$temp_file" "$target_file"
+        local skip=false
+        for local_file in "${LOCAL_FILES[@]}"; do
+            [ "$basename" = "$local_file" ] && skip=true && break
+        done
+        [ "$basename" = ".backup" ] && skip=true
+        [ "$skip" = true ] && continue
 
-        # 如果是 .sh 文件，设置执行权限
-        if [[ "$file" == *.sh ]]; then
-            chmod +x "$target_file"
-        fi
-    done
+        rm -rf "$item"
+    done < <(find "$TARGET_DIR" -maxdepth 1 -mindepth 1 -print0)
 
-    log_success "同步完成: $TARGET_DIR"
+    # 复制上游内容
+    local count=0
+    while IFS= read -r -d '' item; do
+        cp -R "$item" "$TARGET_DIR/"
+        count=$((count + 1))
+    done < <(find "$upstream_skills" -maxdepth 1 -mindepth 1 -print0)
 
-    # 更新 SYNC.md 中的同步时间（如果存在）
+    # 设置 .sh 文件的执行权限
+    find "$TARGET_DIR" -name "*.sh" -exec chmod +x {} \;
+
+    log_success "同步完成: 已同步 $count 个项目"
+
+    # 更新 SYNC.md 中的同步时间
     local sync_md="$TARGET_DIR/SYNC.md"
     if [ -f "$sync_md" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -264,22 +307,12 @@ main() {
     # 检查必要工具
     check_requirements
 
-    # 下载上游文件
-    local temp_dir
-    temp_dir=$(download_upstream)
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
+    # 克隆上游
+    clone_upstream
 
     # 检查差异
-    check_diff "$temp_dir"
-    local has_diff=$?
-
-    # 清理临时文件
-    cleanup() {
-        rm -rf "$temp_dir"
-    }
-    trap cleanup EXIT
+    local has_diff=0
+    check_diff || has_diff=$?
 
     # 如果只是检查模式
     if [ "$check_only" = true ]; then
@@ -308,13 +341,13 @@ main() {
     fi
 
     # 执行同步
-    sync_files "$temp_dir" "$no_backup"
+    sync_files "$no_backup"
 
-    log_success "✨ 同步完成!"
+    log_success "同步完成!"
     log_info "建议执行以下命令提交更改:"
     echo ""
     echo "    git add office/skills/agent-browser/"
-    echo "    git-agent commit --no-stage --intent \"sync agent-browser skill from upstream\" --co-author \"Claude Sonnet 4.6 <noreply@anthropic.com>\""
+    echo "    git-agent commit --no-stage --intent \"sync agent-browser skill from upstream vercel-labs/agent-browser\" --co-author \"Claude Opus 4.6 <noreply@anthropic.com>\""
     echo ""
 }
 

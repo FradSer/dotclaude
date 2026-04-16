@@ -4,17 +4,21 @@
 
 - **仓库**: [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)
 - **路径**: `skills/agent-browser/`
-- **上次同步**: 2026-01-25
+- **上次同步**: 2026-04-16
 
 ## 同步内容
 
-此 skill 从上游仓库同步,包含以下文件:
+此 skill 通过 `git sparse-checkout` 从上游仓库整个目录同步，自动处理新增/变更/删除的文件。
+
+当前同步的文件:
 
 ### 核心文件
 - `SKILL.md` - 主技能文档
 
 ### 参考文档 (references/)
 - `authentication.md` - 认证模式
+- `commands.md` - 命令参考
+- `profiling.md` - 性能分析
 - `proxy-support.md` - 代理支持
 - `session-management.md` - 会话管理
 - `snapshot-refs.md` - 快照引用
@@ -42,6 +46,8 @@
 
 ## 注意事项
 
-- 本地修改会在同步时被覆盖
+- 脚本使用 `git sparse-checkout` 同步整个目录，自动处理新增/删除文件
+- 本地 `SYNC.md` 不会被上游覆盖
+- 本地修改会在同步时被覆盖（其他文件）
 - 脚本会自动创建备份到 `.backup/` 目录
 - 使用 `--no-backup` 选项可跳过备份
