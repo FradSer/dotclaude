@@ -1,27 +1,55 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
-  "description": "Web frontend development toolkit — shadcn/ui component management and Next.js development tools with MCP integration",
+  "version": "0.2.0",
+  "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, and impeccable design skills",
   "keywords": [
     "frontend",
     "shadcn",
-    "shadcn-ui",
     "nextjs",
     "react",
-    "components",
+    "supabase",
+    "design",
     "ui",
     "tailwind",
-    "mcp",
-    "devtools"
+    "impeccable",
+    "anti-patterns"
   ],
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
+  "commands": [
+    "./skills/impeccable/"
+  ],
   "skills": [
     "./skills/shadcn/",
-    "./skills/next-devtools-guide/"
+    "./skills/next-devtools-guide/",
+    "./skills/react-best-practices/",
+    "./skills/web-design-guidelines/",
+    "./skills/supabase/",
+    "./skills/supabase-postgres-best-practices/",
+    "./skills/impeccable-critique/",
+    "./skills/impeccable-adapt/",
+    "./skills/impeccable-animate/",
+    "./skills/impeccable-audit/",
+    "./skills/impeccable-bolder/",
+    "./skills/impeccable-clarify/",
+    "./skills/impeccable-colorize/",
+    "./skills/impeccable-delight/",
+    "./skills/impeccable-distill/",
+    "./skills/impeccable-harden/",
+    "./skills/impeccable-layout/",
+    "./skills/impeccable-optimize/",
+    "./skills/impeccable-overdrive/",
+    "./skills/impeccable-polish/",
+    "./skills/impeccable-quieter/",
+    "./skills/impeccable-shape/",
+    "./skills/impeccable-typeset/"
+  ],
+  "agents": [
+    "./agents/frontend-expert.md",
+    "./agents/frontend-anti-patterns.md"
   ],
   "mcpServers": {
     "next-devtools": {

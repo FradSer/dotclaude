@@ -1,37 +1,62 @@
 # frontend
 
-Web frontend development toolkit combining shadcn/ui component management and Next.js development tools.
+Web frontend development toolkit combining component management, framework tools, best practices, and design skills.
 
-## Skills
+## Skills (24)
 
-### shadcn (synced from upstream)
+### Component & Framework
+| Skill | Source | Sync Script |
+|-------|--------|-------------|
+| shadcn | [shadcn-ui/ui](https://github.com/shadcn-ui/ui) | `sync-shadcn.sh` |
+| next-devtools-guide | local | -- |
+| react-best-practices | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
+| web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
 
-Manages shadcn/ui components and projects -- adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples.
+### Backend & Data
+| Skill | Source | Sync Script |
+|-------|--------|-------------|
+| supabase | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
+| supabase-postgres-best-practices | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
 
-- **Source**: [shadcn-ui/ui](https://github.com/shadcn-ui/ui/tree/main/skills/shadcn)
-- **Sync**: `./scripts/sync-shadcn.sh`
+### Design & Quality (from impeccable)
+| Skill | Source | Sync Script |
+|-------|--------|-------------|
+| impeccable + 17 design skills | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | `sync-impeccable.sh` |
 
-### next-devtools-guide
+Impeccable skills: adapt, animate, audit, bolder, clarify, colorize, critique, delight, distill, harden, impeccable, layout, optimize, overdrive, polish, quieter, shape, typeset
 
-Next.js development tools integration via MCP server. Runtime diagnostics, development automation, and documentation access.
+## Agents (2)
 
-- **MCP Server**: `next-devtools-mcp`
-- **Capabilities**: 7 Tools + 2 Prompts + 17 Resources
+| Agent | Purpose |
+|-------|---------|
+| frontend-expert | Guides usage of all skills, recommends the right skill for any task |
+| frontend-anti-patterns | Detects UI anti-patterns: AI slop and design quality issues |
 
 ## Syncing
 
-The shadcn skill is synced from the official [shadcn-ui/ui](https://github.com/shadcn-ui/ui) repository:
-
 ```bash
-# Check for updates
-./scripts/sync-shadcn.sh --check
-
-# Sync latest
+# shadcn (from shadcn-ui/ui)
 ./scripts/sync-shadcn.sh
 
-# Force sync (skip confirmation)
-./scripts/sync-shadcn.sh --force
+# React best practices + web design guidelines (from vercel-labs/agent-skills)
+./scripts/sync-vercel-skills.sh
+
+# Supabase + Postgres best practices (from supabase/agent-skills)
+./scripts/sync-supabase-skills.sh
+
+# Impeccable design skills + anti-patterns agent (from pbakaus/impeccable)
+./scripts/sync-impeccable.sh
+
+# Check all for updates (dry run)
+./scripts/sync-shadcn.sh --check
+./scripts/sync-vercel-skills.sh --check
+./scripts/sync-supabase-skills.sh --check
+./scripts/sync-impeccable.sh --check
 ```
+
+## MCP Server
+
+- **next-devtools**: Next.js runtime diagnostics, Cache Components, documentation (7 tools + 2 prompts + 17 resources)
 
 ## License
 

@@ -119,8 +119,8 @@
     },
     {
       "name": "frontend",
-      "version": "0.1.0",
-      "description": "Web frontend development toolkit — shadcn/ui component management and Next.js development tools with MCP integration",
+      "version": "0.2.0",
+      "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, and impeccable design skills",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"

@@ -257,6 +257,26 @@ lerna-debug.log*
 # Sync backups
 .backup/
 
+# Frontend plugin: synced upstream content (run sync scripts to regenerate)
+# shadcn-ui/ui
+frontend/skills/shadcn/*
+!frontend/skills/shadcn/SYNC.md
+# vercel-labs/agent-skills
+frontend/skills/react-best-practices/*
+!frontend/skills/react-best-practices/SYNC.md
+frontend/skills/web-design-guidelines/*
+!frontend/skills/web-design-guidelines/SYNC.md
+# supabase/agent-skills
+frontend/skills/supabase/*
+!frontend/skills/supabase/SYNC.md
+frontend/skills/supabase-postgres-best-practices/*
+!frontend/skills/supabase-postgres-best-practices/SYNC.md
+# pbakaus/impeccable
+frontend/skills/impeccable/reference/
+frontend/skills/impeccable/scripts/
+frontend/skills/impeccable-*/
+frontend/agents/references/anti-patterns-upstream.md
+
 # Python
 __pycache__/
 *.py[cod]
