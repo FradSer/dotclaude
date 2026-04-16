@@ -5,34 +5,49 @@ Web frontend development toolkit combining component management, framework tools
 ## Skills (24)
 
 ### Component & Framework
-| Skill | Source | Sync Script |
-|-------|--------|-------------|
-| shadcn | [shadcn-ui/ui](https://github.com/shadcn-ui/ui) | `sync-shadcn.sh` |
-| next-devtools-guide | local | -- |
-| react-best-practices | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
+
+
+| Skill                 | Source                                                                  | Sync Script             |
+| --------------------- | ----------------------------------------------------------------------- | ----------------------- |
+| shadcn                | [shadcn-ui/ui](https://github.com/shadcn-ui/ui)                         | `sync-shadcn.sh`        |
+| next-devtools-guide   | local                                                                   | --                      |
+| react-best-practices  | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
 | web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
 
+
 ### Backend & Data
-| Skill | Source | Sync Script |
-|-------|--------|-------------|
-| supabase | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
+
+
+| Skill                            | Source                                                            | Sync Script               |
+| -------------------------------- | ----------------------------------------------------------------- | ------------------------- |
+| supabase                         | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
 | supabase-postgres-best-practices | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
 
+
 ### Design & Quality (from impeccable)
-| Skill | Source | Sync Script |
-|-------|--------|-------------|
+
+
+| Skill                         | Source                                                      | Sync Script          |
+| ----------------------------- | ----------------------------------------------------------- | -------------------- |
 | impeccable + 17 design skills | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | `sync-impeccable.sh` |
+
 
 Impeccable skills: adapt, animate, audit, bolder, clarify, colorize, critique, delight, distill, harden, impeccable, layout, optimize, overdrive, polish, quieter, shape, typeset
 
 ## Agents (2)
 
-| Agent | Purpose |
-|-------|---------|
-| frontend-expert | Guides usage of all skills, recommends the right skill for any task |
-| frontend-anti-patterns | Detects UI anti-patterns: AI slop and design quality issues |
+
+| Agent                  | Purpose                                                             |
+| ---------------------- | ------------------------------------------------------------------- |
+| frontend-expert        | Guides usage of all skills, recommends the right skill for any task |
+| frontend-anti-patterns | Detects UI anti-patterns: AI slop and design quality issues         |
+
 
 ## Syncing
+
+Sync metadata is centralized in `SYNC.md` (single file under `frontend/`), and all sync scripts update its `**上次同步**` field.
+
+Run these commands from the `frontend/` directory:
 
 ```bash
 # shadcn (from shadcn-ui/ui)

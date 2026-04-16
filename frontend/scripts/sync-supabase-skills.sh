@@ -18,13 +18,11 @@ UPSTREAM_REPO="https://github.com/supabase/agent-skills.git"
 UPSTREAM_BRANCH="main"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TARGET_DIR="$SCRIPT_DIR/../skills"
+SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 TEMP_DIR="/tmp/supabase-skills-sync-$$"
 
 # 要同步的 skill 目录
 SKILL_DIRS=("supabase" "supabase-postgres-best-practices")
-
-# 本地文件（不被覆盖）
-LOCAL_FILES=("SYNC.md")
 
 # 帮助信息
 show_help() {
@@ -119,9 +117,6 @@ create_backup() {
         local basename
         basename=$(basename "$item")
         local skip=false
-        for local_file in "${LOCAL_FILES[@]}"; do
-            [ "$basename" = "$local_file" ] && skip=true && break
-        done
         [ "$basename" = ".backup" ] && skip=true
         [ "$skip" = true ] && continue
         cp -R "$item" "$backup_path/"
@@ -196,9 +191,6 @@ sync_skill() {
             local basename
             basename=$(basename "$item")
             local skip=false
-            for local_file in "${LOCAL_FILES[@]}"; do
-                [ "$basename" = "$local_file" ] && skip=true && break
-            done
             [ "$basename" = ".backup" ] && skip=true
             [ "$skip" = true ] && continue
             rm -rf "$item"
@@ -213,7 +205,7 @@ sync_skill() {
 
     log_success "  $skill_name: 已同步 $count 个项目"
 
-    local sync_md="$skill_target/SYNC.md"
+    local sync_md="$SYNC_FILE"
     if [ -f "$sync_md" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"

@@ -22,10 +22,8 @@ UPSTREAM_AGENTS_PATH=".claude/agents"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TARGET_SKILLS_DIR="$SCRIPT_DIR/../skills"
 TARGET_AGENTS_DIR="$SCRIPT_DIR/../agents"
+SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 TEMP_DIR="/tmp/impeccable-sync-$$"
-
-# 本地文件（不被覆盖）
-LOCAL_FILES=("SYNC.md")
 
 # impeccable skill 的 SKILL.md 保留本地版本，上游原文存为 reference
 IMPECCABLE_LOCAL_SKILL=true
@@ -141,9 +139,6 @@ create_backup() {
         local basename
         basename=$(basename "$item")
         local skip=false
-        for local_file in "${LOCAL_FILES[@]}"; do
-            [ "$basename" = "$local_file" ] && skip=true && break
-        done
         [ "$basename" = ".backup" ] && skip=true
         [ "$skip" = true ] && continue
         cp -R "$item" "$backup_path/"
@@ -230,7 +225,7 @@ sync_skill() {
     mkdir -p "$skill_target"
 
     # 构建跳过列表
-    local skip_files=("${LOCAL_FILES[@]}")
+    local skip_files=()
     local is_impeccable=false
 
     if [ "$skill_name" = "impeccable" ] && [ "$IMPECCABLE_LOCAL_SKILL" = true ]; then
@@ -282,7 +277,7 @@ sync_skill() {
     log_success "  $target_name: 已同步 $count 个项目"
 
     # 更新 SYNC.md 时间
-    local sync_md="$skill_target/SYNC.md"
+    local sync_md="$SYNC_FILE"
     if [ -f "$sync_md" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"

@@ -19,11 +19,9 @@ UPSTREAM_BRANCH="main"
 UPSTREAM_PATH="skills/shadcn"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TARGET_DIR="$SCRIPT_DIR/../skills/shadcn"
+SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/shadcn-sync-$$"
-
-# 本地文件（不被覆盖）
-LOCAL_FILES=("SYNC.md")
 
 # 排除的上游目录（OpenAI 特定，Claude Code 不需要）
 EXCLUDE_DIRS=("agents" "assets")
@@ -157,14 +155,8 @@ create_backup() {
         local basename
         basename=$(basename "$item")
 
-        # 跳过本地文件和备份目录
+        # 跳过备份目录
         local skip=false
-        for local_file in "${LOCAL_FILES[@]}"; do
-            if [ "$basename" = "$local_file" ]; then
-                skip=true
-                break
-            fi
-        done
         [ "$basename" = ".backup" ] && skip=true
         [ "$skip" = true ] && continue
 
@@ -217,11 +209,8 @@ check_diff() {
         local dirname
         dirname=$(dirname "$rel_path")
 
-        # 跳过本地文件和备份目录
+        # 跳过备份目录
         local skip=false
-        for lf in "${LOCAL_FILES[@]}"; do
-            [ "$basename" = "$lf" ] && [ "$dirname" = "." ] && skip=true && break
-        done
         [[ "$rel_path" == .backup* ]] && skip=true
         [ "$skip" = true ] && continue
 
@@ -255,15 +244,12 @@ sync_files() {
 
     log_info "正在同步文件..."
 
-    # 删除旧的上游内容（保留本地文件和备份）
+    # 删除旧的上游内容（保留备份）
     while IFS= read -r -d '' item; do
         local basename
         basename=$(basename "$item")
 
         local skip=false
-        for local_file in "${LOCAL_FILES[@]}"; do
-            [ "$basename" = "$local_file" ] && skip=true && break
-        done
         [ "$basename" = ".backup" ] && skip=true
         [ "$skip" = true ] && continue
 
@@ -280,7 +266,7 @@ sync_files() {
     log_success "同步完成: 已同步 $count 个项目"
 
     # 更新 SYNC.md 中的同步时间
-    local sync_md="$TARGET_DIR/SYNC.md"
+    local sync_md="$SYNC_FILE"
     if [ -f "$sync_md" ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"
