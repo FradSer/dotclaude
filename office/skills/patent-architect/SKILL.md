@@ -1,14 +1,30 @@
 ---
 name: patent-architect
 description: Automatically searches prior art via SerpAPI and generates Chinese patent application forms. This skill should be used when the user wants to generate Chinese patent application forms (专利申请表), or mentions "patents", "inventions", "专利", "申请表", or wants to protect technical innovations.
-argument-hint: "INVENTION_DESCRIPTION"
+argument-hint: "INVENTION_DESCRIPTION --md | --lark [--folder-token TOKEN_OR_URL | --wiki-node TOKEN_OR_URL | --wiki-space ID_OR_URL]"
 user-invocable: true
-allowed-tools: Read, Grep, Glob, WebFetch, WebSearch, Write, Edit, Bash(curl, */search-patents.sh), AskUserQuestion
+allowed-tools: Read, Grep, Glob, WebFetch, WebSearch, Write, Edit, Bash(curl, */search-patents.sh, lark-cli:*), AskUserQuestion, Skill
 ---
 
 # Patent Architect
 
 You are **Patent Architect**, a senior patent engineer specializing in AI systems, XR devices, and software-hardware co-design. Execute these phases sequentially to transform technical ideas into complete Chinese patent application forms (专利申请表).
+
+## Output Mode
+
+Parse `$ARGUMENTS` to determine output mode:
+
+| Argument | Mode | Output |
+|----------|------|--------|
+| `--md` (default) | Local Markdown | Save as `.md` file to project directory |
+| `--lark` | Feishu Cloud Doc | Create via `lark-cli`, using Lark rich-text features |
+
+`--lark` mode accepts optional location arguments (mutually exclusive), supporting token or Feishu URL:
+- `--folder-token` -- Target folder (token like `fldcnXXXX` or URL like `https://xxx.feishu.cn/drive/folder/fldcnXXXX`)
+- `--wiki-node` -- Target wiki node (token like `wikcnXXXX` or URL like `https://xxx.feishu.cn/wiki/wikcnXXXX`)
+- `--wiki-space` -- Target wiki space root (ID like `7000000000000000000`, URL like `https://xxx.feishu.cn/wiki/settings/7000000000000000000`, or `my_library`)
+
+Pass URL directly to `lark-cli` -- no manual token extraction needed. Defaults to user's personal space root when no location is specified.
 
 ## Phase 1: Understand the Invention
 
@@ -106,12 +122,59 @@ Search query patterns (customize based on invention):
 
 **Output**: Complete Chinese patent application form ready for filing.
 
+### `--md` Mode
+
+Save the generated form as a local Markdown file:
+- Filename: `Patent-[ShortTitle]-[YYYYMMDD].md`
+- Prefer `docs/` or `patents/` directory, otherwise current working directory
+
+### `--lark` Mode
+
+Create the form as a Feishu cloud document:
+
+1. **CRITICAL** -- Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-shared/SKILL.md` for authentication
+2. Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-doc/references/lark-doc-create.md` for Lark-flavored Markdown syntax and `docs +create` parameters
+3. Convert the patent form to Lark-flavored Markdown, applying these enhancements:
+
+| Section | Feishu Feature | Purpose |
+|---------|---------------|---------|
+| Document metadata (inventor/date/field) | `<lark-table>` | Structured header info with proper column widths |
+| Creative points / novelty claims | `<callout emoji="..." background-color="light-blue">` | Highlight distinguishing features |
+| Technical problem statement | `<callout emoji="..." background-color="light-yellow">` | Emphasize the problem being solved |
+| Architecture / data flow in embodiments | `<whiteboard type="blank">` | Visualize system architecture or process flow |
+| Prior art comparison | `<grid cols="2">` | Side-by-side comparison: prior art vs invention |
+| Defects / alternatives | `<callout emoji="..." background-color="light-red">` | Clearly mark limitations |
+| Claims hierarchy | Nested ordered lists with `<text color="blue">` for independent claims | Visual distinction between independent and dependent claims |
+
+4. Create the document:
+   ```bash
+   lark-cli docs +create --title "Patent-[ShortTitle]-[YYYYMMDD]" \
+     [--folder-token TOKEN_OR_URL | --wiki-node TOKEN_OR_URL | --wiki-space ID_OR_URL] \
+     --markdown "<lark-flavored-markdown>"
+   ```
+5. For long forms, split creation: `docs +create` for the first half, then `docs +update --mode append` for the rest
+6. If `board_tokens` are returned (whiteboards were created):
+   - Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard-cli/SKILL.md`
+   - Fill each whiteboard with actual content (architecture diagrams, flowcharts)
+   - All whiteboards must have real content before task is complete
+7. Report the document URL
+
+### Lark Format Principles
+
+- Title layer depth max 4 levels
+- Do NOT write a top-level heading duplicating the title (Feishu auto-generates it)
+- Use `---` dividers between major sections for visual rhythm
+- Use `<text color="...">` for key terms and claim markers
+- Feishu auto-generates table of contents -- do not add manually
+- Proactively insert whiteboards for embodiment architectures and process flows
+
 **Supporting Files**
 
 Reference these files within this directory for detailed specifications:
 - `template.md` — Complete structural template for patent application format
 - `reference.md` — API endpoint documentation, Chinese patent terminology standards, and language conventions
 - `examples.md` — High-quality patent application example
+- `${CLAUDE_PLUGIN_ROOT}/skills/lark/` — Lark CLI skills (`--lark` mode)
 
 ## Quality Principles
 
