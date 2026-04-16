@@ -118,16 +118,16 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/plugin-optimizer"
     },
     {
-      "name": "next-devtools",
-      "version": "0.1.2",
-      "description": "Next.js development tools integration via MCP server",
+      "name": "frontend",
+      "version": "0.1.0",
+      "description": "Web frontend development toolkit — shadcn/ui component management and Next.js development tools with MCP integration",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
-      "source": "./next-devtools",
+      "source": "./frontend",
       "category": "development",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/next-devtools"
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/frontend"
     },
     {
       "name": "acpx",
@@ -140,18 +140,6 @@
       "source": "./acpx",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/acpx"
-    },
-    {
-      "name": "shadcn",
-      "version": "0.1.1",
-      "description": "Manages shadcn components and projects \u2014 adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples",
-      "author": {
-        "name": "Frad LEE",
-        "email": "fradser@gmail.com"
-      },
-      "source": "./shadcn",
-      "category": "development",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/shadcn"
     },
     {
       "name": "code-context",
