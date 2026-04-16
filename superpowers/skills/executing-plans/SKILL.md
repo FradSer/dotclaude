@@ -16,9 +16,8 @@ Execute written implementation plans efficiently using Superpower Loop for conti
 
 1. Resolve the plan path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
-   - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/`
-   - If found without explicit argument, confirm with user: "Execute this plan: [path]?"
-   - If not found or user declines, ask the user for the plan folder path
+   - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/` and use it directly (no confirmation)
+   - If no plan folder is found, abort with a clear error message naming the expected path pattern
 2. Immediately run:
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
@@ -35,7 +34,7 @@ This skill uses Superpower Loop to enable self-referential iteration throughout 
 - Phase 1-5 (Plan Review, Task Creation, Batch Execution, Verification, Git Commit) are all complete
 - All tasks executed and verified
 - All tasks marked `completed` (verified via TaskList — zero tasks with `in_progress` or `pending` status)
-- User approval received in Phase 4
+- Every Phase 4 verification gate has passed (no failing tasks)
 - Git commit completed
 
 Do NOT output the promise until ALL conditions are genuinely TRUE.
@@ -194,7 +193,7 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
       - Evaluator outputs report content as text; the executing-plans skill writes it to `evaluation-round-{N}-batch-{M}.md` in the plan directory
       - If verdict is REWORK: generator reads rework items from the superpowers-evaluator, fixes issues, re-runs verification (max 2 evaluation-rework rounds, then escalate per `./references/blocker-and-escalation.md`)
       - If verdict is PASS: proceed to step 2e (mark complete) for remaining tasks
-      - If **pivot flag** is set: log the superpowers-evaluator recommendation, present to user via AskUserQuestion
+      - If **pivot flag** is set: log the superpowers-evaluator recommendation to the evaluation report and continue execution based on that recommendation (do NOT ask the user)
       - See `./references/evaluation-file-formats.md` for report format
       - **Intensity modifiers**: `thorough` = per-task evaluation; `standard` = per-batch (default); `light` = end-of-plan only
 
@@ -217,11 +216,11 @@ Close the loop with structured evidence and intra-plan learning.
 
 2. **Pattern Scan** (if evaluator enabled): Read all evaluation reports in the plan directory, identify checklist items that FAILed in 2+ distinct batches, and inject a "Recurring Failure Patterns" block into the next sprint contract preamble. See `./references/intra-plan-learning.md` for format.
 
-3. **Escalation for Persistent Patterns**: If a checklist item FAILed in 3+ batches, elevate to the first item in the user confirmation prompt with a recommendation to pause and review the task specification. See `./references/intra-plan-learning.md` for details.
+3. **Escalation for Persistent Patterns**: If a checklist item FAILed in 3+ batches, log a prominent "PERSISTENT PATTERN" warning to the batch handoff block with a recommendation to review the task specification during retrospective. Continue execution — do NOT pause for user input. See `./references/intra-plan-learning.md` for details.
 
 4. **Batch Handoff**: After each batch completes, emit a lightweight handoff block to conversation context (progress, patterns, modified files, next batch scope). See `./references/intra-plan-learning.md` for format.
 
-5. **Confirm**: Use AskUserQuestion to present evidence summary (with pattern notes if any). Get explicit confirmation before continuing.
+5. **Emit Evidence Summary**: Output the evidence summary (with pattern notes if any) to conversation context, then proceed immediately to the next batch. Do NOT ask the user for confirmation — this skill runs fully autonomously.
 
 6. **Loop**: Repeat Phase 3-4 until all batches complete.
 
@@ -241,7 +240,7 @@ Commit the implementation changes using git-agent (with git fallback).
 See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
 
 **Critical requirements**:
-- Commit only after Phase 4 user confirmation
+- Commit only after all Phase 4 verification gates have passed (no failing tasks)
 - Commit should reflect the completed feature, not individual tasks
 - Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
 
@@ -257,7 +256,7 @@ Verify all tasks are complete, then output the promise as the absolute last line
 
 ## Exit Criteria
 
-All tasks executed and verified, evidence captured, no blockers, user approval received, final verification passes, git commit completed.
+All tasks executed and verified, evidence captured, no blockers, final verification passes, git commit completed. This skill runs fully autonomously — no user approval step exists.
 
 ## References
 

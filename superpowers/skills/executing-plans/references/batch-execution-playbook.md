@@ -70,8 +70,8 @@ For single-task batches or unavoidable sequential dependencies:
 
 #### Between Batches
 
-- Report progress and verification results
-- Get user confirmation before next batch
+- Report progress and verification results to conversation context
+- Proceed directly to the next batch (no user confirmation — this skill is fully autonomous)
 
 ### Step 4: Report and Continue
 
@@ -128,7 +128,7 @@ After the superpowers-evaluator completes:
 2. Check the per-task verdicts:
    - **PASS**: All tasks accepted. Proceed to mark tasks complete and move to Phase 4 evidence.
    - **REWORK**: Read rework items (file:line references + issue descriptions). Fix the identified issues, re-run verification, then re-spawn superpowers-evaluator for another round.
-   - **FAIL / Pivot**: Present the superpowers-evaluator's pivot recommendation to the user via AskUserQuestion.
+   - **FAIL / Pivot**: Log the superpowers-evaluator's pivot recommendation to the evaluation report and apply it directly (do NOT prompt the user). If the recommendation is ambiguous, fall back to the rework loop.
 
 ### Rework Loop
 
@@ -136,7 +136,7 @@ After the superpowers-evaluator completes:
 |-------|--------|
 | 1 | Fix rework items, re-verify, re-evaluate |
 | 2 | Fix remaining items, re-verify, re-evaluate |
-| 3+ | Escalate to user per `blocker-and-escalation.md` |
+| 3+ | Log a HARD BLOCKER entry per `blocker-and-escalation.md` and abort this batch (do NOT prompt the user) |
 
 Maximum 2 evaluation-rework rounds before escalation. The superpowers-evaluator assesses independently each round -- it does not inherit previous round results.
 

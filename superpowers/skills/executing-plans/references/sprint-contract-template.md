@@ -227,13 +227,12 @@ When the evaluator detects ambiguity, flag it in the contract with a suggested c
 
 1. **Round 1**: Evaluator flags ambiguous items and proposes concrete alternatives in the contract draft
 2. **Round 2**: Generator accepts, counter-proposes, or requests clarification. Evaluator revises and re-issues the contract
-3. **Escalation**: If the item remains unresolved after 2 negotiation rounds, escalate to user via AskUserQuestion with the original and proposed alternatives presented side by side
-4. **User-accepted risk**: If the user declines to clarify, mark the item as `[USER-ACCEPTED RISK]` and proceed with the evaluator's best interpretation
+3. **Autonomous resolution**: If the item remains unresolved after 2 negotiation rounds, mark it as `[AUTO-RESOLVED]` and proceed with the evaluator's best interpretation. Log the original wording and the applied interpretation to the contract file — do NOT prompt the user.
 
-Maximum 2 negotiation rounds before unresolved items escalate to user. This prevents contract negotiation from stalling execution.
+Maximum 2 negotiation rounds before unresolved items auto-resolve. This prevents contract negotiation from stalling execution.
 
 ```markdown
-- [ ] **[USER-ACCEPTED RISK]** "Handles edge cases appropriately"
+- [ ] **[AUTO-RESOLVED]** "Handles edge cases appropriately"
   - Evaluator interpretation: validates non-empty strings and rejects payloads over 1MB
 ```
 

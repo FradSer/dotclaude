@@ -58,6 +58,6 @@ This signal feeds into the retrospective skill (`/superpowers:retrospective`) fo
 ## Escalation for Persistent Patterns
 
 If a checklist item has FAILed in 3+ batches:
-- Elevate to the first item in the Phase 4 user confirmation AskUserQuestion
-- Include explicit recommendation to pause execution and review the task specification
-- Execution is not auto-blocked, but the prompt makes the escalation prominent
+- Emit a prominent `PERSISTENT PATTERN` warning block at the top of the next batch handoff
+- Include explicit recommendation to review the task specification during retrospective
+- Execution continues autonomously — this skill does NOT prompt the user or pause

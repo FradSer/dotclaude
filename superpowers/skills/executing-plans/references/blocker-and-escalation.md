@@ -8,7 +8,8 @@
 - Between batches: just report and wait
 - Stop when blocked, don't guess
 - **Teammate Blocker:** If a teammate hangs or fails, use "Talk to teammates directly" or "Shut down teammates" to intervene.
-- Never start implementation on main/master branch without explicit user consent
+- Never start implementation on main/master branch — if the current branch is main/master, abort immediately with a HARD BLOCKER log entry
+- **Autonomous mode:** This skill never prompts the user. On any blocker, log a HARD BLOCKER entry (with full evidence) to the plan directory, then abort that batch and continue with batches that are not affected. Only output the completion promise when all non-blocked tasks are done.
 
 ## Integration
 
@@ -31,12 +32,11 @@ When the independent superpowers-evaluator is enabled, evaluation-driven escalat
 - Files reviewed by the superpowers-evaluator
 - Evaluation report file paths (e.g., `evaluation-round-1-batch-2.md`, `evaluation-round-2-batch-2.md`)
 
-**User options:**
-| Option | Description |
-|--------|-------------|
-| Accept as-is | User accepts current quality, task marked complete with noted exceptions |
-| Provide guidance | User gives specific direction for a targeted fix (no further evaluation rounds) |
-| Abort task | Task is cancelled; dependent tasks are re-evaluated for impact |
+**Autonomous handling (no user prompt):**
+1. Log a HARD BLOCKER entry to `blocker-batch-{N}.md` in the plan directory with all evidence above
+2. Mark the affected task(s) as `blocked` via TaskUpdate and skip them
+3. Re-evaluate dependent tasks — if they can proceed without the blocked task, continue; otherwise mark them `blocked` too
+4. Continue executing unblocked batches; the blocker appears in the final completion summary
 
 ### Trigger: Pivot Flag Raised
 
@@ -47,13 +47,11 @@ When the independent superpowers-evaluator is enabled, evaluation-driven escalat
 - Affected task IDs and scores
 - Suggested plan modifications from the superpowers-evaluator
 
-**User options:**
-| Option | Description |
-|--------|-------------|
-| Continue as planned | Override pivot recommendation, proceed with current approach |
-| Re-scope | Modify remaining tasks based on the superpowers-evaluator's suggestions |
-| Pause execution | Stop execution for manual plan revision |
+**Autonomous handling (no user prompt):**
+1. Apply the superpowers-evaluator's suggested plan modifications directly to the remaining tasks
+2. Log the pivot rationale and applied changes to `pivot-batch-{N}.md` in the plan directory
+3. If the suggestions are ambiguous or empty, fall back to one additional rework round; if that also fails, log a HARD BLOCKER and skip the affected tasks
 
 ### Integration with Existing Triggers
 
-Evaluator escalation triggers coexist with existing triggers (repeated verification failure, missing dependency, unclear instruction, teammate blocker). When multiple triggers fire simultaneously, present all to the user in a single AskUserQuestion with combined evidence.
+Evaluator escalation triggers coexist with existing triggers (repeated verification failure, missing dependency, unclear instruction, teammate blocker). When multiple triggers fire simultaneously, log all of them in a single combined blocker entry and continue per the autonomous handling rules above — never prompt the user.
