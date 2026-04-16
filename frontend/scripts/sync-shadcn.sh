@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 UPSTREAM_REPO="https://github.com/shadcn-ui/ui.git"
 UPSTREAM_BRANCH="main"
 UPSTREAM_PATH="skills/shadcn"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TARGET_DIR="$SCRIPT_DIR/../skills/shadcn"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/shadcn-sync-$$"
@@ -117,9 +117,9 @@ clone_upstream() {
     git clone --depth 1 --filter=blob:none --sparse \
         "$UPSTREAM_REPO" "$TEMP_DIR/repo" 2>/dev/null
 
-    cd "$TEMP_DIR/repo"
+    cd "$TEMP_DIR/repo" >/dev/null 2>&1
     git sparse-checkout set "$UPSTREAM_PATH" 2>/dev/null
-    cd - > /dev/null
+    cd - >/dev/null 2>&1
 
     if [ ! -d "$TEMP_DIR/repo/$UPSTREAM_PATH" ]; then
         log_error "上游仓库中未找到 $UPSTREAM_PATH 目录"
