@@ -1,0 +1,36 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "description": "Web frontend development toolkit — shadcn/ui component management and Next.js development tools with MCP integration",
+  "keywords": [
+    "frontend",
+    "shadcn",
+    "shadcn-ui",
+    "nextjs",
+    "react",
+    "components",
+    "ui",
+    "tailwind",
+    "mcp",
+    "devtools"
+  ],
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "skills": [
+    "./skills/shadcn/",
+    "./skills/next-devtools-guide/"
+  ],
+  "mcpServers": {
+    "next-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
+      ]
+    }
+  }
+}

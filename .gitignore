@@ -254,6 +254,9 @@ lerna-debug.log*
 # Research and reference materials
 .research/
 
+# Sync backups
+.backup/
+
 # Python
 __pycache__/
 *.py[cod]
