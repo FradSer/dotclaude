@@ -19,7 +19,7 @@ Assess complexity early (from `$ARGUMENTS` + quick codebase scan) and route the 
 | Questions | Sprint contract (1 round) | Sprint contract (1-2 rounds) | Sprint contract (2-3 rounds) |
 | Approval gates | 1 (Phase 1) | 1 (Phase 1) | 2 (Phase 1 + Phase 2 light confirm) |
 | Sub-agents (Design) | None | 2 | 3+ |
-| QA | Self-review checklist | 2 sub-agents | Evaluator with checklist |
+| QA | Evaluator (design mode) | Evaluator (design mode) | Evaluator (design mode) |
 | Output files | `_index.md` + `bdd-specs.md` | `_index.md` + `bdd-specs.md` | All 4 + optional |
 
 ## Initialization
@@ -94,13 +94,14 @@ Create design documents with integrated quality assurance, scaled by complexity.
 
 **Step 2: Integrated QA**
 
-- **Simple**: Self-review -- requirements covered? BDD complete? Sections correct? Folder named correctly? No scope creep?
-- **Medium**: Launch 2 sub-agents in parallel -- (1) Requirements & BDD Review, (2) Consistency & Risk Review. Fix identified issues. No human gate.
-- **Complex**: Resolve latest checklist from `docs/retros/checklists/design-v{N}.md`. Spawn `superpowers:superpowers-evaluator` agent (design mode) with checklist path. Read evaluator report:
-  - PASS: proceed to lightweight user confirmation
-  - REWORK: fix issues, re-run evaluator if needed
-  - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
-  - Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
+**All complexities (mandatory)**: Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. Read the evaluator report:
+
+- PASS: proceed to lightweight user confirmation
+- REWORK: fix issues, re-run evaluator if needed
+- REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
+- Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
+
+Evaluator output is non-negotiable regardless of complexity. For Medium/Complex, pre-evaluator sub-agents may additionally run in parallel for finer-grained structural review (see `./references/design-and-qa.md`); these are complements, not substitutes. If the resolved `design-v{N}.md` does not exist, abort with a clear error naming the expected path — seed the checklist via `/superpowers:retrospective` before retrying.
 
 **Exit**: Design folder created with all required files, QA passed.
 

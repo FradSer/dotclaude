@@ -181,21 +181,21 @@ Before committing, verify plan quality. Scale reflection based on plan size.
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
-### Evaluator Mode (Large Plans)
+### Evaluator Mode (Mandatory — All Plans)
 
-For **large plans** (16+ tasks), spawn the `superpowers:superpowers-evaluator` agent (plan mode) instead of ad-hoc reflection sub-agents. The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
+After the sub-agent reflection (or single-pass self-review for small plans) above, spawn the `superpowers:superpowers-evaluator` agent (plan mode). The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
 
-**When to use**: Auto-activated for plans with 16+ tasks. Smaller plans continue using the existing ad-hoc sub-agent approach above.
+**When to use**: Always. The evaluator runs for every plan regardless of size — sub-agent reflection covers structural analysis (coverage, dependency graph), the evaluator applies the binary checklist verdict. They are complementary, not alternatives. If the resolved `plan-v{N}.md` does not exist, abort with a clear error naming the expected path — seed the checklist via `/superpowers:retrospective` before retrying.
 
 **Process**:
-1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N
+1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. Abort if none exists.
 2. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path] using the plan checklist at docs/retros/checklists/plan-v{N}.md."
-3. Evaluator reads _index.md and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
+3. Evaluator reads `_index.md` and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
 4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as the evaluation report
 5. Main agent reads the report:
    - **PASS**: Proceed to user confirmation
    - **REWORK**: Fix identified issues (add missing tasks, fix dependencies, complete sections), then re-submit to user
-6. Present reflection summary (including checklist results if applicable) to user via AskUserQuestion
+6. Present reflection summary (including checklist results) to user via AskUserQuestion
 
 See `./references/evaluation-checklist-reference.md` for checklist reference details and calibration examples.
 
