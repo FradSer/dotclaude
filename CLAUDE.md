@@ -51,7 +51,9 @@ Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
 
 **Branch Strategy:** develop -> main (merge commits)
 
-**Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions.
+**Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions. `README.md` / `README.zh-CN.md` are a third sync target — their plugin listings drift silently (currently still mention removed `next-devtools`/`shadcn`), so run `/utils:update-readme` whenever you add, remove, or rename a plugin.
+
+**`strict` field in marketplace.json:** Default is `true`. Set `"strict": false` on a plugin entry (see `office`) to relax marketplace validation for plugins that intentionally bundle non-standard content.
 
 **Token budgets (official best practices):**
 - Level 1 (Metadata): ~100 tokens for name + description - always loaded at startup
@@ -67,7 +69,8 @@ Validation script enforces these limits with exit codes:
 1. `mkdir -p plugin-name/{.claude-plugin,skills,agents}`
 2. Add `plugin.json` with name, description, author, version, keywords, license
 3. Add entry to `.claude-plugin/marketplace.json` with matching version
-4. Validate with plugin-optimizer before committing
+4. Run `/utils:update-readme` to sync `README.md` and `README.zh-CN.md`
+5. Validate with plugin-optimizer before committing
 
 **Required plugin.json fields:**
 ```json
