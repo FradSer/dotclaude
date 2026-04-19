@@ -1,31 +1,27 @@
-hook:
-    - conventional
 scopes:
     - name: acpx
-      description: Plugin for agent-to-agent communication via acpx protocol.
+      description: Agent-to-agent communication plugin and skill
     - name: cconfig
-      description: 'Claude config plugin: manages configuration fragments and templates.'
-    - name: cctx
-      description: 'Code-context plugin: provides context and code analysis skills.'
+      description: Claude configuration plugin assets and scripts
+    - name: codec
+      description: Code context plugin for external data fetching
+    - name: frontend
+      description: Frontend skill definitions and synchronization scripts
     - name: git
-      description: 'Git skillset: commit, config, ignore, and branch workflows.'
+      description: Git plugin with skills and configuration
     - name: gitflow
-      description: 'Gitflow skillset: feature, hotfix, release branching strategies.'
+      description: Gitflow branch management skills
     - name: github
-      description: 'GitHub skills: issue, PR, and repository automation.'
+      description: GitHub issue and PR automation skills
     - name: meeseeks
-      description: 'Meeseeks‑vetted plugin: verification and task automation hooks.'
-    - name: next
-      description: 'Next.js devtools: guide and utilities for Next.js projects.'
+      description: Meeseeks vetted plugin with verification hooks
     - name: office
-      description: 'Office skills: browser, patents, and documentation automation.'
-    - name: po
-      description: 'Plugin optimizer: improves plugin performance and best practices.'
-    - name: shadcn
-      description: 'Shadcn plugin: UI component management and customization.'
-    - name: sp
-      description: 'Superpowers plugin: advanced agent planning and execution.'
+      description: Office productivity skills for Lark and others
+    - name: plugin-optimizer
+      description: Plugin optimization and best practices skills
+    - name: superpowers
+      description: Superpowers framework for planning, execution, and evaluation
     - name: swiftui
-      description: 'SwiftUI review plugin: UI review and architecture guidelines.'
-    - name: utls
-      description: 'Utility plugin: shared helper scripts and functions.'
+      description: SwiftUI review and architecture skills
+    - name: utils
+      description: Utility functions and plugins
