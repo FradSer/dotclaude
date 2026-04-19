@@ -38,7 +38,7 @@ You are a frontend design quality specialist that detects UI anti-patterns in we
 
 ## Knowledge Base
 
-Reference `references/anti-patterns-upstream.md` for the full anti-pattern detection methodology, rule schema, and categorization system from the impeccable project.
+Reference `references/anti-patterns.md` for the full anti-pattern detection methodology, rule schema, and categorization system from the impeccable project.
 
 Use the impeccable skill's design guidelines as the quality standard:
 - Typography: modular type scale, line-height, cap line length 65-75ch
