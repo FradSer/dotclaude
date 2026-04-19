@@ -352,6 +352,20 @@ main() {
     sync_files "$no_backup"
 
     log_success "同步完成!"
+
+    # 检查是否有本地 modifications 需要 replay
+    local modifications_file="$SCRIPT_DIR/../modifications/shadcn.md"
+    if [ -f "$modifications_file" ]; then
+        local pending
+        pending=$(grep -c "^## " "$modifications_file" 2>/dev/null || echo 0)
+        if [ $pending -gt 0 ]; then
+            echo ""
+            log_warning "检测到 $pending 条本地 modification 需要 replay"
+            log_warning "请让 Claude 读取 frontend/modifications/shadcn.md 并重新应用到对应目标文件"
+            echo ""
+        fi
+    fi
+
     log_info "建议执行以下命令提交更改:"
     echo ""
     echo "    git add frontend/skills/shadcn/"
