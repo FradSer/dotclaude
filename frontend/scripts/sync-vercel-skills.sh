@@ -294,6 +294,25 @@ main() {
     sync_files "$no_backup"
 
     log_success "同步完成!"
+
+    # 检查是否有本地 modifications 需要 replay
+    local modifications_dir="$SCRIPT_DIR/../modifications"
+    local pending=0
+    for skill in "${SKILL_DIRS[@]}"; do
+        if [ -f "$modifications_dir/$skill.md" ]; then
+            local count
+            count=$(grep -c "^## " "$modifications_dir/$skill.md" 2>/dev/null || echo 0)
+            pending=$((pending + count))
+        fi
+    done
+
+    if [ $pending -gt 0 ]; then
+        echo ""
+        log_warning "检测到 $pending 条本地 modification 需要 replay"
+        log_warning "请让 Claude 读取 frontend/modifications/*.md 并重新应用到对应目标文件"
+        echo ""
+    fi
+
     log_info "建议执行以下命令提交更改:"
     echo ""
     echo "    git add frontend/skills/react-best-practices/ frontend/skills/web-design-guidelines/"
