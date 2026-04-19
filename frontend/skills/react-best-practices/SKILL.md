@@ -65,6 +65,7 @@ Reference these guidelines when:
 - `server-parallel-fetching` - Restructure components to parallelize fetches
 - `server-parallel-nested-fetching` - Chain nested fetches per item in Promise.all
 - `server-after-nonblocking` - Use after() for non-blocking operations
+- `server-rsc-tanstack-hybrid` - Hybrid RSC prefetch + TanStack Query hydration for interactive pages
 
 ### 4. Client-Side Data Fetching (MEDIUM-HIGH)
 
@@ -72,6 +73,10 @@ Reference these guidelines when:
 - `client-event-listeners` - Deduplicate global event listeners
 - `client-passive-event-listeners` - Use passive listeners for scroll
 - `client-localstorage-schema` - Version and minimize localStorage data
+- `client-use-action-state` - React 19: useActionState wires Server Actions to forms
+- `client-use-form-status` - React 19: useFormStatus reads pending from parent form
+- `client-use-optimistic` - React 19: useOptimistic for instant mutation feedback
+- `client-state-management` - Decision tree: useState / URL / TanStack Query / Zustand / Jotai
 
 ### 5. Re-render Optimization (MEDIUM)
 
@@ -90,6 +95,7 @@ Reference these guidelines when:
 - `rerender-use-deferred-value` - Defer expensive renders to keep input responsive
 - `rerender-use-ref-transient-values` - Use refs for transient frequent values
 - `rerender-no-inline-components` - Don't define components inside components
+- `rerender-react-compiler` - React Compiler replaces manual memo/useMemo/useCallback when enabled
 
 ### 6. Rendering Performance (MEDIUM)
 
@@ -128,6 +134,7 @@ Reference these guidelines when:
 - `advanced-event-handler-refs` - Store event handlers in refs
 - `advanced-init-once` - Initialize app once per app load
 - `advanced-use-latest` - useLatest for stable callback refs
+- `advanced-use-hook-promise` - React 19: use() unwraps Promises in Client Components under Suspense
 
 ## How to Use
 
