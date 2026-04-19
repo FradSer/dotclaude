@@ -3,9 +3,9 @@ scopes:
       description: Agent-to-agent communication plugin and skill
     - name: cconfig
       description: Claude configuration plugin assets and scripts
-    - name: codec
+    - name: cod
       description: Code context plugin for external data fetching
-    - name: frontend
+    - name: fe
       description: Frontend skill definitions and synchronization scripts
     - name: git
       description: Git plugin with skills and configuration
@@ -17,9 +17,9 @@ scopes:
       description: Meeseeks vetted plugin with verification hooks
     - name: office
       description: Office productivity skills for Lark and others
-    - name: plugin-optimizer
+    - name: po
       description: Plugin optimization and best practices skills
-    - name: superpowers
+    - name: sp
       description: Superpowers framework for planning, execution, and evaluation
     - name: swiftui
       description: SwiftUI review and architecture skills
