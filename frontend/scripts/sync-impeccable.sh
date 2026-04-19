@@ -192,7 +192,7 @@ check_diff() {
 
     # 检查 anti-patterns agent
     local upstream_agent="$TEMP_DIR/repo/$UPSTREAM_AGENTS_PATH/anti-patterns.md"
-    local local_agent="$TARGET_AGENTS_DIR/references/anti-patterns-upstream.md"
+    local local_agent="$TARGET_AGENTS_DIR/references/anti-patterns.md"
     if [ -f "$upstream_agent" ]; then
         if [ ! -f "$local_agent" ]; then
             log_info "  anti-patterns agent: 新文件"
@@ -261,8 +261,8 @@ sync_skill() {
     # impeccable: 保存上游 SKILL.md 到 reference/
     if [ "$is_impeccable" = true ] && [ -f "$upstream_skill/SKILL.md" ]; then
         mkdir -p "$skill_target/reference"
-        cp "$upstream_skill/SKILL.md" "$skill_target/reference/design-guide-upstream.md"
-        log_info "  $target_name: 上游 SKILL.md 已保存为 reference/design-guide-upstream.md"
+        cp "$upstream_skill/SKILL.md" "$skill_target/reference/SKILL.md"
+        log_info "  $target_name: 上游 SKILL.md 已保存为 reference/SKILL.md"
     fi
 
     # 子 skill: 将 user-invocable 改为 false（仅 impeccable 保持 true）
@@ -298,7 +298,7 @@ sync_agent() {
     fi
 
     mkdir -p "$target_ref_dir"
-    cp "$upstream_agent" "$target_ref_dir/anti-patterns-upstream.md"
+    cp "$upstream_agent" "$target_ref_dir/anti-patterns.md"
     log_success "  anti-patterns agent: 已保存原始文本到 agents/references/"
 }
 
