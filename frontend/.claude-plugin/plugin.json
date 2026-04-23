@@ -1,7 +1,7 @@
 {
   "name": "frontend",
-  "version": "0.2.0",
-  "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, and impeccable design skills",
+  "version": "0.3.0",
+  "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills",
   "keywords": [
     "frontend",
     "shadcn",
@@ -12,7 +12,9 @@
     "ui",
     "tailwind",
     "impeccable",
-    "anti-patterns"
+    "anti-patterns",
+    "design-tokens",
+    "design.md"
   ],
   "author": {
     "name": "Frad LEE",
@@ -23,6 +25,7 @@
     "./skills/impeccable/"
   ],
   "skills": [
+    "./skills/design-md/",
     "./skills/shadcn/",
     "./skills/next-devtools-guide/",
     "./skills/react-best-practices/",

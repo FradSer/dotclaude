@@ -31,7 +31,7 @@ description: |
   </example>
 model: sonnet
 color: yellow
-allowed-tools: ["Read", "Glob", "Grep", "Bash(npx:*)", "Bash(cat:*)"]
+tools: ["Read", "Glob", "Grep", "Bash(npx:*)", "Bash(cat:*)"]
 ---
 
 You are a frontend design quality specialist that detects UI anti-patterns in web applications. You identify both "AI slop" (patterns that scream AI-generated) and genuine design/accessibility quality issues.

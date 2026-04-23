@@ -205,13 +205,15 @@ sync_skill() {
 
     log_success "  $skill_name: 已同步 $count 个项目"
 
-    local sync_md="$SYNC_FILE"
-    if [ -f "$sync_md" ]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"
-        else
-            sed -i "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"
-        fi
+    # 更新 SYNC.md 对应 section 的同步时间
+    if [ -f "$SYNC_FILE" ]; then
+        local today
+        today=$(date +%Y-%m-%d)
+        awk -v section="## $skill_name" -v today="$today" '
+            /^## / { in_section = ($0 == section) }
+            in_section && /^- \*\*上次同步\*\*:/ { print "- **上次同步**: " today; next }
+            { print }
+        ' "$SYNC_FILE" > "$SYNC_FILE.tmp" && mv "$SYNC_FILE.tmp" "$SYNC_FILE"
     fi
 }
 
@@ -266,10 +268,29 @@ main() {
     sync_files "$no_backup"
 
     log_success "同步完成!"
+
+    # 检查是否有本地 modifications 需要 replay
+    local modifications_dir="$SCRIPT_DIR/../modifications"
+    local pending=0
+    for skill in "${SKILL_DIRS[@]}"; do
+        if [ -f "$modifications_dir/$skill.md" ]; then
+            local count
+            count=$(grep -c "^## " "$modifications_dir/$skill.md" 2>/dev/null || echo 0)
+            pending=$((pending + count))
+        fi
+    done
+
+    if [ $pending -gt 0 ]; then
+        echo ""
+        log_warning "检测到 $pending 条本地 modification 需要 replay"
+        log_warning "请让 Claude 读取 frontend/modifications/*.md 并重新应用到对应目标文件"
+        echo ""
+    fi
+
     log_info "建议执行以下命令提交更改:"
     echo ""
     echo "    git add frontend/skills/supabase/ frontend/skills/supabase-postgres-best-practices/"
-    echo "    git-agent commit --no-stage --intent \"sync supabase agent skills from upstream\" --co-author \"Claude Opus 4.6 <noreply@anthropic.com>\""
+    echo "    git-agent commit --no-stage --intent \"sync supabase agent skills from upstream\" --co-author \"Claude Opus 4.7 <noreply@anthropic.com>\""
     echo ""
 }
 

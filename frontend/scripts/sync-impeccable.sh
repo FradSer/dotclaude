@@ -261,30 +261,26 @@ sync_skill() {
     # impeccable: 保存上游 SKILL.md 到 reference/
     if [ "$is_impeccable" = true ] && [ -f "$upstream_skill/SKILL.md" ]; then
         mkdir -p "$skill_target/reference"
-        cp "$upstream_skill/SKILL.md" "$skill_target/reference/SKILL.md"
-        log_info "  $target_name: 上游 SKILL.md 已保存为 reference/SKILL.md"
+        cp "$upstream_skill/SKILL.md" "$skill_target/reference/upstream-SKILL.md"
+        log_info "  $target_name: 上游 SKILL.md 已保存为 reference/upstream-SKILL.md"
     fi
 
-    # 子 skill: 将 user-invocable 改为 false（仅 impeccable 保持 true）
-    if [ "$is_impeccable" = false ] && [ -f "$skill_target/SKILL.md" ]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' 's/^user-invocable: true$/user-invocable: false/' "$skill_target/SKILL.md"
-        else
-            sed -i 's/^user-invocable: true$/user-invocable: false/' "$skill_target/SKILL.md"
-        fi
-    fi
+    # 子 skill 保留 user-invocable: true，让 frontend-expert agent 可以通过
+    # Skill 工具显式加载它们（否则 Skill tool 只能调用列出的 skills）
 
     log_success "  $target_name: 已同步 $count 个项目"
+}
 
-    # 更新 SYNC.md 时间
-    local sync_md="$SYNC_FILE"
-    if [ -f "$sync_md" ]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"
-        else
-            sed -i "s/\*\*上次同步\*\*: .*/\*\*上次同步\*\*: $(date +%Y-%m-%d)/" "$sync_md"
-        fi
-    fi
+# 更新 SYNC.md impeccable section 的时间（每次 sync 只调用一次）
+update_sync_timestamp() {
+    [ ! -f "$SYNC_FILE" ] && return 0
+    local today
+    today=$(date +%Y-%m-%d)
+    awk -v section="## impeccable" -v today="$today" '
+        /^## / { in_section = ($0 == section) }
+        in_section && /^- \*\*上次同步\*\*:/ { print "- **上次同步**: " today; next }
+        { print }
+    ' "$SYNC_FILE" > "$SYNC_FILE.tmp" && mv "$SYNC_FILE.tmp" "$SYNC_FILE"
 }
 
 # 同步 anti-patterns agent 原始文本
@@ -322,6 +318,7 @@ sync_files() {
     find "$TARGET_SKILLS_DIR" -name "*.mjs" -exec chmod +x {} \; 2>/dev/null || true
     find "$TARGET_SKILLS_DIR" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
+    update_sync_timestamp
     log_success "共同步 $skill_count 个 skills + 1 个 agent 参考文件"
 }
 
@@ -367,10 +364,32 @@ main() {
     sync_files "$no_backup"
 
     log_success "同步完成!"
+
+    # 检查是否有本地 modifications 需要 replay
+    local modifications_dir="$SCRIPT_DIR/../modifications"
+    local pending=0
+    while IFS= read -r -d '' mod_file; do
+        local name
+        name=$(basename "$mod_file" .md)
+        # impeccable 或 impeccable-* 都属于本脚本管辖
+        if [ "$name" = "impeccable" ] || [[ "$name" == impeccable-* ]]; then
+            local count
+            count=$(grep -c "^## " "$mod_file" 2>/dev/null || echo 0)
+            pending=$((pending + count))
+        fi
+    done < <(find "$modifications_dir" -maxdepth 1 -name "*.md" -not -name "README.md" -print0 2>/dev/null)
+
+    if [ $pending -gt 0 ]; then
+        echo ""
+        log_warning "检测到 $pending 条本地 modification 需要 replay"
+        log_warning "请让 Claude 读取 frontend/modifications/impeccable*.md 并重新应用到对应目标文件"
+        echo ""
+    fi
+
     log_info "建议执行以下命令提交更改:"
     echo ""
     echo "    git add frontend/skills/ frontend/agents/references/"
-    echo "    git-agent commit --no-stage --intent \"sync impeccable design skills from upstream\" --co-author \"Claude Opus 4.6 <noreply@anthropic.com>\""
+    echo "    git-agent commit --no-stage --intent \"sync impeccable design skills from upstream\" --co-author \"Claude Opus 4.7 <noreply@anthropic.com>\""
     echo ""
 }
 

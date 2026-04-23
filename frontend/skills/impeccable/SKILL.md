@@ -28,7 +28,7 @@ Commit to a BOLD aesthetic direction with: Purpose, Tone (pick an extreme -- min
 
 ## Design Guidelines
 
-See `reference/SKILL.md` for the full design guide covering:
+See `reference/upstream-SKILL.md` for the full design guide covering:
 - Typography (modular scale, fluid sizing, font selection)
 - Color & Contrast (OKLCH, 60-30-10 rule, tinted neutrals)
 - Layout & Space (4pt scale, semantic tokens, gap not margins)

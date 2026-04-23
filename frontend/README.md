@@ -2,7 +2,15 @@
 
 Web frontend development toolkit combining component management, framework tools, best practices, and design skills.
 
-## Skills (24)
+## Skills (25)
+
+### Design System Source of Truth
+
+
+| Skill     | Source                                                                        | Sync Script           |
+| --------- | ----------------------------------------------------------------------------- | --------------------- |
+| design-md | [google-labs-code/design.md](https://github.com/google-labs-code/design.md)   | `sync-design-md.sh`   |
+
 
 ### Component & Framework
 
@@ -62,11 +70,15 @@ Run these commands from the `frontend/` directory:
 # Impeccable design skills + anti-patterns agent (from pbakaus/impeccable)
 ./scripts/sync-impeccable.sh
 
+# DESIGN.md spec (from google-labs-code/design.md)
+./scripts/sync-design-md.sh
+
 # Check all for updates (dry run)
 ./scripts/sync-shadcn.sh --check
 ./scripts/sync-vercel-skills.sh --check
 ./scripts/sync-supabase-skills.sh --check
 ./scripts/sync-impeccable.sh --check
+./scripts/sync-design-md.sh --check
 ```
 
 ## MCP Server

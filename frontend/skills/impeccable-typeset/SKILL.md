@@ -2,7 +2,7 @@
 name: typeset
 description: Improves typography by fixing font choices, hierarchy, sizing, weight, and readability so text feels intentional. Use when the user mentions fonts, type, readability, text hierarchy, sizing looks off, or wants more polished, intentional typography.
 version: 2.1.1
-user-invocable: false
+user-invocable: true
 argument-hint: "[target]"
 ---
 
