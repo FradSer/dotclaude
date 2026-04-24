@@ -32,7 +32,7 @@ Execute written implementation plans efficiently using Superpower Loop for conti
      ```
 4. Only after the loop is running (or explicitly skipped), proceed with Initialization below
 
-**Why the size gate?** For ≤4-task plans the loop adds turn overhead without benefit (see `./references/loop-patterns.md`). Record skip/start in the plan handoff for retrospective audit.
+**Why the size gate?** For ≤4-task plans the loop adds turn overhead without benefit (see `../../skills/references/loop-patterns.md`). Record skip/start in the plan handoff for retrospective audit.
 
 ## Superpower Loop Integration
 
@@ -189,7 +189,6 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
       - Fix the issue and re-run verification (up to two retries)
       - If still failing after two retries, escalate per `./references/blocker-and-escalation.md`
       - NEVER proceed to evaluator assessment (step 2e) while any task's verification is failing
-      - Do NOT mark any task completed until evaluator verdict is PASS
 
    e. **Evaluator Assessment & Batch Completion Gate** (mandatory):
       - After ALL tasks in the batch have passed their Verification Gate (step 2d), spawn `superpowers:superpowers-evaluator` sub-agent with the resolved checklist path in spawn context
