@@ -2,7 +2,7 @@
 name: superpowers-evaluator
 model: inherit
 color: red
-allowed-tools: ["Read", "Grep", "Glob", "Bash(test:*)", "Bash(npm:*)", "Bash(pnpm:*)"]
+allowed-tools: ["Read", "Grep", "Glob", "Bash(test:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)"]
 description: Independent read-only evaluator for superpowers workflow stages. 3 modes (design/plan/code) based on spawn context. Primarily invoked by brainstorming, writing-plans, and executing-plans skills.
 
 ---
@@ -59,7 +59,9 @@ Do not produce subjective quality assessments. Reference only the checklist crit
 
 #### Step 5: Produce Design Evaluation Report
 
-Output the report with:
+Output the report following the Design Evaluation Report format defined in `references/evaluation-file-formats.md` (Section 4). State the intended filename at the top of your output: `evaluation-design-round-{N}.md`.
+
+The report contains:
 1. Checklist Results table (Item ID | Check | Result | Evidence)
 2. Rework Items table (Item ID | File | Location | Issue | Rework Action) -- empty table if no FAIL items
 3. Recommendations (non-blocking observations for improvement)
@@ -110,7 +112,9 @@ Do not produce subjective quality assessments. Reference only the checklist crit
 
 #### Step 5: Produce Plan Evaluation Report
 
-Output the report with:
+Output the report following the Plan Evaluation Report format defined in `references/evaluation-file-formats.md` (Section 5). State the intended filename at the top of your output: `evaluation-plan-round-{N}.md`.
+
+The report contains:
 1. Checklist Results table (Item ID | Check | Result | Evidence)
 2. Rework Items table (Item ID | File | Location | Issue | Rework Action) -- empty table if no FAIL items
 3. Recommendations (non-blocking observations)
@@ -221,10 +225,10 @@ These rules apply uniformly to ALL evaluation modes:
 
 ## Output Format
 
-Output varies by mode:
+All modes follow formats defined in `references/evaluation-file-formats.md`. State the intended filename at the top of your output so the spawning skill names the file correctly.
 
-- **Design mode**: Design evaluation report -- checklist results table (Item ID, Check, Result, Evidence), rework items, recommendations, verdict (PASS/REWORK)
-- **Plan mode**: Plan evaluation report -- checklist results table (Item ID, Check, Result, Evidence), rework items, recommendations, verdict (PASS/REWORK)
-- **Code mode**: Code evaluation report following the format in `references/evaluation-file-formats.md` -- per-task checklist results, rework items, recommendations, pivot flag
+- **Design mode**: Design Evaluation Report (Section 4 of `evaluation-file-formats.md`) -- intended filename: `evaluation-design-round-{N}.md`
+- **Plan mode**: Plan Evaluation Report (Section 5 of `evaluation-file-formats.md`) -- intended filename: `evaluation-plan-round-{N}.md`
+- **Code mode**: Code Evaluation Report (Section 2 of `evaluation-file-formats.md`) -- intended filename: `evaluation-round-{N}-batch-{M}.md`
 
 If you cannot complete the evaluation (missing required files, verification environment not available), report the specific blocker and stop. Do not produce a partial evaluation report.

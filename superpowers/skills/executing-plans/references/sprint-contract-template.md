@@ -17,7 +17,7 @@ The contract format follows the Sprint Contract Format defined in `evaluation-fi
 
 ## Template Structure
 
-Each sprint contract contains exactly 4 sections in this order, matching the Sprint Contract Format from `evaluation-file-formats.md`.
+Each sprint contract contains exactly 5 sections in this order, matching the Sprint Contract Format from `evaluation-file-formats.md`.
 
 ### Section 1: Tasks
 
@@ -70,7 +70,25 @@ Table mapping test tasks to their implementation counterparts with expected BDD 
 Tasks not part of a Red-Green pair have no Red state expectation.
 ```
 
-### Section 4: Sign-off
+### Section 4: Evaluation Criteria Preview
+
+List the checklist items (ID + description) the evaluator will apply to this batch. This feedforward lets the generator know upfront what will be assessed, improving first-pass output quality.
+
+```markdown
+## Evaluation Criteria Preview
+
+The evaluator will apply the following checklist items to this batch:
+
+| Item ID | Description |
+|---------|-------------|
+| CODE-VER-01 | All verification commands exit with code 0 |
+| CODE-QUAL-01 | No TODO/FIXME/NotImplementedError patterns in produced files |
+| CODE-QUAL-02 | No hardcoded stubs, skeleton-only bodies, or placeholder implementations |
+```
+
+Derive this table by reading the latest `docs/retros/checklists/code-v{N}.md` and extracting each item's ID and description. Do not embed the full checklist item — ID and description only.
+
+### Section 5: Sign-off
 
 Contract generator identity and readiness status.
 
@@ -272,6 +290,7 @@ For `light` intensity, a simplified plan-level summary contract replaces per-bat
 | File naming | `sprint-contract-batch-{N}.md` | `sprint-contract-summary.md` |
 | Acceptance criteria | Per-task checklist | Grouped by milestone or feature area |
 | Red-Green pairs | Fully enumerated | Listed but not expanded with state descriptions |
+| Evaluation Criteria Preview | Per-batch checklist items | Single plan-level checklist items table |
 | Ambiguity handling | Per-batch auto-resolution notes | Plan-level auto-resolution notes |
 | Sign-off | Per batch | Single sign-off for all tasks |
 
@@ -309,6 +328,16 @@ For `light` intensity, a simplified plan-level summary contract replaces per-bat
 |-----------|-----------|
 | 002 | 003 |
 | 005 | 004 |
+
+## Evaluation Criteria Preview
+
+The evaluator will apply the following checklist items to all batches in this plan:
+
+| Item ID | Description |
+|---------|-------------|
+| CODE-VER-01 | All verification commands exit with code 0 |
+| CODE-QUAL-01 | No TODO/FIXME/NotImplementedError patterns in produced files |
+| CODE-QUAL-02 | No hardcoded stubs, skeleton-only bodies, or placeholder implementations |
 
 ## Sign-off
 

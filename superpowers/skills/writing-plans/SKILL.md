@@ -3,7 +3,7 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Writing Plans
@@ -203,7 +203,7 @@ After the sub-agent reflection (or single-pass self-review for small plans) abov
 1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. Abort if none exists.
 2. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path] using the plan checklist at docs/retros/checklists/plan-v{N}.md."
 3. Evaluator reads `_index.md` and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
-4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as the evaluation report
+4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as `evaluation-plan-round-{N}.md`
 5. Main agent reads the report:
    - **PASS**: Proceed to user confirmation
    - **REWORK**: Fix identified issues (add missing tasks, fix dependencies, complete sections), then re-submit to user

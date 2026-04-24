@@ -32,7 +32,7 @@ Execute written implementation plans efficiently using Superpower Loop for conti
      ```
 4. Only after the loop is running (or explicitly skipped), proceed with Initialization below
 
-**Why the size gate?** The loop encodes a context-anxiety assumption from older models (see Anthropic harness-design blog: "assumption testing"). For ≤4-task plans the loop adds turn overhead without benefit. Record skip/start in the plan handoff so retrospective can audit the threshold.
+**Why the size gate?** For ≤4-task plans the loop adds turn overhead without benefit (see `./references/loop-patterns.md`). Record skip/start in the plan handoff for retrospective audit.
 
 ## Superpower Loop Integration
 
@@ -81,12 +81,9 @@ These rules are non-negotiable and override all other guidance.
 1. Verification commands from the task file exit with code 0
 2. Expected output matches actual output (no test failures, no assertion errors)
 3. No prohibited patterns exist in any file written during the task
+4. Evaluator verdict for the batch is PASS (see Phase 3 step 2e)
 
-**On verification failure:**
-- The task MUST remain `in_progress`
-- Fix the issue and re-run verification
-- If blocked after two retries, escalate per `./references/blocker-and-escalation.md`
-- NEVER mark a task `completed` after a failed verification
+See Phase 3 step 2d HARD GATE for verification failure handling.
 
 ## Phase 1: Plan Review & Understanding
 
@@ -191,16 +188,15 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
       - The task MUST remain `in_progress`
       - Fix the issue and re-run verification (up to two retries)
       - If still failing after two retries, escalate per `./references/blocker-and-escalation.md`
-      - NEVER proceed to step 2e while any verification is failing
+      - NEVER proceed to evaluator assessment (step 2e) while any task's verification is failing
+      - Do NOT mark any task completed until evaluator verdict is PASS
 
-   e. **Mark Task Complete**: Only after ALL verification steps in 2d pass, use TaskUpdate to set status to `completed`. Include in the update: which verification commands ran and that they passed.
-
-   f. **Evaluator Assessment** (mandatory):
-      - After all tasks in batch pass the Verification Gate, spawn `superpowers:superpowers-evaluator` sub-agent with the resolved checklist path in spawn context
+   e. **Evaluator Assessment & Batch Completion Gate** (mandatory):
+      - After ALL tasks in the batch have passed their Verification Gate (step 2d), spawn `superpowers:superpowers-evaluator` sub-agent with the resolved checklist path in spawn context
       - The superpowers-evaluator reads sprint contract + produced artifacts, applies binary checklist evaluation
       - Evaluator outputs report content as text; the executing-plans skill writes it to `evaluation-round-{N}-batch-{M}.md` in the plan directory
-      - If verdict is REWORK: generator reads rework items from the superpowers-evaluator, fixes issues, re-runs verification (max 2 evaluation-rework rounds, then escalate per `./references/blocker-and-escalation.md`)
-      - If verdict is PASS: proceed to step 2e (mark complete) for remaining tasks
+      - If verdict is **PASS**: mark ALL tasks in the batch completed — use TaskUpdate to set status to `completed` for each task, noting which verification commands ran and that they passed
+      - If verdict is **REWORK**: generator reads rework items from the superpowers-evaluator, fixes issues, re-runs verification (max 2 evaluation-rework rounds, then escalate per `./references/blocker-and-escalation.md`). Do NOT mark any task completed until evaluator verdict is PASS
       - If **pivot flag** is set: log the superpowers-evaluator recommendation to the evaluation report and continue execution based on that recommendation (do NOT ask the user)
       - See `./references/evaluation-file-formats.md` for report format
       - **Intensity modifiers**: `thorough` = per-task evaluation; `standard` = per-batch (default); `light` = end-of-plan only
@@ -222,13 +218,13 @@ Close the loop with structured evidence and intra-plan learning.
    ```
    Any task without a PASS evidence block is NOT verified. Do not proceed to confirmation until all tasks have PASS status.
 
-2. **Pattern Scan**: Read all evaluation reports in the plan directory, identify checklist items that FAILed in 2+ distinct batches, and inject a "Recurring Failure Patterns" block into the next sprint contract preamble. See `./references/intra-plan-learning.md` for format.
+2. **Pattern Scan**: Scan evaluation reports for checklist items that FAILed in 2+ distinct batches; inject "Recurring Failure Patterns" into the next sprint contract preamble. See `./references/intra-plan-learning.md`.
 
-3. **Escalation for Persistent Patterns**: If a checklist item FAILed in 3+ batches, log a prominent "PERSISTENT PATTERN" warning to the batch handoff block with a recommendation to review the task specification during retrospective. Continue execution — do NOT pause for user input. See `./references/intra-plan-learning.md` for details.
+3. **Persistent Patterns**: If a checklist item FAILed in 3+ batches, emit a `PERSISTENT PATTERN` warning in the batch handoff. Continue execution autonomously. See `./references/intra-plan-learning.md`.
 
-4. **Batch Handoff**: After each batch completes, emit a lightweight handoff block to conversation context (progress, patterns, modified files, next batch scope). See `./references/intra-plan-learning.md` for format.
+4. **Batch Handoff**: Emit a lightweight handoff block to context (progress, patterns, modified files, next batch scope). See `./references/intra-plan-learning.md`.
 
-5. **Emit Evidence Summary**: Output the evidence summary (with pattern notes if any) to conversation context, then proceed immediately to the next batch. Do NOT ask the user for confirmation — this skill runs fully autonomously.
+5. **Proceed**: Output the evidence summary, then move immediately to the next batch — no user confirmation.
 
 6. **Loop**: Repeat Phase 3-4 until all batches complete.
 
@@ -245,12 +241,7 @@ Commit the implementation changes using git-agent (with git fallback).
 2. On auth error, retry with `--free` flag
 3. **Fallback**: If git-agent is unavailable or fails, stage files with `git add` and use `git commit` with conventional format
 
-See `../../skills/references/git-commit.md` for detailed patterns, commit message templates, and requirements.
-
-**Critical requirements**:
-- Commit only after all Phase 4 verification gates have passed (no failing tasks)
-- Commit should reflect the completed feature, not individual tasks
-- Use meaningful scope (e.g., `feat(auth):`, `feat(ui):`, `feat(db):`)
+See `../../skills/references/git-commit.md` for patterns, templates, and requirements. Commit only after all tasks are completed; use a meaningful feature scope.
 
 ## Phase 6: Completion
 

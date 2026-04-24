@@ -53,14 +53,13 @@ For test+impl pairs sharing the same NNN prefix:
 
 For independent multi-task batches:
 
-1. **Plan**: Use `EnterPlanMode` to plan batch execution, define file ownership
-2. **Approve**: Use `ExitPlanMode` to get approval
-3. **Launch**: Create Agent Team (3+ tasks) or subagents (2 tasks)
+1. **Launch**: Create Agent Team (3+ tasks) or subagents (2 tasks)
    - If agents edit overlapping files, add `isolation: "worktree"` for isolation
-4. **Assign**: Give each agent its task with full context and file boundaries
-5. **Wait**: Wait for all agents to complete
-6. **Verify**: Run verification commands for all tasks
-7. **Complete**: Use `TaskUpdate` to mark tasks completed
+2. **Assign**: Give each agent its task with full context and file boundaries
+3. **Wait**: Wait for all agents to complete
+4. **Verify**: Run verification commands for all tasks
+5. **Evaluate**: Spawn superpowers-evaluator after all tasks pass verification
+6. **Complete**: Use `TaskUpdate` to mark tasks completed only after evaluator verdict is PASS
 
 #### Linear Mode (Last Resort)
 

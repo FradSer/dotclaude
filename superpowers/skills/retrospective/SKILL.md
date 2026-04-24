@@ -12,10 +12,92 @@ Analyze evaluation patterns across completed plans, identify recurring failures,
 
 **Chain position**: This skill is the downstream consumer of executing-plans Phase 4 "Checklist Evolution Candidates". It aggregates signals across plans and produces versioned checklist updates.
 
+## Phase 0: Bootstrap (run only when no checklists exist)
+
+Before Phase 1, check whether `docs/retros/checklists/` contains any `{mode}-v1.md` files.
+
+If the directory is missing or empty, seed the initial v1 checklists:
+
+1. Create `docs/retros/checklists/` if it does not exist
+2. For each mode that lacks a v1 file, create a minimal starter checklist:
+
+**`design-v1.md`** — minimum viable design checklist:
+```markdown
+# Design Checklist v1
+
+### REQ-TRACE-01: All requirements map to at least one BDD scenario
+**Check method:** `grep -c "Scenario:" bdd-specs.md` -- count must equal or exceed scenario count implied by requirements
+**Evidence format:** N/M requirements traced
+**Rework format:** Add missing scenario for requirement: {requirement}
+# Type: inferential
+
+### SCEN-CONC-01: Given clauses use specific, concrete data values
+**Check method:** `grep -n "Given" bdd-specs.md` -- flag any clause containing "some", "a valid", "appropriate", or other vague qualifiers
+**Evidence format:** bdd-specs.md:{line} -- "{clause text}"
+**Rework format:** Replace "{vague phrase}" with concrete value at bdd-specs.md:{line}
+# Type: computational
+```
+
+**`plan-v1.md`** — minimum viable plan checklist:
+```markdown
+# Plan Checklist v1
+
+### PLAN-COV-01: Every design BDD scenario maps to at least one task
+**Check method:** Cross-reference scenario titles in bdd-specs.md against task subject lines and BDD Scenario sections in task files
+**Evidence format:** N/M scenarios covered; uncovered: {scenario titles}
+**Rework format:** Add task for scenario: {scenario title}
+# Type: inferential
+
+### DEP-01: No circular dependencies
+**Check method:** Walk depends-on graph from _index.md; detect any cycle
+**Evidence format:** Cycle detected: task-{A} -> task-{B} -> ... -> task-{A} | No cycles
+**Rework format:** Break cycle by removing dependency: task-{A} depends-on task-{B}
+# Type: computational
+
+### DEP-02: All depends-on references resolve to existing task IDs
+**Check method:** For each depends-on ID in _index.md, confirm a matching task-{ID}-*.md file exists
+**Evidence format:** Unresolved: {ID list} | All resolved
+**Rework format:** Fix depends-on reference {ID} in {task file}
+# Type: computational
+
+### TEST-01: Every impl task has a corresponding test task
+**Check method:** For each task-{NNN}-*-impl.md, check for matching task-{NNN}-*-test.md
+**Evidence format:** Unpaired impl tasks: {list} | All paired
+**Rework format:** Add test task for: task-{NNN}-{slug}-impl.md
+# Type: computational
+```
+
+**`code-v1.md`** — minimum viable code checklist:
+```markdown
+# Code Checklist v1
+
+### CODE-VER-01: All verification commands exit with code 0
+**Check method:** Run each verification command from the task file; record exit code
+**Evidence format:** Command: {cmd} | Exit: {code} | Output: {last 5 lines}
+**Rework format:** Fix failing verification: {cmd} exits {code}; error: {output}
+# Type: computational
+
+### CODE-QUAL-01: No TODO/FIXME/NotImplementedError/pass-only patterns in produced files
+**Check method:** `grep -rn "TODO\|FIXME\|NotImplementedError\|raise NotImplementedError" {files}`
+**Evidence format:** {file}:{line} -- {match}
+**Rework format:** Remove placeholder at {file}:{line}; implement real logic
+# Type: computational
+
+### CODE-QUAL-02: No skeleton-only files (imports + type declarations only, no logic)
+**Check method:** For each produced file, check that at least one function/method contains a non-trivial body (not just `pass`, `...`, `return None`, or a hardcoded literal)
+**Evidence format:** {file} -- all bodies are stubs
+**Rework format:** Implement real logic in {file} function {name}
+# Type: computational
+```
+
+3. Log: "Seeded initial checklists: design-v1.md, plan-v1.md, code-v1.md. Proceeding with retrospective."
+
+Skip Phase 0 entirely if any v1 file already exists for any mode.
+
 ## Phase 1: Data Collection
 
 1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports.
-2. **Resolve evals**: For each plan path, look for evaluation reports in the plan directory (`evaluation-round-*.md`). If a sibling `*-evals/` directory exists, read from there instead.
+2. **Resolve evals**: For each plan path, look for evaluation reports in the plan directory (`evaluation-round-*.md`, `evaluation-design-round-*.md`, `evaluation-plan-round-*.md`). If a sibling `*-evals/` directory exists, read from there instead.
 3. **Read checklists**: Scan `docs/retros/checklists/` for latest versions of each mode (`{mode}-v{N}.md`, highest N).
 4. **Read reports**: For each plan, read all evaluation report files. Extract per-item results (Item ID, Result, Evidence) and rework items.
 5. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.

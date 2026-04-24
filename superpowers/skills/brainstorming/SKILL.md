@@ -2,7 +2,7 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -94,10 +94,10 @@ Create design documents with integrated quality assurance, scaled by complexity.
 
 **Step 2: Integrated QA**
 
-**All complexities (mandatory)**: Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. Read the evaluator report:
+**All complexities (mandatory)**: Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. The evaluator outputs report content as text; write it to the design folder as `evaluation-design-round-{N}.md`. Then read the report verdict:
 
 - PASS: proceed to lightweight user confirmation
-- REWORK: fix issues, re-run evaluator if needed
+- REWORK: fix issues, re-run evaluator if needed (writes `evaluation-design-round-2.md`, etc.)
 - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
 - Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
 

@@ -61,6 +61,16 @@ All evaluation files live in the plan directory alongside task files (e.g., `doc
 
 Tasks not part of a Red-Green pair have no Red state expectation.
 
+## Evaluation Criteria Preview
+
+The evaluator will apply the following checklist items to this batch:
+
+| Item ID | Description |
+|---------|-------------|
+| CODE-VER-01 | All verification commands exit with code 0 |
+| CODE-QUAL-01 | No TODO/FIXME/NotImplementedError patterns in produced files |
+| CODE-QUAL-02 | No hardcoded stubs, skeleton-only bodies, or placeholder implementations |
+
 ## Sign-off
 
 - **Generator:** [agent identifier]
@@ -75,6 +85,7 @@ Tasks not part of a Red-Green pair have no Red state expectation.
 | Tasks table | Yes | Every task in the batch with ID, subject, and type |
 | Acceptance Criteria | Yes | Per-task checklist with testable, binary pass/fail items |
 | Red-Green Pairs | Yes | Omit rows if batch has no pairs; keep the section with "None" |
+| Evaluation Criteria Preview | Yes | Checklist items (ID + description) the evaluator will apply; derived from latest `code-v{N}.md` |
 | Sign-off | Yes | Contract generator identity and generation timestamp |
 
 ## 2. Evaluation Report
@@ -209,3 +220,101 @@ If blockers exist, list each with:
 | Key Decisions | Yes | Architectural or process decisions made during execution |
 | File Ownership | Yes | Maps every modified file to the task that last changed it |
 | Blockers | Yes | Active blockers; write "None" if clear |
+
+## 4. Design Evaluation Report
+
+**File naming:** `evaluation-design-round-{N}.md` (e.g., `evaluation-design-round-1.md`)
+
+**Purpose:** Assess a completed design against the design checklist. The evaluator produces the assessment content; the brainstorming skill persists it as a file in the design folder.
+
+**Written by:** brainstorming skill (from evaluator text output)
+
+### Format
+
+```markdown
+# Design Evaluation Round {N}
+
+## Checklist Results
+
+| Item ID | Check | Result | Evidence |
+|---------|-------|--------|----------|
+| REQ-TRACE-01 | All requirements map to >=1 scenario | PASS | 5/5 requirements traced |
+| SCEN-CONC-01 | Given clauses use specific data | FAIL | bdd-specs.md:23 -- "some valid user" |
+
+## Rework Items
+
+| Item ID | File | Location | Issue | Rework Action |
+|---------|------|----------|-------|---------------|
+| SCEN-CONC-01 | bdd-specs.md | line 23 | Replace "some valid user" with concrete values | Use specific username and email values |
+
+## Recommendations
+
+Non-blocking observations that improve quality but do not require rework:
+
+- Consider adding error scenarios for network timeout conditions
+
+## Verdict: REWORK
+1 item FAIL: SCEN-CONC-01
+```
+
+If verdict is PASS, the Rework Items table remains present but empty.
+
+### Field Definitions
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| Checklist Results | Yes | One row per checklist item with PASS/FAIL and evidence |
+| Rework Items | Yes | Empty table if no FAIL items; keep the section |
+| Recommendations | Yes | Non-blocking observations; empty list if none |
+| Verdict | Yes | PASS (all items PASS) or REWORK (count and IDs of FAIL items) |
+
+## 5. Plan Evaluation Report
+
+**File naming:** `evaluation-plan-round-{N}.md` (e.g., `evaluation-plan-round-1.md`)
+
+**Purpose:** Assess a completed plan against the plan checklist. The evaluator produces the assessment content; the writing-plans skill persists it as a file in the plan folder.
+
+**Written by:** writing-plans skill (from evaluator text output)
+
+### Format
+
+```markdown
+# Plan Evaluation Round {N}
+
+## Checklist Results
+
+| Item ID | Check | Result | Evidence |
+|---------|-------|--------|----------|
+| PLAN-COV-01 | BDD scenario coverage | FAIL | session-expiry scenario has no mapped task |
+| TASK-COMP-03 | Verification commands executable | FAIL | task-004: description instead of command |
+| DEP-01 | No circular dependencies | PASS | no cycles detected |
+| DEP-02 | All depends-on references resolve | PASS | all IDs match task files |
+| TEST-01 | Impl tasks have test counterparts | PASS | all impl tasks paired |
+
+## Rework Items
+
+| Item ID | File | Location | Issue | Rework Action |
+|---------|------|----------|-------|---------------|
+| PLAN-COV-01 | _index.md | BDD Coverage section | session-expiry scenario has no mapped task | Add task for session-expiry scenario |
+| TASK-COMP-03 | task-004-rate-limit-impl.md | Verification section | "Verify that rate limiting works" is a description | Replace with executable command: `npm test tests/rate-limit.spec.ts` |
+
+## Recommendations
+
+Non-blocking observations that improve quality but do not require rework:
+
+- task-007 acceptance criteria could be more specific about expected response format
+
+## Verdict: REWORK
+2 items FAIL: PLAN-COV-01, TASK-COMP-03
+```
+
+If verdict is PASS, the Rework Items table remains present but empty.
+
+### Field Definitions
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| Checklist Results | Yes | One row per checklist item with PASS/FAIL and evidence |
+| Rework Items | Yes | Empty table if no FAIL items; keep the section |
+| Recommendations | Yes | Non-blocking observations; empty list if none |
+| Verdict | Yes | PASS (all items PASS) or REWORK (count and IDs of FAIL items) |

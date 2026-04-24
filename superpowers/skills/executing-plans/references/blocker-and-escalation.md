@@ -27,7 +27,7 @@ When the independent superpowers-evaluator is enabled, evaluation-driven escalat
 **Condition:** A task or batch receives REWORK or FAIL verdict from the superpowers-evaluator in 2 consecutive evaluation rounds.
 
 **Evidence to include in escalation:**
-- Evaluation scores from both rounds (per-dimension)
+- PASS/FAIL checklist results and FAIL items from both evaluation rounds
 - Rework items from both rounds (file:line references, issue descriptions)
 - Files reviewed by the superpowers-evaluator
 - Evaluation report file paths (e.g., `evaluation-round-1-batch-2.md`, `evaluation-round-2-batch-2.md`)
@@ -40,7 +40,7 @@ When the independent superpowers-evaluator is enabled, evaluation-driven escalat
 
 ### Trigger: Pivot Flag Raised
 
-**Condition:** The superpowers-evaluator sets `pivot: true` in the evaluation report, indicating sustained low scores (2 or below on 2+ dimensions across 2 evaluation rounds).
+**Condition:** The superpowers-evaluator sets `pivot: true` in the evaluation report. This occurs when the same FAIL items recur across 2 consecutive evaluation rounds with the same error pattern, when multiple tasks share a common architectural root cause, or when rework items require changes outside the current batch scope.
 
 **Evidence to include in escalation:**
 - Pivot rationale from evaluation report
