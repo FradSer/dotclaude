@@ -160,7 +160,7 @@ Do not trust the generator's reported verification output. Run commands independ
 Read the code checklist from the path provided in the spawn context (default: `docs/retros/checklists/code-v1.md`). Apply each checklist item to the files produced by the task:
 
 1. **CODE-VER-01**: Verification commands already executed in Step 3. Use the recorded exit codes as the result -- exit code 0 is PASS, non-zero is FAIL
-2. **CODE-QUAL-01 and CODE-QUAL-02**: Run the grep patterns from the checklist against all files created or modified by the task. Any match is FAIL
+2. **CODE-QUAL-01 and CODE-QUAL-02**: Run each item's check method from the checklist against all files created or modified by the task (grep patterns for CODE-QUAL-01; function-body inspection for CODE-QUAL-02). Any violation is FAIL
 3. Record PASS or FAIL with evidence in the format specified by each checklist item
 
 All code checklist items are computational (`# Type: computational`). Results are deterministic.
