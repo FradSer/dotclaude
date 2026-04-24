@@ -60,15 +60,41 @@ After all proposals reviewed:
 2. **Create new version**: Write `{mode}-v{N+1}.md` with all approved changes applied. Version increments once per run (not per proposal). Original version preserved unchanged.
 3. **Log evolution**: Append one JSON object per approved proposal to `docs/retros/evolution-log.jsonl`. See `./references/evolution-protocol.md` for schema.
 
-## Phase 5: Harness Health
+## Phase 5: Harness Health and Load-Bearing Audit
 
-Review whether each harness component is still load-bearing. See `./references/analysis-patterns.md` for criteria.
+Assess whether each harness component still earns its cost as models improve. Every harness piece encodes an assumption about model limitations; as those limitations change, some components become pure overhead (see Anthropic harness-design blog: "assumption testing"). All output in this phase is advisory — **never auto-remove components**. The retrospective report (Phase 6) surfaces candidates; the user approves changes in Phase 4 of the *next* retrospective run, not this one.
+
+### 5a. Usage-Driven Recommendations
+
+See `./references/analysis-patterns.md` for criteria.
 
 - If all tasks in recent plans pass on first round (no REWORK), recommend reducing evaluation frequency
 - If "Recurring Failure Patterns" injections never improve outcomes, recommend revising intra-plan learning
 - If a mode's checklist has only regression items all passing consistently, recommend spot-check mode (every 3rd batch)
 
-Output as a "Harness Health" section -- recommendations only, never auto-remove components.
+### 5b. Load-Bearing Candidate Identification
+
+Flag a component as a **removal candidate** when it satisfies any of the following across **≥3 consecutive plans**:
+
+| Component | Removal-candidate trigger | Signal source |
+|-----------|---------------------------|---------------|
+| Evaluator at current intensity | Zero rework items produced | evaluation reports in plan dirs |
+| Superpower Loop | Loop iterated ≤2 times (retry unused) | state file `iteration` field or plan handoff |
+| Sprint contract Evaluation Criteria Preview | First-pass output PASSes every preview item | per-batch evaluation reports |
+| Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles |
+| Auto-downgrade to `light` intensity | Triggered for ≥3 consecutive plans | executing-plans handoff log |
+
+Checklist items with zero failures are covered by Phase 3 REMOVE proposals — cross-reference here, do not duplicate.
+
+### 5c. One-At-A-Time Disable Protocol
+
+Select **at most one** candidate from 5b for the next plan run as a live assumption test. Disabling multiple components at once confounds cause-and-effect. Record in the retrospective report:
+
+- Which component will be disabled
+- Plan context (mode, expected task count, complexity)
+- Quality delta thresholds: what outcome proves the component stays (e.g., ≥2 rework items evaluator would have caught) vs. what proves it can be permanently removed (zero missed issues across ≥3 follow-up plans)
+
+The next retrospective reads this record in Phase 1 data collection and judges whether to promote the disable into a permanent config change (via standard ADD/REMOVE/MODIFY proposals in Phase 3).
 
 ## Phase 6: Output
 
@@ -77,8 +103,11 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
 1. Analysis tables (failure frequency, plateaus, never-failing, variety gaps)
 2. Proposals with approval status
 3. Checklist versions updated (if any)
-4. Harness health recommendations
-5. Summary: N proposals approved, M rejected, checklists updated to version X
+4. Harness Health section:
+   - 5a usage-driven recommendations
+   - 5b load-bearing candidates table
+   - 5c selected one-at-a-time disable test (if any), with quality delta thresholds
+5. Summary: N proposals approved, M rejected, checklists updated to version X, harness component disabled for next run (if any)
 
 ## References
 

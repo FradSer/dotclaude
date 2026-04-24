@@ -28,6 +28,8 @@ Load plan, create task tracking, identify batches, execute in parallel or serial
 
 ### Step 3: Batch Execution Loop (MANDATORY)
 
+Before launching any agent or starting linear execution, write the sprint contract file for the batch using the plan tasks, task files, and relevant BDD scenarios. Execution starts only after the contract file exists.
+
 #### Execution Mode Decision Tree
 
 ```
@@ -116,7 +118,7 @@ The superpowers-evaluator is a **sub-agent** (not a teammate). Spawn it via the 
    - List of modified/created files from the batch
    - Plan directory path
 2. The superpowers-evaluator reads the sprint contract, inspects artifacts, runs verification commands, and scores against rubrics
-3. The superpowers-evaluator writes an evaluation report: `evaluation-round-{N}-batch-{M}.md` in the plan directory
+3. The superpowers-evaluator returns report content; the executing-plans skill writes `evaluation-round-{N}-batch-{M}.md` in the plan directory
 
 **Independence**: The superpowers-evaluator runs as a sub-agent regardless of the execution mode used for the batch (Parallel, Linear, Red-Green). It is never added as a teammate to an Agent Team.
 

@@ -2,16 +2,16 @@
 
 ## Overview
 
-Sprint contracts are produced per-batch by the evaluator before execution begins. They replace implicit done criteria with concrete, testable checklists that the generator executes against.
+Sprint contracts are produced per-batch by the executing-plans skill before execution begins. They replace implicit done criteria with concrete, testable checklists that the batch executes against.
 
-**Core principle:** Execution does not start until the contract file exists. The evaluator writes the contract; the generator acknowledges it and implements against it.
+**Core principle:** Execution does not start until the contract file exists. The executing-plans skill writes the contract; the evaluator later grades completed work against it.
 
 The contract format follows the Sprint Contract Format defined in `evaluation-file-formats.md`.
 
 | Property | Value |
 |----------|-------|
-| Written by | Evaluator agent |
-| Acknowledged by | Generator (executing-plans skill) |
+| Written by | Executing-plans skill |
+| Read by | Evaluator agent and batch executors |
 | Timing | Phase 3 step 0 -- before batch execution begins |
 | File naming | `sprint-contract-batch-{N}.md` |
 
@@ -72,19 +72,19 @@ Tasks not part of a Red-Green pair have no Red state expectation.
 
 ### Section 4: Sign-off
 
-Evaluator identity and approval status.
+Contract generator identity and readiness status.
 
 ```markdown
 ## Sign-off
 
-- **Evaluator:** evaluator-agent
+- **Generator:** executing-plans
 - **Timestamp:** 2026-04-02T10:30:00Z
-- **Status:** APPROVED
+- **Status:** READY
 ```
 
 ## Red-Green Pair Distinction
 
-Red-Green pairs enforce the BDD cycle within the sprint contract. The evaluator identifies these pairs during contract generation and defines distinct done criteria for each role.
+Red-Green pairs enforce the BDD cycle within the sprint contract. The executing-plans skill identifies these pairs during contract generation and defines distinct done criteria for each role.
 
 ### Test Tasks (Red State)
 
@@ -188,7 +188,7 @@ Scan BDD scenarios for missing coverage. Flag gaps and add criteria for:
 | Concurrency | Duplicate submissions, race conditions, stale data |
 | Security | Injection, unauthorized access, expired tokens |
 
-If a BDD scenario lacks error path coverage, the evaluator adds criteria derived from the task type. Example: an auth handler task without a "wrong password" scenario gets:
+If a BDD scenario lacks error path coverage, the contract generator adds criteria derived from the task type. Example: an auth handler task without a "wrong password" scenario gets:
 
 ```markdown
 - [ ] Returns 401 when password is incorrect
@@ -197,7 +197,7 @@ If a BDD scenario lacks error path coverage, the evaluator adds criteria derived
 
 ## Ambiguity Detection and Flagging
 
-The evaluator scans acceptance criteria for ambiguous language before approving the contract.
+The contract generator scans acceptance criteria for ambiguous language before writing the contract.
 
 ### Identifying Vague Then-Clauses
 
@@ -212,7 +212,7 @@ Flag any Then-clause that contains these patterns:
 
 ### Flagging and Resolution Protocol
 
-When the evaluator detects ambiguity, flag it in the contract with a suggested concrete alternative:
+When the contract generator detects ambiguity, flag it in the contract with a suggested concrete alternative:
 
 ```markdown
 ### Task 003: Create user authentication handler
@@ -223,17 +223,17 @@ When the evaluator detects ambiguity, flag it in the contract with a suggested c
 - [ ] Logs authentication attempts with timestamp
 ```
 
-### Negotiation Protocol
+### Autonomous Resolution Protocol
 
-1. **Round 1**: Evaluator flags ambiguous items and proposes concrete alternatives in the contract draft
-2. **Round 2**: Generator accepts, counter-proposes, or requests clarification. Evaluator revises and re-issues the contract
-3. **Autonomous resolution**: If the item remains unresolved after 2 negotiation rounds, mark it as `[AUTO-RESOLVED]` and proceed with the evaluator's best interpretation. Log the original wording and the applied interpretation to the contract file — do NOT prompt the user.
+1. Detect ambiguity while deriving acceptance criteria from tasks and BDD scenarios
+2. Rewrite the criterion into the most concrete binary form supported by the available evidence
+3. If ambiguity remains, mark it as `[AUTO-RESOLVED]` and log the applied interpretation directly in the contract file — do NOT prompt the user
 
-Maximum 2 negotiation rounds before unresolved items auto-resolve. This prevents contract negotiation from stalling execution.
+Use a single generation pass. Do not stall execution waiting on a separate negotiation loop.
 
 ```markdown
 - [ ] **[AUTO-RESOLVED]** "Handles edge cases appropriately"
-  - Evaluator interpretation: validates non-empty strings and rejects payloads over 1MB
+  - Applied interpretation: validates non-empty strings and rejects payloads over 1MB
 ```
 
 ## Contract Lifecycle
@@ -243,23 +243,22 @@ The sprint contract follows a strict lifecycle tied to the batch execution phase
 ```
 Phase 3, Step 0          Generator              Execution              Grading
      |                      |                      |                     |
-  Evaluator            Acknowledges           References            Scored against
-  generates            contract               criteria              contract
-  contract                                    during impl
+  Generator            Launches batch         References            Evaluator scores
+  writes               after contract         criteria              against contract
+  contract             exists                 during impl
      |                      |                      |                     |
-  sprint-contract-     Generator confirms     Each task checks      Evaluation report
-  batch-{N}.md         receipt and flags      its acceptance        references contract
-  written              any objections         criteria              criteria
+  sprint-contract-     Batch starts only      Each task checks      Evaluation report
+  batch-{N}.md         after file exists      its acceptance        references contract
+  written                                    criteria              criteria
 ```
 
 | Stage | Actor | Action | Artifact |
 |-------|-------|--------|----------|
-| Generation | Evaluator | Writes contract from plan tasks and BDD scenarios | `sprint-contract-batch-{N}.md` |
-| Acknowledgement | Generator | Reads contract, flags objections or confirms | Updated contract if negotiation needed |
+| Generation | Executing-plans skill | Writes contract from plan tasks, task files, BDD scenarios, and checklist preview | `sprint-contract-batch-{N}.md` |
 | Execution | Generator | Implements against acceptance criteria | Source code, test files |
 | Grading | Evaluator | Scores work against contract criteria | `evaluation-round-{N}-batch-{M}.md` |
 
-**Critical gate:** Execution does not start until the contract file exists in the plan directory. The generator MUST NOT begin any task in the batch before reading and acknowledging the contract.
+**Critical gate:** Execution does not start until the contract file exists in the plan directory. The generator MUST NOT begin any task in the batch before writing and reading the contract.
 
 ## Light Intensity Mode
 
@@ -273,7 +272,7 @@ For `light` intensity, a simplified plan-level summary contract replaces per-bat
 | File naming | `sprint-contract-batch-{N}.md` | `sprint-contract-summary.md` |
 | Acceptance criteria | Per-task checklist | Grouped by milestone or feature area |
 | Red-Green pairs | Fully enumerated | Listed but not expanded with state descriptions |
-| Negotiation rounds | Up to 2 per batch | Up to 2 for the entire plan |
+| Ambiguity handling | Per-batch auto-resolution notes | Plan-level auto-resolution notes |
 | Sign-off | Per batch | Single sign-off for all tasks |
 
 ### Light Contract Template
@@ -313,12 +312,12 @@ For `light` intensity, a simplified plan-level summary contract replaces per-bat
 
 ## Sign-off
 
-- **Evaluator:** evaluator-agent
+- **Generator:** executing-plans
 - **Timestamp:** 2026-04-02T10:30:00Z
-- **Status:** APPROVED
+- **Status:** READY
 ```
 
-The evaluator produces this simplified contract at Phase 3 step 0 for the first batch. It covers all batches in the plan, so subsequent batches reference the same file rather than generating new contracts.
+The executing-plans skill produces this simplified contract at Phase 3 step 0 for the first batch. It covers all batches in the plan, so subsequent batches reference the same file rather than generating new contracts.
 
 ## Reference
 

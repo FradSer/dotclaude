@@ -31,7 +31,8 @@ Scenarios are your "Executable Specifications".
 *   Keep them declarative (business focus).
 *   Avoid technical jargon and UI details.
 *   One behavior per scenario.
-*   **Store in .feature files, NOT as code comments** - this makes them executable and accessible to non-technical stakeholders.
+*   Use `bdd-specs.md` as the planning-stage scenario inventory in the superpowers workflow. During brainstorming and plan writing, keep the reviewed Given/When/Then scenarios in `docs/plans/.../bdd-specs.md` so design review, task decomposition, and sprint contracts all read from the same source.
+*   **Store executable scenarios in .feature files, NOT as code comments** - once implementation begins, translate the scenarios that will be automated into `.feature` files or the framework-native executable test format. `bdd-specs.md` is for design and planning; `.feature` files are for automation and living documentation.
 
 See `./references/gherkin-guide.md` for syntax and storage structure.
 

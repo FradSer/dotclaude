@@ -189,15 +189,15 @@ Set pivot to **false** when:
 
 When pivot is true, include: root cause referencing the specific repeated error, suggested plan modifications, and tasks to cancel or re-scope. The recommended action is to review the task specification, not retry the same implementation.
 
-#### Step 7: Write Evaluation Report
+#### Step 7: Produce Evaluation Report Content
 
-Produce the evaluation report following the format defined in `references/evaluation-file-formats.md`. The report contains these sections in order:
+Output the evaluation report as text, following the format defined in `references/evaluation-file-formats.md`. The report contains these sections in order:
 1. Per-Task Checklist Results table (Task ID | Item ID | Result | Evidence)
 2. Rework Items table (empty table if none)
 3. Recommendations list (non-blocking observations)
 4. Pivot Flag with rationale
 
-Name the file `evaluation-round-{N}-batch-{M}.md` and place it in the plan directory.
+**Do NOT write the file yourself.** You do not have Write or Edit tools (see Shared Standards below). The spawning skill (executing-plans) persists your text output as `evaluation-round-{N}-batch-{M}.md` in the plan directory. State the intended filename at the top of your output so the spawning skill names the file correctly.
 
 ## Shared Standards
 

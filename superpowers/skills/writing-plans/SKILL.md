@@ -10,22 +10,29 @@ allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/
 
 Create executable implementation plans that reduce ambiguity for whoever executes them using Superpower Loop for continuous iteration.
 
-## CRITICAL: First Action - Start Superpower Loop NOW
+## CRITICAL: First Action - Size the Design, Then Decide on Superpower Loop
 
-**Resolve the design path and start the loop immediately — do NOT read design files, explore the codebase, or do anything else first.**
+**Resolve the design path, peek at scenario count, then either start the loop or proceed single-session — do NOT read design files fully or explore the codebase first.**
 
 1. Resolve the design path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/`
    - If found without explicit argument, confirm with user: "Use this design: [path]?"
    - If not found or user declines, ask the user for the design folder path
-2. Immediately run:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "PLAN_COMPLETE" --max-iterations 50
-```
-3. Only after the loop is running, proceed with Initialization below
+2. **Size the design** (quick grep only — do NOT fully read files):
+   ```bash
+   scenario_count=$(grep -cE '^\s*Scenario:' <design-path>/bdd-specs.md)
+   ```
+   Also check whether `$ARGUMENTS` contains `--no-loop`.
+3. **Loop decision**:
+   - **Skip loop** (single-session mode) if any of: `$ARGUMENTS` contains `--no-loop`, OR `scenario_count ≤ 3`. Proceed directly to Initialization; do NOT run `setup-superpower-loop.sh`; omit the completion-promise tag at the end (it is a no-op without loop state).
+   - **Start loop** otherwise. Run:
+     ```bash
+     "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "PLAN_COMPLETE" --max-iterations 50
+     ```
+4. Only after the loop is running (or explicitly skipped), proceed with Initialization below
 
-**The loop enables self-referential iteration throughout the planning process.**
+**Why the size gate?** The Superpower Loop encodes an assumption about model context anxiety that held on older models (see Anthropic harness-design blog: "assumption testing"). For designs of ≤3 scenarios, the loop adds turn overhead without benefit — run them in a single session. Larger designs still benefit from loop-driven phase pacing and the completion-promise safety net.
 
 ## Superpower Loop Integration
 

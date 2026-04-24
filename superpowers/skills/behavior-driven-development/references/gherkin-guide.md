@@ -61,6 +61,17 @@ Scenario Outline: Eating cucumbers
 
 ## Storage & Structure
 
+### Planning vs Execution Artifacts
+
+In the superpowers workflow, Gherkin scenarios exist in two forms at different stages:
+
+| Stage | File | Purpose |
+|-------|------|---------|
+| Design and planning | `docs/plans/.../bdd-specs.md` | Review behavior, trace requirements, drive task decomposition |
+| Implementation and automation | `tests/features/*.feature` or framework-native executable specs | Run automated BDD checks and serve as living documentation |
+
+Use `bdd-specs.md` as the planning artifact while shaping the design and writing the implementation plan. When execution begins, move or translate the scenarios that must run into `.feature` files or the project's executable test format. Do not leave the only copy of an automated behavior inside planning markdown.
+
 ### Where to Store Gherkin Scenarios
 
 **Best Practice:** Store scenarios in dedicated `.feature` files, NOT as code comments.

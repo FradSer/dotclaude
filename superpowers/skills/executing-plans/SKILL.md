@@ -3,28 +3,36 @@ name: executing-plans
 description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
 ---
 
 # Executing Plans
 
 Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
 
-## CRITICAL: First Action - Start Superpower Loop NOW
+## CRITICAL: First Action - Size the Plan, Then Decide on Superpower Loop
 
-**Resolve the plan path and start the loop immediately — do NOT read plan files, explore the codebase, or do anything else first.**
+**Resolve the plan path, peek at task count, then either start the loop or proceed single-session — do NOT read task files or explore the codebase first.**
 
 1. Resolve the plan path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/` and use it directly (no confirmation)
    - If no plan folder is found, abort with a clear error message naming the expected path pattern
-2. Immediately run:
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
-```
-3. Only after the loop is running, proceed with Initialization below
+2. **Size the plan** (quick grep only — do NOT fully read files):
+   ```bash
+   task_count=$(grep -cE '^\s*-\s+id:' <plan-path>/_index.md)
+   has_rg_pair=$(ls <plan-path>/task-*-test.md 2>/dev/null | wc -l)
+   ```
+   Also check whether `$ARGUMENTS` contains `--no-loop`.
+3. **Loop decision**:
+   - **Skip loop** (single-session mode) if any of: `$ARGUMENTS` contains `--no-loop`, OR `task_count ≤ 4`. Proceed directly to Initialization; do NOT run `setup-superpower-loop.sh`; omit the completion-promise tag at the end (it is a no-op without loop state).
+   - **Start loop** otherwise. Run:
+     ```bash
+     "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
+     ```
+4. Only after the loop is running (or explicitly skipped), proceed with Initialization below
 
-**The loop enables self-referential iteration throughout the execution process.**
+**Why the size gate?** The loop encodes a context-anxiety assumption from older models (see Anthropic harness-design blog: "assumption testing"). For ≤4-task plans the loop adds turn overhead without benefit. Record skip/start in the plan handoff so retrospective can audit the threshold.
 
 ## Superpower Loop Integration
 
@@ -48,6 +56,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
 3. **Evaluator Configuration** (mandatory): The evaluator is always enabled for every plan execution. If `_index.md` contains an `evaluator:` YAML block, only `intensity` is honored (`thorough` | `standard` | `light`, default: `standard`). Any `mode: off` or `mode: auto` value is rejected — every plan execution MUST produce evaluator output.
+   - **Auto-downgrade for small plans**: If `task_count ≤ 5` AND no Red-Green pair exists, force `light` as the effective intensity (overrides declared `standard` / `thorough`). Rationale: small plans don't justify per-batch passes; one end-of-plan evaluation catches the same issues at lower cost. Record the downgrade in the plan handoff under "Auto-Downgrade" for retrospective audit.
    - **Checklist resolution**: Before spawning the evaluator, resolve the latest checklist version by scanning `docs/retros/checklists/` for files matching `{mode}-v{N}.md` and selecting the highest N. Pass the resolved path in the spawn context. If `code-v{N}.md` does not exist, abort with a clear error naming the expected path — seed it via `/superpowers:retrospective` before retrying.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
@@ -123,11 +132,14 @@ Execute tasks in batches using Agent Teams or subagents for parallel execution.
 
 0. **Sprint Contract** (mandatory):
    - Resolve the latest checklist version: scan `docs/retros/checklists/` for `{mode}-v{N}.md`, select the highest N
-   - Spawn `superpowers:superpowers-evaluator` sub-agent with the checklist path in spawn context to produce `sprint-contract-batch-{N}.md` in the plan directory
-   - Contract defines per-task acceptance criteria, Red-Green pair expectations, and an **Evaluation Criteria Preview** section listing the checklist items (ID + description) the evaluator will apply -- this feedforward helps the generator produce better first-pass output
+   - Generate the sprint contract file in the plan directory before any task in the batch starts:
+     - `standard` / `thorough`: write `sprint-contract-batch-{N}.md`
+     - `light`: write `sprint-contract-summary.md` once for the full plan and reuse it across batches
+   - Build the contract from `_index.md`, the batch's task files, the relevant BDD scenarios, the latest checklist items, and any "Recurring Failure Patterns" carried forward from earlier batches
+   - Contract defines per-task acceptance criteria, Red-Green pair expectations, and an **Evaluation Criteria Preview** section listing the checklist items (ID + description) the evaluator will later apply -- this feedforward helps the generator produce better first-pass output
    - Execution MUST NOT start until the contract file exists
    - See `./references/sprint-contract-template.md` for format
-   - For `light` intensity, emit a single plan-level contract instead of per-batch contracts; for `standard`/`thorough`, produce the sprint contract per batch. The contract is never skipped.
+   - The contract is never skipped. If the batch scope changes, rewrite the contract before resuming execution.
    - Checklist path table:
 
      | Mode   | Checklist path pattern             |

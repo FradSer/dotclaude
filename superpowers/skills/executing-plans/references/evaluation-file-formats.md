@@ -8,8 +8,8 @@ All evaluation files live in the plan directory alongside task files (e.g., `doc
 
 | Property | Value |
 |----------|-------|
-| Written by | Evaluator agent |
-| Read by | Generator (executing-plans skill) |
+| Written by | Executing-plans skill |
+| Read by | Executing-plans skill and evaluator agent |
 | Committed | NOT committed by default -- these are ephemeral working artifacts |
 | Cleanup | Deleted after plan execution completes, or kept if user explicitly requests |
 
@@ -17,7 +17,7 @@ All evaluation files live in the plan directory alongside task files (e.g., `doc
 
 **File naming:** `sprint-contract-batch-{N}.md` (e.g., `sprint-contract-batch-1.md`)
 
-**Purpose:** Define the scope, acceptance criteria, and expected BDD states for a batch before execution begins. The evaluator writes this contract; the generator executes against it.
+**Purpose:** Define the scope, acceptance criteria, and expected BDD states for a batch before execution begins. The executing-plans skill writes this contract; the evaluator later grades against it.
 
 ### Format
 
@@ -63,9 +63,9 @@ Tasks not part of a Red-Green pair have no Red state expectation.
 
 ## Sign-off
 
-- **Evaluator:** [agent identifier]
+- **Generator:** [agent identifier]
 - **Timestamp:** [ISO 8601 timestamp]
-- **Status:** APPROVED
+- **Status:** READY
 ```
 
 ### Field Definitions
@@ -75,13 +75,13 @@ Tasks not part of a Red-Green pair have no Red state expectation.
 | Tasks table | Yes | Every task in the batch with ID, subject, and type |
 | Acceptance Criteria | Yes | Per-task checklist with testable, binary pass/fail items |
 | Red-Green Pairs | Yes | Omit rows if batch has no pairs; keep the section with "None" |
-| Sign-off | Yes | Evaluator identity and approval timestamp |
+| Sign-off | Yes | Contract generator identity and generation timestamp |
 
 ## 2. Evaluation Report
 
 **File naming:** `evaluation-round-{N}-batch-{M}.md` (e.g., `evaluation-round-1-batch-2.md`)
 
-**Purpose:** Assess completed work against the sprint contract using binary checklist evaluation. Identifies rework items, recommendations, and whether execution should pivot.
+**Purpose:** Assess completed work against the sprint contract using binary checklist evaluation. The evaluator produces the assessment content, and the executing-plans skill persists it as a file. Identifies rework items, recommendations, and whether execution should pivot.
 
 **Location convention:** Evaluation artifacts are stored in the plan directory (e.g., `docs/plans/YYYY-MM-DD-{topic}-plan/`). When a separate evals directory is used, derive the path by replacing `-plan/` with `-evals/` in the plan path.
 
