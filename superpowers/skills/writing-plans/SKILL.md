@@ -76,14 +76,10 @@ Define goal, architecture, constraints, and context.
 
 Break into small tasks mapped to specific BDD scenarios.
 
-**CRITICAL — Deterministic, no user consultation**: Apply the decomposition pattern below automatically. Do NOT present granularity options to the user (e.g., "19 vs 40 vs 140 tasks") and do NOT ask for approval of the decomposition strategy mid-process. The pattern is fixed by BDD structure; user approval happens only on the completed plan in Phase 3.
+**PROHIBITED**: Do not ask the user to choose task granularity or approve decomposition mid-process. Apply the rules in steps 1-6 below plus these additions automatically; user approval comes on the completed plan (Phase 3) and after reflection (Phase 4).
 
-**Decomposition Pattern**:
-- One test task + one impl task per BDD Feature (paired, sharing `NNN` prefix, linked via `depends-on`)
-- Foundation tasks (setup, shared schema, types, external config, storage) come first with ascending `NNN`
-- Test tasks across different features are independent — no `depends-on` between them
-- Impl task depends only on its paired test task (and any foundation task it genuinely needs)
-- Bundle all scenarios of a Feature into its single test file; split across tasks only when the Feature crosses independent service boundaries (e.g., frontend vs backend)
+- Foundation tasks (setup, shared schema, types, config, storage) take lower `NNN` before feature pairs
+- Bundle all scenarios of a Feature into one test file; split only when the Feature crosses independent service boundaries (e.g., frontend vs backend)
 
 1. **Reference Scenarios**: **CRITICAL**: Every task must explicitly include the full BDD Scenario content in the task file using Gherkin syntax. For example:
 
