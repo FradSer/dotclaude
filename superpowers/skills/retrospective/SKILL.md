@@ -36,6 +36,18 @@ If the directory is missing or empty, seed the initial v1 checklists:
 **Evidence format:** bdd-specs.md:{line} -- "{clause text}"
 **Rework format:** Replace "{vague phrase}" with concrete value at bdd-specs.md:{line}
 # Type: computational
+
+### ARCH-01: No inner-to-outer layer dependencies described
+**Check method:** Scan architecture.md (or Detailed Design in _index.md) for any arrow or prose stating an inner layer (domain/application) imports from an outer layer (infrastructure/interfaces)
+**Evidence format:** {file}:{line} -- "{dependency description}"
+**Rework format:** Invert dependency at {file}:{line}; define interface in inner layer
+# Type: inferential
+
+### RISK-02: Each risk mitigation specifies a concrete action
+**Check method:** For each risk listed in _index.md, confirm its mitigation names a specific mechanism (flag, retry policy, circuit breaker, etc.) rather than a vague verb like "monitor" or "handle carefully"
+**Evidence format:** _index.md -- risk "{title}" mitigation "{text}"
+**Rework format:** Replace vague mitigation for risk "{title}" with concrete action
+# Type: inferential
 ```
 
 **`plan-v1.md`** — minimum viable plan checklist:
@@ -83,16 +95,16 @@ If the directory is missing or empty, seed the initial v1 checklists:
 **Rework format:** Remove placeholder at {file}:{line}; implement real logic
 # Type: computational
 
-### CODE-QUAL-02: No skeleton-only files (imports + type declarations only, no logic)
+### CODE-QUAL-02: No hardcoded stubs, skeleton-only bodies, or placeholder implementations
 **Check method:** For each produced file, check that at least one function/method contains a non-trivial body (not just `pass`, `...`, `return None`, or a hardcoded literal)
 **Evidence format:** {file} -- all bodies are stubs
 **Rework format:** Implement real logic in {file} function {name}
 # Type: computational
 ```
 
-3. Log: "Seeded initial checklists: design-v1.md, plan-v1.md, code-v1.md. Proceeding with retrospective."
+3. Log one line per mode seeded: "Seeded initial checklist: {mode}-v1.md". If all three modes already have a v1 file, log "Phase 0: all checklists present, skipping seed."
 
-Skip Phase 0 entirely if any v1 file already exists for any mode.
+Phase 0 runs per mode independently — only the modes missing a v{N} file are seeded. Do not skip the entire phase because one mode already has a checklist.
 
 ## Phase 1: Data Collection
 
