@@ -10,29 +10,20 @@ allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuesti
 
 Create executable implementation plans that reduce ambiguity for whoever executes them using Superpower Loop for continuous iteration.
 
-## CRITICAL: First Action - Size the Design, Then Decide on Superpower Loop
+## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 
-**Resolve the design path, peek at scenario count, then either start the loop or proceed single-session — do NOT read design files fully or explore the codebase first.**
+**Resolve the design path, then unconditionally start the loop — do NOT read design files fully or explore the codebase first.**
 
 1. Resolve the design path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/`
    - If found without explicit argument, confirm with user: "Use this design: [path]?"
    - If not found or user declines, ask the user for the design folder path
-2. **Size the design** (quick grep only — do NOT fully read files):
+2. **Start the loop** (no size gate — this skill's default user plans large multi-scenario work):
    ```bash
-   scenario_count=$(grep -cE '^\s*Scenario:' <design-path>/bdd-specs.md)
+   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "PLAN_COMPLETE" --max-iterations 50
    ```
-   Also check whether `$ARGUMENTS` contains `--no-loop`.
-3. **Loop decision**:
-   - **Skip loop** (single-session mode) if any of: `$ARGUMENTS` contains `--no-loop`, OR `scenario_count ≤ 3`. Proceed directly to Initialization; do NOT run `setup-superpower-loop.sh`; omit the completion-promise tag at the end (it is a no-op without loop state).
-   - **Start loop** otherwise. Run:
-     ```bash
-     "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "PLAN_COMPLETE" --max-iterations 50
-     ```
-4. Only after the loop is running (or explicitly skipped), proceed with Initialization below
-
-**Why the size gate?** The Superpower Loop encodes an assumption about model context anxiety that held on older models (see Anthropic harness-design blog: "assumption testing"). For designs of ≤3 scenarios, the loop adds turn overhead without benefit — run them in a single session. Larger designs still benefit from loop-driven phase pacing and the completion-promise safety net.
+3. Only after the loop is running, proceed with Initialization below
 
 ## Superpower Loop Integration
 
@@ -151,21 +142,9 @@ Verify completeness, confirm with user, and save.
 
 ## Phase 4: Plan Reflection
 
-Before committing, verify plan quality. Scale reflection based on plan size.
+Before committing, verify plan quality with parallel fresh sub-agents. Each sub-agent runs in an isolated context (context reset — no pollution from the main planning session).
 
-**Small plans (up to 6 tasks)**: Main agent performs a single review pass — check BDD coverage, dependency graph, and task completeness sequentially. No sub-agents needed.
-
-**Medium plans (7-15 tasks, 2 sub-agents)**:
-
-**Sub-agent 1: BDD Coverage & Completeness Review**
-- Focus: Verify BDD scenario coverage AND task structure completeness
-- Output: Coverage matrix, incomplete tasks, missing sections
-
-**Sub-agent 2: Dependency Graph Review**
-- Focus: Verify depends-on fields, check for cycles, identify missing dependencies
-- Output: Dependency graph, cycle detection, incorrect dependencies
-
-**Large plans (16+ tasks, 3+ sub-agents)**:
+Launch these three sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`:
 
 **Sub-agent 1: BDD Coverage Review**
 - Focus: Verify every BDD scenario from design has corresponding tasks
@@ -195,9 +174,9 @@ See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
 ### Evaluator Mode (Mandatory — All Plans)
 
-After the sub-agent reflection (or single-pass self-review for small plans) above, spawn the `superpowers:superpowers-evaluator` agent (plan mode). The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
+After the parallel sub-agent reflection above, spawn the `superpowers:superpowers-evaluator` agent (plan mode). The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
 
-**When to use**: Always. The evaluator runs for every plan regardless of size — sub-agent reflection covers structural analysis (coverage, dependency graph), the evaluator applies the binary checklist verdict. They are complementary, not alternatives. If the resolved `plan-v{N}.md` does not exist, abort with a clear error naming the expected path — seed the checklist via `/superpowers:retrospective` before retrying.
+**When to use**: Always. Sub-agent reflection covers structural analysis (coverage, dependency graph); the evaluator applies the binary checklist verdict. They are complementary, not alternatives. If the resolved `plan-v{N}.md` does not exist, abort with a clear error naming the expected path — seed the checklist via `/superpowers:retrospective` before retrying.
 
 **Process**:
 1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. Abort if none exists.
