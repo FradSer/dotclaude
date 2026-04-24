@@ -87,11 +87,11 @@ Evaluate each harness component against recent data:
 
 | Component | Health signal | Recommendation if triggered |
 |-----------|--------------|---------------------------|
-| Evaluator | All tasks PASS on first round in 3+ consecutive plans | Reduce evaluation to `light` intensity |
+| Evaluator | All tasks PASS on first round in 3+ consecutive plans | Flag the evaluator as a removal candidate in the one-at-a-time disable protocol |
 | Sprint contracts | No "Recurring Failure Patterns" injection in 5+ batches | Sprint contracts still valuable for acceptance criteria; keep |
 | Intra-plan learning | Recurring patterns injected but same items still FAIL | Review injection mechanism -- may need stronger generator guidance |
-| Checklist mode X | Only regression items, all passing in 3+ plans | Reduce to spot-check (every 3rd batch) for that mode |
-| Batch handoffs | N/A -- always lightweight | No action needed |
+| Checklist mode X | Only regression items, all passing in 3+ plans | Propose REMOVE for those items via standard checklist evolution |
+| Context reset (per-batch coordinator) | Main-agent context stays compact across 10+ batch runs | Confirm load-bearing; no action unless it demonstrably costs more than it saves |
 
 Output as "Harness Health" section with recommendations. Never auto-disable components.
 

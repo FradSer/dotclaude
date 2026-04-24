@@ -172,11 +172,11 @@ Flag a component as a **removal candidate** when it satisfies any of the followi
 
 | Component | Removal-candidate trigger | Signal source |
 |-----------|---------------------------|---------------|
-| Evaluator at current intensity | Zero rework items produced | evaluation reports in plan dirs |
+| Evaluator (per-batch) | Zero rework items produced | evaluation reports in plan dirs |
 | Superpower Loop | Loop iterated ≤2 times (retry unused) | state file `iteration` field or plan handoff |
 | Sprint contract Evaluation Criteria Preview | First-pass output PASSes every preview item | per-batch evaluation reports |
 | Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles |
-| Auto-downgrade to `light` intensity | Triggered for ≥3 consecutive plans | executing-plans handoff log |
+| Per-batch context reset (coordinator spawn) | Main-agent context stays below 30% of cap for entire run | handoff-state.md growth + transcript length |
 
 Checklist items with zero failures are covered by Phase 3 REMOVE proposals — cross-reference here, do not duplicate.
 
