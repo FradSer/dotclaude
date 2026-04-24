@@ -2,23 +2,15 @@
 
 ## Overview
 
-Handoff summaries are structured documentation artifacts produced during long plan executions (16+ tasks). They provide a human-readable snapshot of progress at configurable boundaries, capturing completed work, remaining tasks, architectural decisions, file ownership, and blockers.
+Handoff summaries are the cross-batch memory substrate for the context-reset execution architecture. Every batch produces one. Together with `handoff-state.md` (the rolling mutable snapshot), they form the ONLY cross-batch memory the spawned per-batch coordinator can rely on — the main agent never replays batch execution transcripts.
 
-**Scope limitation:** Handoff summaries are documentation only. They do NOT reset, compress, or modify Claude Code's conversation context. TaskList remains the authoritative source of task state at all times. The orchestrator produces these files for progress tracking and auditability -- they have no effect on agent memory or context windows.
+**Two artifacts, distinct roles:**
+- `handoff-state.md` — rolling, rewritten each batch; the live cumulative snapshot the next coordinator reads
+- `handoff-summary-{N}.md` — immutable per-batch record; progress artifact for retrospective + audit
 
 ## When to Produce
 
-Generate a handoff summary file when any of these boundaries is reached:
-
-| Trigger | Default | Description |
-|---------|---------|-------------|
-| Batch count | Every 3 batches | Produce after the 3rd, 6th, 9th, ... completed batch |
-| Task count | Every 15 tasks | Produce after the 15th, 30th, 45th, ... completed task |
-| Plan threshold | 16+ tasks | Only activate handoff mode for plans with 16 or more tasks |
-
-**Configuration precedence:** skill argument > plan metadata (`handoff-boundary` key in `_index.md` YAML) > defaults above.
-
-If both batch and task triggers fire at the same boundary, produce a single summary (do not duplicate).
+Unconditional: produce `handoff-summary-{N}.md` after every completed batch. No size gate, no task-count threshold. `{N}` is the batch number.
 
 ## File Naming and Location
 

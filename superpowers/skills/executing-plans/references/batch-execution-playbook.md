@@ -2,33 +2,32 @@
 
 ## Overview
 
-Load plan, create task tracking, identify batches, execute in parallel or serial, report between batches.
+This playbook defines the per-batch coordinator's internal process. It is invoked by the main executing-plans orchestrator via the Agent tool (see Phase 3 of `../SKILL.md`). The coordinator runs in a fresh isolated context and receives a self-contained prompt — the coordinator has no memory of prior conversation, only the handoff files named in its prompt.
 
-**Core principle:** Parallel execution for independent tasks, serial for dependent tasks.
+**Coordinator inputs (from spawn prompt):**
+- Plan directory path
+- `sprint-contract-batch-{N}.md` path
+- `handoff-state.md` path (cross-batch memory)
+- Resolved `code-v{N}.md` checklist path
+- Batch task ID list + execution mode + Red-Green pair annotations
 
-## The Process
+**Coordinator output (structured return to main agent):**
+- Verdict: PASS | REWORK_ESCALATED | PIVOT
+- Completed task IDs, evidence blocks, modified files
+- Evaluation report path, recurring patterns, pivot recommendation (if any)
 
-### Step 1: Load and Understand Plan
-1. Read all plan files (`_index.md` and task files)
-2. Understand scope, architecture, and dependencies
-3. Explore relevant codebase files to understand existing patterns
+**Core principle:** Parallel execution for independent tasks, serial for dependent tasks. Red-Green pairs are non-negotiable.
 
-### Step 2: Create Tasks and Scope Batches (MANDATORY)
+## The Coordinator Process
 
-**REQUIRED**: Create task tracking and identify batches using `TaskCreate` before any execution.
+### Step 1: Load Context
 
-1. Use `TaskCreate` for each task in the plan
-2. Load both `superpowers:agent-team-driven-development` and `superpowers:behavior-driven-development` skills
-3. Group independent tasks into parallel batches (3-6 tasks per batch)
+1. Read `handoff-state.md` to learn prior batches' modified files, decisions, recurring patterns
+2. Read `sprint-contract-batch-{N}.md` for this batch's scope, acceptance criteria, and Evaluation Criteria Preview
+3. Read every task file for the batch (the coordinator, not the main agent, owns this reading)
+4. Load both `superpowers:agent-team-driven-development` and `superpowers:behavior-driven-development` skills
 
-| Criterion | Parallel Batch | Serial Batch |
-|-----------|---------------|--------------|
-| Dependencies | None between tasks | Some tasks depend on others |
-| File conflicts | No shared files | Shared files that cannot be split |
-
-### Step 3: Batch Execution Loop (MANDATORY)
-
-Before launching any agent or starting linear execution, write the sprint contract file for the batch using the plan tasks, task files, and relevant BDD scenarios. Execution starts only after the contract file exists.
+### Step 2: Execute the Batch
 
 #### Execution Mode Decision Tree
 
@@ -74,13 +73,9 @@ For single-task batches or unavoidable sequential dependencies:
 - Report progress and verification results to conversation context
 - Proceed directly to the next batch (no user confirmation — this skill is fully autonomous)
 
-### Step 4: Report and Continue
+### Step 4: Return Structured Result
 
-After each batch: show what was implemented, show verification output, get feedback, apply changes if needed, continue to next batch.
-
-### Step 5: Complete Development
-
-After all tasks verified: run full test suite, report completion and results.
+The coordinator does NOT emit prose completion messages. It returns a structured result to the main agent containing verdict, completed task IDs, evidence blocks, modified files list, evaluation report path, and any pivot recommendation. The main agent is responsible for user-facing progress output.
 
 ## Verification Gate
 

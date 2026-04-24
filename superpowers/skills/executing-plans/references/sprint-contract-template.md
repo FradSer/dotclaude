@@ -278,75 +278,9 @@ Phase 3, Step 0          Generator              Execution              Grading
 
 **Critical gate:** Execution does not start until the contract file exists in the plan directory. The generator MUST NOT begin any task in the batch before writing and reading the contract.
 
-## Light Intensity Mode
+## Single-Mode Contract (per-batch, mandatory)
 
-For `light` intensity, a simplified plan-level summary contract replaces per-batch contracts. This reduces overhead for smaller plans or when the user opts for faster iteration.
-
-### Differences from Standard Mode
-
-| Aspect | Standard (per-batch) | Light (plan-level) |
-|--------|----------------------|--------------------|
-| Granularity | One contract per batch | One contract for the entire plan |
-| File naming | `sprint-contract-batch-{N}.md` | `sprint-contract-summary.md` |
-| Acceptance criteria | Per-task checklist | Grouped by milestone or feature area |
-| Red-Green pairs | Fully enumerated | Listed but not expanded with state descriptions |
-| Evaluation Criteria Preview | Per-batch checklist items | Single plan-level checklist items table |
-| Ambiguity handling | Per-batch auto-resolution notes | Plan-level auto-resolution notes |
-| Sign-off | Per batch | Single sign-off for all tasks |
-
-### Light Contract Template
-
-```markdown
-# Plan Sprint Contract (Light)
-
-## Tasks
-
-| ID | Subject | Type | Batch |
-|----|---------|------|-------|
-| 001 | Set up project scaffolding | setup | 1 |
-| 002 | Write auth handler test | test | 1 |
-| 003 | Implement auth handler | impl | 1 |
-| 004 | Add input validation | impl | 2 |
-| 005 | Write integration tests | test | 2 |
-
-## Acceptance Summary
-
-### Batch 1: Authentication Foundation
-
-- Auth handler returns JWT on valid credentials and 401 on invalid
-- Test suite covers success, invalid password, and missing username scenarios
-- Project structure follows conventions from _index.md
-
-### Batch 2: Validation Layer
-
-- Input validation rejects missing fields with 400 status
-- Integration tests cover end-to-end auth flow
-
-## Red-Green Pairs
-
-| Test Task | Impl Task |
-|-----------|-----------|
-| 002 | 003 |
-| 005 | 004 |
-
-## Evaluation Criteria Preview
-
-The evaluator will apply the following checklist items to all batches in this plan:
-
-| Item ID | Description |
-|---------|-------------|
-| CODE-VER-01 | All verification commands exit with code 0 |
-| CODE-QUAL-01 | No TODO/FIXME/NotImplementedError patterns in produced files |
-| CODE-QUAL-02 | No hardcoded stubs, skeleton-only bodies, or placeholder implementations |
-
-## Sign-off
-
-- **Generator:** executing-plans
-- **Timestamp:** 2026-04-02T10:30:00Z
-- **Status:** READY
-```
-
-The executing-plans skill produces this simplified contract at Phase 3 step 0 for the first batch. It covers all batches in the plan, so subsequent batches reference the same file rather than generating new contracts.
+There is only one sprint-contract mode: one contract per batch, written as `sprint-contract-batch-{N}.md` in the plan directory. Intensity modes (`light` / `standard` / `thorough`) have been removed — the per-batch contract is unconditional. Plans that previously would have qualified for `light` still produce per-batch contracts.
 
 ## Reference
 

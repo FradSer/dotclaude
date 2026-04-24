@@ -10,29 +10,19 @@ allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Writ
 
 Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
 
-## CRITICAL: First Action - Size the Plan, Then Decide on Superpower Loop
+## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop
 
-**Resolve the plan path, peek at task count, then either start the loop or proceed single-session — do NOT read task files or explore the codebase first.**
+**Resolve the plan path, then unconditionally start the loop — do NOT read task files or explore the codebase first.**
 
 1. Resolve the plan path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/` and use it directly (no confirmation)
    - If no plan folder is found, abort with a clear error message naming the expected path pattern
-2. **Size the plan** (quick grep only — do NOT fully read files):
+2. **Start the loop** (no size gate — this skill's default user operates on large multi-batch plans):
    ```bash
-   task_count=$(grep -cE '^\s*-\s+id:' <plan-path>/_index.md)
-   has_rg_pair=$(ls <plan-path>/task-*-test.md 2>/dev/null | wc -l)
+   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
    ```
-   Also check whether `$ARGUMENTS` contains `--no-loop`.
-3. **Loop decision**:
-   - **Skip loop** (single-session mode) if any of: `$ARGUMENTS` contains `--no-loop`, OR `task_count ≤ 4`. Proceed directly to Initialization; do NOT run `setup-superpower-loop.sh`; omit the completion-promise tag at the end (it is a no-op without loop state).
-   - **Start loop** otherwise. Run:
-     ```bash
-     "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
-     ```
-4. Only after the loop is running (or explicitly skipped), proceed with Initialization below
-
-**Why the size gate?** For ≤4-task plans the loop adds turn overhead without benefit (see `../../skills/references/loop-patterns.md`). Record skip/start in the plan handoff for retrospective audit.
+3. Only after the loop is running, proceed with Initialization below
 
 ## Superpower Loop Integration
 
@@ -55,9 +45,8 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
-3. **Evaluator Configuration** (mandatory): The evaluator is always enabled for every plan execution. If `_index.md` contains an `evaluator:` YAML block, only `intensity` is honored (`thorough` | `standard` | `light`, default: `standard`). Any `mode: off` or `mode: auto` value is rejected — every plan execution MUST produce evaluator output.
-   - **Auto-downgrade for small plans**: If `task_count ≤ 5` AND no Red-Green pair exists, force `light` as the effective intensity (overrides declared `standard` / `thorough`). Rationale: small plans don't justify per-batch passes; one end-of-plan evaluation catches the same issues at lower cost. Record the downgrade in the plan handoff under "Auto-Downgrade" for retrospective audit.
-   - **Checklist resolution**: Before spawning the evaluator, resolve the latest checklist version by scanning `docs/retros/checklists/` for files matching `{mode}-v{N}.md` and selecting the highest N. Pass the resolved path in the spawn context. If `code-v{N}.md` does not exist, abort with a clear error naming the expected path — seed it via `/superpowers:retrospective` before retrying.
+3. **Evaluator Configuration** (mandatory): The evaluator runs once per batch for every plan execution. No intensity modes, no downgrades — a single per-batch pass is the contract.
+   - **Checklist resolution**: Before spawning the evaluator, resolve the latest checklist version by scanning `docs/retros/checklists/` for files matching `code-v{N}.md` and selecting the highest N. Pass the resolved path in the spawn context. If `code-v{N}.md` does not exist, abort with a clear error naming the expected path — seed it via `/superpowers:retrospective` before retrying.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
@@ -81,9 +70,9 @@ These rules are non-negotiable and override all other guidance.
 1. Verification commands from the task file exit with code 0
 2. Expected output matches actual output (no test failures, no assertion errors)
 3. No prohibited patterns exist in any file written during the task
-4. Evaluator verdict for the batch is PASS (see Phase 3 step 2e)
+4. The batch coordinator's returned verdict is PASS (evaluator PASS on the batch containing this task)
 
-See Phase 3 step 2d HARD GATE for verification failure handling.
+Verification failure handling lives inside the batch coordinator (see `./references/batch-execution-playbook.md` — Verification Gate + Rework Loop). The main agent never retries verification in its own context; it receives a structured PASS / REWORK_ESCALATED / PIVOT result from the coordinator.
 
 ## Phase 1: Plan Review & Understanding
 
@@ -121,113 +110,99 @@ See Phase 3 step 2d HARD GATE for verification failure handling.
    - `addBlocks`: Array of task IDs that must wait for this task to complete
    - Example: `TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })` means task #2 waits for task #1
 
-## Phase 3: Batch Execution Loop
+## Phase 3: Batch Execution Loop (Context-Reset Architecture)
 
-Execute tasks in batches using Agent Teams or subagents for parallel execution.
+**CRITICAL — Context Reset Principle (Anthropic harness-design blog, principle 1)**: The main executing-plans agent does NOT execute batch tasks itself. Each batch runs inside a **fresh, isolated sub-agent context** spawned via the Agent tool (`subagent_type: "general-purpose"`). The main agent orchestrates only: it holds plan metadata, TaskList, and a rolling handoff state file — it never accumulates batch execution transcripts. This prevents context pollution as task count scales.
+
+**What the main agent owns (kept across batches)**:
+- `_index.md` (plan structure, read once in Phase 1)
+- TaskList (authoritative task state)
+- `handoff-state.md` in plan directory — cumulative snapshot, rewritten after each batch
+- Git commit at the end
+
+**What each spawned batch coordinator owns (discarded when batch returns)**:
+- Reading task files, running verification, executing BDD/Red-Green/Parallel logic
+- Spawning `superpowers:superpowers-evaluator` for the batch
+- Rework loops inside the batch
+- All per-task implementation transcripts
 
 **For Each Batch**:
 
-0. **Sprint Contract** (mandatory):
-   - Resolve the latest checklist version: scan `docs/retros/checklists/` for `{mode}-v{N}.md`, select the highest N
-   - Generate the sprint contract file in the plan directory before any task in the batch starts:
-     - `standard` / `thorough`: write `sprint-contract-batch-{N}.md`
-     - `light`: write `sprint-contract-summary.md` once for the full plan and reuse it across batches
+0. **Sprint Contract** (main agent, before spawning coordinator):
+   - Resolve the latest checklist version: scan `docs/retros/checklists/` for `code-v{N}.md`, select the highest N
+   - Write `sprint-contract-batch-{N}.md` in the plan directory before spawning the batch coordinator
    - Build the contract from `_index.md`, the batch's task files, the relevant BDD scenarios, the latest checklist items, and any "Recurring Failure Patterns" carried forward from earlier batches
    - Contract defines per-task acceptance criteria, Red-Green pair expectations, and an **Evaluation Criteria Preview** section listing the checklist items (ID + description) the evaluator will later apply -- this feedforward helps the generator produce better first-pass output
-   - Execution MUST NOT start until the contract file exists
-   - See `./references/sprint-contract-template.md` for format
    - The contract is never skipped. If the batch scope changes, rewrite the contract before resuming execution.
-   - Checklist path table:
+   - See `./references/sprint-contract-template.md` for format
+   - Checklist path: `docs/retros/checklists/code-v{N}.md`
 
-     | Mode   | Checklist path pattern             |
-     |--------|------------------------------------|
-     | design | `docs/retros/checklists/design-v{N}.md` |
-     | plan   | `docs/retros/checklists/plan-v{N}.md`   |
-     | code   | `docs/retros/checklists/code-v{N}.md`   |
+1. **Refresh Handoff State** (main agent):
+   - Rewrite `handoff-state.md` in the plan directory with:
+     - Completed task IDs (from TaskList)
+     - Modified files accumulated from prior batches
+     - Recurring Failure Patterns from prior evaluation reports (see `./references/intra-plan-learning.md`)
+     - Key architectural decisions carried forward
+   - This file is the ONLY cross-batch memory the spawned batch coordinator can rely on. If it is not written, the coordinator starts blind — do not skip.
+   - See `./references/handoff-template.md` for format.
 
-1. **Choose Execution Mode** (decision tree):
-   - **Red-Green Pair**: If the batch contains a Red-Green pair (same NNN prefix, one `test` + one `impl`), assign exactly two dedicated agents — one per task. The test agent runs first and confirms Red state; then the impl agent starts. Multiple pairs run in parallel. Non-negotiable for any test+impl pair.
-   - **Parallel** (default for all other multi-task batches): Use Agent Team for 3+ tasks, or plain subagents for exactly 2 tasks. If agents edit overlapping files, use worktree isolation (`isolation: "worktree"`) as an option within this mode — not a separate mode. File conflicts within a batch should be resolved by splitting the batch further when possible.
-   - **Linear** (last resort): Only when the batch has a single task or unavoidable sequential dependencies that cannot be split. State the reason explicitly.
+2. **Spawn Batch Coordinator** (main agent → fresh sub-agent via Agent tool):
+   - Use the Agent tool with `subagent_type: "general-purpose"` and `description: "Execute batch {N} of {plan-name}"`
+   - The coordinator prompt MUST be fully self-contained (the coordinator has no memory of this conversation). Include:
+     1. The plan directory absolute path
+     2. The `sprint-contract-batch-{N}.md` path
+     3. The `handoff-state.md` path
+     4. The resolved code checklist path (`docs/retros/checklists/code-v{N}.md`)
+     5. The full task ID list for this batch, with Red-Green pair annotations where applicable
+     6. The batch's execution mode (Red-Green Pair / Parallel / Linear — see decision tree in `./references/batch-execution-playbook.md`)
+     7. The full Agent Prompt Template (Quality Requirements + Verification blocks) from `./references/batch-execution-playbook.md`
+     8. Instruction to spawn `superpowers:superpowers-evaluator` for batch evaluation after all tasks pass their Verification Gate
+     9. Max 2 evaluation-rework rounds before the coordinator escalates per `./references/blocker-and-escalation.md`
+     10. Required structured return format (see step 3 below)
 
-2. **For Each Task in Batch**:
+3. **Process Coordinator Result** (main agent):
+   The batch coordinator returns a structured result. Main agent parses it:
+   ```
+   Verdict: PASS | REWORK_ESCALATED | PIVOT
+   Completed task IDs: [001, 002, ...]
+   Evidence blocks: [ {task_id, verification_command, status, last_20_lines_of_output} ]
+   Modified files: [path/to/file1, ...]
+   Evaluation report path: evaluation-round-{N}-batch-{M}.md
+   Recurring patterns detected: [ {item_id, issue_summary} ]
+   Pivot recommendation: <text or null>
+   ```
+   - On **PASS**: TaskUpdate each completed task ID to `completed` with a note referencing the verification commands that ran
+   - On **PIVOT**: log the recommendation to the evaluation report, apply the recommended plan modifications to `_index.md` and remaining task files, then continue with the revised plan (do NOT ask the user)
+   - On **REWORK_ESCALATED**: the coordinator exhausted 2 rework rounds. Escalate per `./references/blocker-and-escalation.md` — log HARD BLOCKER, abort batch, do NOT retry in the main agent's own context
 
-   a. **Mark Task In Progress**: Use TaskUpdate to set status to `in_progress`
+4. **Batch Completion** (main agent): Append a batch handoff block to the conversation, update `handoff-state.md` with the new modified files + patterns, proceed to next batch. See Phase 4 for handoff format.
 
-   b. **Read Task Context**: Read the task file to get full context (subject, description, BDD scenario, verification steps)
-
-   c. **Execute Task**: Based on execution mode:
-
-      **Mandatory prompt content** — regardless of execution mode, every agent/teammate prompt MUST include:
-      1. Full task file content (subject, description, BDD scenario, verification commands)
-      2. The Quality Requirements block: "You MUST produce complete, working implementation code — not stubs, skeletons, or placeholders. Every function body must contain real logic. If you cannot implement something completely, stop and report a blocker."
-      3. The Verification block: "After implementation, run the verification commands below and confirm they all pass (exit code 0, no test failures). Report the actual command output. Do NOT report completion until all verification commands pass."
-
-      See `./references/batch-execution-playbook.md` — "Agent Prompt Template" section — for the full required template.
-
-      **For Agent Team / Worktree mode**:
-      - Create team if not already created
-      - Assign task to available teammate using the mandatory prompt template above
-      - Wait for teammate to complete and report verification output
-
-      **For Subagent mode**:
-      - Launch subagent using the mandatory prompt template above
-      - Wait for subagent to complete and report verification output
-
-      **For Linear mode**:
-      - Execute task directly in current session
-      - Follow BDD scenario and verification steps
-      - Run verification commands and capture output
-
-   d. **Verification Gate**: Run all verification commands from the task file. Capture the actual output.
-      - For test tasks: Confirm test fails for the right reason (Red state confirmed)
-      - For impl tasks: Confirm all tests pass (Green state confirmed, exit code 0)
-      - For other tasks: Confirm verification command exits 0 and output matches expected
-
-      **HARD GATE**: If ANY verification step fails (non-zero exit, test failure, unexpected output):
-      - The task MUST remain `in_progress`
-      - Fix the issue and re-run verification (up to two retries)
-      - If still failing after two retries, escalate per `./references/blocker-and-escalation.md`
-      - NEVER proceed to evaluator assessment (step 2e) while any task's verification is failing
-
-   e. **Evaluator Assessment & Batch Completion Gate** (mandatory):
-      - After ALL tasks in the batch have passed their Verification Gate (step 2d), spawn `superpowers:superpowers-evaluator` sub-agent with the resolved checklist path in spawn context
-      - The superpowers-evaluator reads sprint contract + produced artifacts, applies binary checklist evaluation
-      - Evaluator outputs report content as text; the executing-plans skill writes it to `evaluation-round-{N}-batch-{M}.md` in the plan directory
-      - If verdict is **PASS**: mark ALL tasks in the batch completed — use TaskUpdate to set status to `completed` for each task, noting which verification commands ran and that they passed
-      - If verdict is **REWORK**: generator reads rework items from the superpowers-evaluator, fixes issues, re-runs verification (max 2 evaluation-rework rounds, then escalate per `./references/blocker-and-escalation.md`). Do NOT mark any task completed until evaluator verdict is PASS
-      - If **pivot flag** is set: log the superpowers-evaluator recommendation to the evaluation report and continue execution based on that recommendation (do NOT ask the user)
-      - See `./references/evaluation-file-formats.md` for report format
-      - **Intensity modifiers**: `thorough` = per-task evaluation; `standard` = per-batch (default); `light` = end-of-plan only
-
-3. **Batch Completion**: After all tasks in batch complete, report progress and proceed to next batch
-
-See `./references/batch-execution-playbook.md` for detailed execution patterns.
+See `./references/batch-execution-playbook.md` for the coordinator's internal execution patterns (Red-Green pair, Parallel mode, Linear mode, verification gate, rework loop, evaluator invocation).
 
 ## Phase 4: Verification & Feedback
 
-Close the loop with structured evidence and intra-plan learning.
+Close the loop with structured evidence and intra-plan learning. All of Phase 4 runs in the main agent's context — the batch coordinator returned evidence as a structured result; the main agent persists it without re-reading transcripts.
 
-1. **Publish Evidence**: For each completed task in the batch, output a structured evidence block:
+1. **Publish Evidence**: For each completed task in the batch (from the coordinator's structured result), output a compact evidence block:
    ```
    Task [ID]: [subject]
    Verification command: <command run>
-   Output: <actual output, truncated to last 20 lines if long>
-   Status: PASS / FAIL
+   Output: <last 20 lines of coordinator-reported output>
+   Status: PASS
    ```
-   Any task without a PASS evidence block is NOT verified. Do not proceed to confirmation until all tasks have PASS status.
+   Evidence is drawn from the coordinator's return payload — do NOT re-run verification in the main context.
 
-2. **Pattern Scan**: Scan evaluation reports for checklist items that FAILed in 2+ distinct batches; inject "Recurring Failure Patterns" into the next sprint contract preamble. See `./references/intra-plan-learning.md`.
+2. **Pattern Scan**: Read evaluation reports from the plan directory; identify checklist items that FAILed in 2+ distinct batches. Inject "Recurring Failure Patterns" into the next sprint contract preamble. See `./references/intra-plan-learning.md`.
 
-3. **Persistent Patterns**: If a checklist item FAILed in 3+ batches, emit a `PERSISTENT PATTERN` warning in the batch handoff. Continue execution autonomously. See `./references/intra-plan-learning.md`.
+3. **Persistent Patterns**: If a checklist item FAILed in 3+ batches, emit a `PERSISTENT PATTERN` warning in the batch handoff. Continue execution autonomously.
 
-4. **Batch Handoff**: Emit a lightweight handoff block to context (progress, patterns, modified files, next batch scope). See `./references/intra-plan-learning.md`.
+4. **Batch Handoff**: Emit a lightweight handoff block to context (progress, patterns, modified files, next batch scope). Also update `handoff-state.md` (written in Phase 3 step 1) with the new accumulated state — this is the cross-batch memory the next coordinator reads.
 
-5. **Proceed**: Output the evidence summary, then move immediately to the next batch — no user confirmation.
+5. **Handoff Summary** (every batch boundary, no task-count gate): Produce `handoff-summary-{N}.md` after every completed batch. See `./references/handoff-template.md` for format. This file + `handoff-state.md` together constitute the persistent cross-batch memory; the main agent only retains structural metadata.
 
-6. **Loop**: Repeat Phase 3-4 until all batches complete.
+6. **Proceed**: Output the evidence summary, then move immediately to the next batch — no user confirmation.
 
-7. **Handoff Summary** (for plans with 16+ tasks): Produce `handoff-summary-{N}.md` at configured boundaries (default: every 3 batches). See `./references/handoff-template.md` for format. The lightweight batch handoff (step 4) is emitted for every batch regardless of plan size.
+7. **Loop**: Repeat Phase 3-4 until all batches complete.
 
 8. **Checklist Evolution Candidates** (on plan completion): Scan for checklist items that FAILed in 3+ batches or required 3+ rework rounds. Emit evolution candidates and variety gap notes in the plan completion summary. See `./references/intra-plan-learning.md` for format.
 
