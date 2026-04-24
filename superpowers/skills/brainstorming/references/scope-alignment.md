@@ -2,7 +2,7 @@
 
 ## Goal
 
-Understand what's being built by exploring the codebase, classify complexity, align on approach via sprint contract, and get user approval.
+Understand what's being built by exploring the codebase, align on approach via sprint contract, and get user approval.
 
 ## Explore Codebase First
 
@@ -14,16 +14,6 @@ Understand what's being built by exploring the codebase, classify complexity, al
 4. **Build mental model**: Synthesize exploration into requirements, constraints, and relevant patterns
 
 **Key Principle**: Explore extensively before asking. Questions should fill gaps that codebase exploration cannot answer.
-
-## Complexity Assessment Criteria
-
-| Level | Indicators | Examples |
-|-------|-----------|----------|
-| **Simple** | Single file/component, clear pattern to follow, obvious implementation path | Add a field to existing form, fix a known bug, add a CLI flag |
-| **Medium** | Cross-module changes, some architectural decisions, 2-3 integration points | New API endpoint with DB changes, refactor shared utility, add auth to existing route |
-| **Complex** | New system/subsystem, large refactor, multiple integration points, novel patterns | New plugin system, auth middleware rewrite, data pipeline architecture |
-
-**When uncertain, round up one level.** Misclassifying Complex as Simple wastes more time than the reverse.
 
 ## Sprint Contract Pattern
 
