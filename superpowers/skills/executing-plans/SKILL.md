@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: Executes written implementation plans efficiently using agent teams or subagents. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
+description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
 allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
@@ -45,7 +45,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
-3. **Evaluator Configuration** (mandatory): The evaluator runs once per batch for every plan execution. No intensity modes, no downgrades — a single per-batch pass is the contract.
+3. **Evaluator Configuration** (default: on, overridable only via `harness-config.json`): The evaluator runs once per batch for every plan execution. The sole exception is a retrospective-approved, one-at-a-time assumption test — when `docs/retros/harness-config.json` lists `evaluator_per_batch` in `disabled_components`, the per-batch evaluator spawn is skipped and a `harness_observation` row is appended instead (see `./references/intra-plan-learning.md`). There are no user-facing intensity modes, no ad-hoc downgrades.
    - **Checklist resolution**: Before spawning the evaluator, resolve the latest checklist version by scanning `docs/retros/checklists/` for files matching `code-v{N}.md` and selecting the highest N. Pass the resolved path in the spawn context. If `code-v{N}.md` does not exist, abort with a clear error naming the expected path — seed it via `/superpowers:retrospective` before retrying.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
@@ -54,7 +54,7 @@ The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</pr
 
 **Core Principles**: Review before execution, batch verification, explicit blockers, evidence-driven approach.
 
-**MANDATORY SKILLS**: Both `superpowers:agent-team-driven-development` and `superpowers:behavior-driven-development` must be loaded regardless of execution mode.
+**MANDATORY SKILL**: `superpowers:behavior-driven-development` must be loaded regardless of execution mode.
 
 ## Definition of Done
 
@@ -79,6 +79,7 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 1. **Read Plan**: Read `_index.md` to understand scope, architecture decisions, and extract inline YAML task metadata from the "Execution Plan" section.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
+4. **Read Harness Config** (assumption test): If `docs/retros/harness-config.json` exists, read it. For each entry in `disabled_components[]`, store the `component` identifier locally as a disabled flag honored later in Phase 3 / Phase 4. Emit one line in the batch log: `Harness disable active: <component> (from <retrospective_id>)`. See `../retrospective/references/harness-config.md` for supported identifiers. Skip this step silently when the file does not exist, is empty, or contains an empty `disabled_components[]` array (default behavior).
 
 ## Phase 2: Task Creation (MANDATORY)
 
@@ -156,8 +157,10 @@ Verification failure handling lives inside the batch coordinator (see `./referen
      5. The full task ID list for this batch, with Red-Green pair annotations where applicable
      6. The batch's execution mode (Red-Green Pair / Parallel / Linear — see decision tree in `./references/batch-execution-playbook.md`)
      7. The full Agent Prompt Template (Quality Requirements + Verification blocks) from `./references/batch-execution-playbook.md`
-     8. Instruction to spawn `superpowers:superpowers-evaluator` for batch evaluation after all tasks pass their Verification Gate
-     9. Max 2 evaluation-rework rounds before the coordinator escalates per `./references/blocker-and-escalation.md`
+     8. **Evaluator instruction (conditional on Phase 1 step 4):**
+        - Default: "Spawn `superpowers:superpowers-evaluator` for batch evaluation after all tasks pass their Verification Gate"
+        - When `evaluator_per_batch` is disabled: "Do NOT spawn the evaluator. After all tasks pass the Verification Gate, return verdict PASS directly. The main agent will log a `harness_observation` entry."
+     9. Max 2 evaluation-rework rounds before the coordinator escalates per `./references/blocker-and-escalation.md` (skipped when evaluator is disabled)
      10. Required structured return format (see step 3 below)
 
 3. **Process Coordinator Result** (main agent):
@@ -175,7 +178,7 @@ Verification failure handling lives inside the batch coordinator (see `./referen
    - On **PIVOT**: log the recommendation to the evaluation report, apply the recommended plan modifications to `_index.md` and remaining task files, then continue with the revised plan (do NOT ask the user)
    - On **REWORK_ESCALATED**: the coordinator exhausted 2 rework rounds. Escalate per `./references/blocker-and-escalation.md` — log HARD BLOCKER, abort batch, do NOT retry in the main agent's own context
 
-4. **Batch Completion** (main agent): Append a batch handoff block to the conversation, update `handoff-state.md` with the new modified files + patterns, proceed to next batch. See Phase 4 for handoff format.
+4. **Batch Completion** (main agent): Append a batch handoff block to the conversation, update `handoff-state.md` with the new modified files + patterns, proceed to next batch. See Phase 4 for handoff format. When a harness component was disabled for this run (Phase 1 step 4), append one `harness_observation` row per batch to `docs/retros/harness-observations.jsonl` (format: `./references/intra-plan-learning.md`).
 
 See `./references/batch-execution-playbook.md` for the coordinator's internal execution patterns (Red-Green pair, Parallel mode, Linear mode, verification gate, rework loop, evaluator invocation).
 
@@ -219,11 +222,19 @@ See `../../skills/references/git-commit.md` for patterns, templates, and require
 
 ## Phase 6: Completion
 
-Verify all tasks are complete, then output the promise as the absolute last line.
+Verify all tasks are complete, log plan completion, then output the promise as the absolute last line.
 
 1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
-2. Summary message: "Plan execution complete. All [N] tasks verified and committed. To analyze patterns and evolve checklists, run `/superpowers:retrospective`."
-3. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
+2. **Log Plan Completion** (calibration input): Append one JSON line to `docs/retros/plans-completed.jsonl` (create file + parent dir if absent):
+   ```json
+   {"event":"plan_completed","plan":"<absolute plan dir path>","task_count":<N>,"batch_count":<M>,"timestamp":"<ISO8601 UTC>"}
+   ```
+3. **Retrospective-Due Reminder**: Count `plan_completed` entries in `plans-completed.jsonl` whose timestamp is later than the most recent `retrospective_run` timestamp in `docs/retros/evolution-log.jsonl`. If the count is `>= 3`, emit a visible reminder in the summary:
+   > **RETROSPECTIVE DUE**: {count} plans completed since the last retrospective. Run `/superpowers:retrospective --across-all` to evolve checklists before the next plan.
+
+   If the count is `< 3`, skip the reminder silently. If `evolution-log.jsonl` does not exist, treat "since last retrospective" as "since forever".
+4. Summary message: "Plan execution complete. All [N] tasks verified and committed." (append the retrospective-due reminder from step 3 if applicable).
+5. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
 
 **PROHIBITED**: Do NOT output the promise tag if TaskList shows any non-completed tasks. Do NOT output any text after the promise tag.
 

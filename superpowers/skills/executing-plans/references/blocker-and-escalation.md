@@ -7,14 +7,13 @@
 - Reference skills when plan says to
 - Between batches: just report and wait
 - Stop when blocked, don't guess
-- **Teammate Blocker:** If a teammate hangs or fails, use "Talk to teammates directly" or "Shut down teammates" to intervene.
+- **Sub-agent Blocker:** If a spawned sub-agent hangs or returns an error, log the failure and abort the batch — do NOT retry in the main agent's context.
 - Never start implementation on main/master branch — if the current branch is main/master, abort immediately with a HARD BLOCKER log entry
 - **Autonomous mode:** This skill never prompts the user. On any blocker, log a HARD BLOCKER entry (with full evidence) to the plan directory, then abort that batch and continue with batches that are not affected. Only output the completion promise when all non-blocked tasks are done.
 
 ## Integration
 
 **Required workflow skills (MANDATORY for all execution modes):**
-- **Superpowers: Agent Team Driven Development** - Load `superpowers:agent-team-driven-development` skill using the Skill tool for team coordination guidance
 - **Superpowers: Behavior Driven Development** - Load `superpowers:behavior-driven-development` skill using the Skill tool for BDD/TDD workflow guidance
 - **Superpowers: Writing Plans** - Load `superpowers:writing-plans` skill using the Skill tool to create the plan this skill executes
 
@@ -54,4 +53,4 @@ When the independent superpowers-evaluator is enabled, evaluation-driven escalat
 
 ### Integration with Existing Triggers
 
-Evaluator escalation triggers coexist with existing triggers (repeated verification failure, missing dependency, unclear instruction, teammate blocker). When multiple triggers fire simultaneously, log all of them in a single combined blocker entry and continue per the autonomous handling rules above — never prompt the user.
+Evaluator escalation triggers coexist with existing triggers (repeated verification failure, missing dependency, unclear instruction, sub-agent blocker). When multiple triggers fire simultaneously, log all of them in a single combined blocker entry and continue per the autonomous handling rules above — never prompt the user.

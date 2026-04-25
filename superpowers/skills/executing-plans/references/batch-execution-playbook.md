@@ -25,7 +25,7 @@ This playbook defines the per-batch coordinator's internal process. It is invoke
 1. Read `handoff-state.md` to learn prior batches' modified files, decisions, recurring patterns
 2. Read `sprint-contract-batch-{N}.md` for this batch's scope, acceptance criteria, and Evaluation Criteria Preview
 3. Read every task file for the batch (the coordinator, not the main agent, owns this reading)
-4. Load both `superpowers:agent-team-driven-development` and `superpowers:behavior-driven-development` skills
+4. Load `superpowers:behavior-driven-development` skill
 
 ### Step 2: Execute the Batch
 
@@ -35,7 +35,7 @@ This playbook defines the per-batch coordinator's internal process. It is invoke
 Is this a Red-Green pair (test + impl, same NNN prefix)?
   YES → Red-Green Pair mode
   NO  → Does the batch have 2+ tasks?
-          YES → Parallel mode (Agent Team for 3+, subagents for 2)
+          YES → Parallel mode (spawn one Task sub-agent per task)
           NO  → Linear mode
 ```
 
@@ -43,8 +43,8 @@ Is this a Red-Green pair (test + impl, same NNN prefix)?
 
 For test+impl pairs sharing the same NNN prefix:
 
-1. Assign test task to first agent — writes failing test, confirms Red state
-2. Once Red confirmed, assign impl task to second agent — implements to pass
+1. Assign test task to first sub-agent — writes failing test, confirms Red state
+2. Once Red confirmed, assign impl task to second sub-agent — implements to pass
 3. Multiple pairs across batches run in parallel
 4. Non-negotiable: overrides all other mode selection for that pair
 
@@ -52,10 +52,10 @@ For test+impl pairs sharing the same NNN prefix:
 
 For independent multi-task batches:
 
-1. **Launch**: Create Agent Team (3+ tasks) or subagents (2 tasks)
-   - If agents edit overlapping files, add `isolation: "worktree"` for isolation
-2. **Assign**: Give each agent its task with full context and file boundaries
-3. **Wait**: Wait for all agents to complete
+1. **Launch**: Spawn one Task sub-agent per task via the Agent tool
+   - If sub-agents edit overlapping files, add `isolation: "worktree"` for isolation
+2. **Assign**: Give each sub-agent its task with full context and file boundaries
+3. **Wait**: Wait for all sub-agents to complete
 4. **Verify**: Run verification commands for all tasks
 5. **Evaluate**: Spawn superpowers-evaluator after all tasks pass verification
 6. **Complete**: Use `TaskUpdate` to mark tasks completed only after evaluator verdict is PASS
@@ -105,7 +105,7 @@ When the evaluator is enabled, an independent assessment step runs after each ba
 
 ### Evaluator Invocation
 
-The superpowers-evaluator is a **sub-agent** (not a teammate). Spawn it via the Agent tool after batch verification completes:
+The superpowers-evaluator is a dedicated read-only sub-agent. Spawn it via the Agent tool after batch verification completes:
 
 1. Pass context to the superpowers-evaluator:
    - Sprint contract file path: `sprint-contract-batch-{N}.md`
@@ -114,7 +114,7 @@ The superpowers-evaluator is a **sub-agent** (not a teammate). Spawn it via the 
 2. The superpowers-evaluator reads the sprint contract, inspects artifacts, runs verification commands, and scores against rubrics
 3. The superpowers-evaluator returns report content; the executing-plans skill writes `evaluation-round-{N}-batch-{M}.md` in the plan directory
 
-**Independence**: The superpowers-evaluator runs as a sub-agent regardless of the execution mode used for the batch (Parallel, Linear, Red-Green). It is never added as a teammate to an Agent Team.
+**Independence**: The superpowers-evaluator runs as its own sub-agent regardless of the execution mode used for the batch (Parallel, Linear, Red-Green). It is never fused with an implementation sub-agent.
 
 ### Reading Evaluation Results
 
@@ -140,7 +140,7 @@ See `evaluation-file-formats.md` for report format details.
 
 ## Agent Prompt Template
 
-Every agent/teammate prompt MUST include all three sections:
+Every sub-agent prompt MUST include all three sections:
 
 ```
 ## Task Assignment

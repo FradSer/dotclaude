@@ -61,3 +61,49 @@ If a checklist item has FAILed in 3+ batches:
 - Emit a prominent `PERSISTENT PATTERN` warning block at the top of the next batch handoff
 - Include explicit recommendation to review the task specification during retrospective
 - Execution continues autonomously — this skill does NOT prompt the user or pause
+
+## Harness Observations Log Schema
+
+Write to: `docs/retros/harness-observations.jsonl` (one JSON object per line, append-only). Populated by the consuming skill (executing-plans Phase 3 / Phase 4) when a harness component listed in `docs/retros/harness-config.json` is honored.
+
+See `../../retrospective/references/harness-config.md` for the disable protocol that produces these observations.
+
+```json
+{
+  "event": "harness_observation",
+  "timestamp": "2026-04-24T12:34:56Z",
+  "component": "evaluator_per_batch",
+  "retrospective_id": "docs/retros/retro-2026-04-24-evaluator-cost.md",
+  "plan": "docs/plans/2026-04-24-auth-plan/",
+  "batch": 2,
+  "task_count_in_batch": 4,
+  "rework_rounds_observed": 0,
+  "persistent_patterns_detected": [],
+  "notes": "Batch passed verification gate on first attempt; evaluator spawn skipped per harness-config"
+}
+```
+
+### Field semantics
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `event` | string | Always `"harness_observation"`. |
+| `timestamp` | ISO 8601 | When the observation was recorded. |
+| `component` | string | Matches the component in harness-config.json. |
+| `retrospective_id` | path | The retrospective that authorized the disable. |
+| `plan` | path | The plan under execution. |
+| `batch` | integer | Batch index within the plan (1-based). |
+| `task_count_in_batch` | integer | Tasks executed in this batch. |
+| `rework_rounds_observed` | integer | Verification-gate reruns inside the batch (not evaluator rounds, since evaluator may be disabled). |
+| `persistent_patterns_detected` | array | `PERSISTENT PATTERN` item IDs raised for this batch (may be empty). |
+| `notes` | string | One-sentence human-readable summary. Used by the next retrospective when judging promotion vs. reinstate. |
+
+Plans that execute without any disabled component MUST NOT write to this file.
+
+### Reader contract (retrospective Phase 1 step 6)
+
+The next retrospective aggregates observations by `component + retrospective_id`, then in Phase 5 uses the aggregate to decide:
+
+- **Promote (permanent remove)**: `persistent_patterns_detected` empty across ≥3 follow-up plans AND no user-reported regressions.
+- **Reinstate**: any row shows patterns the disabled component would have caught, OR the reinstate condition recorded in Phase 5c fires.
+- **Extend test**: fewer than 3 plans have elapsed since the disable began.
