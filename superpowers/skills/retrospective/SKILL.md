@@ -172,13 +172,14 @@ See `./references/analysis-patterns.md` for criteria.
 
 Flag a component as a **removal candidate** when it satisfies any of the following across **≥3 consecutive plans**:
 
-| Component | Removal-candidate trigger | Signal source |
-|-----------|---------------------------|---------------|
-| Evaluator (per-batch) | Zero rework items produced | evaluation reports in plan dirs |
-| Superpower Loop | Loop iterated ≤2 times (retry unused) | state file `iteration` field or plan handoff |
-| Sprint contract Evaluation Criteria Preview | First-pass output PASSes every preview item | per-batch evaluation reports |
-| Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles |
-| Per-batch context reset (coordinator spawn) | Main-agent context stays below 30% of cap for entire run | handoff-state.md growth + transcript length |
+| Component | Removal-candidate trigger | Signal source | harness-config identifier |
+|-----------|---------------------------|---------------|----|
+| Evaluator (per-batch, code mode) | Zero rework items produced | evaluation reports in plan dirs | `evaluator_per_batch` |
+| Plan evaluator | Zero plan-mode rework items in 3+ plans | `evaluation-plan-round-*.md` | `plan_evaluator` |
+| Design evaluator | Zero design-mode rework items in 3+ designs | `evaluation-design-round-*.md` | `design_evaluator` |
+| Sprint contract Evaluation Criteria Preview | First-pass output PASSes every preview item | per-batch evaluation reports | `sprint_contract_preview` |
+| Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles | `recurring_failure_patterns` |
+| Superpower Loop | Loop iterated ≤2 times (retry unused) | state file `iteration` field or plan handoff | (no identifier — informational only) |
 
 Checklist items with zero failures are covered by Phase 3 REMOVE proposals — cross-reference here, do not duplicate.
 

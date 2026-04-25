@@ -46,16 +46,23 @@ configuration — the file is not required to exist.
 
 ### Supported component identifiers
 
-| Identifier | Effect when listed |
-|-----------|---------------------|
-| `evaluator_per_batch` | executing-plans Phase 3 skips the superpowers-evaluator (Code mode) spawn. Sprint contract and verification gate still run. |
-| `sprint_contract_preview` | executing-plans omits the "Evaluation Criteria Preview" section from sprint contracts. |
-| `recurring_failure_patterns` | executing-plans Phase 4 skips the pattern-scan injection into the next sprint contract. |
-| `context_reset_coordinator` | executing-plans Phase 3 runs batches directly in the main agent (no sub-agent coordinator spawn). **Only valid for plans ≤ 3 batches** — skills reject this identifier for larger plans and log an observation explaining the refusal. |
-| `plan_evaluator` | writing-plans Phase 4 skips the superpowers-evaluator (plan mode). Sub-agent reflection still runs. |
-| `design_evaluator` | brainstorming Phase 2 skips the superpowers-evaluator (design mode). Sub-agent research still runs. |
+| Identifier | Effect when listed | Consumer (file + step) |
+|-----------|---------------------|----------|
+| `evaluator_per_batch` | executing-plans Phase 3 skips the superpowers-evaluator (Code mode) spawn. Sprint contract and verification gate still run. | `executing-plans/SKILL.md` Phase 1 step 4 + Phase 3 step 2.8 |
+| `sprint_contract_preview` | executing-plans omits the "Evaluation Criteria Preview" section from sprint contracts. | `executing-plans/SKILL.md` Phase 3 step 0 |
+| `recurring_failure_patterns` | executing-plans Phase 4 skips the pattern-scan injection into the next sprint contract preamble. | `executing-plans/SKILL.md` Phase 4 step 2 |
+| `plan_evaluator` | writing-plans Phase 4 skips the superpowers-evaluator (plan mode). Sub-agent reflection still runs. | `writing-plans/SKILL.md` Initialization step 3 + Phase 4 Evaluator Mode |
+| `design_evaluator` | brainstorming Phase 2 skips the superpowers-evaluator (design mode). Sub-agent research still runs. | `brainstorming/SKILL.md` Phase 1.5 + Phase 2 Step 2 |
 
-Any identifier not in this table is treated as unknown — the consuming skill
+Every supported identifier above MUST have a corresponding `if-disabled` branch in its consumer; new identifiers cannot be added to this table without landing the consumer-side check first.
+
+**Removed / deferred identifiers (do NOT propose):**
+
+| Identifier | Why removed |
+|-----------|---|
+| `context_reset_coordinator` | The "main agent runs batches directly" alt-path was too large to land safely (would require inlining the entire batch-execution-playbook into the main agent). Re-introduce only after a dedicated design pass. Retrospective Phase 5c MUST refuse this identifier; if selected, log an observation `component_unsupported` and rewrite `harness-config.json` with an empty `disabled_components[]`. |
+
+Any identifier not in the supported table is treated as unknown — the consuming skill
 logs an observation (`component_unknown`) and proceeds with the full pipeline.
 
 ## Lifecycle
