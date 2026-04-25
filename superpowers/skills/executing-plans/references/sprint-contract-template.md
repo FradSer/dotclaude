@@ -35,7 +35,9 @@ Table listing every task in the batch with its identifier, subject, and type.
 | 005 | Write auth handler test | test |
 ```
 
-### Section 2: Acceptance Criteria
+### Section 2: Acceptance Criteria (auto-derived)
+
+**CRITICAL — auto-derive only**: Acceptance criteria are mechanically derived from each task file's `## BDD Scenario` section (Then-clauses) using the rules in `## Acceptance Criteria Derivation` below. Do NOT author new criteria from scratch. Do NOT paraphrase. Each Then-clause produces exactly one acceptance criterion. This eliminates duplicate spec between `_index.md` task YAML, individual task files, and the sprint contract.
 
 Per-task checklist of testable, binary pass/fail items. Each criterion maps directly to a verifiable outcome.
 

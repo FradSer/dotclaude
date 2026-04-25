@@ -318,3 +318,38 @@ If verdict is PASS, the Rework Items table remains present but empty.
 | Rework Items | Yes | Empty table if no FAIL items; keep the section |
 | Recommendations | Yes | Non-blocking observations; empty list if none |
 | Verdict | Yes | PASS (all items PASS) or REWORK (count and IDs of FAIL items) |
+
+## 6. REWORK Resolution Protocol
+
+When any evaluation report (Design / Plan / Code) returns verdict `REWORK`, the consuming skill (brainstorming / writing-plans / executing-plans coordinator) MUST process Rework Items deterministically. This section is the single source of truth so all three consumers behave identically.
+
+### Processing Order
+
+1. Read the report's Rework Items table top-to-bottom — do NOT cherry-pick which to fix
+2. For each row in order:
+   - Locate `File:Location` (line number or section reference)
+   - Apply `Rework Action` literally — the action text is the spec
+   - If the action is ambiguous, pick the most concrete interpretation per the "Autonomous Resolution Protocol" in `sprint-contract-template.md`; do NOT prompt the user mid-rework
+3. After all rows processed, re-spawn evaluator (round N+1)
+
+### Round Limit
+
+| Round | Action |
+|-------|--------|
+| 1 | Apply all rework items, re-spawn evaluator |
+| 2 | Apply remaining rework items, re-spawn evaluator |
+| 3+ | Escalate per `blocker-and-escalation.md` — do NOT attempt round 3 |
+
+The evaluator assesses independently each round; previous PASS items can fail in a later round if the rework introduced regressions.
+
+### Multi-File / Multi-Location Rework
+
+When a single Item ID's rework spans multiple locations (e.g., `SCEN-CONC-01` flagged 3 lines), the report lists one row per location. Process all rows for the same Item ID before moving to the next Item ID — this preserves the "fix this category, then move on" mental model and reduces cross-item regression.
+
+### When Rework Action References Missing Information
+
+If a Rework Action says "Add task for: <scenario>" but the scenario name doesn't appear in the design, do NOT invent it — the evaluator likely mis-read. Log the discrepancy as a recommendation in the next round's report and skip the row. Looping on missing info is forbidden.
+
+### Cross-Skill Consistency
+
+This protocol is authoritative. Skill SKILL.md files MUST NOT redefine REWORK handling — they reference this section. If evaluator output format changes, update this section first; consumers follow.

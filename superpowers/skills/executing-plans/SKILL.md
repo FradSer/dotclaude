@@ -10,6 +10,10 @@ allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Writ
 
 Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
 
+## CRITICAL: Bail-Out Check (run first)
+
+Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip loop, coordinator, sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template.
+
 ## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop
 
 **Resolve the plan path, then unconditionally start the loop — do NOT read task files or explore the codebase first.**
@@ -45,8 +49,8 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
-3. **Evaluator Configuration** (default: on, overridable only via `harness-config.json`): The evaluator runs once per batch for every plan execution. The sole exception is a retrospective-approved, one-at-a-time assumption test — when `docs/retros/harness-config.json` lists `evaluator_per_batch` in `disabled_components`, the per-batch evaluator spawn is skipped and a `harness_observation` row is appended instead (see `./references/intra-plan-learning.md`). There are no user-facing intensity modes, no ad-hoc downgrades.
-   - **Checklist resolution**: Before spawning the evaluator, resolve the latest checklist version by scanning `docs/retros/checklists/` for files matching `code-v{N}.md` and selecting the highest N. Pass the resolved path in the spawn context. If `code-v{N}.md` does not exist, abort with a clear error naming the expected path — seed it via `/superpowers:retrospective` before retrying.
+3. **Evaluator Configuration** (default: on, overridable only via `harness-config.json`): Evaluator runs once per batch unless `evaluator_per_batch` is in `disabled_components` — then skip spawn and append a `harness_observation` row (see `./references/intra-plan-learning.md`). No intensity modes.
+   - **Checklist resolution**: Scan `docs/retros/checklists/` for `code-v{N}.md` (highest N). **Auto-seed when missing**: copy the `code-v1.md` template from `../retrospective/SKILL.md` Phase 0, log `Auto-seeded code-v1.md`, continue.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
@@ -130,13 +134,10 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 **For Each Batch**:
 
 0. **Sprint Contract** (main agent, before spawning coordinator):
-   - Resolve the latest checklist version: scan `docs/retros/checklists/` for `code-v{N}.md`, select the highest N
-   - Write `sprint-contract-batch-{N}.md` in the plan directory before spawning the batch coordinator
-   - Build the contract from `_index.md`, the batch's task files, the relevant BDD scenarios, the latest checklist items, and any "Recurring Failure Patterns" carried forward from earlier batches
-   - Contract defines per-task acceptance criteria, Red-Green pair expectations, and an **Evaluation Criteria Preview** section listing the checklist items (ID + description) the evaluator will later apply -- this feedforward helps the generator produce better first-pass output
-   - The contract is never skipped. If the batch scope changes, rewrite the contract before resuming execution.
-   - See `./references/sprint-contract-template.md` for format
-   - Checklist path: `docs/retros/checklists/code-v{N}.md`
+   - Write `sprint-contract-batch-{N}.md` from `_index.md`, batch task files, BDD scenarios, latest `code-v{N}.md`
+   - Acceptance criteria **auto-derived** from each task file's BDD Then-clauses — see `./references/sprint-contract-template.md` "Acceptance Criteria Derivation"; do NOT author new criteria
+   - Conditional sections (per Phase 1 step 4 flags): omit "Recurring Failure Patterns" preamble when `recurring_failure_patterns` disabled; omit "Evaluation Criteria Preview" when `sprint_contract_preview` disabled
+   - Contract is never skipped. Rewrite on scope change.
 
 1. **Refresh Handoff State** (main agent):
    - Rewrite `handoff-state.md` in the plan directory with:
@@ -195,7 +196,7 @@ Close the loop with structured evidence and intra-plan learning. All of Phase 4 
    ```
    Evidence is drawn from the coordinator's return payload — do NOT re-run verification in the main context.
 
-2. **Pattern Scan**: Read evaluation reports from the plan directory; identify checklist items that FAILed in 2+ distinct batches. Inject "Recurring Failure Patterns" into the next sprint contract preamble. See `./references/intra-plan-learning.md`.
+2. **Pattern Scan**: Read evaluation reports from the plan directory; identify checklist items that FAILed in 2+ distinct batches. Inject "Recurring Failure Patterns" into the next sprint contract preamble UNLESS `recurring_failure_patterns` is disabled (Phase 1 step 4) — in that case, skip injection and append one `harness_observation` row per affected batch. See `./references/intra-plan-learning.md`.
 
 3. **Persistent Patterns**: If a checklist item FAILed in 3+ batches, emit a `PERSISTENT PATTERN` warning in the batch handoff. Continue execution autonomously.
 
