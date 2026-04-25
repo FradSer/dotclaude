@@ -10,6 +10,18 @@ allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuesti
 
 Create executable implementation plans that reduce ambiguity for whoever executes them using Superpower Loop for continuous iteration.
 
+## CRITICAL: Bail-Out Check (run first)
+
+**Read `bdd-specs.md` from the resolved design folder. Count `Scenario:` occurrences. Bail out — do NOT start the loop, do NOT decompose tasks — when:**
+
+- BDD scenarios < 3 AND total estimated tasks < 5
+
+**Bail-out response (output verbatim):**
+
+> Design has < 3 BDD scenarios; full task-decomposition pipeline is overhead. Drafting a one-page lightweight plan inline instead. To force the full pipeline, re-invoke as `/superpowers:writing-plans --force <design-path>`.
+
+Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no plan evaluator) and exit. The `--force` token bypasses this check.
+
 ## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 
 **Resolve the design path, then unconditionally start the loop — do NOT read design files fully or explore the codebase first.**
@@ -45,6 +57,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
 2. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
+3. **Read Harness Config** (assumption test): If `docs/retros/harness-config.json` exists and lists `plan_evaluator` in `disabled_components[]`, set local flag `_PLAN_EVALUATOR_DISABLED=true` for Phase 4. Skip silently when the file is absent or `disabled_components[]` is empty. See `../retrospective/references/harness-config.md` for supported identifiers.
 
 The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
@@ -170,16 +183,24 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 
 **Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, and user approval received.
 
+**On user rejection in Phase 3 or Phase 4 AskUserQuestion**:
+- Rejection in Phase 3 (`Confirm` step): user disagrees with task list. Re-enter Phase 2 — regenerate task decomposition with the user's objections as new constraints. Do not just re-run validation.
+- Rejection in Phase 4 (`Confirm with user` step): user disagrees with reflection conclusions. Re-enter Phase 4 — relaunch the 3 sub-agents with the user's specific objections appended to each sub-agent prompt as additional review criteria.
+- Cancellation ("abort", "cancel", "start over"): emit `<promise>PLAN_COMPLETE</promise>` after a one-line cancellation note. Do not commit; do not advance to Phase 5.
+- The Stop hook will re-inject the original prompt; route the next iteration based on which phase the rejection targeted, not blindly re-run the full pipeline.
+
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
-### Evaluator Mode (Mandatory — All Plans)
+### Evaluator Mode (default: on, overridable only via `harness-config.json`)
 
-After the parallel sub-agent reflection above, spawn the `superpowers:superpowers-evaluator` agent (plan mode). The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
+**CRITICAL**: When `_PLAN_EVALUATOR_DISABLED=true` (Initialization step 3 detected the harness-config flag), skip the evaluator spawn entirely. Sub-agent reflection above is sufficient verification for this run; treat the plan as PASS, proceed to user confirmation, and append one `harness_observation` row to `docs/retros/harness-observations.jsonl` (schema: `../executing-plans/references/intra-plan-learning.md`).
 
-**When to use**: Always. Sub-agent reflection covers structural analysis (coverage, dependency graph); the evaluator applies the binary checklist verdict. They are complementary, not alternatives. If the resolved `plan-v{N}.md` does not exist, abort with a clear error naming the expected path — seed the checklist via `/superpowers:retrospective` before retrying.
+Otherwise, spawn the `superpowers:superpowers-evaluator` agent (plan mode) after the parallel sub-agent reflection. The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
+
+**When to use**: Always (unless disabled per above). Sub-agent reflection covers structural analysis (coverage, dependency graph); the evaluator applies the binary checklist verdict. They are complementary, not alternatives.
 
 **Process**:
-1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. Abort if none exists.
+1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. **Auto-seed when missing**: if no file matches, do NOT abort — copy the `plan-v1.md` template from `../retrospective/SKILL.md` Phase 0 to `docs/retros/checklists/plan-v1.md`, log `Auto-seeded plan-v1.md`, then continue.
 2. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path] using the plan checklist at docs/retros/checklists/plan-v{N}.md."
 3. Evaluator reads `_index.md` and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
 4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as `evaluation-plan-round-{N}.md`

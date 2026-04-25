@@ -1,6 +1,6 @@
 {
   "name": "superpowers",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop and work verification",
   "author": {
     "name": "Frad LEE",
@@ -23,12 +23,12 @@
     "./skills/writing-plans/",
     "./skills/executing-plans/",
     "./skills/retrospective/",
+    "./skills/systematic-debugging/",
     "./skills/need-vet/"
   ],
   "skills": [
     "./skills/behavior-driven-development/",
-    "./skills/build-like-iphone-team/",
-    "./skills/systematic-debugging/"
+    "./skills/build-like-iphone-team/"
   ],
   "hooks": {
     "UserPromptSubmit": [

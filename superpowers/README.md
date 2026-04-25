@@ -2,7 +2,7 @@
 
 Advanced development superpowers for orchestrating complex workflows from idea to execution.
 
-**Version**: 2.3.0
+**Version**: 2.4.0
 
 ## Installation
 
@@ -20,16 +20,25 @@ The full pipeline (brainstorming → writing-plans → executing-plans + per-bat
 
 Using the full pipeline for smaller work is **net negative** — the overhead (sprint contracts, per-batch evaluator, checklist resolution, retrospective logs) exceeds the value delivered.
 
-Skip superpowers and work directly when any of the following apply:
+**Each user-invocable skill enforces this at its entry via a CRITICAL Bail-Out Check** (see SKILL.md):
 
-| Signal | Example |
-|--------|---------|
-| Single-file edit with obvious outcome | Rename a variable, fix a typo, adjust a log level |
-| Mechanical refactor with tests already in place | Extract a helper, reorder imports, update a deprecated API call |
-| Bug fix traceable to a specific line | Off-by-one in a loop, null-check missing on a known field |
-| Exploratory one-shot script | Throwaway data migration, one-off CLI check |
-| BDD scenarios are genuinely not useful | UI tweaks with no behavioral contract, config-file formatting |
-| The user explicitly asks for a terse fix | "Just change X to Y", "no plan, just patch" |
+| Skill | Bail-out trigger | Override |
+|---|---|---|
+| `/superpowers:brainstorming` | Trivial-scope signals in `$ARGUMENTS` (single-file change, mechanical refactor, named root cause, one-shot script, "just patch") | `/superpowers:brainstorming --force "<task>"` |
+| `/superpowers:writing-plans` | `bdd-specs.md` has < 3 scenarios AND < 5 estimated tasks | `/superpowers:writing-plans --force <design-path>` |
+| `/superpowers:executing-plans` | `_index.md` lists < 5 tasks in a single batch | `/superpowers:executing-plans --force <plan-path>` |
+
+**For incident response and root-cause work, use `/superpowers:systematic-debugging` directly** — the design pipeline is the wrong shape for unknown-root-cause bugs.
+
+Examples that ALWAYS bail out:
+
+| Signal | Example | Recommended path |
+|--------|---------|----|
+| Single-file edit with obvious outcome | Rename a variable, fix a typo, adjust a log level | Direct edit, no skill needed |
+| Mechanical refactor with tests already in place | Extract a helper, reorder imports, update a deprecated API call | Direct edit, no skill needed |
+| Bug fix traceable to a specific line | Off-by-one in a loop, null-check missing on a known field | `/superpowers:systematic-debugging` |
+| Unknown bug | "Tests pass locally but fail in CI" | `/superpowers:systematic-debugging` |
+| Exploratory one-shot script | Throwaway data migration, one-off CLI check | Direct edit, no skill needed |
 
 If a task turns out to be larger than it first appeared, start superpowers at the level that matches — e.g. jump directly to `/superpowers:writing-plans` when you already have a clear design in your head, or `/superpowers:executing-plans` when a plan folder already exists from a prior session. You do not have to run every upstream skill.
 
@@ -89,6 +98,19 @@ Analyze evaluation patterns across completed plans and evolve checklists.
 
 **Output:** Retrospective report, updated `{mode}-v{N+1}.md` checklists (if any proposals approved), and optionally an updated `harness-config.json`
 
+### `/superpowers:systematic-debugging "<bug description>"`
+
+Root-cause analysis for bugs, test failures, and incidents — no design pipeline, no Superpower Loop.
+
+- 4-phase process: Root Cause Investigation → Pattern Analysis → Hypothesis & Testing → Implementation
+- Captures `$ARGUMENTS` as the symptom statement and starts at Phase 1 immediately
+- Deliverable is `the fix + a test that catches the regression`, not design folders
+- Refuses to propose fixes before completing Phase 1 (Iron Law: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST)
+
+**When to use**: bug reports, test failures, unexpected behavior, performance issues, build failures. Especially valuable when time pressure tempts you to guess.
+
+**Output**: root cause one-liner + fix diff summary + regression test path
+
 ### `/superpowers:need-vet`
 
 Opt-in work verification for the current task.
@@ -109,9 +131,7 @@ Loaded when implementing features or bugfixes during execution. Enforces the Red
 
 Loaded when the user wants to challenge industry conventions or approach open-ended problems requiring disruptive thinking. Applies Apple's Project Purple design philosophy for radical innovation, including first-principles thinking, internal competition, and breakthrough research techniques. The `superpowers:brainstorming` skill loads this automatically for problems that benefit from unconventional approaches.
 
-### Systematic Debugging
-
-Loaded when diagnosing bugs or unexpected behavior. Provides a 4-phase methodology: root cause investigation, pattern analysis, hypothesis testing, and implementation.
+(The `systematic-debugging` skill was promoted to user-invocable in 2.4.0 — see `/superpowers:systematic-debugging` above.)
 
 ## End-to-End Workflow
 
@@ -172,10 +192,10 @@ superpowers/
 │   ├── writing-plans/           # Design → task files (user-invocable)
 │   ├── executing-plans/         # Plan → verified code via per-batch coordinator (user-invocable)
 │   ├── retrospective/           # Evolve checklists + audit harness health (user-invocable)
+│   ├── systematic-debugging/    # 4-phase root cause analysis (user-invocable, 2.4.0+)
 │   ├── need-vet/                # Opt-in work verification (user-invocable)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
 │   ├── build-like-iphone-team/  # Project Purple design philosophy (internal)
-│   ├── systematic-debugging/    # 4-phase debugging methodology (internal)
 │   └── references/
 │       ├── git-commit.md        # Shared git commit patterns
 │       └── loop-patterns.md     # Shared Superpower Loop patterns
@@ -200,8 +220,14 @@ The plugin exposes a feedback loop so harness components earn their cost as mode
 
 - Every plan completion appends to `docs/retros/plans-completed.jsonl`
 - At 3+ plans since the last retrospective, `executing-plans` emits a `RETROSPECTIVE DUE` reminder
-- `/superpowers:retrospective` Phase 5 can write `docs/retros/harness-config.json` to disable one component (`evaluator_per_batch`, `sprint_contract_preview`, `recurring_failure_patterns`, `context_reset_coordinator`, `plan_evaluator`, `design_evaluator`) for the next plan run as a live assumption test
+- `/superpowers:retrospective` Phase 5 can write `docs/retros/harness-config.json` to disable one component for the next plan run as a live assumption test. Supported identifiers (each with a real consumer-side check):
+  - `evaluator_per_batch` — `executing-plans` skips per-batch evaluator
+  - `plan_evaluator` — `writing-plans` skips plan-mode evaluator
+  - `design_evaluator` — `brainstorming` skips design-mode evaluator
+  - `sprint_contract_preview` — `executing-plans` omits Evaluation Criteria Preview from sprint contracts
+  - `recurring_failure_patterns` — `executing-plans` skips pattern-scan injection
 - Disabled runs append to `docs/retros/harness-observations.jsonl`; the next retrospective reads those observations and decides promote / reinstate / extend
+- `context_reset_coordinator` was removed in 2.4.0 — it was listed in the schema but never had a consumer; retrospective Phase 5c now refuses to write it
 
 See `skills/retrospective/references/harness-config.md` for schema and lifecycle.
 

@@ -1,10 +1,20 @@
 ---
 name: systematic-debugging
-description: Provides a systematic debugging methodology with a 4-phase root cause analysis process. This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, ensuring thorough investigation precedes any code changes.
-user-invocable: false
+description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes.
+argument-hint: "<bug description or symptom>"
+user-invocable: true
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)"]
 ---
 
 # Systematic Debugging
+
+## Slash-command Usage
+
+Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by other skills (BDD, brainstorming) when bug-fix language is detected.
+
+**When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement, then start at Phase 1 (Root Cause Investigation) immediately. Do NOT spawn the Superpower Loop — debugging is iterative within a single session, not phase-driven. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
+
+**Output discipline**: Report findings inline as you complete each phase. End with: (a) root cause one-liner, (b) fix diff summary, (c) regression test path. No `<promise>` tag (no loop to exit).
 
 ## Overview
 
