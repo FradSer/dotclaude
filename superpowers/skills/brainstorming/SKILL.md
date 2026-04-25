@@ -7,13 +7,29 @@ allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Ba
 
 # Brainstorming Ideas Into Designs
 
-Turn rough ideas into implementation-ready designs through structured collaborative dialogue. No complexity routing — this skill's default user brings open-ended multi-component problems, so the full pipeline (Superpower Loop + parallel research sub-agents + evaluator) runs unconditionally.
+Turn rough ideas into implementation-ready designs through structured collaborative dialogue. The full pipeline (Superpower Loop + parallel research sub-agents + evaluator) is calibrated for **open-ended multi-component problems**. Trivial work bypasses via the bail-out check below.
+
+## CRITICAL: Bail-Out Check (run before Initialization)
+
+**Inspect `$ARGUMENTS` for trivial-scope signals. Bail out — do NOT start the loop, do NOT write design files, do NOT spawn evaluator — when ANY of these match:**
+
+- Names a single file or single-line change ("change X to Y", "rename foo to bar", "log level to DEBUG")
+- Mechanical refactor ("extract helper", "reorder imports", "update deprecated API call")
+- Bug with a named root cause ("cookie domain is wrong, fix it") — route to `/superpowers:systematic-debugging`
+- One-shot script / config tweak / dependency bump
+- User explicitly said "just patch" / "no plan" / "terse fix"
+
+**Bail-out response (output verbatim, then proceed with direct edit OR hand off):**
+
+> Detected trivial-scope work. Skipping the brainstorming pipeline (calibrated for open-ended multi-component problems). To force the full pipeline, re-invoke as `/superpowers:brainstorming --force "<task>"`.
+
+When the user passes `--force` (literal token in `$ARGUMENTS`), skip this bail-out and proceed to Initialization unconditionally.
 
 ## Initialization
 
 1. Capture `$ARGUMENTS` as the initial prompt
 2. Read `CLAUDE.md` and `README.md` to understand project constraints
-3. Start the Superpower Loop (no size gate):
+3. Start the Superpower Loop (no size gate beyond bail-out):
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: $ARGUMENTS. Progress through phases: Phase 1 (Scope Alignment) -> Phase 2 (Design with QA) -> Phase 3 (Wrap-up)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
 ```
@@ -44,7 +60,16 @@ Explore codebase, propose approach, get user approval.
 
 **Exit**: User-approved approach, clear requirements and constraints.
 
+**On user rejection of the sprint contract** (response says "no", "wrong", "different approach", names specific objections):
+- Do NOT auto-loop with the same proposal. The Stop hook will re-inject the same prompt; absorb the rejection in the next iteration by regenerating the contract from scratch with the user's objections as new constraints.
+- If the user names a different problem entirely ("actually this is about X"), reset captured `$ARGUMENTS` to the new framing and re-run Phase 1 step 1 (codebase exploration with the new scope).
+- If the user says "abort" or "cancel", emit `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line cancellation note. Do not write design files.
+
 See `./references/scope-alignment.md` for exploration patterns, question guidelines, and trade-off templates.
+
+## Phase 1.5: Read Harness Config (assumption test)
+
+**CRITICAL**: Before Phase 2, if `docs/retros/harness-config.json` exists and lists `design_evaluator` in `disabled_components[]`, set a local flag `_DESIGN_EVALUATOR_DISABLED=true`. Honor that flag in Phase 2 Step 2 (skip evaluator spawn) AND append one row to `docs/retros/harness-observations.jsonl` after Phase 2 completes (schema: `../executing-plans/references/intra-plan-learning.md`). Skip silently when the file does not exist or `disabled_components[]` is empty. See `../retrospective/references/harness-config.md` for supported identifiers.
 
 ## Phase 2: Design with QA
 
@@ -72,7 +97,9 @@ Create design documents with integrated quality assurance. All research runs in 
 
 The main agent integrates returned results, resolves conflicts favoring codebase patterns, and writes the 4 design files.
 
-**Step 2: Integrated QA (mandatory)**
+**Step 2: Integrated QA (default: on, overridable only via `harness-config.json`)**
+
+**CRITICAL**: When `_DESIGN_EVALUATOR_DISABLED=true` (set in Phase 1.5), skip the evaluator spawn entirely, treat verdict as PASS, proceed to user confirmation, and append one `harness_observation` row to `docs/retros/harness-observations.jsonl`. Otherwise, run the evaluator pass below.
 
 Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. The evaluator outputs report content as text; write it to the design folder as `evaluation-design-round-{N}.md`. Then read the report verdict:
 
@@ -81,7 +108,7 @@ Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highe
 - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
 - Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
 
-If the resolved `design-v{N}.md` does not exist, abort with a clear error naming the expected path — seed the checklist via `/superpowers:retrospective` before retrying.
+**Auto-seed when missing**: If `docs/retros/checklists/design-v{N}.md` does not exist, do NOT abort. Run `/superpowers:retrospective` Phase 0 inline (or copy the `design-v1.md` template from `../retrospective/SKILL.md` Phase 0) to seed `docs/retros/checklists/design-v1.md`, log `Auto-seeded design-v1.md`, then proceed with the new file. Abort only if seeding itself fails (e.g., disk error).
 
 **Exit**: Design folder created with all required files, QA passed.
 
