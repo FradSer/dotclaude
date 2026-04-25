@@ -84,13 +84,7 @@ Every task in the plan must result in:
 
 ## Execution Handoff
 
-After saving the plan, offer execution choice via Agent Teams:
+After saving the plan, transition to execution:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Execution options:**
-
-**1. Orchestrated Execution (Recommended)** - Load `superpowers:executing-plans` skill using the Skill tool to manage execution (it will spawn an Agent Team for parallel work).
-
-**2. Direct Agent Team** - Load `superpowers:agent-team-driven-development` skill using the Skill tool to spawn a team immediately (Architecture/Implementation/Review).
-
-**3. Manual / Serial** - Execute tasks one by one in this session (slower)."
+**"Plan complete and saved to `docs/plans/<filename>.md`. Load `superpowers:executing-plans` skill using the Skill tool — it orchestrates per-batch sub-agent coordinators through the full Phase 1-6 pipeline."**
 

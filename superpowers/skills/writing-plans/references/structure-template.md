@@ -104,13 +104,7 @@ task-001 (setup)
 
 ## Execution Handoff
 
-**"Plan complete and saved to `docs/plans/YYYY-MM-DD-<topic>-plan/`. Execution options:**
-
-**1. Orchestrated Execution (Recommended)** - Load `superpowers:executing-plans` skill using the Skill tool.
-
-**2. Direct Agent Team** - Load `superpowers:agent-team-driven-development` skill using the Skill tool.
-
-**3. BDD-Focused Execution** - Load `superpowers:behavior-driven-development` skill using the Skill tool for specific scenarios.
+**"Plan complete and saved to `docs/plans/YYYY-MM-DD-<topic>-plan/`. Load `superpowers:executing-plans` skill using the Skill tool — it orchestrates per-batch sub-agent coordinators through the full Phase 1-6 pipeline."**
 ```
 
 **CRITICAL**: The Execution Plan section with task file references is MANDATORY in `_index.md`

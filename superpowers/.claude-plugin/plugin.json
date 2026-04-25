@@ -26,7 +26,6 @@
     "./skills/need-vet/"
   ],
   "skills": [
-    "./skills/agent-team-driven-development/",
     "./skills/behavior-driven-development/",
     "./skills/build-like-iphone-team/",
     "./skills/systematic-debugging/"

@@ -108,11 +108,13 @@ Phase 0 runs per mode independently — only the modes missing a v{N} file are s
 
 ## Phase 1: Data Collection
 
-1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports.
+1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`.
 2. **Resolve evals**: For each plan path, look for evaluation reports in the plan directory (`evaluation-round-*.md`, `evaluation-design-round-*.md`, `evaluation-plan-round-*.md`). If a sibling `*-evals/` directory exists, read from there instead.
 3. **Read checklists**: Scan `docs/retros/checklists/` for latest versions of each mode (`{mode}-v{N}.md`, highest N).
 4. **Read reports**: For each plan, read all evaluation report files. Extract per-item results (Item ID, Result, Evidence) and rework items.
-5. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.
+5. **Read evolution history** (calibration input): Read `docs/retros/evolution-log.jsonl` if present. Build a history table keyed by `item_id` with: most recent event (`item_added|item_removed|item_modified|item_promoted`), timestamp, rationale. This history feeds Phase 3 — do NOT re-propose an `ADD` for an item `REMOVE`d in the most recent retrospective unless the new evidence is materially different from the original removal rationale. Cite the historical entry in any such proposal.
+6. **Read harness config and observations** (Phase 5c feedback loop): If `docs/retros/harness-config.json` exists and contains a non-empty `disabled_components[]`, read the entry and read all matching rows from `docs/retros/harness-observations.jsonl`. Feed this into Phase 5 so the prior disable test can be judged (promote / reinstate / extend). See `./references/harness-config.md`.
+7. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.
 
 ## Phase 2: Pattern Analysis
 
@@ -182,13 +184,24 @@ Checklist items with zero failures are covered by Phase 3 REMOVE proposals — c
 
 ### 5c. One-At-A-Time Disable Protocol
 
-Select **at most one** candidate from 5b for the next plan run as a live assumption test. Disabling multiple components at once confounds cause-and-effect. Record in the retrospective report:
+Select **at most one** candidate from 5b for the next plan run as a live assumption test. Disabling multiple components at once confounds cause-and-effect.
 
-- Which component will be disabled
-- Plan context (mode, expected task count, complexity)
-- Quality delta thresholds: what outcome proves the component stays (e.g., ≥2 rework items evaluator would have caught) vs. what proves it can be permanently removed (zero missed issues across ≥3 follow-up plans)
+**CRITICAL**: The disable must land in `docs/retros/harness-config.json` so the next plan run actually honors it. Writing only to the retrospective report is insufficient — consuming skills do not read reports. See `./references/harness-config.md` for schema, supported component identifiers, and lifecycle.
 
-The next retrospective reads this record in Phase 1 data collection and judges whether to promote the disable into a permanent config change (via standard ADD/REMOVE/MODIFY proposals in Phase 3).
+Actions (in order):
+
+1. Read `./references/harness-config.md` to confirm the chosen component identifier is supported.
+2. Read existing `docs/retros/harness-config.json` if present; include its current content in the retrospective report under "Previous Harness Config" for audit.
+3. Write the new `docs/retros/harness-config.json` with exactly one entry (or an empty `disabled_components` array if the test is being closed — see 5d below). `mkdir -p docs/retros` first if needed.
+4. Record in the retrospective report:
+   - Which component will be disabled (the `component` identifier)
+   - Plan context (expected task count, complexity)
+   - Reinstate conditions (mirrors the `reinstate_conditions` field): what outcome rolls this back before next retrospective (e.g., ≥1 missed issue the evaluator would have caught)
+   - Promotion conditions: what outcome proves the component can be permanently removed via a future REMOVE proposal (e.g., zero missed issues across ≥3 follow-up plans)
+
+**If no candidate is selected this run**, still write `docs/retros/harness-config.json` with `{"version":1,"disabled_components":[]}` to clear any prior disable and return the harness to defaults. This is the closure path for a completed disable test.
+
+The next retrospective reads `harness-observations.jsonl` (written by consuming skills) in Phase 1 and judges whether to promote the disable into a permanent config change (via standard ADD/REMOVE/MODIFY proposals in Phase 3) or to reinstate the component (by clearing the entry from harness-config.json in 5c of that run).
 
 ## Phase 6: Output
 
@@ -203,7 +216,16 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
    - 5c selected one-at-a-time disable test (if any), with quality delta thresholds
 5. Summary: N proposals approved, M rejected, checklists updated to version X, harness component disabled for next run (if any)
 
+**Close the calibration loop** (mandatory): Append one JSON line to `docs/retros/evolution-log.jsonl` marking this retrospective run:
+
+```json
+{"event":"retrospective_run","timestamp":"<ISO8601 UTC>","plans_analyzed":["<plan dir>",...],"report":"docs/retros/retro-{date}-{topic}.md","proposals_approved":N,"proposals_rejected":M,"disable_test":"<component or null>"}
+```
+
+This entry is the closure marker that executing-plans Phase 6 uses to compute retrospective-due reminders. Do NOT skip it even when zero proposals were approved — the run itself is the signal.
+
 ## References
 
 - `./references/analysis-patterns.md` - Failure frequency, plateau detection, never-failing analysis, harness health criteria
 - `./references/evolution-protocol.md` - Proposal types, thresholds, version management, evolution log schema, pre-edit snapshot
+- `./references/harness-config.md` - `harness-config.json` schema and lifecycle for one-at-a-time component disable
