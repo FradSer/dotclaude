@@ -1,6 +1,20 @@
 #!/bin/bash
 # Shared utilities for superpowers hooks and scripts
 
+# Identify whether a skill name owns its own multi-phase verification (and
+# therefore should bypass the generic vet phase). Keep this list in one place;
+# loop.sh and vet.sh both call into it.
+# Usage: if is_workflow_skill "$skill"; then ...
+is_workflow_skill() {
+  local skill_name="$1"
+  case "$skill_name" in
+    brainstorming|writing-plans|executing-plans|retrospective)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
 # Return the project-scoped state directory path (~/.claude/projects/<key>/)
 # Usage: DIR=$(state_dir)
 state_dir() {

@@ -34,12 +34,10 @@ _loop_handle_workflow_skill_bypass() {
   local state_file="$1"
   local skill_name
   skill_name=$(state_read "$state_file" '.skill_name // ""')
-  case "$skill_name" in
-    brainstorming|writing-plans|executing-plans|retrospective)
-      state_update "$state_file" 'del(.need_vet)'
-      exit 0
-      ;;
-  esac
+  if is_workflow_skill "$skill_name"; then
+    state_update "$state_file" 'del(.need_vet)'
+    exit 0
+  fi
   return 0
 }
 

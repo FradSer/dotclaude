@@ -45,33 +45,31 @@ _vet_build_system_message() {
 }
 
 # Consume pending_prompt and merge with last assistant message into a
-# synthesized one-sentence task summary. Populates SYNTHESIZED and updates
-# CURRENT_PROMPT by reference via printing the values on separate lines
-# (caller captures them).
+# synthesized one-sentence task summary. Sets two globals:
+#   _VET_CURRENT_PROMPT  — the task prompt to display
+#   _VET_SYNTHESIZED     — non-empty when a Haiku merge changed the task
+# Globals avoid the newline-based multi-value return, which broke when Haiku
+# emitted multi-line text despite the "plain text only" instruction.
 _vet_merge_pending_prompt() {
   local state_file="$1"
   local last_msg="$2"
 
-  local current_prompt=""
-  local synthesized=""
+  _VET_CURRENT_PROMPT=""
+  _VET_SYNTHESIZED=""
 
-  if [[ ! -f "$state_file" ]]; then
-    printf '%s\n%s\n' "$current_prompt" "$synthesized"
-    return
-  fi
+  [[ -f "$state_file" ]] || return 0
 
   local pending_prompt existing_task
   pending_prompt=$(jq -r '.pending_prompt // ""' "$state_file")
   existing_task=$(jq -r '.task // ""' "$state_file")
 
   if [[ -z "$pending_prompt" || "$pending_prompt" == "null" ]]; then
-    current_prompt="$existing_task"
-    printf '%s\n%s\n' "$current_prompt" "$synthesized"
-    return
+    _VET_CURRENT_PROMPT="$existing_task"
+    return 0
   fi
 
-  current_prompt="$existing_task"
-  [[ -z "$current_prompt" ]] && current_prompt="$pending_prompt"
+  _VET_CURRENT_PROMPT="$existing_task"
+  [[ -z "$_VET_CURRENT_PROMPT" ]] && _VET_CURRENT_PROMPT="$pending_prompt"
   local now
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   local last_assistant="${last_msg:0:500}"
@@ -91,16 +89,14 @@ Output: ${last_assistant}"
     fi
   fi
 
-  if [[ "$merged" != "$current_prompt" ]]; then
-    synthesized="$merged"
+  if [[ "$merged" != "$_VET_CURRENT_PROMPT" ]]; then
+    _VET_SYNTHESIZED="$merged"
   fi
 
   state_update "$state_file" \
     --arg task "$merged" \
     --arg ts "$now" \
     '.task = $task | .updated_at = $ts | del(.pending_prompt)'
-
-  printf '%s\n%s\n' "$current_prompt" "$synthesized"
 }
 
 # Synthesize a final one-sentence task summary after verification succeeds.
@@ -146,12 +142,10 @@ vet_phase() {
   # need-vet is intentionally excluded (its entire purpose is to enforce vet).
   local skill_name
   skill_name=$(state_read "$state_file" '.skill_name // ""')
-  case "$skill_name" in
-    brainstorming|writing-plans|executing-plans|retrospective)
-      state_update "$state_file" 'del(.need_vet)'
-      exit 0
-      ;;
-  esac
+  if is_workflow_skill "$skill_name"; then
+    state_update "$state_file" 'del(.need_vet)'
+    exit 0
+  fi
 
   # Verified-tag match → synthesize summary and allow exit.
   local verified_text
@@ -162,17 +156,14 @@ vet_phase() {
     exit 0
   fi
 
-  # Merge pending_prompt if present.
-  local merge_output current_prompt synthesized
-  merge_output=$(_vet_merge_pending_prompt "$state_file" "$last_msg")
-  current_prompt=$(echo "$merge_output" | sed -n '1p')
-  synthesized=$(echo "$merge_output" | sed -n '2p')
+  # Merge pending_prompt if present (sets _VET_CURRENT_PROMPT + _VET_SYNTHESIZED).
+  _vet_merge_pending_prompt "$state_file" "$last_msg"
 
   # Transcript fallback for current prompt.
-  if [[ -z "$current_prompt" ]]; then
+  if [[ -z "$_VET_CURRENT_PROMPT" ]]; then
     if [[ -n "$transcript_path" ]] && [[ -f "$transcript_path" ]]; then
       set +e
-      current_prompt=$(grep '"type":"last-prompt"' "$transcript_path" \
+      _VET_CURRENT_PROMPT=$(grep '"type":"last-prompt"' "$transcript_path" \
         | tail -1 \
         | jq -r '.lastPrompt // ""' \
         2>/dev/null || echo "")
@@ -186,8 +177,8 @@ vet_phase() {
   fi
 
   local msg
-  if [[ -n "$current_prompt" ]]; then
-    msg=$(_vet_build_system_message "$current_prompt" "$synthesized" "$modified_files")
+  if [[ -n "$_VET_CURRENT_PROMPT" ]]; then
+    msg=$(_vet_build_system_message "$_VET_CURRENT_PROMPT" "$_VET_SYNTHESIZED" "$modified_files")
   else
     msg=$(_vet_build_system_message "(no task context available)" "" "$modified_files")
   fi
