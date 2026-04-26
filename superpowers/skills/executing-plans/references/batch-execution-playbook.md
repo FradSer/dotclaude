@@ -111,7 +111,7 @@ The superpowers-evaluator is a dedicated read-only sub-agent. Spawn it via the A
    - Sprint contract file path: `sprint-contract-batch-{N}.md`
    - List of modified/created files from the batch
    - Plan directory path
-2. The superpowers-evaluator reads the sprint contract, inspects artifacts, runs verification commands, and scores against rubrics
+2. The superpowers-evaluator reads the sprint contract, inspects artifacts, runs verification commands, and applies the resolved code checklist
 3. The superpowers-evaluator returns report content; the executing-plans skill writes `evaluation-round-{N}-batch-{M}.md` in the plan directory
 
 **Independence**: The superpowers-evaluator runs as its own sub-agent regardless of the execution mode used for the batch (Parallel, Linear, Red-Green). It is never fused with an implementation sub-agent.
@@ -121,10 +121,10 @@ The superpowers-evaluator is a dedicated read-only sub-agent. Spawn it via the A
 After the superpowers-evaluator completes:
 
 1. Read the evaluation report from the plan directory
-2. Check the per-task verdicts:
+2. Check the evaluator verdict:
    - **PASS**: All tasks accepted. Proceed to mark tasks complete and move to Phase 4 evidence.
    - **REWORK**: Read rework items (file:line references + issue descriptions). Fix the identified issues, re-run verification, then re-spawn superpowers-evaluator for another round.
-   - **FAIL / Pivot**: Log the superpowers-evaluator's pivot recommendation to the evaluation report and apply it directly (do NOT prompt the user). If the recommendation is ambiguous, fall back to the rework loop.
+   - **PIVOT**: Log the superpowers-evaluator's pivot recommendation to the evaluation report and apply it directly (do NOT prompt the user). If the recommendation is ambiguous, fall back to the rework loop.
 
 ### Rework Loop
 

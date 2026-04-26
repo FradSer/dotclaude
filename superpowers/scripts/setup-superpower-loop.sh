@@ -42,7 +42,7 @@ DESCRIPTION:
 
   State files are stored in ~/.claude/projects/<project-key>/ as JSON.
 
-  To signal completion, you must output: <promise>YOUR_PHRASE</promise>
+  To signal completion, you must output <promise>YOUR_PHRASE</promise> as the final standalone line.
 
   Use this for:
   - Interactive iteration where you want to see progress
@@ -238,7 +238,7 @@ if [[ "$COMPLETION_PROMISE" != "null" ]]; then
   echo "CRITICAL - Superpower Loop Completion Promise"
   echo "==============================================================="
   echo ""
-  echo "To complete this loop, output this EXACT text:"
+  echo "To complete this loop, output this EXACT text as the final standalone line:"
   echo "  <promise>$COMPLETION_PROMISE</promise>"
   echo ""
   echo "STRICT REQUIREMENTS (DO NOT VIOLATE):"

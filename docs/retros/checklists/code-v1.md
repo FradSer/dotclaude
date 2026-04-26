@@ -74,11 +74,11 @@ placeholder bodies. The following patterns indicate unfinished implementation:
 - `...` (ellipsis) as the sole body of a function/method
 
 **Check method:**
-Run targeted grep commands against every file created or modified by the task:
+Run targeted, macOS-compatible grep commands against every file created or modified by the task:
 ```
 grep -rn 'NotImplementedError' <file-list>
-grep -rn -P '^\s+pass\s*$' <file-list>
-grep -rn -P '^\s+\.\.\.\s*$' <file-list>
+grep -rn -E '^[[:space:]]+pass[[:space:]]*$' <file-list>
+grep -rn -E '^[[:space:]]+\.\.\.[[:space:]]*$' <file-list>
 ```
 Each grep is run independently. Any match from any grep constitutes a failure.
 

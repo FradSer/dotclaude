@@ -61,7 +61,7 @@ _loop_emit_block() {
   # System message
   local system_msg
   if [[ -n "$completion_promise" ]] && [[ "$completion_promise" != "null" ]]; then
-    system_msg="Superpower loop iteration $next_iteration | To stop: output <promise>$completion_promise</promise> (ONLY when statement is TRUE - do not lie to exit!)"
+    system_msg="Superpower loop iteration $next_iteration | To stop: output <promise>$completion_promise</promise> as the final standalone line (ONLY when statement is TRUE - do not lie to exit!)"
   else
     system_msg="Superpower loop iteration $next_iteration | No completion promise set - loop runs infinitely"
   fi

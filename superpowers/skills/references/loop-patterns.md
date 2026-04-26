@@ -2,13 +2,13 @@
 
 ## Completion Promise Design
 
-The completion promise is the exit condition for a Superpower Loop. The Stop hook scans the last assistant turn for `<promise>TEXT</promise>` and exits on exact match.
+The completion promise is the exit condition for a Superpower Loop. The Stop hook exits only when the last assistant turn ends with a standalone `<promise>TEXT</promise>` line whose text exactly matches the configured promise.
 
 ### Mechanics
 
 - **Exact string match** — `"DONE"` and `"Done"` are different promises
 - **Whitespace normalized** — internal whitespace collapsed to single spaces
-- **First tag wins** — only one `<promise>` tag is matched
+- **Final standalone tag required** — inline mentions or text after the tag do not exit the loop
 - **Multi-word promises need quotes** when passing via `--completion-promise`
 
 ### Superpowers Promise Conventions
@@ -29,7 +29,8 @@ Use a single promise covering all exit paths; encode the outcome in prose before
 
 ```
 Report either "All tests pass" or "Blocked after N attempts — see notes"
-Then output <promise>TASK_123_COMPLETE</promise> in either case.
+Then output this as the final standalone line:
+<promise>TASK_123_COMPLETE</promise>
 ```
 
 ## Prompt Patterns
@@ -42,7 +43,8 @@ Effective loop prompts have four properties: clear completion criteria, incremen
 Build a REST API for todos.
 Requirements:
 - CRUD endpoints, input validation, 80% test coverage, README
-Output <promise>COMPLETE</promise> when all requirements met and tests pass.
+When all requirements are met and tests pass, output this as the final standalone line:
+<promise>COMPLETE</promise>
 ```
 
 ### Incremental Goals
@@ -57,7 +59,8 @@ Implement feature X following TDD:
 2. Implement minimal code to pass (Green)
 3. Run tests — if any fail, debug and fix
 4. Refactor while keeping tests green
-Output <promise>COMPLETE</promise> when all tests green.
+When all tests are green, output this as the final standalone line:
+<promise>COMPLETE</promise>
 ```
 
 ### Escape Hatches

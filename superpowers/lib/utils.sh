@@ -68,11 +68,13 @@ state_update() {
   jq "$@" "$file" > "$temp" && mv "$temp" "$file"
 }
 
-# Extract text from <promise>...</promise> tags (multiline-safe via Perl)
+# Extract text from a final standalone <promise>...</promise> tag.
 # Usage: TEXT=$(extract_promise_text "$MESSAGE")
 extract_promise_text() {
-  echo "$1" | perl -0777 -pe \
-    's/.*?<promise>(.*?)<\/promise>.*/$1/s; s/^\s+|\s+$//g; s/\s+/ /g' \
+  local msg="${1:-}"
+  [[ -z "$msg" ]] && return 0
+  printf '%s' "$msg" | perl -0777 -ne \
+    's/\s+\z//; if (/(?:^|\n)[ \t]*<promise>([^<]*)<\/promise>[ \t]*\z/) { $x = $1; $x =~ s/^\s+|\s+$//g; $x =~ s/\s+/ /g; print $x }' \
     2>/dev/null || echo ""
 }
 
@@ -100,14 +102,15 @@ extract_last_assistant_text() {
 # Canonical verified-tag content marker
 STOP_CHAR="Fully Vetted."
 
-# Extract content between <verified>...</verified> tags.
-# Returns the last match (relevant when multiple tags appear).
-# macOS-compatible: uses sed instead of grep -P.
+# Extract content from a final standalone <verified>...</verified> tag.
+# macOS-compatible: uses Perl instead of grep -P.
 # Usage: TEXT=$(extract_verified_text "$MESSAGE")
 extract_verified_text() {
   local msg="${1:-}"
   [[ -z "$msg" ]] && return 0
-  echo "$msg" | sed -n 's/.*<verified>\(.*\)<\/verified>.*/\1/p' | tail -1
+  printf '%s' "$msg" | perl -0777 -ne \
+    's/\s+\z//; if (/(?:^|\n)[ \t]*<verified>([^<]*)<\/verified>[ \t]*\z/) { $x = $1; $x =~ s/^\s+|\s+$//g; $x =~ s/\s+/ /g; print $x }' \
+    2>/dev/null || echo ""
 }
 
 # Send a prompt to Claude Haiku and return the text response.

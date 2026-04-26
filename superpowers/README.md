@@ -116,7 +116,7 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 Opt-in work verification for the current task.
 
 - Sets a `need_vet` flag on the session state file
-- The Stop hook (`hooks/stop-hook.sh`) blocks session exit until Claude emits `<verified>Fully Vetted.</verified>` after actually running the code / opening the UI / testing edge cases
+- The Stop hook (`hooks/stop-hook.sh`) blocks session exit until Claude emits `<verified>Fully Vetted.</verified>` as the final standalone line after actually running the code / opening the UI / testing edge cases
 - Workflow skills (brainstorming / writing-plans / executing-plans / retrospective) have their own phase verification and bypass this check automatically
 
 **Output:** A Verification Checkpoint system message that lists the current task, modified files, and required verification steps

@@ -8,7 +8,7 @@
 # Behavior:
 #   - If need_vet is not set → exit 0 (skip verification entirely)
 #   - If skill_name is a workflow skill → clear need_vet, exit 0 (skill bypass)
-#   - If <verified>Fully Vetted.</verified> is found in LAST_MSG → synthesize
+#   - If LAST_MSG ends with standalone <verified>Fully Vetted.</verified> → synthesize
 #     one-sentence task summary via Haiku, clear need_vet, exit 0
 #   - Otherwise → merge pending_prompt into task, emit block JSON with
 #     verification checkpoint message, exit 0
@@ -38,7 +38,7 @@ _vet_build_system_message() {
   msg="${msg}${NL}- For web apps, open the page, click through flows, confirm rendering and interactions"
   msg="${msg}${NL}- Test with real or representative input and inspect results"
   msg="${msg}${NL}- Simulate edge cases if possible"
-  msg="${msg}${NL}${NL}Once verified, append \`<verified>${STOP_CHAR}</verified>\` at the end of your response, then report back."
+  msg="${msg}${NL}${NL}Once verified, append \`<verified>${STOP_CHAR}</verified>\` as the final standalone line of your response, then report back."
   msg="${msg}${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
 
   echo "$msg"

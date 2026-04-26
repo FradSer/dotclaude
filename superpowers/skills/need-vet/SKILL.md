@@ -21,4 +21,4 @@ Enable work verification for the current task. The stop hook will block session 
    - Test with real or representative input and inspect results
    - Simulate edge cases if possible
 
-4. **Mark as verified.** Once the work is genuinely verified, append `<verified>Fully Vetted.</verified>` at the end of the response. Only output this tag when you have genuinely verified the work — do not lie to exit.
+4. **Mark as verified.** Once the work is genuinely verified, append `<verified>Fully Vetted.</verified>` as the final standalone line of the response. Only output this tag when you have genuinely verified the work — do not lie to exit.
