@@ -13,6 +13,8 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 
 **Inspect `$ARGUMENTS` for trivial-scope signals. Bail out — do NOT start the loop, do NOT write design files, do NOT spawn evaluator — when ANY of these match:**
 
+(This check is intentionally heuristic — brainstorming's input is free-form text, unlike writing-plans/executing-plans which have countable task/scenario thresholds. When in doubt, proceed to Initialization; the `--force` override exists for the reverse case.)
+
 - Names a single file or single-line change ("change X to Y", "rename foo to bar", "log level to DEBUG")
 - Mechanical refactor ("extract helper", "reorder imports", "update deprecated API call")
 - Bug with a named root cause ("cookie domain is wrong, fix it") — route to `/superpowers:systematic-debugging`
