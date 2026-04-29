@@ -1,7 +1,7 @@
 ---
 name: next-devtools-guide
 description: Provides guidance on using the next-devtools MCP server. Use when working with Next.js projects that have the MCP server configured, when the user encounters connection issues, or when needing help with error detection, route inspection, Server Action tracing, or Cache Components migration.
-user-invocable: true
+user-invocable: false
 ---
 
 # Next.js DevTools MCP

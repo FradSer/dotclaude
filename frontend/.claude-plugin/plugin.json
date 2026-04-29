@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills",
   "keywords": [
     "frontend",
@@ -32,13 +32,13 @@
     "./skills/web-design-guidelines/",
     "./skills/supabase/",
     "./skills/supabase-postgres-best-practices/",
-    "./skills/impeccable-critique/",
     "./skills/impeccable-adapt/",
     "./skills/impeccable-animate/",
     "./skills/impeccable-audit/",
     "./skills/impeccable-bolder/",
     "./skills/impeccable-clarify/",
     "./skills/impeccable-colorize/",
+    "./skills/impeccable-critique/",
     "./skills/impeccable-delight/",
     "./skills/impeccable-distill/",
     "./skills/impeccable-harden/",

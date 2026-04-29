@@ -1,7 +1,7 @@
 ---
 name: design-md
 description: Author, consume, and enforce a DESIGN.md design system spec (Google Labs open format, package @google/design.md). This skill should be used when the project has a DESIGN.md at the root or under docs/, when the user mentions "design tokens", "design system spec", "DESIGN.md", "tokens.json", needs to translate a design system into Tailwind theme config, export tokens to DTCG, lint token consistency, diff design system revisions, or check WCAG contrast on component color pairs. Acts as the upstream source of truth for impeccable-colorize, impeccable-typeset, impeccable-audit, impeccable-critique, web-design-guidelines, and shadcn.
-user-invocable: true
+user-invocable: false
 allowed-tools: ["Bash(npx @google/design.md*)", "Bash(npx @google/design.md@latest *)", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch"]
 ---
 
