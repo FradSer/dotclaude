@@ -67,8 +67,9 @@ PATH_FIELDS_STRING_OR_ARRAY = {"skills", "commands", "agents", "outputStyles", "
 PATH_FIELDS_WITH_INLINE = {"hooks", "mcpServers", "lspServers", "monitors"}
 
 # Agent frontmatter spec (per upstream plugins-reference#agents)
-# `name` and `description` are the only fields the upstream doc treats as load-bearing for plugin agents.
-# `model` and `color` are accepted but not required.
+# Upstream lists: name, description, model, effort, maxTurns, tools, disallowedTools,
+# skills, memory, background, isolation. `color` is a project-local convention (not upstream)
+# accepted here so we don't flag existing agents, but its value is only checked at SHOULD level.
 KNOWN_AGENT_FIELDS = {
     "name", "description",
     "model", "color",
@@ -1030,13 +1031,13 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
             elif verbose:
                 result.ok(f'model: "{model}"', file=rel_path, line=line_num)
 
-        # Optional: color (upstream does not require it for plugin agents)
+        # Optional: color (project-local convention; not in upstream agent field list)
         if "color" in fm:
             color = fm["color"]
             line_num = find_fm_key_line("color")
             valid_colors = ("blue", "cyan", "green", "yellow", "magenta", "red")
             if color not in valid_colors:
-                result.must(
+                result.should(
                     "Invalid color value",
                     file=rel_path,
                     line=line_num,
