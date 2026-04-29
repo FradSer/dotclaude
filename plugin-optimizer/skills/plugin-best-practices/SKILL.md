@@ -30,7 +30,10 @@ python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> --check=manife
 | **Agents** | Isolated, specialized decision-making | Restricted tools, 2-4 `<example>` blocks, isolated context |
 | **MCP Servers** | External tool/data integration | stdio/http/sse transport, ${CLAUDE_PLUGIN_ROOT} paths |
 | **LSP Servers** | IDE features (go to definition) | Language server binary, extension mapping |
-| **Hooks** | Event-driven automation | PreToolUse/PostToolUse events, command/prompt/agent types |
+| **Hooks** | Event-driven automation | Lifecycle events, `command`/`http`/`mcp_tool`/`prompt`/`agent` types |
+| **Monitors** | Long-running watchers (logs, deploys) | `name`+`command`+`description` per entry; v2.1.105+ |
+| **Themes** | Bundled color presets | JSON with `name`, `base`, `overrides` |
+| **Output Styles** | Adjust response formatting | Markdown with `name` + `description` frontmatter |
 
 See `./references/component-model.md` for detailed selection criteria and `./references/components/` for implementation guides.
 
@@ -120,14 +123,15 @@ See `./references/components/skills.md` for complete frontmatter specification.
 
 ### Agent Frontmatter
 
-**Required fields**:
+**Required fields** (per upstream spec):
 - `name`: 3-50 chars, kebab-case
-- `model`: inherit, sonnet, opus, or haiku
-- `color`: blue, cyan, green, yellow, magenta, or red
-- **`<example>` blocks**: 2-4 required for router-friendliness
-- **`isolation: worktree`**: Optional — enables automatic git worktree isolation for parallel execution
+- `description`: trigger conditions plus 2-4 `<example>` blocks
 
-**Field order**: `name` → `description` → `model`/`color`/`skills`/`tools`/`isolation` → `<example>` blocks → closing `---`. Fields placed after `<example>` blocks are not parsed as YAML.
+**Optional fields**: `model`, `color`, `effort`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `memory`, `background`, `isolation` (only `"worktree"` is valid).
+
+**Forbidden fields** in plugin agents (security): `hooks`, `mcpServers`, `permissionMode`.
+
+**Field order**: `name` → `description` → other YAML fields → `<example>` blocks → closing `---`. Fields placed after `<example>` blocks are not parsed as YAML.
 
 See `./references/components/agents.md` for complete agent design guidelines including CO-STAR framework.
 
@@ -153,9 +157,9 @@ See `./references/components/mcp-servers.md` for component configuration details
 
 ### Hook Configuration
 
-Hook events cover the full session lifecycle: PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest, UserPromptSubmit, Notification, Stop, SubagentStart, SubagentStop, SessionStart, SessionEnd, PreCompact. Three hook types are available: `command`, `prompt`, and `agent`.
+Hook events cover the full session lifecycle (28+ events including `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PostToolBatch`, `PermissionRequest`, `PermissionDenied`, `UserPromptSubmit`, `UserPromptExpansion`, `Setup`, `Notification`, `Stop`/`StopFailure`, `SubagentStart`/`SubagentStop`, `TaskCreated`/`TaskCompleted`, `TeammateIdle`, `InstructionsLoaded`, `ConfigChange`, `CwdChanged`, `FileChanged`, `WorktreeCreate`/`WorktreeRemove`, `PreCompact`/`PostCompact`, `Elicitation`/`ElicitationResult`, `SessionStart`/`SessionEnd`). Five hook types: `command`, `http`, `mcp_tool`, `prompt`, `agent`.
 
-See `./references/components/hooks.md` for complete hook patterns including AI-native structured output.
+See `./references/components/hooks.md` for the full event table and AI-native structured output patterns.
 
 ## Agent Teams vs Subagents
 
@@ -181,9 +185,14 @@ plugin-name/
 │   └── skill-name/
 │       ├── SKILL.md
 │       └── references/
-├── commands/                     # Legacy commands (optional)
+├── commands/                     # Skills as flat .md files (legacy)
 ├── agents/                       # Subagent definitions
+├── output-styles/                # Output style markdown
+├── themes/                       # Color theme JSON
+├── monitors/monitors.json        # Background monitor configs
 ├── hooks/hooks.json              # Hook configuration
+├── bin/                          # Executables added to Bash PATH
+├── settings.json                 # Plugin default settings
 ├── .mcp.json                     # MCP server definitions
 ├── .lsp.json                     # LSP server configurations
 └── scripts/                      # Executable scripts
@@ -206,11 +215,14 @@ See `./references/directory-structure.md` for complete layout guidelines.
 ### Component Implementation
 - `./references/component-model.md` - Component types, selection criteria, token budgets
 - `./references/components/skills.md` - Skill structure, frontmatter, progressive disclosure
-- `./references/components/agents.md` - Agent design, CO-STAR framework, example blocks
+- `./references/components/agents.md` - Agent design, CO-STAR framework, forbidden fields
 - `./references/components/commands.md` - Command frontmatter, dynamic context
 - `./references/components/hooks.md` - Hook events, types, AI-native patterns, templates
 - `./references/components/mcp-servers.md` - MCP configuration, stdio/http/sse
 - `./references/components/lsp-servers.md` - LSP setup, binary requirements
+- `./references/components/monitors.md` - Background monitor configuration
+- `./references/components/themes.md` - Color theme JSON structure
+- `./references/components/output-styles.md` - Output style frontmatter
 
 ### Configuration & Integration
 - `./references/directory-structure.md` - Plugin layout, naming conventions

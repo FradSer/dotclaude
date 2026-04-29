@@ -52,6 +52,34 @@ SKILL_LINE_CRITICAL = 800
 SKILL_BODY_WARNING = 4500  # Warning when approaching 5k limit
 SKILL_BODY_MAX = 5000      # Under 5k tokens hard limit (SKILL.md body)
 
+# Manifest schema (mirrors https://code.claude.com/docs/en/plugins-reference)
+KNOWN_MANIFEST_FIELDS = {
+    "$schema",
+    "name", "version", "description", "author",
+    "homepage", "repository", "license", "keywords",
+    "skills", "commands", "agents", "hooks",
+    "mcpServers", "outputStyles", "themes", "lspServers", "monitors",
+    "userConfig", "channels", "dependencies",
+}
+
+# Manifest fields that accept a path (string), an array of paths, or an inline object/array
+PATH_FIELDS_STRING_OR_ARRAY = {"skills", "commands", "agents", "outputStyles", "themes"}
+PATH_FIELDS_WITH_INLINE = {"hooks", "mcpServers", "lspServers", "monitors"}
+
+# Agent frontmatter spec (per upstream plugins-reference#agents)
+# `name` and `description` are the only fields the upstream doc treats as load-bearing for plugin agents.
+# `model` and `color` are accepted but not required.
+KNOWN_AGENT_FIELDS = {
+    "name", "description",
+    "model", "color",
+    "effort", "maxTurns", "tools", "disallowedTools",
+    "skills", "memory", "background", "isolation",
+}
+FORBIDDEN_AGENT_FIELDS = {"hooks", "mcpServers", "permissionMode"}
+
+USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
+MONITOR_WHEN_PREFIXES = ("always", "on-skill-invoke:")
+
 # Try tiktoken for accurate counting
 try:
     import tiktoken
@@ -163,7 +191,10 @@ def parse_frontmatter(content: str) -> tuple[dict, str, int]:
 
 def find_components(plugin_dir: Path) -> dict[str, list[Path]]:
     """Find all component files in a plugin directory."""
-    components = {"commands": [], "agents": [], "skills": []}
+    components = {
+        "commands": [], "agents": [], "skills": [],
+        "monitors": [], "themes": [], "output_styles": [],
+    }
 
     cmd_dir = plugin_dir / "commands"
     if cmd_dir.exists():
@@ -184,6 +215,22 @@ def find_components(plugin_dir: Path) -> dict[str, list[Path]]:
                 skill_md = skill_dir / "SKILL.md"
                 if skill_md.exists():
                     components["skills"].append(skill_md)
+
+    monitors_file = plugin_dir / "monitors" / "monitors.json"
+    if monitors_file.exists():
+        components["monitors"].append(monitors_file)
+
+    themes_dir = plugin_dir / "themes"
+    if themes_dir.exists():
+        for f in themes_dir.iterdir():
+            if f.is_file() and f.suffix == ".json":
+                components["themes"].append(f)
+
+    output_styles_dir = plugin_dir / "output-styles"
+    if output_styles_dir.exists():
+        for f in output_styles_dir.iterdir():
+            if f.is_file() and f.suffix == ".md" and f.name != "README.md":
+                components["output_styles"].append(f)
 
     return components
 
@@ -215,7 +262,7 @@ def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult
 
     # Check for misplaced components
     claude_plugin = plugin_dir / ".claude-plugin"
-    for name in ("commands", "agents", "skills"):
+    for name in ("commands", "agents", "skills", "monitors", "themes", "output-styles", "hooks", "bin"):
         misplaced = claude_plugin / name
         if misplaced.exists():
             result.must(
@@ -486,7 +533,378 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
             if verbose:
                 result.ok("Inline hooks configuration valid", file=".claude-plugin/plugin.json")
 
+    # Validate monitors field
+    if "monitors" in manifest:
+        _validate_monitors(manifest["monitors"], plugin_dir, result, verbose)
+
+    # Validate string-or-array path fields: agents, skills, outputStyles, themes
+    for field_name in ("agents", "skills", "outputStyles", "themes"):
+        if field_name in manifest:
+            _validate_path_field(field_name, manifest[field_name], plugin_dir, result, verbose)
+
+    # Validate mcpServers field (string path or inline object)
+    if "mcpServers" in manifest:
+        _validate_mcp_servers(manifest["mcpServers"], plugin_dir, result, verbose)
+
+    # Validate lspServers field (string path or inline object)
+    if "lspServers" in manifest:
+        _validate_lsp_servers(manifest["lspServers"], plugin_dir, result, verbose)
+
+    # Validate userConfig field
+    if "userConfig" in manifest:
+        _validate_user_config(manifest["userConfig"], result)
+
+    # Validate dependencies field
+    if "dependencies" in manifest:
+        _validate_dependencies(manifest["dependencies"], result)
+
+    # Validate stand-alone .mcp.json / .lsp.json files even when not declared in manifest
+    standalone_mcp = plugin_dir / ".mcp.json"
+    if standalone_mcp.exists() and "mcpServers" not in manifest:
+        try:
+            data = json.loads(standalone_mcp.read_text())
+            _validate_mcp_servers_object(data, plugin_dir, result, source_file=".mcp.json")
+        except json.JSONDecodeError as e:
+            result.must(
+                "Invalid JSON in .mcp.json",
+                file=".mcp.json",
+                line=e.lineno if hasattr(e, "lineno") else 0,
+                source=str(e),
+                suggestion="Fix JSON syntax error",
+            )
+
+    standalone_lsp = plugin_dir / ".lsp.json"
+    if standalone_lsp.exists() and "lspServers" not in manifest:
+        try:
+            data = json.loads(standalone_lsp.read_text())
+            _validate_lsp_servers_object(data, result, source_file=".lsp.json")
+        except json.JSONDecodeError as e:
+            result.must(
+                "Invalid JSON in .lsp.json",
+                file=".lsp.json",
+                line=e.lineno if hasattr(e, "lineno") else 0,
+                source=str(e),
+                suggestion="Fix JSON syntax error",
+            )
+
+    standalone_monitors = plugin_dir / "monitors" / "monitors.json"
+    if standalone_monitors.exists() and "monitors" not in manifest:
+        _validate_monitors_file(standalone_monitors, result, source_file="monitors/monitors.json")
+
+    # Warn on unknown manifest fields (catches typos like "montiors")
+    for key in manifest.keys():
+        if key not in KNOWN_MANIFEST_FIELDS:
+            result.should(
+                f"Unknown manifest field: {key!r}",
+                file=".claude-plugin/plugin.json",
+                line=find_key_line(key),
+                source=f'"{key}": ...',
+                suggestion=f"Remove or fix typo. Known fields: {', '.join(sorted(KNOWN_MANIFEST_FIELDS))}",
+            )
+
     return result
+
+
+def _resolve_manifest_path(plugin_dir: Path, rel_path: str) -> Path:
+    """Resolve a './foo' manifest path against plugin_dir without breaking on Windows."""
+    return plugin_dir / rel_path[2:] if rel_path.startswith("./") else plugin_dir / rel_path
+
+
+def _validate_path_field(field_name: str, value, plugin_dir: Path,
+                         result: ValidationResult, verbose: bool) -> None:
+    """Validate a string|array manifest field that points to component paths."""
+    paths = [value] if isinstance(value, str) else value
+    if not isinstance(paths, list):
+        result.must(
+            f"'{field_name}' must be a string or array",
+            file=".claude-plugin/plugin.json",
+            source=f'"{field_name}": {json.dumps(value)[:60]}...',
+            suggestion='Use "./path/" or ["./path1/", "./path2/"]',
+        )
+        return
+
+    for p in paths:
+        if not isinstance(p, str):
+            result.must(
+                f"'{field_name}' entry must be a string path",
+                file=".claude-plugin/plugin.json",
+                source=str(p),
+            )
+            continue
+        if not p.startswith("./"):
+            result.must(
+                f"Invalid {field_name} path format: {p}",
+                file=".claude-plugin/plugin.json",
+                source=f'"{p}"',
+                suggestion="Paths must be relative and start with './'",
+            )
+            continue
+        target = _resolve_manifest_path(plugin_dir, p.rstrip("/"))
+        if not target.exists():
+            result.must(
+                f"{field_name} path not found: {p}",
+                file=".claude-plugin/plugin.json",
+                source=f'"{p}"',
+                suggestion=f"Create {p} or remove from manifest",
+            )
+        elif verbose:
+            result.ok(f"{field_name}: {p}", file=".claude-plugin/plugin.json")
+
+
+def _validate_monitors(value, plugin_dir: Path, result: ValidationResult, verbose: bool) -> None:
+    """Validate the `monitors` manifest field. Accepts a path string, an inline array, or null."""
+    if isinstance(value, str):
+        if not value.startswith("./"):
+            result.must(
+                "Invalid monitors path format",
+                file=".claude-plugin/plugin.json",
+                source=f'"monitors": "{value}"',
+                suggestion="Use './path/to/monitors.json'",
+            )
+            return
+        path = _resolve_manifest_path(plugin_dir, value)
+        if not path.exists():
+            result.must(
+                "Monitors file not found",
+                file=".claude-plugin/plugin.json",
+                source=f'"monitors": "{value}"',
+                suggestion=f"Create {value}",
+            )
+            return
+        _validate_monitors_file(path, result, source_file=value)
+    elif isinstance(value, list):
+        _validate_monitors_array(value, result, source_file=".claude-plugin/plugin.json")
+    else:
+        result.must(
+            "'monitors' must be a path string or array of monitor entries",
+            file=".claude-plugin/plugin.json",
+            source=f'"monitors": {json.dumps(value)[:60]}...',
+        )
+
+
+def _validate_monitors_file(path: Path, result: ValidationResult, source_file: str) -> None:
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError as e:
+        result.must(
+            f"Invalid JSON in {source_file}",
+            file=source_file,
+            line=e.lineno if hasattr(e, "lineno") else 0,
+            source=str(e),
+            suggestion="Fix JSON syntax error",
+        )
+        return
+    if not isinstance(data, list):
+        result.must(
+            "monitors.json must be a JSON array",
+            file=source_file,
+            suggestion="Wrap entries in [...]",
+        )
+        return
+    _validate_monitors_array(data, result, source_file=source_file)
+
+
+def _validate_monitors_array(entries, result: ValidationResult, source_file: str) -> None:
+    seen_names = set()
+    for idx, entry in enumerate(entries):
+        loc = f"{source_file}[{idx}]"
+        if not isinstance(entry, dict):
+            result.must("Monitor entry must be an object", file=loc)
+            continue
+        for required in ("name", "command", "description"):
+            if required not in entry or not entry[required]:
+                result.must(
+                    f"Monitor missing '{required}'",
+                    file=loc,
+                    source=json.dumps(entry)[:80],
+                    suggestion=f"Add '{required}' field per https://code.claude.com/docs/en/plugins-reference#monitors",
+                )
+        name = entry.get("name")
+        if isinstance(name, str):
+            if name in seen_names:
+                result.must(
+                    f"Duplicate monitor name: {name!r}",
+                    file=loc,
+                    suggestion="Each monitor name must be unique within the plugin",
+                )
+            seen_names.add(name)
+        when = entry.get("when")
+        if when is not None and isinstance(when, str):
+            if not (when == "always" or when.startswith("on-skill-invoke:")):
+                result.should(
+                    f"Unknown 'when' value: {when!r}",
+                    file=loc,
+                    source=f'"when": "{when}"',
+                    suggestion='Use "always" (default) or "on-skill-invoke:<skill-name>"',
+                )
+
+
+def _validate_mcp_servers(value, plugin_dir: Path, result: ValidationResult, verbose: bool) -> None:
+    if isinstance(value, str):
+        if not value.startswith("./"):
+            result.must(
+                "Invalid mcpServers path format",
+                file=".claude-plugin/plugin.json",
+                source=f'"mcpServers": "{value}"',
+                suggestion="Use './path/to/.mcp.json'",
+            )
+            return
+        path = _resolve_manifest_path(plugin_dir, value)
+        if not path.exists():
+            result.must(
+                "mcpServers file not found",
+                file=".claude-plugin/plugin.json",
+                source=f'"mcpServers": "{value}"',
+            )
+            return
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError as e:
+            result.must(f"Invalid JSON in {value}", file=value, source=str(e))
+            return
+        _validate_mcp_servers_object(data, plugin_dir, result, source_file=value)
+    elif isinstance(value, dict):
+        _validate_mcp_servers_object(value, plugin_dir, result,
+                                      source_file=".claude-plugin/plugin.json")
+    else:
+        result.must(
+            "'mcpServers' must be a path string or inline object",
+            file=".claude-plugin/plugin.json",
+        )
+
+
+def _validate_mcp_servers_object(servers, plugin_dir: Path, result: ValidationResult,
+                                  source_file: str) -> None:
+    if not isinstance(servers, dict):
+        result.must("mcpServers must be an object keyed by server name", file=source_file)
+        return
+    for name, cfg in servers.items():
+        loc = f"{source_file}:{name}"
+        if not isinstance(cfg, dict):
+            result.must(f"MCP server {name!r} config must be an object", file=loc)
+            continue
+        # http/sse servers use 'url' instead of 'command'
+        transport = cfg.get("type")
+        if transport in ("http", "sse"):
+            if "url" not in cfg or not cfg["url"]:
+                result.must(
+                    f"MCP server {name!r} missing 'url'",
+                    file=loc,
+                    suggestion="http/sse transports require a 'url' field",
+                )
+        else:
+            if "command" not in cfg or not cfg["command"]:
+                result.must(
+                    f"MCP server {name!r} missing 'command'",
+                    file=loc,
+                    suggestion="stdio servers require a 'command' field",
+                )
+
+
+def _validate_lsp_servers(value, plugin_dir: Path, result: ValidationResult, verbose: bool) -> None:
+    if isinstance(value, str):
+        if not value.startswith("./"):
+            result.must(
+                "Invalid lspServers path format",
+                file=".claude-plugin/plugin.json",
+                source=f'"lspServers": "{value}"',
+                suggestion="Use './path/to/.lsp.json'",
+            )
+            return
+        path = _resolve_manifest_path(plugin_dir, value)
+        if not path.exists():
+            result.must(
+                "lspServers file not found",
+                file=".claude-plugin/plugin.json",
+                source=f'"lspServers": "{value}"',
+            )
+            return
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError as e:
+            result.must(f"Invalid JSON in {value}", file=value, source=str(e))
+            return
+        _validate_lsp_servers_object(data, result, source_file=value)
+    elif isinstance(value, dict):
+        _validate_lsp_servers_object(value, result, source_file=".claude-plugin/plugin.json")
+    else:
+        result.must(
+            "'lspServers' must be a path string or inline object",
+            file=".claude-plugin/plugin.json",
+        )
+
+
+def _validate_lsp_servers_object(servers, result: ValidationResult, source_file: str) -> None:
+    if not isinstance(servers, dict):
+        result.must("lspServers must be an object keyed by language name", file=source_file)
+        return
+    for name, cfg in servers.items():
+        loc = f"{source_file}:{name}"
+        if not isinstance(cfg, dict):
+            result.must(f"LSP server {name!r} config must be an object", file=loc)
+            continue
+        if "command" not in cfg or not cfg["command"]:
+            result.must(
+                f"LSP server {name!r} missing 'command'",
+                file=loc,
+                suggestion="LSP entries require a 'command' field (binary in PATH)",
+            )
+        if "extensionToLanguage" not in cfg or not cfg["extensionToLanguage"]:
+            result.must(
+                f"LSP server {name!r} missing 'extensionToLanguage'",
+                file=loc,
+                suggestion='Add e.g. "extensionToLanguage": {".go": "go"}',
+            )
+
+
+def _validate_user_config(value, result: ValidationResult) -> None:
+    if not isinstance(value, dict):
+        result.must(
+            "'userConfig' must be an object",
+            file=".claude-plugin/plugin.json",
+        )
+        return
+    for key, opt in value.items():
+        loc = f".claude-plugin/plugin.json:userConfig.{key}"
+        if not isinstance(opt, dict):
+            result.must(f"userConfig.{key} must be an object", file=loc)
+            continue
+        for required in ("type", "title", "description"):
+            if required not in opt:
+                result.must(
+                    f"userConfig.{key} missing '{required}'",
+                    file=loc,
+                    suggestion=f"Required fields: type, title, description",
+                )
+        t = opt.get("type")
+        if t is not None and t not in USER_CONFIG_TYPES:
+            result.must(
+                f"userConfig.{key} has invalid type: {t!r}",
+                file=loc,
+                suggestion=f"Use one of: {', '.join(sorted(USER_CONFIG_TYPES))}",
+            )
+
+
+def _validate_dependencies(value, result: ValidationResult) -> None:
+    if not isinstance(value, list):
+        result.must(
+            "'dependencies' must be an array",
+            file=".claude-plugin/plugin.json",
+        )
+        return
+    for idx, dep in enumerate(value):
+        loc = f".claude-plugin/plugin.json:dependencies[{idx}]"
+        if isinstance(dep, str):
+            continue
+        if isinstance(dep, dict):
+            if "name" not in dep:
+                result.must(f"dependencies[{idx}] object missing 'name'", file=loc)
+            continue
+        result.must(
+            f"dependencies[{idx}] must be a string or {{name, version}} object",
+            file=loc,
+            source=str(dep),
+        )
 
 
 # =============================================================================
@@ -597,14 +1015,8 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                 suggestion="Add description with trigger conditions and <example> blocks"
             )
 
-        # Required: model
-        if "model" not in fm:
-            result.must(
-                "Missing 'model' in frontmatter",
-                file=rel_path,
-                suggestion="Add model: inherit (or sonnet|opus|haiku)"
-            )
-        else:
+        # Optional: model (upstream does not require it for plugin agents)
+        if "model" in fm:
             model = fm["model"]
             line_num = find_fm_key_line("model")
             if model not in ("inherit", "sonnet", "opus", "haiku"):
@@ -618,14 +1030,8 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
             elif verbose:
                 result.ok(f'model: "{model}"', file=rel_path, line=line_num)
 
-        # Required: color
-        if "color" not in fm:
-            result.must(
-                "Missing 'color' in frontmatter",
-                file=rel_path,
-                suggestion="Add color: blue (or cyan|green|yellow|magenta|red)"
-            )
-        else:
+        # Optional: color (upstream does not require it for plugin agents)
+        if "color" in fm:
             color = fm["color"]
             line_num = find_fm_key_line("color")
             valid_colors = ("blue", "cyan", "green", "yellow", "magenta", "red")
@@ -639,6 +1045,30 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                 )
             elif verbose:
                 result.ok(f'color: "{color}"', file=rel_path, line=line_num)
+
+        # Forbidden fields per upstream spec — plugin-shipped agents must not declare these
+        for forbidden in FORBIDDEN_AGENT_FIELDS:
+            if forbidden in fm:
+                result.must(
+                    f"Forbidden agent field: {forbidden!r}",
+                    file=rel_path,
+                    line=find_fm_key_line(forbidden),
+                    source=f"{forbidden}: {fm[forbidden]}",
+                    suggestion=(
+                        "Plugin-shipped agents cannot declare hooks, mcpServers, or "
+                        "permissionMode (security restriction per plugins-reference#agents)."
+                    ),
+                )
+
+        # isolation: only "worktree" is valid
+        if "isolation" in fm and fm["isolation"] != "worktree":
+            result.must(
+                "Invalid isolation value",
+                file=rel_path,
+                line=find_fm_key_line("isolation"),
+                source=f"isolation: {fm['isolation']}",
+                suggestion='Only "worktree" is supported',
+            )
 
     elif comp_type == "skill":
         # Allowed fields for skills (name, description are required for official best practices)
@@ -1084,9 +1514,15 @@ def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bo
 
     components = find_components(plugin_dir)
     print(f"\nComponents:")
-    print(f"  Commands: {len(components['commands'])}")
-    print(f"  Agents:   {len(components['agents'])}")
-    print(f"  Skills:   {len(components['skills'])}")
+    print(f"  Commands:      {len(components['commands'])}")
+    print(f"  Agents:        {len(components['agents'])}")
+    print(f"  Skills:        {len(components['skills'])}")
+    if components.get("monitors"):
+        print(f"  Monitors:      {len(components['monitors'])}")
+    if components.get("themes"):
+        print(f"  Themes:        {len(components['themes'])}")
+    if components.get("output_styles"):
+        print(f"  Output styles: {len(components['output_styles'])}")
 
     # Issues by severity
     def print_issue(issue: Issue, indent: str = ""):

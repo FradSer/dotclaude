@@ -25,22 +25,43 @@ Plugins provide event handlers that respond to Claude Code events automatically.
 
 ## Available events
 
-* `PreToolUse`: Before Claude uses any tool
-* `PostToolUse`: After Claude successfully uses any tool
-* `PostToolUseFailure`: After Claude tool execution fails
-* `PermissionRequest`: When a permission dialog is shown
-* `UserPromptSubmit`: When user submits a prompt
-* `Notification`: When Claude Code sends notifications
-* `Stop`: When Claude attempts to stop
-* `SubagentStart`: When a subagent is started
-* `SubagentStop`: When a subagent attempts to stop
-* `SessionStart`: At the beginning of sessions
-* `SessionEnd`: At the end of sessions
-* `PreCompact`: Before conversation history is compacted
+| Event                 | When it fires                                                                                                              |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| `SessionStart`        | When a session begins or resumes                                                                                           |
+| `Setup`               | When Claude Code starts with `--init-only`, or with `--init`/`--maintenance` in `-p` mode (one-time CI prep)               |
+| `UserPromptSubmit`    | When the user submits a prompt, before Claude processes it                                                                 |
+| `UserPromptExpansion` | When a typed command expands into a prompt, before it reaches Claude. Can block the expansion                              |
+| `PreToolUse`          | Before a tool call executes. Can block it                                                                                  |
+| `PermissionRequest`   | When a permission dialog appears                                                                                           |
+| `PermissionDenied`    | When a tool call is denied by the auto-mode classifier. Return `{retry: true}` to allow Claude to retry                    |
+| `PostToolUse`         | After a tool call succeeds                                                                                                 |
+| `PostToolUseFailure`  | After a tool call fails                                                                                                    |
+| `PostToolBatch`       | After a full batch of parallel tool calls resolves, before the next model call                                             |
+| `Notification`        | When Claude Code sends a notification                                                                                      |
+| `SubagentStart`       | When a subagent is spawned                                                                                                 |
+| `SubagentStop`        | When a subagent finishes                                                                                                   |
+| `TaskCreated`         | When a task is being created via `TaskCreate`                                                                              |
+| `TaskCompleted`       | When a task is being marked as completed                                                                                   |
+| `Stop`                | When Claude finishes responding                                                                                            |
+| `StopFailure`         | When the turn ends due to an API error (output and exit code ignored)                                                      |
+| `TeammateIdle`        | When an agent-team teammate is about to go idle                                                                            |
+| `InstructionsLoaded`  | When a CLAUDE.md or `.claude/rules/*.md` file is loaded into context                                                       |
+| `ConfigChange`        | When a configuration file changes during a session                                                                         |
+| `CwdChanged`          | When the working directory changes (e.g. after `cd`). Useful for direnv-style reactive environment management              |
+| `FileChanged`         | When a watched file changes on disk. Use the `matcher` field to specify filenames                                          |
+| `WorktreeCreate`      | When a worktree is being created via `--worktree` or `isolation: "worktree"`. Replaces default git behavior                |
+| `WorktreeRemove`      | When a worktree is being removed (session exit or subagent finish)                                                         |
+| `PreCompact`          | Before context compaction                                                                                                  |
+| `PostCompact`         | After context compaction completes                                                                                         |
+| `Elicitation`         | When an MCP server requests user input during a tool call                                                                  |
+| `ElicitationResult`   | After a user responds to an MCP elicitation, before the response is sent back to the server                                |
+| `SessionEnd`          | When a session terminates                                                                                                  |
 
 ## Hook types
 
 * `command`: Execute shell commands or scripts
+* `http`: POST the event JSON to a URL
+* `mcp_tool`: Call a tool on a configured MCP server
 * `prompt`: Evaluate a prompt with an LLM (uses `$ARGUMENTS` placeholder for context)
 * `agent`: Run an agentic verifier with tools for complex verification tasks
 

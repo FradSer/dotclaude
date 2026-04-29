@@ -1,6 +1,6 @@
 # Component Model
 
-Detailed overview of Claude Code plugin component types.
+Detailed overview of Claude Code plugin component types. Per the upstream plugins-reference, plugins can ship: **skills**, **agents**, **hooks**, **MCP servers**, **LSP servers**, **monitors**, **themes**, and **output styles**.
 
 ## Skills
 
@@ -40,11 +40,30 @@ Agents can be used in two ways:
     - Use when tasks are **parallelizable** (e.g., refactoring 50 files).
     - Use when tasks need **multi-perspective analysis** (e.g., UX + Security).
 
+## Monitors
+
+Monitors are background shell commands the plugin starts automatically. Every stdout line becomes a Claude notification.
+
+- Use for log tails, status polling, deployment watchers — events Claude should react to without being told to start the watch
+- See `./components/monitors.md` for required fields and `when` triggers
+- Requires Claude Code v2.1.105+
+
+## Themes
+
+JSON color themes that surface in `/theme` once the plugin is enabled. See `./components/themes.md`.
+
+## Output styles
+
+Markdown files that adjust Claude's response shape (terseness, structure, verbosity). See `./components/output-styles.md`.
+
 ## Selection Guide
 
 - **Instruction-type skills** apply when a user invokes a workflow via slash command and the process is linear
 - **Knowledge-type skills** apply when providing reference knowledge for agents or the main session
 - **Agents** apply when isolation, specialization, and autonomous decision-making are required
+- **Monitors** apply when Claude should react to a stream of out-of-band events (logs, deploys, file changes)
+- **Themes** ship branded color presets
+- **Output styles** modulate response formatting independent of domain logic
 
 ## plugin.json Declaration
 

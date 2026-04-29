@@ -6,8 +6,8 @@ A complete plugin follows this structure. **Modern plugins** prioritize Skills o
 
 ```
 enterprise-plugin/
-├── .claude-plugin/           # Metadata directory
-│   └── plugin.json          # Required: plugin manifest (declare skills here)
+├── .claude-plugin/           # Metadata directory (only plugin.json belongs here)
+│   └── plugin.json
 ├── skills/                   # Agent Skills (RECOMMENDED)
 │   ├── commit/
 │   │   └── SKILL.md
@@ -17,24 +17,33 @@ enterprise-plugin/
 │   └── pdf-processor/
 │       ├── SKILL.md
 │       └── scripts/
-├── commands/                 # Legacy commands (optional)
+├── commands/                 # Skills as flat .md files (legacy; use skills/ for new plugins)
 │   ├── status.md
 │   └── logs.md
-├── agents/                   # Default agent location
+├── agents/                   # Subagent definitions
 │   ├── security-reviewer.md
 │   ├── performance-tester.md
 │   └── compliance-checker.md
+├── output-styles/            # Response-formatting style definitions
+│   └── terse.md
+├── themes/                   # Color theme JSON files
+│   └── dracula.json
+├── monitors/                 # Background monitor configurations
+│   └── monitors.json
 ├── hooks/                    # Hook configurations
 │   ├── hooks.json           # Main hook config
 │   └── security-hooks.json  # Additional hooks
-├── .mcp.json                # MCP server definitions
-├── .lsp.json                # LSP server configurations
-├── scripts/                 # Hook and utility scripts
-│   ├── security-scan.sh     # Must be executable with shebang
-│   ├── format-code.py       # Must be executable with shebang
-│   └── deploy.js            # Must be executable with shebang
-├── LICENSE                  # License file
-└── CHANGELOG.md             # Version history
+├── bin/                      # Plugin executables added to Bash PATH
+│   └── my-tool               # Invokable as a bare command in any Bash tool call
+├── settings.json             # Plugin default settings (agent + subagentStatusLine keys)
+├── .mcp.json                 # MCP server definitions
+├── .lsp.json                 # LSP server configurations
+├── scripts/                  # Hook and utility scripts
+│   ├── security-scan.sh      # Must be executable with shebang
+│   ├── format-code.py        # Must be executable with shebang
+│   └── deploy.js             # Must be executable with shebang
+├── LICENSE                   # License file
+└── CHANGELOG.md              # Version history
 ```
 
 **Example plugin.json with explicit skill declarations**:
@@ -51,22 +60,27 @@ enterprise-plugin/
 }
 ```
 
-> **Warning**: The `.claude-plugin/` directory contains the `plugin.json` file. All other directories (commands/, agents/, skills/, hooks/) MUST be at the plugin root, not inside `.claude-plugin/`.
+> **Warning**: The `.claude-plugin/` directory contains the `plugin.json` file. All other directories (commands/, agents/, skills/, output-styles/, themes/, monitors/, hooks/, bin/) MUST be at the plugin root, not inside `.claude-plugin/`.
 
 > **Best Practice**: See `./references/manifest-schema.md` for plugin.json declaration guidance.
 
 ## File locations reference
 
-| Component       | Default Location             | Purpose                          | Priority      |
-| :-------------- | :--------------------------- | :------------------------------- | :------------ |
-| **Manifest**    | `.claude-plugin/plugin.json` | Required metadata file           | Required      |
-| **Skills**      | `skills/`                    | Agent Skills with SKILL.md files | **Recommended** |
-| **Commands**    | `commands/`                  | Legacy slash command files       | Optional      |
-| **Agents**      | `agents/`                    | Subagent Markdown files          | -             |
-| **Hooks**       | `hooks/hooks.json`           | Hook configuration               | -             |
-| **MCP servers** | `.mcp.json`                  | MCP server definitions           | -             |
-| **LSP servers** | `.lsp.json`                  | Language server configurations   | -             |
-| **Scripts**     | `scripts/`                    | Hook and utility scripts         | -             |
+| Component         | Default Location             | Purpose                                                                                    |
+| :---------------- | :--------------------------- | :----------------------------------------------------------------------------------------- |
+| **Manifest**      | `.claude-plugin/plugin.json` | Plugin metadata (optional)                                                                 |
+| **Skills**        | `skills/`                    | Skills with `<name>/SKILL.md` structure (recommended for new plugins)                      |
+| **Commands**      | `commands/`                  | Skills as flat Markdown files (legacy form)                                                |
+| **Agents**        | `agents/`                    | Subagent Markdown files                                                                    |
+| **Output styles** | `output-styles/`             | Output style definitions                                                                   |
+| **Themes**        | `themes/`                    | Color theme definitions                                                                    |
+| **Monitors**      | `monitors/monitors.json`     | Background monitor configurations                                                          |
+| **Hooks**         | `hooks/hooks.json`           | Hook configuration                                                                         |
+| **MCP servers**   | `.mcp.json`                  | MCP server definitions                                                                     |
+| **LSP servers**   | `.lsp.json`                  | Language server configurations                                                             |
+| **Executables**   | `bin/`                       | Files added to Bash tool's PATH while plugin is enabled                                    |
+| **Settings**      | `settings.json`              | Default plugin config (only `agent` and `subagentStatusLine` keys are currently supported) |
+| **Scripts**       | `scripts/`                   | Hook and utility scripts (must be executable with shebang)                                 |
 
 ## Script Requirements
 

@@ -1,11 +1,14 @@
 # Plugin Manifest Schema
 
-The `plugin.json` file defines your plugin's metadata and configuration. This section documents all supported fields and options.
+The `.claude-plugin/plugin.json` file defines your plugin's metadata and configuration. This section documents all supported fields.
+
+The manifest itself is optional. When omitted, Claude Code auto-discovers components in their default locations and derives the plugin name from the directory name. Use a manifest when you need to provide metadata, custom paths, or non-default configuration.
 
 ## Complete schema
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "plugin-name",
   "version": "1.2.0",
   "description": "Brief plugin description",
@@ -18,67 +21,91 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
   "repository": "https://github.com/author/plugin",
   "license": "MIT",
   "keywords": ["keyword1", "keyword2"],
+  "skills": "./custom/skills/",
   "commands": ["./custom/commands/special.md"],
   "agents": "./custom/agents/",
-  "skills": "./custom/skills/",
   "hooks": "./config/hooks.json",
   "mcpServers": "./mcp-config.json",
   "outputStyles": "./styles/",
-  "lspServers": "./.lsp.json"
+  "themes": "./themes/",
+  "lspServers": "./.lsp.json",
+  "monitors": "./monitors.json",
+  "userConfig": { "...": "..." },
+  "channels": [{ "...": "..." }],
+  "dependencies": [
+    "helper-lib",
+    { "name": "secrets-vault", "version": "~2.1.0" }
+  ]
 }
 ```
 
-## Required fields
+## Required field
+
+If you ship a manifest, `name` is the only required field.
 
 | Field  | Type   | Description                               | Example              |
 | :----- | :----- | :---------------------------------------- | :------------------- |
 | `name` | string | Unique identifier (kebab-case, no spaces) | `"deployment-tools"` |
 
+The name is used for namespacing — agent `agent-creator` in plugin `plugin-dev` appears as `plugin-dev:agent-creator`.
+
 ## Metadata fields
 
-| Field         | Type   | Description                         | Example                                            |
-| :------------ | :----- | :---------------------------------- | :------------------------------------------------- |
-| `version`     | string | Semantic version                    | `"2.1.0"`                                          |
-| `description` | string | Brief explanation of plugin purpose | `"Deployment automation tools"`                    |
-| `author`      | object | Author information                  | `{"name": "Dev Team", "email": "dev@company.com"}` |
-| `homepage`    | string | Documentation URL                   | `"https://docs.example.com"`                       |
-| `repository`  | string | Source code URL                     | `"https://github.com/user/plugin"`                 |
-| `license`     | string | License identifier                  | `"MIT"`, `"Apache-2.0"`                            |
-| `keywords`    | array  | Discovery tags                      | `["deployment", "ci-cd"]`                          |
+| Field         | Type   | Description                                                                                                                                        |
+| :------------ | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$schema`     | string | JSON Schema URL for editor autocomplete. Ignored at load time.                                                                                     |
+| `version`     | string | Semantic version. If set, users only get updates when bumped. If omitted, Claude Code falls back to the git commit SHA.                            |
+| `description` | string | Brief explanation of plugin purpose                                                                                                                |
+| `author`      | object | Author information (`name`, `email`, `url`)                                                                                                        |
+| `homepage`    | string | Documentation URL                                                                                                                                  |
+| `repository`  | string | Source code URL                                                                                                                                    |
+| `license`     | string | License identifier (e.g. `"MIT"`, `"Apache-2.0"`)                                                                                                  |
+| `keywords`    | array  | Discovery tags                                                                                                                                     |
 
 ## Component path fields
 
-> **Best Practice**: See `./references/component-model.md` for component types and selection criteria.
+| Field          | Type                  | Description                                                                                                                            | Example                                |
+| :------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- |
+| `skills`       | string\|array         | Custom skill directories containing `<name>/SKILL.md` (replaces default `skills/`)                                                     | `"./custom/skills/"`                   |
+| `commands`     | string\|array         | Flat `.md` skill files or skill directories (replaces default `commands/`)                                                             | `["./skills/commit/"]`                 |
+| `agents`       | string\|array         | Custom agent files or directories (replaces default `agents/`)                                                                         | `"./custom-agents/"`                   |
+| `hooks`        | string\|array\|object | Hook config path or inline configuration (additive — combines with default `hooks/hooks.json`)                                         | `"./extra-hooks.json"`                 |
+| `mcpServers`   | string\|array\|object | MCP config path or inline configuration (additive — combines with default `.mcp.json`)                                                 | `"./mcp-config.json"`                  |
+| `outputStyles` | string\|array         | Custom output style files/directories (replaces default `output-styles/`)                                                              | `"./styles/"`                          |
+| `themes`       | string\|array         | Color theme files/directories (replaces default `themes/`)                                                                             | `"./themes/"`                          |
+| `lspServers`   | string\|array\|object | LSP server configurations (additive)                                                                                                   | `"./.lsp.json"`                        |
+| `monitors`     | string\|array         | Background monitor configurations (replaces default `monitors/monitors.json`). See `./components/monitors.md`.                         | `"./monitors.json"`                    |
 
-| Field          | Type           | Description                                                                                                                                              | Example                                |
-| :------------- | :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- |
-| `commands`     | string\|array  | Instruction-type skills (`user-invocable: true` or default, including `disable-model-invocation: true`). Required for / menu. | `["./skills/commit/", "./skills/config/"]` |
-| `agents`       | string\|array  | Additional agent files                                                                                                                                   | `"./custom/agents/"`                   |
-| `skills`       | string\|array  | Knowledge-type skills (`user-invocable: false`). Agent-only; not in / menu.                                                                 | `"./custom/skills/"`                   |
-| `hooks`        | string\|object | Hook config path or inline config                                                                                                                        | `"./hooks.json"`                       |
-| `mcpServers`   | string\|object | MCP config path or inline config                                                                                                                         | `"./mcp-config.json"`                  |
-| `outputStyles` | string\|array  | Additional output style files/directories                                                                                                                | `"./styles/"`                          |
-| `lspServers`   | string\|object | [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) config for code intelligence (go to definition, find references, etc.) | `"./.lsp.json"`                        |
+## Plugin configuration fields
+
+| Field          | Type   | Description                                                                                                                                                  |
+| :------------- | :----- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `userConfig`   | object | User-configurable values prompted at enable time. Each option requires `type` (`string\|number\|boolean\|directory\|file`), `title`, and `description`.     |
+| `channels`     | array  | Message-injection channels (Telegram/Slack/Discord-style). Each entry needs `server` matching a key in `mcpServers`.                                         |
+| `dependencies` | array  | Other plugins this one requires. Entries are either `"plugin-name"` strings or `{ "name": "...", "version": "~1.0.0" }` objects.                            |
+
+`userConfig` values are exposed in MCP/LSP/hook/monitor commands as `${user_config.<key>}` and as `CLAUDE_PLUGIN_OPTION_<KEY>` environment variables. Set `"sensitive": true` to mask input and store the value in the system keychain.
 
 ## Path behavior rules
 
-**Important**: Custom paths supplement default directories - they don't replace them.
+For `skills`, `commands`, `agents`, `outputStyles`, `themes`, and `monitors`, a custom path **replaces** the default directory. To keep the default and add more, include the default path explicitly:
 
-* If `commands/` or `skills/` directories exist, they're loaded in addition to custom paths
-* All paths MUST be relative to plugin root and start with `./`
-* Commands from custom paths use the same naming and namespacing rules
-* Multiple paths can be specified as arrays for flexibility
+```json
+{ "skills": ["./skills/", "./extras/"] }
+```
 
-**Recommended**: Declare by type: `user-invocable: false` → `skills`; `user-invocable: true` (or default) → `commands`. Improves documentation, maintainability, and clarity.
+`hooks`, `mcpServers`, and `lspServers` use additive semantics — values declared in the manifest layer combine with files at the standard locations.
 
-**Path examples** (knowledge-type in `skills`, instruction-type in `commands`):
+* All paths MUST be relative to the plugin root and start with `./`
+* Components from custom paths use the same naming and namespacing rules
+* When a skill path points to a directory containing `SKILL.md` directly (e.g. `"./"`), the frontmatter `name` field determines the invocation name; otherwise the directory basename is used.
+
+**Path examples**:
 
 ```json
 {
-  "skills": ["./skills/plugin-best-practices/"],
   "commands": [
     "./skills/commit/",
-    "./skills/commit-and-push/",
     "./skills/config-git/"
   ],
   "agents": [
@@ -90,7 +117,12 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 
 ## Environment variables
 
-**`${CLAUDE_PLUGIN_ROOT}`**: Contains the absolute path to your plugin directory. Use this in hooks, MCP servers, and scripts to ensure correct paths regardless of installation location.
+| Variable                | Description                                                                                                                                       |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `${CLAUDE_PLUGIN_ROOT}` | Absolute path to the plugin's installation directory. Use for bundled scripts/configs. Files written here do not survive plugin updates.          |
+| `${CLAUDE_PLUGIN_DATA}` | Persistent state directory at `~/.claude/plugins/data/<id>/`. Survives plugin updates. Use for `node_modules`, virtualenvs, caches, generated code. |
+| `${ENV_VAR}`            | Any process-environment variable. Useful for secrets in `mcpServers`/`lspServers`/`monitors` configs.                                             |
+| `${user_config.<key>}`  | Substitutes a value from `userConfig`. Available in MCP/LSP/hook/monitor commands.                                                                |
 
 ```json
 {
@@ -111,62 +143,29 @@ The `plugin.json` file defines your plugin's metadata and configuration. This se
 
 ## Plugin installation scopes
 
-When you install a plugin, you choose a **scope** that determines where the plugin is available and who else can use it:
+When installed, plugins use the standard Claude Code scope system:
 
 | Scope     | Settings file                 | Use case                                                 |
 | :-------- | :---------------------------- | :------------------------------------------------------- |
 | `user`    | `~/.claude/settings.json`     | Personal plugins available across all projects (default) |
 | `project` | `.claude/settings.json`       | Team plugins shared via version control                  |
 | `local`   | `.claude/settings.local.json` | Project-specific plugins, gitignored                     |
-| `managed` | `managed-settings.json`       | Managed plugins (read-only, update only)                 |
-
-Plugins use the same scope system as other Claude Code configurations. For installation instructions and scope flags, see [Install plugins](/en/discover-plugins#install-plugins). For a complete explanation of scopes, see [Configuration scopes](/en/settings#configuration-scopes).
+| `managed` | Managed settings              | Read-only, update-only deployments                       |
 
 ## Plugin caching and file resolution
 
-For security and verification purposes, Claude Code copies plugins to a cache directory rather than using them in-place. Understanding this behavior is important when developing plugins that reference external files.
-
-### How plugin caching works
-
-When you install a plugin, Claude Code copies the plugin files to a cache directory:
-
-* **For marketplace plugins with relative paths**: The path specified in the `source` field is copied recursively. For example, if your marketplace entry specifies `"source": "./plugins/my-plugin"`, the entire `./plugins` directory is copied.
-* **For plugins with `.claude-plugin/plugin.json`**: The implicit root directory (the directory containing `.claude-plugin/plugin.json`) is copied recursively.
+Marketplace plugins are copied to `~/.claude/plugins/cache` rather than loaded in-place, so paths must stay inside the plugin root.
 
 ### Path traversal limitations
 
-Plugins cannot reference files outside their copied directory structure. Paths that traverse outside the plugin root (such as `../shared-utils`) will not work after installation because those external files are not copied to the cache.
+Paths that traverse outside the plugin root (e.g. `../shared-utils`) will not resolve after installation because external files are not copied to the cache.
 
 ### Working with external dependencies
 
-If your plugin needs to access files outside its directory, you have two options:
-
-**Option 1: Use symlinks**
-
-Create symbolic links to external files within your plugin directory. Symlinks are honored during the copy process:
+Use a symlink inside the plugin directory; symlinks are preserved during caching and resolve at runtime:
 
 ```bash
-# Inside your plugin directory
 ln -s /path/to/shared-utils ./shared-utils
 ```
 
-The symlinked content will be copied into the plugin cache.
-
-**Option 2: Restructure your marketplace**
-
-Set the plugin path to a parent directory that contains all required files, then provide the rest of the plugin manifest directly in the marketplace entry:
-
-```json
-{
-  "name": "my-plugin",
-  "source": "./",
-  "description": "Plugin that needs root-level access",
-  "commands": ["./plugins/my-plugin/commands/"],
-  "agents": ["./plugins/my-plugin/agents/"],
-  "strict": false
-}
-```
-
-This approach copies the entire marketplace root, giving your plugin access to sibling directories.
-
-> **Note**: Symlinks that point to locations outside the plugin's logical root are followed during copying. This provides flexibility while maintaining the security benefits of the caching system.
+This pattern provides flexibility while keeping the security benefits of the cache layout.
