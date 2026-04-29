@@ -357,9 +357,14 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
     lines = content.split("\n")
 
+    key_line_re_cache: dict[str, re.Pattern] = {}
+
     def find_key_line(key: str) -> int:
+        pattern = key_line_re_cache.setdefault(
+            key, re.compile(r'^\s*"' + re.escape(key) + r'"\s*:')
+        )
         for i, line in enumerate(lines, 1):
-            if f'"{key}"' in line:
+            if pattern.match(line):
                 return i
         return 0
 
@@ -784,8 +789,15 @@ def _validate_mcp_servers_object(servers, plugin_dir: Path, result: ValidationRe
         if not isinstance(cfg, dict):
             result.must(f"MCP server {name!r} config must be an object", file=loc)
             continue
-        # http/sse servers use 'url' instead of 'command'
+        # http/sse servers use 'url' instead of 'command'; stdio is the implicit default
         transport = cfg.get("type")
+        if transport is not None and transport not in ("stdio", "http", "sse"):
+            result.must(
+                f"MCP server {name!r} has invalid transport: {transport!r}",
+                file=loc,
+                suggestion="Use one of: stdio (default), http, sse",
+            )
+            continue
         if transport in ("http", "sse"):
             if "url" not in cfg or not cfg["url"]:
                 result.must(
@@ -955,9 +967,13 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
             break
 
     def find_fm_key_line(key: str) -> int:
+        prefix = f"{key}:"
         for i, line in enumerate(lines, 1):
-            if i <= fm_end_line and line.startswith(f"{key}:"):
-                return i
+            if i <= fm_end_line and line.startswith(prefix):
+                # Reject partial-key matches like 'description:' when looking for 'desc'
+                rest = line[len(prefix):]
+                if not rest or rest[0] in (" ", "\t", ""):
+                    return i
         return 0
 
     # Type-specific validation

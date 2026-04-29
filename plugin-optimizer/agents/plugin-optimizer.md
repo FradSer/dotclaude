@@ -1,6 +1,11 @@
 ---
 name: plugin-optimizer
 description: Use this agent when validating plugin structure, analyzing documentation redundancy, or executing optimization workflows. Trigger when user asks to "validate plugin", "check for redundancy", "optimize plugin", or when launched by /optimize-plugin command. Examples:
+model: opus
+color: cyan
+skills:
+  - plugin-optimizer:plugin-best-practices
+allowed-tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash(bash:*)", "Bash(git:*)", "Bash(python3:*)", "AskUserQuestion", "Skill"]
 
 <example>
 Context: User explicitly requests plugin validation
@@ -37,12 +42,6 @@ assistant: "I'll use the plugin-optimizer agent to identify and fix validation i
 Fix request with error context - agent applies systematic fixes based on validation issues and best practices.
 </commentary>
 </example>
-
-model: opus
-color: cyan
-skills:
-  - plugin-optimizer:plugin-best-practices
-allowed-tools: ["Read", "Glob", "Grep", "Bash(bash:*)", "Bash(git:*)", "AskUserQuestion", "Skill"]
 ---
 
 You are an expert plugin optimization specialist for Claude Code plugins. Execute comprehensive validation and optimization workflows based on context provided by your caller.
