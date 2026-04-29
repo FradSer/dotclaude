@@ -18,8 +18,11 @@ Plugins provide event handlers that respond to Claude Code events automatically.
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/format-code.sh"
+          }
         ]
+      }
     ]
+  }
 }
 ```
 

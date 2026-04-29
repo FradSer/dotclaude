@@ -52,7 +52,7 @@ Per the upstream plugins-reference#agents:
 | `name`            | Yes      | Kebab-case identifier, 3-50 chars                                                                    |
 | `description`     | Yes      | What the agent specializes in and when Claude should invoke it. Include 2-4 `<example>` blocks.       |
 | `model`           | No       | `inherit` (default), `sonnet`, `opus`, or `haiku`                                                    |
-| `color`           | No       | UI accent: `blue`, `cyan`, `green`, `yellow`, `magenta`, or `red`                                    |
+| `color`           | No       | UI accent: `blue`, `cyan`, `green`, `yellow`, `magenta`, or `red`. *Project-local convention — not in the upstream agent field list.* |
 | `effort`          | No       | Reasoning budget hint                                                                                |
 | `maxTurns`        | No       | Hard cap on agent loop iterations                                                                    |
 | `tools`           | No       | Allowlist of tools the agent can call                                                                |
