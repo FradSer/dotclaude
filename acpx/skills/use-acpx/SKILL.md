@@ -112,6 +112,15 @@ acpx codex exec 'summarize this repo'
 
 Runs a single prompt in a temporary session; does not reuse or persist session state.
 
+**Note**: `-s/--session` is a `prompt`-verb option only — it does not apply to `exec`. For parallel one-shot tasks, run multiple `acpx ... exec` processes with different `--cwd` values; each process is independently isolated by its working directory.
+
+```bash
+# Parallel one-shot tasks across separate working dirs (no --session needed)
+acpx --cwd /tmp/wt-A codex exec 'task A' &
+acpx --cwd /tmp/wt-B codex exec 'task B' &
+wait
+```
+
 ### Cancel / Mode / Set
 
 ```bash
@@ -191,5 +200,23 @@ acpx --format json codex 'review current branch changes' > events.ndjson
 acpx --cwd ~/repos/shop --approve-all codex -s pr-842 \
   'review PR #842 for regressions and propose minimal patch'
 ```
+
+Cross-repo / worktree delegation (current repo stays untouched):
+
+```bash
+# Same shell stays on the orchestration repo; the agent works elsewhere
+acpx --cwd /home/dev/code/projectB codex exec 'audit failing CI in projectB'
+
+# Parallel one-shots on isolated worktrees — no --session needed,
+# each acpx process is naturally isolated by its --cwd
+acpx --cwd /tmp/codex-worktrees/feat-A codex exec 'task A' &
+acpx --cwd /tmp/codex-worktrees/feat-B codex exec 'task B' &
+wait
+```
+
+The `--cwd` overrides the working directory the agent sees, but skills, MCP
+servers, and config are still loaded from the user's home (`~/.codex/` for
+codex). Add the target paths to `[projects."<path>"]` in the agent config to
+avoid trust prompts on first use.
 
 For more examples including stdin/file prompts, session management, and JSON automation pipelines, see `./references/cli.md`.
