@@ -1514,130 +1514,123 @@ def run_all_checks(plugin_dir: Path, checks: list[str], verbose: bool = False) -
     return results
 
 
-def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bool = False):
-    """Print validation results with structured formatting."""
-    all_issues = {"must": [], "should": [], "may": [], "ok": []}
+# ANSI severity styling (only emitted when stdout is a TTY)
+_SEVERITY_STYLE = {
+    "must":   "\033[1;31m",  # bold red
+    "should": "\033[33m",    # yellow
+    "may":    "\033[34m",    # blue
+    "ok":     "\033[32m",    # green
+}
+_RESET = "\033[0m"
 
+
+def _color(text: str, severity: str, enabled: bool) -> str:
+    if not enabled:
+        return text
+    style = _SEVERITY_STYLE.get(severity, "")
+    return f"{style}{text}{_RESET}" if style else text
+
+
+def _format_location(issue: Issue) -> str:
+    if not issue.file:
+        return ""
+    return f"{issue.file}:{issue.line}" if issue.line else issue.file
+
+
+def print_results(results: list[ValidationResult], plugin_dir: Path, verbose: bool = False):
+    """Render validation results in compiler-diagnostic style.
+
+    Layout: `path:line  severity  message`, with optional indented `> source`
+    and `help: suggestion` lines beneath. Files with 2+ issues are visually
+    grouped by a blank-line separator. Summary is one line.
+    """
+    color = sys.stdout.isatty()
+
+    bucket = {"must": [], "should": [], "may": [], "ok": []}
     for result in results:
         for issue in result.issues:
-            all_issues[issue.severity].append(issue)
-
-    # Header
-    print("\n" + "=" * 70)
-    print("PLUGIN VALIDATION REPORT")
-    print("=" * 70)
-    print(f"Target:  {plugin_dir}")
-    print(f"Checks:  {', '.join(r.check for r in results)}")
+            bucket[issue.severity].append(issue)
 
     components = find_components(plugin_dir)
-    print(f"\nComponents:")
-    print(f"  Commands:      {len(components['commands'])}")
-    print(f"  Agents:        {len(components['agents'])}")
-    print(f"  Skills:        {len(components['skills'])}")
-    if components.get("monitors"):
-        print(f"  Monitors:      {len(components['monitors'])}")
-    if components.get("themes"):
-        print(f"  Themes:        {len(components['themes'])}")
-    if components.get("output_styles"):
-        print(f"  Output styles: {len(components['output_styles'])}")
+    comp_parts = [f"commands={len(components['commands'])}",
+                  f"agents={len(components['agents'])}",
+                  f"skills={len(components['skills'])}"]
+    for key, label in (("monitors", "monitors"), ("themes", "themes"),
+                       ("output_styles", "output-styles")):
+        if components.get(key):
+            comp_parts.append(f"{label}={len(components[key])}")
 
-    # Issues by severity
-    def print_issue(issue: Issue, indent: str = ""):
-        """Print a single issue with structured format."""
-        # Location line
-        loc = f"{issue.file}" if issue.file else "(no file)"
-        if issue.line:
-            loc += f":{issue.line}"
-        print(f"{indent}┌─ {loc}")
+    try:
+        rel_target = plugin_dir.relative_to(Path.cwd())
+    except ValueError:
+        rel_target = plugin_dir
 
-        # Message
-        print(f"{indent}│  Issue: {issue.message}")
+    print(f"{rel_target}  ({', '.join(comp_parts)})")
 
-        # Source text (if available)
-        if issue.source:
-            src = issue.source[:80] + "..." if len(issue.source) > 80 else issue.source
-            print(f"{indent}│  Source: {src}")
+    diagnostics = bucket["must"] + bucket["should"] + bucket["may"]
 
-        # Token details (if available)
-        if issue.details.get("frontmatter") is not None:
-            fm = issue.details["frontmatter"]
-            body = issue.details["body"]
-            refs = issue.details["refs"]
-            body_lines = issue.details.get("body_lines", 0)
-            print(f"{indent}│  Tokens: Level1={fm} (metadata), Level2={body} ({body_lines} lines), Level3={refs} (resources)")
-            print(f"{indent}│  Budget: Level1≈{METADATA_TARGET} (always), Level2<5k (triggered), Level3 unlimited (as needed)")
+    if diagnostics:
+        # Sort by file, then severity ordering (must first)
+        sev_rank = {"must": 0, "should": 1, "may": 2}
+        diagnostics.sort(key=lambda i: (i.file or "", i.line or 0, sev_rank[i.severity]))
 
-        # Suggestion
-        if issue.suggestion:
-            print(f"{indent}│  Fix: {issue.suggestion}")
+        loc_strings = [_format_location(i) or "(no file)" for i in diagnostics]
+        max_loc = min(max(len(s) for s in loc_strings), 60)
+        max_sev = max(len(i.severity) for i in diagnostics)
 
-        print(f"{indent}└─")
+        print()
+        prev_file = None
+        for issue, loc in zip(diagnostics, loc_strings):
+            if prev_file is not None and issue.file != prev_file:
+                print()
+            prev_file = issue.file
 
-    # MUST violations
-    if all_issues["must"]:
-        print(f"\n{'─' * 70}")
-        print(f"[MUST] Critical Issues ({len(all_issues['must'])})")
-        print(f"{'─' * 70}")
-        for issue in all_issues["must"]:
-            print_issue(issue, "  ")
-        print("\n  ⚠ These issues MUST be fixed before proceeding.")
+            sev_label = _color(issue.severity.ljust(max_sev), issue.severity, color)
+            loc_padded = loc.ljust(max_loc) if len(loc) <= max_loc else loc
+            print(f"  {loc_padded}  {sev_label}  {issue.message}")
 
-    # SHOULD violations
-    if all_issues["should"]:
-        print(f"\n{'─' * 70}")
-        print(f"[SHOULD] Recommended Fixes ({len(all_issues['should'])})")
-        print(f"{'─' * 70}")
-        for issue in all_issues["should"]:
-            print_issue(issue, "  ")
-        print("\n  ℹ These issues SHOULD be addressed for quality.")
+            indent = " " * (2 + max_loc + 2 + max_sev + 2)
+            if issue.source:
+                snippet = issue.source.replace("\n", " ")
+                if len(snippet) > 90:
+                    snippet = snippet[:87] + "…"
+                print(f"{indent}│ {snippet}")
+            if issue.details.get("frontmatter") is not None:
+                d = issue.details
+                print(f"{indent}tokens: metadata={d['frontmatter']} "
+                      f"body={d['body']} ({d.get('body_lines', 0)} lines) "
+                      f"refs={d['refs']}  (limit: body<{SKILL_BODY_MAX})")
+            if issue.suggestion:
+                # Wrap multi-line suggestions cleanly under the same indent
+                first, *rest = issue.suggestion.split("\n")
+                print(f"{indent}help: {first}")
+                for ln in rest:
+                    print(f"{indent}      {ln}")
 
-    # MAY improvements
-    if all_issues["may"]:
-        print(f"\n{'─' * 70}")
-        print(f"[MAY] Optional Improvements ({len(all_issues['may'])})")
-        print(f"{'─' * 70}")
-        for issue in all_issues["may"]:
-            print_issue(issue, "  ")
-
-    # OK items (verbose only)
-    if verbose and all_issues["ok"]:
-        print(f"\n{'─' * 70}")
-        print(f"[OK] Passing Checks ({len(all_issues['ok'])})")
-        print(f"{'─' * 70}")
-        current_file = None
-        for issue in all_issues["ok"]:
-            msg = issue.message
+    if verbose and bucket["ok"]:
+        print(f"\n{len(bucket['ok'])} passing checks:")
+        prev_file = None
+        for issue in bucket["ok"]:
+            mark = _color("✓", "ok", color)
+            line = issue.message
             if issue.file:
-                msg += f" ({issue.file}"
-                if issue.line:
-                    msg += f":{issue.line}"
-                msg += ")"
-                # Add spacing between different agent/skill files
-                if current_file is not None and issue.file != current_file:
+                if prev_file and issue.file != prev_file:
                     print()
-                current_file = issue.file
-            print(f"  ✓ {msg}")
+                prev_file = issue.file
+                loc = _format_location(issue)
+                line = f"{line}  ({loc})" if loc else line
+            print(f"  {mark} {line}")
 
-    # Summary
-    print(f"\n{'=' * 70}")
-    print("SUMMARY")
-    print(f"{'=' * 70}")
-    print(f"  MUST violations:   {len(all_issues['must'])}")
-    print(f"  SHOULD violations: {len(all_issues['should'])}")
-    print(f"  MAY improvements:  {len(all_issues['may'])}")
-
-    print(f"\n{'─' * 70}")
-    if all_issues["must"]:
-        print("Result: FAILED")
-        print("\nPhase 2 Blocked: Fix all MUST violations and re-run validation.")
-    elif all_issues["should"]:
-        print("Result: PASSED (with recommendations)")
-        print("\nPhase 2 Ready: Address SHOULD items during optimization.")
+    counts = [(len(bucket[s]), s) for s in ("must", "should", "may") if bucket[s]]
+    print()
+    if not counts:
+        print(_color("PASSED", "ok", color) + "  no issues")
+    elif bucket["must"]:
+        parts = ", ".join(_color(f"{n} {s}", s, color) for n, s in counts)
+        print(_color("FAILED", "must", color) + f"  {parts}")
     else:
-        print("Result: PASSED")
-        print("\nPlugin follows best practices.")
-        if all_issues["may"]:
-            print(f"  {len(all_issues['may'])} optional improvement(s) noted.")
+        parts = ", ".join(_color(f"{n} {s}", s, color) for n, s in counts)
+        print(_color("PASSED", "should", color) + f"  {parts}")
 
 
 def output_json(results: list[ValidationResult], plugin_dir: Path):
@@ -1709,11 +1702,6 @@ def main():
             print(f"Error: Unknown checks: {', '.join(invalid)}")
             print(f"Available: {', '.join(CHECK_ORDER)}")
             sys.exit(1)
-
-    if not args.json:
-        print("Plugin Validator")
-        if "tokens" in checks:
-            print(f"Token method: {TOKEN_METHOD}")
 
     results = run_all_checks(plugin_dir, checks, args.verbose)
 
