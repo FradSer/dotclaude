@@ -3,7 +3,7 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Writing Plans
@@ -200,7 +200,7 @@ Otherwise, spawn the `superpowers:superpowers-evaluator` agent (plan mode) after
 **When to use**: Always (unless disabled per above). Sub-agent reflection covers structural analysis (coverage, dependency graph); the evaluator applies the binary checklist verdict. They are complementary, not alternatives.
 
 **Process**:
-1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. **Auto-seed when missing**: if no file matches, do NOT abort — copy the `plan-v1.md` template from `../retrospective/SKILL.md` Phase 0 to `docs/retros/checklists/plan-v1.md`, log `Auto-seeded plan-v1.md`, then continue.
+1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. **Auto-seed when missing**: if no file matches, do NOT abort — run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" plan docs/retros/checklists/plan-v1.md`, log `Auto-seeded plan-v1.md`, then continue.
 2. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path] using the plan checklist at docs/retros/checklists/plan-v{N}.md."
 3. Evaluator reads `_index.md` and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
 4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as `evaluation-plan-round-{N}.md`

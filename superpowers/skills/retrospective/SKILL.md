@@ -3,7 +3,7 @@ name: retrospective
 description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective".
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Retrospective
@@ -14,97 +14,19 @@ Analyze evaluation patterns across completed plans, identify recurring failures,
 
 ## Phase 0: Bootstrap (run only when no checklists exist)
 
-Before Phase 1, check whether `docs/retros/checklists/` contains any `{mode}-v1.md` files.
+Before Phase 1, check whether `docs/retros/checklists/` contains `{mode}-v1.md` for each mode (design / plan / code).
 
-If the directory is missing or empty, seed the initial v1 checklists:
+For each mode that lacks a v1 file, seed it via:
 
-1. Create `docs/retros/checklists/` if it does not exist
-2. For each mode that lacks a v1 file, create a minimal starter checklist:
-
-**`design-v1.md`** — minimum viable design checklist:
-```markdown
-# Design Checklist v1
-
-### REQ-TRACE-01: All requirements map to at least one BDD scenario
-**Check method:** `grep -c "Scenario:" bdd-specs.md` -- count must equal or exceed scenario count implied by requirements
-**Evidence format:** N/M requirements traced
-**Rework format:** Add missing scenario for requirement: {requirement}
-# Type: inferential
-
-### SCEN-CONC-01: Given clauses use specific, concrete data values
-**Check method:** `grep -n "Given" bdd-specs.md` -- flag any clause containing "some", "a valid", "appropriate", or other vague qualifiers
-**Evidence format:** bdd-specs.md:{line} -- "{clause text}"
-**Rework format:** Replace "{vague phrase}" with concrete value at bdd-specs.md:{line}
-# Type: computational
-
-### ARCH-01: No inner-to-outer layer dependencies described
-**Check method:** Scan architecture.md (or Detailed Design in _index.md) for any arrow or prose stating an inner layer (domain/application) imports from an outer layer (infrastructure/interfaces)
-**Evidence format:** {file}:{line} -- "{dependency description}"
-**Rework format:** Invert dependency at {file}:{line}; define interface in inner layer
-# Type: inferential
-
-### RISK-02: Each risk mitigation specifies a concrete action
-**Check method:** For each risk listed in _index.md, confirm its mitigation names a specific mechanism (flag, retry policy, circuit breaker, etc.) rather than a vague verb like "monitor" or "handle carefully"
-**Evidence format:** _index.md -- risk "{title}" mitigation "{text}"
-**Rework format:** Replace vague mitigation for risk "{title}" with concrete action
-# Type: inferential
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" <mode> docs/retros/checklists/<mode>-v1.md
 ```
 
-**`plan-v1.md`** — minimum viable plan checklist:
-```markdown
-# Plan Checklist v1
-
-### PLAN-COV-01: Every design BDD scenario maps to at least one task
-**Check method:** Cross-reference scenario titles in bdd-specs.md against task subject lines and BDD Scenario sections in task files
-**Evidence format:** N/M scenarios covered; uncovered: {scenario titles}
-**Rework format:** Add task for scenario: {scenario title}
-# Type: inferential
-
-### DEP-01: No circular dependencies
-**Check method:** Walk depends-on graph from _index.md; detect any cycle
-**Evidence format:** Cycle detected: task-{A} -> task-{B} -> ... -> task-{A} | No cycles
-**Rework format:** Break cycle by removing dependency: task-{A} depends-on task-{B}
-# Type: computational
-
-### DEP-02: All depends-on references resolve to existing task IDs
-**Check method:** For each depends-on ID in _index.md, confirm a matching task-{ID}-*.md file exists
-**Evidence format:** Unresolved: {ID list} | All resolved
-**Rework format:** Fix depends-on reference {ID} in {task file}
-# Type: computational
-
-### TEST-01: Every impl task has a corresponding test task
-**Check method:** For each task-{NNN}-*-impl.md, check for matching task-{NNN}-*-test.md
-**Evidence format:** Unpaired impl tasks: {list} | All paired
-**Rework format:** Add test task for: task-{NNN}-{slug}-impl.md
-# Type: computational
-```
-
-**`code-v1.md`** — minimum viable code checklist:
-```markdown
-# Code Checklist v1
-
-### CODE-VER-01: All verification commands exit with code 0
-**Check method:** Run each verification command from the task file; record exit code
-**Evidence format:** Command: {cmd} | Exit: {code} | Output: {last 5 lines}
-**Rework format:** Fix failing verification: {cmd} exits {code}; error: {output}
-# Type: computational
-
-### CODE-QUAL-01: No TODO/FIXME/NotImplementedError/pass-only patterns in produced files
-**Check method:** `grep -rn "TODO\|FIXME\|NotImplementedError\|raise NotImplementedError" {files}`
-**Evidence format:** {file}:{line} -- {match}
-**Rework format:** Remove placeholder at {file}:{line}; implement real logic
-# Type: computational
-
-### CODE-QUAL-02: No hardcoded stubs, skeleton-only bodies, or placeholder implementations
-**Check method:** For each produced file, check that at least one function/method contains a non-trivial body (not just `pass`, `...`, `return None`, or a hardcoded literal)
-**Evidence format:** {file} -- all bodies are stubs
-**Rework format:** Implement real logic in {file} function {name}
-# Type: computational
-```
-
-3. Log one line per mode seeded: "Seeded initial checklist: {mode}-v1.md". If all three modes already have a v1 file, log "Phase 0: all checklists present, skipping seed."
+Log one line per mode seeded: `Seeded initial checklist: {mode}-v1.md`. If all three modes already have a v1 file, log `Phase 0: all checklists present, skipping seed`.
 
 Phase 0 runs per mode independently — only the modes missing a v{N} file are seeded. Do not skip the entire phase because one mode already has a checklist.
+
+The canonical v1 template content lives in `lib/seed-checklists.sh`. To inspect or modify the seed bodies, edit that script — do NOT re-inline templates here.
 
 ## Phase 1: Data Collection
 

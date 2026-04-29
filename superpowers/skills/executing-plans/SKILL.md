@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Executing Plans
@@ -50,7 +50,7 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
 3. **Evaluator Configuration** (default: on, overridable only via `harness-config.json`): Evaluator runs once per batch unless `evaluator_per_batch` is in `disabled_components` — then skip spawn and append a `harness_observation` row (see `./references/intra-plan-learning.md`). No intensity modes.
-   - **Checklist resolution**: Scan `docs/retros/checklists/` for `code-v{N}.md` (highest N). **Auto-seed when missing**: copy the `code-v1.md` template from `../retrospective/SKILL.md` Phase 0, log `Auto-seeded code-v1.md`, continue.
+   - **Checklist resolution**: Scan `docs/retros/checklists/` for `code-v{N}.md` (highest N). **Auto-seed when missing**: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" code docs/retros/checklists/code-v1.md`, log `Auto-seeded code-v1.md`, continue.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 

@@ -2,7 +2,7 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -11,9 +11,9 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 
 ## CRITICAL: Bail-Out Check (run before Initialization)
 
-**Inspect `$ARGUMENTS` for trivial-scope signals. Bail out — do NOT start the loop, do NOT write design files, do NOT spawn evaluator — when ANY of these match:**
+**Classify `$ARGUMENTS` into one of three buckets. Do NOT default to "proceed when in doubt" — that biases the harness single-direction toward over-engineering.**
 
-(This check is intentionally heuristic — brainstorming's input is free-form text, unlike writing-plans/executing-plans which have countable task/scenario thresholds. When in doubt, proceed to Initialization; the `--force` override exists for the reverse case.)
+**Bucket A — Strong trivial-scope signals (bail out: do NOT start the loop, do NOT write design files, do NOT spawn evaluator):**
 
 - Names a single file or single-line change ("change X to Y", "rename foo to bar", "log level to DEBUG")
 - Mechanical refactor ("extract helper", "reorder imports", "update deprecated API call")
@@ -21,11 +21,29 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 - One-shot script / config tweak / dependency bump
 - User explicitly said "just patch" / "no plan" / "terse fix"
 
-**Bail-out response (output verbatim, then proceed with direct edit OR hand off):**
+**Bucket B — Strong open-ended signals (proceed to Initialization):**
+
+- Multi-component design naming explicit subsystems (e.g., "design a notification system supporting email + SMS + push")
+- Ambiguous requirements that the user expects to be clarified through dialogue
+- Greenfield feature with explicit "design first" / "brainstorm" framing
+
+**Bucket C — Ambiguous (use `AskUserQuestion` to decide; do NOT pick a default):**
+
+- `$ARGUMENTS` is brief and could go either way (e.g., a single sentence with no scope cues)
+- Mixes trivial signals with open-ended language
+- Names an outcome but not a scope (e.g., "improve performance", "make it faster")
+
+For Bucket A, output the bail-out response below and stop. For Bucket B, proceed to Initialization. For Bucket C, ask the user via `AskUserQuestion` with three options:
+
+1. **Quick edit / direct change** — skip the pipeline, edit directly
+2. **Run brainstorming pipeline** — full Discovery → Design → Wrap-up
+3. **Route to `/superpowers:systematic-debugging`** — if the user actually meant a bug
+
+Use the user's answer to dispatch (Bucket A / Bucket B / debugging route). The `--force` token (literal in `$ARGUMENTS`) bypasses this entire check and proceeds to Initialization unconditionally.
+
+**Bail-out response (Bucket A, output verbatim, then proceed with direct edit OR hand off):**
 
 > Detected trivial-scope work. Skipping the brainstorming pipeline (calibrated for open-ended multi-component problems). To force the full pipeline, re-invoke as `/superpowers:brainstorming --force "<task>"`.
-
-When the user passes `--force` (literal token in `$ARGUMENTS`), skip this bail-out and proceed to Initialization unconditionally.
 
 ## Initialization
 
@@ -110,7 +128,7 @@ Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highe
 - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
 - Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
 
-**Auto-seed when missing**: If `docs/retros/checklists/design-v{N}.md` does not exist, do NOT abort. Run `/superpowers:retrospective` Phase 0 inline (or copy the `design-v1.md` template from `../retrospective/SKILL.md` Phase 0) to seed `docs/retros/checklists/design-v1.md`, log `Auto-seeded design-v1.md`, then proceed with the new file. Abort only if seeding itself fails (e.g., disk error).
+**Auto-seed when missing**: If `docs/retros/checklists/design-v{N}.md` does not exist, do NOT abort. Run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" design docs/retros/checklists/design-v1.md`, log `Auto-seeded design-v1.md`, then proceed with the new file. Abort only if the script exits non-zero (e.g., disk error).
 
 **Exit**: Design folder created with all required files, QA passed.
 

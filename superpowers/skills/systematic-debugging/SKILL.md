@@ -16,6 +16,34 @@ Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by ot
 
 **Output discipline**: Report findings inline as you complete each phase. End with: (a) root cause one-liner, (b) fix diff summary, (c) regression test path. No `<promise>` tag (no loop to exit).
 
+## CRITICAL: Bail-Out Check (run before Phase 1)
+
+**Inspect `$ARGUMENTS` for "named root cause + named fix" signals. Bail out — skip the 4-phase pipeline, apply the fix and write a regression test directly — when ALL of these match:**
+
+- `$ARGUMENTS` names a specific root cause (file:line, config key, or specific value), AND
+- `$ARGUMENTS` names a specific corrective change ("change X to Y", "add the missing flag", "fix the typo"), AND
+- The fix is localized to a single file or a single string substitution
+
+Examples that bail out:
+
+- "cookie domain is `.foo.com`, should be `foo.com` — fix it"
+- "missing `await` at api.ts:42, add it"
+- "wrong env var name `DB_HOST` should be `DATABASE_HOST` in deploy.yaml"
+
+Examples that DO NOT bail out (proceed to Phase 1):
+
+- "tests fail in CI but pass locally" (symptom only, no root cause)
+- "this is slow" (no hypothesis)
+- "I think it's the cache, can you check?" (hypothesis without confirmed root cause)
+
+**Bail-out response (output verbatim, then proceed with direct edit + write a regression test that catches the bug):**
+
+> Detected named root cause and named fix. Skipping the 4-phase pipeline (calibrated for unknown root causes). Applying the fix and writing a regression test directly. To force the full pipeline, re-invoke as `/superpowers:systematic-debugging --force "<symptom>"`.
+
+When the user passes `--force` (literal token in `$ARGUMENTS`), skip this bail-out and proceed to Phase 1 unconditionally.
+
+**Iron Law remains** for non-bail-out paths: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST. The bail-out only fires when the user has *already done* the root cause work and is handing the conclusion to Claude.
+
 ## Overview
 
 Random fixes waste time and create new bugs. Quick patches mask underlying issues.
