@@ -26,13 +26,6 @@ The canonical checklist lives at `docs/retros/checklists/design-v{N}.md` (latest
 
 When the verdict is REWORK, produce rework items for each FAIL with: item ID, file, location, issue, and rework action.
 
-## Check Types
-
-Each checklist item is annotated with a type:
-
-- **Computational** (`# Type: computational`): Deterministic check (grep patterns, structural queries). Two evaluators always produce the same result.
-- **Inferential** (`# Type: inferential`): Requires evaluator judgment anchored to explicit check methods. The evaluator must follow the item's anchor constraint and note borderline results.
-
 ## Output Responsibility
 
 The evaluator outputs report content as text. The parent skill (brainstorming) is responsible for writing the report to disk. The evaluator never writes files directly.
