@@ -222,7 +222,6 @@ The plugin exposes a feedback loop so harness components earn their cost as mode
 - At 3+ plans since the last retrospective, `executing-plans` emits a `RETROSPECTIVE DUE` reminder
 - `/superpowers:retrospective` Phase 5 can write `docs/retros/harness-config.json` to disable one component for the next plan run as a live assumption test. Supported identifiers (each with a real consumer-side check):
   - `evaluator_per_batch` — `executing-plans` skips per-batch evaluator
-  - `plan_evaluator` — `writing-plans` skips plan-mode evaluator
   - `design_evaluator` — `brainstorming` skips design-mode evaluator
   - `sprint_contract_preview` — `executing-plans` omits Evaluation Criteria Preview from sprint contracts
   - `recurring_failure_patterns` — `executing-plans` skips pattern-scan injection

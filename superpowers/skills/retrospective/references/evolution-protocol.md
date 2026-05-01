@@ -74,8 +74,6 @@ When creating an ADD item for the new version file:
 **Evidence format:** {how to report findings}
 
 **Rework format:** {corrective instruction template}
-
-`# Type: computational|inferential` -- {justification}
 ```
 
 ## Evolution Log Schema

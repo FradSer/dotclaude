@@ -153,7 +153,7 @@ Output format:
 - File Usage Matrix (file → tasks that modify it)
 - Potential Conflicts (same file modified by parallel tasks)
 - Safe Parallelization (files used by only one task)
-- Recommendations (ordering or merging suggestions)
+- Required ordering or merging changes (FAIL conditions; emit explicit fix actions, not advice)
 ```
 
 ## Integration Workflow

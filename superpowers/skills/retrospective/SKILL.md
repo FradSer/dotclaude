@@ -97,7 +97,6 @@ Flag a component as a **removal candidate** when it satisfies any of the followi
 | Component | Removal-candidate trigger | Signal source | harness-config identifier |
 |-----------|---------------------------|---------------|----|
 | Evaluator (per-batch, code mode) | Zero rework items produced | evaluation reports in plan dirs | `evaluator_per_batch` |
-| Plan evaluator | Zero plan-mode rework items in 3+ plans | `evaluation-plan-round-*.md` | `plan_evaluator` |
 | Design evaluator | Zero design-mode rework items in 3+ designs | `evaluation-design-round-*.md` | `design_evaluator` |
 | Sprint contract Evaluation Criteria Preview | First-pass output PASSes every preview item | per-batch evaluation reports | `sprint_contract_preview` |
 | Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles | `recurring_failure_patterns` |

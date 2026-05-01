@@ -57,7 +57,6 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
 2. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
-3. **Read Harness Config** (assumption test): If `docs/retros/harness-config.json` exists and lists `plan_evaluator` in `disabled_components[]`, set local flag `_PLAN_EVALUATOR_DISABLED=true` for Phase 4. Skip silently when the file is absent or `disabled_components[]` is empty. See `../retrospective/references/harness-config.md` for supported identifiers.
 
 The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
@@ -191,25 +190,7 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
-### Evaluator Mode (default: on, overridable only via `harness-config.json`)
-
-**CRITICAL**: When `_PLAN_EVALUATOR_DISABLED=true` (Initialization step 3 detected the harness-config flag), skip the evaluator spawn entirely. Sub-agent reflection above is sufficient verification for this run; treat the plan as PASS, proceed to user confirmation, and append one `harness_observation` row to `docs/retros/harness-observations.jsonl` (schema: `../executing-plans/references/intra-plan-learning.md`).
-
-Otherwise, spawn the `superpowers:superpowers-evaluator` agent (plan mode) after the parallel sub-agent reflection. The evaluator provides formal, checklist-based assessment with system-enforced read-only tools.
-
-**When to use**: Always (unless disabled per above). Sub-agent reflection covers structural analysis (coverage, dependency graph); the evaluator applies the binary checklist verdict. They are complementary, not alternatives.
-
-**Process**:
-1. Resolve the latest plan checklist: scan `docs/retros/checklists/` for `plan-v{N}.md`, select the highest N. **Auto-seed when missing**: if no file matches, do NOT abort — run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" plan docs/retros/checklists/plan-v1.md`, log `Auto-seeded plan-v1.md`, then continue.
-2. Spawn `superpowers:superpowers-evaluator` via the Agent tool with context: "Evaluate the plan at [plan-folder-path] using the plan checklist at docs/retros/checklists/plan-v{N}.md."
-3. Evaluator reads `_index.md` and all task files, applies binary PASS/FAIL checklist items (BDD coverage, dependency correctness, task completeness, verification quality)
-4. Evaluator outputs report content as text; the writing-plans skill writes it to the plan folder as `evaluation-plan-round-{N}.md`
-5. Main agent reads the report:
-   - **PASS**: Proceed to user confirmation
-   - **REWORK**: Fix identified issues (add missing tasks, fix dependencies, complete sections), then re-submit to user
-6. Present reflection summary (including checklist results) to user via AskUserQuestion
-
-See `./references/evaluation-checklist-reference.md` for checklist reference details and calibration examples.
+The sub-agents above are the sole reviewer for plan quality. There is no separate formal plan-mode evaluator — structural checks (BDD coverage, dependency graph, task completeness) are fully covered by sub-agent reflection, and the user gates commit via the Phase 4 AskUserQuestion confirmation. Sub-agents read `docs/retros/checklists/plan-v{N}.md` (auto-seeded via `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" plan docs/retros/checklists/plan-v1.md` if missing) as their rubric; their findings are the verdict.
 
 ## Phase 5: Git Commit
 
@@ -244,4 +225,3 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
 - `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
-- `./references/evaluation-checklist-reference.md` - Plan evaluation checklist reference for superpowers-evaluator (plan mode)
