@@ -92,7 +92,7 @@ The evaluator will apply the following checklist items to this batch:
 
 **File naming:** `evaluation-round-{N}-batch-{M}.md` (e.g., `evaluation-round-1-batch-2.md`)
 
-**Purpose:** Assess completed work against the sprint contract using binary checklist evaluation. The evaluator produces the assessment content, and the executing-plans skill persists it as a file. Identifies rework items, recommendations, and whether execution should pivot.
+**Purpose:** Assess completed work against the sprint contract using binary checklist evaluation. The evaluator produces the assessment content, and the executing-plans skill persists it as a file. Identifies rework items and whether execution should pivot.
 
 **Location convention:** Evaluation artifacts are stored in the plan directory (e.g., `docs/plans/YYYY-MM-DD-{topic}-plan/`). When a separate evals directory is used, derive the path by replacing `-plan/` with `-evals/` in the plan path.
 
@@ -114,13 +114,6 @@ The evaluator will apply the following checklist items to this batch:
 | Item ID      | File         | Location | Issue                                                                 |
 |--------------|--------------|----------|-----------------------------------------------------------------------|
 | SCEN-CONC-01 | bdd-specs.md | line 23  | Replace "some valid user data" with concrete values (email, password) |
-
-## Recommendations
-
-Non-blocking observations that improve quality but do not require rework:
-
-- Consider extracting token generation into a shared utility for reuse in refresh flow
-- Auth handler would benefit from rate limiting in a future task
 
 ## Pivot Flag
 
@@ -153,7 +146,6 @@ Token counts are best-effort: extracted from API response `usage` field if avail
 |-------|----------|-------------|
 | Checklist Results | Yes | One row per checklist item with PASS/FAIL result and evidence |
 | Rework Items | Yes | Empty table if no FAIL items; keep the section |
-| Recommendations | Yes | Empty list if none; keep the section |
 | Pivot Flag | Yes | Always present with true/false and rationale |
 | Run Metrics | Yes | Best-effort token/duration tracking; use "N/A" when unavailable |
 
@@ -247,12 +239,6 @@ If blockers exist, list each with:
 |---------|------|----------|-------|---------------|
 | SCEN-CONC-01 | bdd-specs.md | line 23 | Replace "some valid user" with concrete values | Use specific username and email values |
 
-## Recommendations
-
-Non-blocking observations that improve quality but do not require rework:
-
-- Consider adding error scenarios for network timeout conditions
-
 ## Verdict: REWORK
 1 item FAIL: SCEN-CONC-01
 ```
@@ -265,63 +251,13 @@ If verdict is PASS, the Rework Items table remains present but empty.
 |-------|----------|-------------|
 | Checklist Results | Yes | One row per checklist item with PASS/FAIL and evidence |
 | Rework Items | Yes | Empty table if no FAIL items; keep the section |
-| Recommendations | Yes | Non-blocking observations; empty list if none |
 | Verdict | Yes | PASS (all items PASS) or REWORK (count and IDs of FAIL items) |
 
-## 5. Plan Evaluation Report
+(Plan-mode evaluation has no formal report. writing-plans Phase 4 sub-agent reflection produces an inline summary that the main agent presents to the user via AskUserQuestion; no `evaluation-plan-round-*.md` file is written.)
 
-**File naming:** `evaluation-plan-round-{N}.md` (e.g., `evaluation-plan-round-1.md`)
+## 5. REWORK Resolution Protocol
 
-**Purpose:** Assess a completed plan against the plan checklist. The evaluator produces the assessment content; the writing-plans skill persists it as a file in the plan folder.
-
-**Written by:** writing-plans skill (from evaluator text output)
-
-### Format
-
-```markdown
-# Plan Evaluation Round {N}
-
-## Checklist Results
-
-| Item ID | Check | Result | Evidence |
-|---------|-------|--------|----------|
-| PLAN-COV-01 | BDD scenario coverage | FAIL | session-expiry scenario has no mapped task |
-| TASK-COMP-03 | Verification commands executable | FAIL | task-004: description instead of command |
-| DEP-01 | No circular dependencies | PASS | no cycles detected |
-| DEP-02 | All depends-on references resolve | PASS | all IDs match task files |
-| TEST-01 | Impl tasks have test counterparts | PASS | all impl tasks paired |
-
-## Rework Items
-
-| Item ID | File | Location | Issue | Rework Action |
-|---------|------|----------|-------|---------------|
-| PLAN-COV-01 | _index.md | BDD Coverage section | session-expiry scenario has no mapped task | Add task for session-expiry scenario |
-| TASK-COMP-03 | task-004-rate-limit-impl.md | Verification section | "Verify that rate limiting works" is a description | Replace with executable command: `npm test tests/rate-limit.spec.ts` |
-
-## Recommendations
-
-Non-blocking observations that improve quality but do not require rework:
-
-- task-007 acceptance criteria could be more specific about expected response format
-
-## Verdict: REWORK
-2 items FAIL: PLAN-COV-01, TASK-COMP-03
-```
-
-If verdict is PASS, the Rework Items table remains present but empty.
-
-### Field Definitions
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| Checklist Results | Yes | One row per checklist item with PASS/FAIL and evidence |
-| Rework Items | Yes | Empty table if no FAIL items; keep the section |
-| Recommendations | Yes | Non-blocking observations; empty list if none |
-| Verdict | Yes | PASS (all items PASS) or REWORK (count and IDs of FAIL items) |
-
-## 6. REWORK Resolution Protocol
-
-When any evaluation report (Design / Plan / Code) returns verdict `REWORK`, the consuming skill (brainstorming / writing-plans / executing-plans coordinator) MUST process Rework Items deterministically. This section is the single source of truth so all three consumers behave identically.
+When any evaluation report (Design / Code) returns verdict `REWORK`, the consuming skill (brainstorming / executing-plans coordinator) MUST process Rework Items deterministically. This section is the single source of truth so both consumers behave identically.
 
 ### Processing Order
 
@@ -348,7 +284,7 @@ When a single Item ID's rework spans multiple locations (e.g., `SCEN-CONC-01` fl
 
 ### When Rework Action References Missing Information
 
-If a Rework Action says "Add task for: <scenario>" but the scenario name doesn't appear in the design, do NOT invent it — the evaluator likely mis-read. Log the discrepancy as a recommendation in the next round's report and skip the row. Looping on missing info is forbidden.
+If a Rework Action says "Add task for: <scenario>" but the scenario name doesn't appear in the design, do NOT invent it — the evaluator likely mis-read. Skip the row and surface the discrepancy back via the next round's evidence column. Looping on missing info is forbidden.
 
 ### Cross-Skill Consistency
 
