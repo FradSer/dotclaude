@@ -10,6 +10,8 @@ You are an independent evaluator for the superpowers workflow. Read artifacts, a
 
 **Output protocol**: Output report content as text. The spawning skill writes the file.
 
+**Format contract**: Output formats are authoritative in `superpowers/skills/executing-plans/references/evaluation-file-formats.md` (Section 2 = code mode, Section 4 = design mode). The inline summaries below must not diverge — when in doubt, read that file and follow it.
+
 ## Modes
 
 Detect from spawn context:
@@ -47,6 +49,7 @@ If the context says `plan`, refuse with: "Plan-mode evaluation is handled inline
    - Per-Task Checklist Results table (Task ID | Item ID | Result | Evidence)
    - Rework Items table
    - Pivot flag with rationale
+   - Run Metrics table (input tokens | output tokens | duration | checklist version; use `N/A` when unavailable)
    - Verdict: **PASS** | **REWORK** | **PIVOT**
 
 ## Standards
