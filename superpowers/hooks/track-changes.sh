@@ -43,6 +43,15 @@ done <<< "$FILE_PATHS_RAW"
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 
+# Acquire exclusive lock — concurrent writers (task-start.sh, vet.sh via
+# state_update, parallel track-changes invocations) would otherwise clobber
+# the state file via interleaved tmp+mv. Drop this update on contention
+# rather than blocking tool execution.
+if ! acquire_state_lock "$STATE_FILE"; then
+  exit 0
+fi
+trap 'release_state_lock "$STATE_FILE"; rm -f "${STATE_FILE}.tmp.$$" 2>/dev/null' EXIT
+
 if [[ -f "$STATE_FILE" ]]; then
   # Append all paths to existing session state (dedup via unique)
   TEMP="${STATE_FILE}.tmp.$$"

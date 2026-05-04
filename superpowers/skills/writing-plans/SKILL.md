@@ -62,7 +62,7 @@ The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise
 
 ## Background Knowledge
 
-**Core Concept**: Explicit over implicit, granular tasks, verification-driven, context independence. **PROHIBITED**: Do not generate implementation bodies — no function logic, no algorithm code. **ALLOWED**: Interface signatures and type definitions that define the contract.
+**Core Concept**: Explicit over implicit, granular tasks, verification-driven, context independence.
 
 - **MANDATORY**: Tasks must be driven by BDD scenarios (Given/When/Then).
 - **MANDATORY**: Test-First (Red-Green) workflow. Verification tasks must precede implementation tasks.

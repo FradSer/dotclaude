@@ -160,7 +160,7 @@ Output format:
 
 ### 1. Collect Sub-Agent Results
 
-Use TaskOutput tool to retrieve results from all launched sub-agents.
+Each Agent invocation returns the sub-agent's final message as the tool result. Read those returned outputs and merge them into a unified findings list.
 
 ### 2. Synthesize Findings
 

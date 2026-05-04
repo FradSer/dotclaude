@@ -25,17 +25,17 @@ Implement the scenarios using the Red-Green-Refactor cycle.
 
 This is the engine of implementation.
 
-### 🔴 RED: Write a Failing Test
+### RED: Write a Failing Test
 *   **The Rule:** No production code is written without a failing test.
 *   **The Check:** Run the test. It *must* fail. If it passes, your test is broken or the feature already exists.
 *   **Best Practice:** Write small, targeted tests. Focus on one behavior at a time.
 
-### 🟢 GREEN: Make it Pass
+### GREEN: Make it Pass
 *   **The Goal:** Write the *minimal* amount of code to make the test pass.
 *   **The Mindset:** "Make it work." Do not optimize yet. Do not over-engineer.
 *   **YAGNI:** You Ain't Gonna Need It. Don't add fields or logic not required by the current test.
 
-### 🔵 REFACTOR: Make it Clean
+### REFACTOR: Make it Clean
 *   **The Goal:** Improve code structure without changing behavior.
 *   **The Safety Net:** The green test ensures you don't break functionality while cleaning up.
 *   **Actions:** Remove duplication, improve naming, extract methods, apply patterns.

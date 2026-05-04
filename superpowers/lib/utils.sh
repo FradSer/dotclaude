@@ -58,14 +58,63 @@ state_read() {
   jq -r "$query" "$file" 2>/dev/null || echo ""
 }
 
+# Acquire an exclusive lock on a state file using mkdir (POSIX atomic).
+# Stale locks from crashed processes are cleared via PID liveness check.
+# Times out after $timeout tenths of a second (default 50 = 5s).
+# macOS lacks flock(1) by default, so mkdir is the portable choice.
+# Usage: acquire_state_lock "$STATE_FILE" [timeout_tenths] || handle_failure
+acquire_state_lock() {
+  local file="$1"
+  local timeout="${2:-50}"
+  local lockdir="${file}.lock"
+  local elapsed=0
+  while ! mkdir "$lockdir" 2>/dev/null; do
+    if [[ -f "$lockdir/pid" ]]; then
+      local holder
+      holder=$(cat "$lockdir/pid" 2>/dev/null || echo "")
+      if [[ -n "$holder" ]] && ! kill -0 "$holder" 2>/dev/null; then
+        # Stale lock — original holder died. Reclaim.
+        rm -rf "$lockdir" 2>/dev/null
+        continue
+      fi
+    fi
+    sleep 0.1
+    elapsed=$((elapsed + 1))
+    [[ $elapsed -ge $timeout ]] && return 1
+  done
+  echo $$ > "$lockdir/pid" 2>/dev/null || true
+  return 0
+}
+
+# Release the lock on a state file. Idempotent — safe to call without prior
+# acquire (used as an EXIT trap safety net).
+# Usage: release_state_lock "$STATE_FILE"
+release_state_lock() {
+  local file="$1"
+  rm -rf "${file}.lock" 2>/dev/null || true
+}
+
 # Atomically update a JSON state file via jq filter.
-# Uses tmp+mv pattern to avoid partial writes.
+# Uses tmp+mv for in-place atomic replacement and an inter-process mkdir
+# lock to serialize concurrent writers — async PostToolUse hooks can
+# otherwise race with sync UserPromptSubmit / Stop hooks and clobber state.
+# Returns 1 if the lock could not be acquired within the timeout.
 # Usage: state_update "$STATE_FILE" --arg key val '.field = $key'
 state_update() {
   local file="$1"
   shift
   local temp="${file}.tmp.$$"
+
+  if ! acquire_state_lock "$file"; then
+    return 1
+  fi
+
   jq "$@" "$file" > "$temp" && mv "$temp" "$file"
+  local rc=$?
+
+  [[ -f "$temp" ]] && rm -f "$temp"
+  release_state_lock "$file"
+  return $rc
 }
 
 # Extract text from a final standalone <promise>...</promise> tag.
