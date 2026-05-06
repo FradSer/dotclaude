@@ -43,6 +43,13 @@ done <<< "$FILE_PATHS_RAW"
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 
+# Register cleanup BEFORE acquire — release_state_lock is PID-aware so a
+# failed acquire (and the resulting EXIT) won't clobber another process's
+# lock. INT/TERM chain through EXIT to release on signal kills.
+trap 'release_state_lock "$STATE_FILE"; rm -f "${STATE_FILE}.tmp.$$" 2>/dev/null' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 # Acquire exclusive lock — concurrent writers (task-start.sh, vet.sh via
 # state_update, parallel track-changes invocations) would otherwise clobber
 # the state file via interleaved tmp+mv. Drop this update on contention
@@ -50,7 +57,6 @@ STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 if ! acquire_state_lock "$STATE_FILE"; then
   exit 0
 fi
-trap 'release_state_lock "$STATE_FILE"; rm -f "${STATE_FILE}.tmp.$$" 2>/dev/null' EXIT
 
 if [[ -f "$STATE_FILE" ]]; then
   # Append all paths to existing session state (dedup via unique)

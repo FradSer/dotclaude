@@ -72,7 +72,11 @@ acquire_state_lock() {
     if [[ -f "$lockdir/pid" ]]; then
       local holder
       holder=$(cat "$lockdir/pid" 2>/dev/null || echo "")
-      if [[ -n "$holder" ]] && ! kill -0 "$holder" 2>/dev/null; then
+      # Use `ps -p` instead of `kill -0` — kill -0 returns non-zero on
+      # macOS for alive-but-unprivileged PIDs (e.g. root processes), which
+      # would falsely look dead and let us steal their lock. ps -p only
+      # checks existence and works regardless of UID.
+      if [[ -n "$holder" ]] && ! ps -p "$holder" >/dev/null 2>&1; then
         # Stale lock — original holder died. Reclaim.
         rm -rf "$lockdir" 2>/dev/null
         continue
@@ -86,34 +90,50 @@ acquire_state_lock() {
   return 0
 }
 
-# Release the lock on a state file. Idempotent — safe to call without prior
-# acquire (used as an EXIT trap safety net).
+# Release the lock on a state file ONLY if the current process owns it.
+# This makes the function safe to register as an EXIT trap before
+# acquire_state_lock — a failed acquire leaves no pid file with our PID,
+# so release becomes a no-op rather than clobbering another process's lock.
 # Usage: release_state_lock "$STATE_FILE"
 release_state_lock() {
   local file="$1"
-  rm -rf "${file}.lock" 2>/dev/null || true
+  local lockdir="${file}.lock"
+  # No pid file ⇒ either no lock or someone else's partial init — do not touch.
+  [[ -f "$lockdir/pid" ]] || return 0
+  local holder
+  holder=$(cat "$lockdir/pid" 2>/dev/null || echo "")
+  [[ "$holder" == "$$" ]] || return 0
+  rm -rf "$lockdir" 2>/dev/null || true
 }
 
 # Atomically update a JSON state file via jq filter.
 # Uses tmp+mv for in-place atomic replacement and an inter-process mkdir
 # lock to serialize concurrent writers — async PostToolUse hooks can
 # otherwise race with sync UserPromptSubmit / Stop hooks and clobber state.
-# Returns 1 if the lock could not be acquired within the timeout.
+# On lock-acquisition timeout, falls back to an unlocked write rather than
+# silently dropping the update — pre-locking behavior was racy but never
+# silent, and silent drops would lose vet's task-synthesis result.
 # Usage: state_update "$STATE_FILE" --arg key val '.field = $key'
 state_update() {
   local file="$1"
   shift
   local temp="${file}.tmp.$$"
 
-  if ! acquire_state_lock "$file"; then
-    return 1
+  if acquire_state_lock "$file"; then
+    jq "$@" "$file" > "$temp" && mv "$temp" "$file"
+    local rc=$?
+    [[ -f "$temp" ]] && rm -f "$temp"
+    release_state_lock "$file"
+    return $rc
   fi
 
+  # Lock contention timed out — fall back to unlocked write so the caller
+  # sees their update applied. Surfaces a stderr warning so the failure
+  # isn't invisible.
+  echo "warning: state_update lock timeout on $file — falling back to unlocked write" >&2
   jq "$@" "$file" > "$temp" && mv "$temp" "$file"
   local rc=$?
-
   [[ -f "$temp" ]] && rm -f "$temp"
-  release_state_lock "$file"
   return $rc
 }
 

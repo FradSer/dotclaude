@@ -89,13 +89,19 @@ mkdir -p "$STATE_DIR"
 STATE_FILE="${STATE_DIR}/${SESSION_ID}.superpowers.json"
 NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# Register cleanup BEFORE acquire — release_state_lock is PID-aware so a
+# failed acquire (and the resulting EXIT) won't clobber another process's
+# lock. INT/TERM chain through EXIT to release on signal kills.
+trap 'release_state_lock "$STATE_FILE"; rm -f "${STATE_FILE}.tmp.$$" 2>/dev/null' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 # Acquire exclusive lock — covers corruption recovery, NEED_VET decision, and
 # the final write so concurrent track-changes invocations can't clobber
 # pending_prompt / skill_name updates via interleaved tmp+mv cycles.
 if ! acquire_state_lock "$STATE_FILE"; then
   exit 0
 fi
-trap 'release_state_lock "$STATE_FILE"; rm -f "${STATE_FILE}.tmp.$$" 2>/dev/null' EXIT
 
 # Guard: if existing state file has corrupted JSON, remove and recreate
 if [[ -f "$STATE_FILE" ]] && ! jq empty "$STATE_FILE" 2>/dev/null; then
