@@ -410,6 +410,62 @@ class StopHookEndToEndTests(unittest.TestCase):
         self.assertNotIn("need_vet", state)
 
 
+class StopHookCorruptedStateTests(unittest.TestCase):
+    """The stop-hook corrupted-JSON guard (stop-hook.sh:43-52) acquires
+    a lock under a 1-second timeout, then falls back to an unlocked rm
+    so a pathological lock holder never blocks Stop. Untested before
+    this round."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.fake_pwd = (Path(self.tmpdir.name) / "fake-cwd-corrupt").resolve()
+        self.fake_pwd.mkdir()
+        self.fake_pwd = self.fake_pwd.resolve()
+        project_key = str(self.fake_pwd).replace("/", "-")
+        self.state_dir = Path.home() / ".claude" / "projects" / project_key
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.session_id = "test-corrupt-session"
+        self.state = self.state_dir / f"{self.session_id}.superpowers.json"
+        self.transcript = Path(self.tmpdir.name) / "transcript.jsonl"
+        self.transcript.write_text("")
+
+    def tearDown(self) -> None:
+        for p in self.state_dir.glob("*"):
+            if p.is_dir():
+                # Could be a `.lock` directory leftover.
+                for child in p.glob("*"):
+                    child.unlink()
+                p.rmdir()
+            else:
+                p.unlink()
+        try:
+            self.state_dir.rmdir()
+        except OSError:
+            pass
+        self.tmpdir.cleanup()
+
+    def test_corrupted_state_file_is_removed_and_hook_exits_zero(self) -> None:
+        # Write garbage that is not valid JSON.
+        self.state.write_text("{ this is not json at all <<<")
+        result = subprocess.run(
+            ["bash", str(STOP_HOOK)],
+            input=json.dumps({
+                "session_id": self.session_id,
+                "transcript_path": str(self.transcript),
+                "last_assistant_message": "hi",
+            }),
+            text=True,
+            capture_output=True,
+            cwd=str(self.fake_pwd),
+            timeout=15,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # The hook must have removed the corrupted file.
+        self.assertFalse(self.state.exists(), msg="corrupted state file should be removed")
+        # And the warning surfaced on stderr.
+        self.assertIn("State file corrupted", result.stderr)
+
+
 class FindStateFileMultiLegacyTests(unittest.TestCase):
     """Boundary case the first synthesis round missed: when MULTIPLE legacy
     files exist without session_id, find_state_file deterministically picks
@@ -451,6 +507,106 @@ class FindStateFileMultiLegacyTests(unittest.TestCase):
         # New invariant: warning must surface the multi-file case so the
         # user is not silently routed to one of N candidates.
         self.assertIn("3 legacy file", result.stderr)
+
+
+class HookDepsMissingBailSoftTests(unittest.TestCase):
+    """When jq or perl are missing from PATH, every hook must exit 0
+    cleanly without crashing the user's session. utils.sh sets
+    _SUPERPOWERS_DEPS_MISSING=1 and emits a one-line warning; the
+    hooks check the flag immediately after sourcing.
+
+    Empty PATH simulates the missing-deps environment without having
+    to actually uninstall jq."""
+
+    HOOKS = [
+        SUPERPOWERS / "hooks" / "stop-hook.sh",
+        SUPERPOWERS / "hooks" / "task-start.sh",
+        SUPERPOWERS / "hooks" / "track-changes.sh",
+    ]
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        import shutil
+        bash_path = shutil.which("bash")
+        if not bash_path:
+            self.skipTest("bash not on PATH; cannot run hook tests")
+        self.bash = bash_path
+        # Build a curated PATH dir: symlink in the coreutils the hooks need
+        # (dirname, cat, mkdir, sort, grep, sed, date, mv, rm) but NOT jq
+        # or perl. This works regardless of where jq lives on the host
+        # (macOS now ships jq in /usr/bin, breaking the "minimal PATH"
+        # approach). The deps check fires deterministically.
+        self.curated_bin = Path(self.tmpdir.name) / "curated-bin"
+        self.curated_bin.mkdir()
+        for tool in ("dirname", "cat", "mkdir", "sort", "grep", "sed",
+                     "date", "mv", "rm", "find", "tr", "tail", "ps",
+                     "sleep", "command", "echo", "head", "stat", "cut", "wc"):
+            src = shutil.which(tool)
+            if src:
+                (self.curated_bin / tool).symlink_to(src)
+        self.empty_path = str(self.curated_bin)
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _run_hook(self, hook: Path, input_data: dict) -> subprocess.CompletedProcess:
+        env = os.environ.copy()
+        env["PATH"] = self.empty_path
+        return subprocess.run(
+            [self.bash, str(hook)],
+            input=json.dumps(input_data),
+            text=True,
+            capture_output=True,
+            env=env,
+            timeout=10,
+        )
+
+    def test_stop_hook_bails_soft_when_jq_missing(self) -> None:
+        result = self._run_hook(self.HOOKS[0], {
+            "session_id": "x",
+            "transcript_path": "/tmp/none.jsonl",
+            "last_assistant_message": "",
+        })
+        # Must exit 0 — anything else blocks the user's Stop.
+        self.assertEqual(result.returncode, 0,
+                         msg=f"stop-hook crashed without jq: {result.stderr}")
+        # Warning surfaces so user sees why hook is silent.
+        self.assertIn("requires", result.stderr)
+
+    def test_task_start_bails_soft_when_jq_missing(self) -> None:
+        result = self._run_hook(self.HOOKS[1], {
+            "session_id": "x",
+            "prompt": "test prompt",
+        })
+        self.assertEqual(result.returncode, 0,
+                         msg=f"task-start crashed without jq: {result.stderr}")
+
+    def test_track_changes_bails_soft_when_jq_missing(self) -> None:
+        result = self._run_hook(self.HOOKS[2], {
+            "session_id": "x",
+            "tool_input": {"file_path": "/tmp/some-file.py"},
+        })
+        self.assertEqual(result.returncode, 0,
+                         msg=f"track-changes crashed without jq: {result.stderr}")
+
+    def test_setup_superpower_loop_hard_fails_when_jq_missing(self) -> None:
+        """Inverse of the hook bail-soft: setup-superpower-loop is a
+        user-invoked CLI that needs jq to construct JSON. It should
+        hard-fail with a clear message rather than produce a broken
+        state file."""
+        env = os.environ.copy()
+        env["PATH"] = self.empty_path
+        result = subprocess.run(
+            [self.bash, str(SETUP), "--completion-promise", "DONE", "Test"],
+            text=True,
+            capture_output=True,
+            env=env,
+            timeout=10,
+        )
+        # Hard fail: nonzero exit, error message names jq.
+        self.assertNotEqual(result.returncode, 0,
+                            msg="setup-superpower-loop should refuse without jq")
+        self.assertIn("jq", result.stderr)
 
 
 if __name__ == "__main__":

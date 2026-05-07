@@ -9,6 +9,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=../lib/utils.sh
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
+# Runtime-deps check — unlike the hooks (which soft-bail to keep Stop
+# unblocked), this is a user-invoked CLI that constructs JSON via jq and
+# merges via perl. Without those, we cannot proceed; hard-fail with a
+# clear message rather than producing an empty/broken state file.
+if [[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]]; then
+  echo "Error: superpowers requires 'jq' and 'perl' in PATH to set up a loop." >&2
+  echo "       Install jq (https://stedolan.github.io/jq/) and ensure perl is available." >&2
+  exit 1
+fi
+
 # Parse arguments
 PROMPT_PARTS=()
 PROMPT_FILE=""
