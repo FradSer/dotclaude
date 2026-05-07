@@ -226,10 +226,7 @@ See `../../skills/references/git-commit.md` for patterns, templates, and require
 Verify all tasks are complete, log plan completion, then output the promise as the absolute last line.
 
 1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
-2. **Log Plan Completion** (calibration input): Append one JSON line to `docs/retros/plans-completed.jsonl` (create file + parent dir if absent):
-   ```json
-   {"event":"plan_completed","plan":"<absolute plan dir path>","task_count":<N>,"batch_count":<M>,"timestamp":"<ISO8601 UTC>"}
-   ```
+2. **Log Plan Completion** (handled automatically by Stop hook): When you emit `<promise>EXECUTION_COMPLETE</promise>`, the loop hook (`lib/loop.sh:_loop_log_plan_completion_if_executing`) appends a `{event:"plan_completed",plan,timestamp}` line to `docs/retros/plans-completed.jsonl`. No manual write needed — empirical audit showed the previous Claude-instructed write was silently dropped, so this is now mechanical. If you want richer fields (`task_count`, `batch_count`) for downstream retro analysis, append a supplementary line yourself **before** the promise tag; the hook entry stands as the canonical event.
 3. **Retrospective-Due Reminder**: Count `plan_completed` entries in `plans-completed.jsonl` whose timestamp is later than the most recent `retrospective_run` timestamp in `docs/retros/evolution-log.jsonl`. If the count is `>= 3`, emit a visible reminder in the summary:
    > **RETROSPECTIVE DUE**: {count} plans completed since the last retrospective. Run `/superpowers:retrospective --across-all` to evolve checklists before the next plan.
 

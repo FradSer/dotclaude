@@ -19,11 +19,14 @@ The contract format follows the Sprint Contract Format defined in `evaluation-fi
 
 Each sprint contract contains exactly 6 sections in this order, matching the Sprint Contract Format from `evaluation-file-formats.md`.
 
-### Section 0: Preamble (optional — injected only when enabled)
+### Section 0: Preamble (optional — injected only when prior batches show recurring failures)
 
-When `intra-plan-learning.enabled` and `recurring_failure_patterns` are enabled in `harness-config.json`, this preamble is prepended with failure patterns discovered in prior batches. When disabled, this section is omitted entirely (the contract begins directly with the Tasks section).
+By default, executing-plans Phase 4 step 2 scans prior evaluation reports for checklist items that FAILed in 2+ batches and injects them here. The section is omitted entirely (the contract begins directly with the Tasks section) when **either** of the following holds:
 
-**Injection point:** If the prior batch's `harness_observation` recorded recurring failure patterns, those patterns are injected here as a bulleted list with rationale. The executor reads these patterns as context before implementing the batch.
+- No recurring failures detected in prior batches — the common case for first-pass-PASS plans, where every batch's evaluator returned PASS without rework. Empirically observed across 7-batch real plans.
+- `recurring_failure_patterns` is disabled in `docs/retros/harness-config.json` (Phase 5c assumption test). In this branch, the patterns are still detected but written to `harness-observations.jsonl` instead of injected into the contract.
+
+**Injection point:** When patterns exist and the feature is not disabled, they appear here as a bulleted list with rationale. The executor reads these patterns as context before implementing the batch.
 
 ```markdown
 # Batch 3 Sprint Contract

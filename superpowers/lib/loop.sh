@@ -18,6 +18,48 @@
 #
 # Requires lib/utils.sh to already be sourced by the caller.
 
+# Append a `plan_completed` event to the project's plans-completed.jsonl
+# when the loop completes for the executing-plans workflow skill. Empirical
+# audit (agentbook real project, 2 completed plans) showed this file never
+# existed despite the SKILL.md instructing Claude to write it in Phase 6
+# step 2 — the manual instruction was being silently dropped, so the entire
+# downstream feedback loop (retrospective `--across-all` auto-scope, the
+# RETROSPECTIVE DUE reminder threshold, Phase 5c assumption tests) decayed
+# to a no-op. This helper makes the write mechanical: hook-driven on
+# promise detection, not Claude-instructed. Best-effort throughout — any
+# step failing silently returns 0; promise completion must never be
+# blocked by a missed log entry.
+_loop_log_plan_completion_if_executing() {
+  local state_file="$1"
+  local skill_name prompt plan_path log_dir log_file now
+
+  skill_name=$(state_read "$state_file" '.skill_name // ""')
+  [[ "$skill_name" != "executing-plans" ]] && return 0
+
+  # State.prompt carries the project-relative plan path embedded by
+  # executing-plans first action. Pattern: `docs/plans/<topic>-plan` with
+  # optional trailing slash. `|| true` swallows grep-no-match: under
+  # `set -euo pipefail` an assignment whose command substitution returns
+  # non-zero DOES propagate (despite folklore) — the regression test
+  # `test_executing_plans_without_plan_path_in_prompt_skips_log` caught
+  # exactly that.
+  prompt=$(state_read "$state_file" '.prompt // ""')
+  plan_path=$(printf '%s' "$prompt" | grep -oE 'docs/plans/[A-Za-z0-9_/.-]+-plan/?' | head -1) || true
+  [[ -z "$plan_path" ]] && return 0
+  plan_path="${plan_path%/}"
+
+  log_dir="${PWD}/docs/retros"
+  log_file="${log_dir}/plans-completed.jsonl"
+  mkdir -p "$log_dir" 2>/dev/null || return 0
+
+  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  jq -nc \
+    --arg plan "${PWD}/${plan_path}" \
+    --arg ts "$now" \
+    '{event: "plan_completed", plan: $plan, timestamp: $ts}' \
+    >> "$log_file" 2>/dev/null || true
+}
+
 # Clear all loop-related fields on the state file in one atomic update.
 # Used by every "abort the loop but stay in session" path.
 _loop_clear_state() {
@@ -94,8 +136,19 @@ ${reinject}"
   # session has already produced so iteration N+1 picks up where N left off
   # instead of recreating files. Hook is read-only here; track-changes.sh
   # owns writes to .modified_files. Mirrors vet.sh's pattern verbatim.
-  local files_lines files_md
-  files_lines=$(jq -r '.modified_files // [] | .[]' "$state_file" 2>/dev/null | sort -u)
+  #
+  # Capped at 20 entries: at ~80 chars/path the list reaches ~1.6KB, a
+  # paragraph's worth of tokens. Without a cap the injection grows
+  # monotonically across long loops (50 files * 30 iterations = 4KB
+  # re-injected every turn) — exactly the working-context pollution this
+  # plugin is supposed to prevent. 20 keeps mid-size plans (4 batches,
+  # ~30 files) intact while truncating long-running loops; overflow rows
+  # become a "... (N more — see state file)" pointer so Claude knows to
+  # consult the state file directly when needed.
+  local files_total files_lines files_md
+  files_total=$(jq -r '.modified_files // [] | length' "$state_file" 2>/dev/null)
+  [[ "$files_total" =~ ^[0-9]+$ ]] || files_total=0
+  files_lines=$(jq -r '.modified_files // [] | .[]' "$state_file" 2>/dev/null | sort -u | head -20)
   files_md=""
   if [[ -n "$files_lines" ]]; then
     while IFS= read -r f; do
@@ -103,6 +156,9 @@ ${reinject}"
     done <<< "$files_lines"
   fi
   if [[ -n "$files_md" ]]; then
+    if [[ $files_total -gt 20 ]]; then
+      files_md="${files_md}- ... ($((files_total - 20)) more — see state file)"$'\n'
+    fi
     injected="${injected}
 
 ---
@@ -201,6 +257,9 @@ loop_phase() {
   fi
 
   if [[ "$loop_complete" == "true" ]]; then
+    # Order matters: log BEFORE _loop_clear_state because the helper reads
+    # state.prompt to extract the plan path, which clear_state deletes.
+    _loop_log_plan_completion_if_executing "$state_file"
     _loop_clear_state "$state_file"
     # Workflow skills exit 0 from inside the helper; non-workflow skills
     # return 1, which `|| true` swallows so we fall through to vet_phase

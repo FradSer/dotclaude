@@ -860,6 +860,39 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertIn("docs/plans/2026-05-07-feat-design/_index.md", payload["reason"])
         self.assertIn("docs/plans/2026-05-07-feat-design/bdd-specs.md", payload["reason"])
 
+    def test_modified_files_capped_at_twenty_with_overflow_pointer(self) -> None:
+        """Without a cap the artifact snapshot grows monotonically across long
+        loops (50 files * 30 iterations = 4KB re-injected every turn) — exactly
+        the working-context pollution superpowers is supposed to prevent.
+        Cap at 20 + emit a `... (N more — see state file)` pointer for
+        overflow so Claude knows where to look when the visible list is
+        truncated."""
+        files = [f"src/module_{i:02d}.py" for i in range(25)]
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build it",
+            "skill_name": "",
+            "modified_files": files,
+        }))
+        self._write_transcript("Working...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # First 20 entries (sorted) appear; sort -u sorts lexicographically,
+        # so module_00 .. module_19 are the visible window.
+        for i in range(20):
+            self.assertIn(f"src/module_{i:02d}.py", payload["reason"])
+        # Overflow pointer present.
+        self.assertIn("... (5 more", payload["reason"])
+        # Entries 20-24 must NOT leak through.
+        for i in range(20, 25):
+            self.assertNotIn(f"src/module_{i:02d}.py", payload["reason"])
+
     def test_empty_modified_files_omits_artifact_section(self) -> None:
         """No modified_files (or empty array): omit the snapshot block entirely
         rather than emit a section with no entries — keeps re-injection lean
@@ -928,6 +961,107 @@ class LoopPhaseTests(unittest.TestCase):
         # Concise skill ref, not the verbose prompt.
         self.assertIn("superpowers:writing-plans", payload["reason"])
         self.assertNotIn("verbose original prompt", payload["reason"])
+
+    def test_executing_plans_promise_match_writes_plan_completion_log(self) -> None:
+        """When executing-plans loop promise matches, the hook appends a
+        plan_completed entry to <project>/docs/retros/plans-completed.jsonl.
+        Empirical audit (agentbook real project, 2 completed plans) found
+        this file never existed despite the SKILL.md instructing Claude to
+        write it — the manual write was being silently dropped, decaying
+        retrospective auto-scope, RETROSPECTIVE DUE reminders, and Phase 5c
+        assumption tests to no-ops. Hook makes the write mechanical."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        project_root.mkdir()
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan. Continue progressing through superpowers:executing-plans skill phases.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("All tasks done and committed.\n<promise>EXECUTION_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # Workflow skill bypass exits before fallthrough.
+        self.assertNotIn("FELL_THROUGH", result.stdout)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        self.assertTrue(
+            log_file.exists(),
+            f"plans-completed.jsonl missing at {log_file}",
+        )
+        lines = log_file.read_text().strip().split("\n")
+        self.assertEqual(len(lines), 1)
+        entry = json.loads(lines[0])
+        self.assertEqual(entry["event"], "plan_completed")
+        self.assertIn("2026-05-07-banner-plan", entry["plan"])
+        self.assertRegex(entry["timestamp"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+    def test_writing_plans_promise_match_does_not_write_completion_log(self) -> None:
+        """plans-completed.jsonl is the executing-plans-only completion log.
+        Other workflow skills (brainstorming, writing-plans) emit different
+        promises (BRAINSTORMING_COMPLETE / PLAN_COMPLETE) and must not
+        pollute this file — retrospective Phase 1 auto-scope reads it and
+        would conflate design/plan completion with execution completion."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        project_root.mkdir()
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 2,
+            "max_iterations": 0,
+            "completion_promise": "PLAN_COMPLETE",
+            "prompt": "Write an implementation plan for: docs/plans/2026-05-07-banner-design.",
+            "skill_name": "writing-plans",
+        }))
+        self._write_transcript("Plan written.\n<promise>PLAN_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        self.assertFalse(
+            log_file.exists(),
+            "writing-plans completion must not pollute plans-completed.jsonl",
+        )
+
+    def test_executing_plans_without_plan_path_in_prompt_skips_log(self) -> None:
+        """Defensive: if for any reason state.prompt does not contain a
+        recognizable `docs/plans/<topic>-plan` path, the log helper returns
+        without writing rather than emitting a malformed entry. Promise
+        completion must continue to clear state regardless."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        project_root.mkdir()
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 3,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "execute everything",  # no plan path embedded
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        self.assertFalse(log_file.exists())
+        # State still cleared even though logging skipped.
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
 
 
 class ExtractLastAssistantTextTests(unittest.TestCase):
