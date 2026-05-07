@@ -22,12 +22,19 @@ UTILS = SUPERPOWERS / "lib" / "utils.sh"
 LOOP = SUPERPOWERS / "lib" / "loop.sh"
 VET = SUPERPOWERS / "lib" / "vet.sh"
 SETUP = SUPERPOWERS / "scripts" / "setup-superpower-loop.sh"
+STOP_HOOK = SUPERPOWERS / "hooks" / "stop-hook.sh"
 
 
 def run_bash(script: str, **kwargs) -> subprocess.CompletedProcess:
-    """Run a bash script with utils.sh + loop.sh + vet.sh sourced."""
+    """Run a bash script with utils.sh + loop.sh + vet.sh sourced.
+
+    Uses `set -euo pipefail` to mirror stop-hook.sh's runtime environment.
+    Tests that ran under `set +e` previously masked a CRITICAL regression
+    where vet.sh's unguarded bypass call silently aborted vet_phase under
+    errexit — the test harness must reproduce production semantics.
+    """
     full = (
-        "set +e\n"
+        "set -euo pipefail\n"
         f"source {shlex.quote(str(UTILS))}\n"
         f"source {shlex.quote(str(LOOP))}\n"
         f"source {shlex.quote(str(VET))}\n"
@@ -67,8 +74,12 @@ class BypassVetForWorkflowSkillTests(unittest.TestCase):
 
     def test_bypass_returns_nonzero_for_non_workflow_skill(self) -> None:
         self.state.write_text(json.dumps({"skill_name": "need-vet", "need_vet": True}))
+        # The helper's contract is `exit 0` for workflow skills, `return 1`
+        # for non-workflow. Callers MUST guard with `|| true` (or handle the
+        # nonzero in an `if`) under `set -e` — vet.sh:145 and loop.sh:158
+        # both do this. The test reproduces the production calling pattern.
         result = run_bash(
-            f'bypass_vet_for_workflow_skill {shlex.quote(str(self.state))}\n'
+            f'bypass_vet_for_workflow_skill {shlex.quote(str(self.state))} || true\n'
             'echo "REACHED_AFTER_BYPASS"'
         )
         # Non-workflow skill: function returns 1, script reaches the next line.
@@ -76,6 +87,24 @@ class BypassVetForWorkflowSkillTests(unittest.TestCase):
         # need_vet must NOT be cleared (vet still has a job to do).
         state = json.loads(self.state.read_text())
         self.assertTrue(state.get("need_vet"))
+
+    def test_bypass_clears_need_vet_for_all_workflow_skills(self) -> None:
+        """is_workflow_skill enumerates 4 workflow skills. The first-round
+        synthesis only tested brainstorming explicitly. This locks in the
+        full set so a future is_workflow_skill change can't silently drop
+        coverage."""
+        for skill in ("brainstorming", "writing-plans", "executing-plans", "retrospective"):
+            with self.subTest(skill=skill):
+                self.state.write_text(json.dumps({"skill_name": skill, "need_vet": True}))
+                result = run_bash(
+                    f'bypass_vet_for_workflow_skill {shlex.quote(str(self.state))} || true\n'
+                    'echo "REACHED_AFTER_BYPASS"'
+                )
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                # Helper exits 0 from inside, never reaches post-call line.
+                self.assertNotIn("REACHED_AFTER_BYPASS", result.stdout)
+                state = json.loads(self.state.read_text())
+                self.assertNotIn("need_vet", state)
 
 
 class FindStateFileLegacyWarningTests(unittest.TestCase):
@@ -292,6 +321,136 @@ class SetupReentryGuardTests(unittest.TestCase):
         self.assertEqual(state["iteration"], 1)
         # Pre-existing fields preserved by the new `. + {...}` merge.
         self.assertEqual(state.get("task"), "stale")
+
+
+class StopHookEndToEndTests(unittest.TestCase):
+    """Run stop-hook.sh as a real subprocess (not sourced) so the test
+    environment exactly mirrors production: `set -euo pipefail`, real
+    process exit codes, real `find_state_file` lookup. This is the only
+    place the CRITICAL `vet.sh:145` regression would have been caught
+    before shipping."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        # Mirror state-dir layout: ~/.claude/projects/<key>/<session>.superpowers.json
+        # We override PWD so state_dir() lands inside our tmpdir.
+        # NOTE: must `.resolve()` on macOS — tmpdir is /var/folders/... but
+        # subprocess cwd resolves to /private/var/folders/... and bash's
+        # state_dir() reads $PWD, so the project key would otherwise mismatch.
+        self.fake_pwd = (Path(self.tmpdir.name) / "fake-cwd").resolve()
+        self.fake_pwd.mkdir()
+        self.fake_pwd = self.fake_pwd.resolve()
+        project_key = str(self.fake_pwd).replace("/", "-")
+        self.state_dir = Path.home() / ".claude" / "projects" / project_key
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.session_id = "test-session-stop-hook"
+        self.state = self.state_dir / f"{self.session_id}.superpowers.json"
+        self.transcript = Path(self.tmpdir.name) / "transcript.jsonl"
+        self.transcript.write_text("")
+
+    def tearDown(self) -> None:
+        for p in self.state_dir.glob("*"):
+            p.unlink()
+        try:
+            self.state_dir.rmdir()
+        except OSError:
+            pass
+        self.tmpdir.cleanup()
+
+    def _run_stop_hook(self, hook_input: dict) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["bash", str(STOP_HOOK)],
+            input=json.dumps(hook_input),
+            text=True,
+            capture_output=True,
+            cwd=str(self.fake_pwd),
+        )
+
+    def test_need_vet_with_non_workflow_skill_emits_block_under_set_e(self) -> None:
+        """REGRESSION: under stop-hook's `set -euo pipefail`, the bare
+        `bypass_vet_for_workflow_skill` call in vet.sh aborted vet_phase
+        before the verified-tag matcher ran — silently breaking /need-vet.
+        This test reproduces the exact production path."""
+        self.state.write_text(json.dumps({
+            "session_id": self.session_id,
+            "skill_name": "need-vet",
+            "need_vet": True,
+            "task": "verify the deploy",
+            "modified_files": ["deploy.yaml"],
+        }))
+        result = self._run_stop_hook({
+            "session_id": self.session_id,
+            "transcript_path": str(self.transcript),
+            "last_assistant_message": "I think it's done.",
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # Block JSON must appear on stdout — the verification gate fired.
+        self.assertTrue(result.stdout.strip(), msg="expected block JSON, got empty stdout")
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["decision"], "block")
+        self.assertIn("Verification Checkpoint", payload["reason"])
+
+    def test_need_vet_with_workflow_skill_bypasses_cleanly(self) -> None:
+        """Workflow skill path under `set -e` — must exit cleanly, clear
+        need_vet, and emit no block JSON."""
+        self.state.write_text(json.dumps({
+            "session_id": self.session_id,
+            "skill_name": "executing-plans",
+            "need_vet": True,
+            "task": "run plan",
+        }))
+        result = self._run_stop_hook({
+            "session_id": self.session_id,
+            "transcript_path": str(self.transcript),
+            "last_assistant_message": "Plan executed.",
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(result.stdout.strip(), "")
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("need_vet", state)
+
+
+class FindStateFileMultiLegacyTests(unittest.TestCase):
+    """Boundary case the first synthesis round missed: when MULTIPLE legacy
+    files exist without session_id, find_state_file deterministically picks
+    one and warns about which other files were ignored. Silent multi-file
+    selection was a known crosstalk vector."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.fake_pwd = Path(self.tmpdir.name) / "fake-cwd-multi"
+        self.fake_pwd.mkdir()
+        project_key = str(self.fake_pwd).replace("/", "-")
+        self.state_dir = Path.home() / ".claude" / "projects" / project_key
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        for p in self.state_dir.glob("*"):
+            p.unlink()
+        try:
+            self.state_dir.rmdir()
+        except OSError:
+            pass
+        self.tmpdir.cleanup()
+
+    def test_warns_when_multiple_legacy_files_exist(self) -> None:
+        (self.state_dir / "a.superpowers.json").write_text("{}")
+        (self.state_dir / "b.superpowers.json").write_text("{}")
+        (self.state_dir / "c.superpowers.json").write_text("{}")
+        result = subprocess.run(
+            ["bash", "-c", f'cd {shlex.quote(str(self.fake_pwd))} && '
+                           f'source {shlex.quote(str(UTILS))} && '
+                           f'find_state_file "wanted-session"'],
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # One file picked, warning surfaces both the chosen file and the count.
+        self.assertIn(".superpowers.json", result.stdout)
+        self.assertIn("legacy file without session_id", result.stderr)
+        # New invariant: warning must surface the multi-file case so the
+        # user is not silently routed to one of N candidates.
+        self.assertIn("3 legacy file", result.stderr)
 
 
 if __name__ == "__main__":

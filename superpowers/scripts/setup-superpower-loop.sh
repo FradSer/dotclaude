@@ -35,6 +35,9 @@ OPTIONS:
   --max-iterations <n>           Maximum iterations before auto-stop (default: unlimited)
   --completion-promise '<text>'  Promise phrase (USE QUOTES for multi-word)
   --state-file <path>            Custom state file path (overrides default)
+  --force                        Overwrite an existing active loop (resets iteration to 1).
+                                 Without this, refusing to clobber active=true is the default —
+                                 use only when you're certain the previous loop is dead.
   -h, --help                     Show this help message
 
 DESCRIPTION:
@@ -192,7 +195,10 @@ if [[ -f "$STATE_FILE" ]] && [[ "$FORCE_OVERRIDE" != "1" ]]; then
     EXISTING_START=$(jq -r '.started_at // "?"' "$STATE_FILE" 2>/dev/null)
     echo "Error: an active Superpower Loop already exists at $STATE_FILE." >&2
     echo "       Iteration ${EXISTING_ITER}/${EXISTING_MAX}, started ${EXISTING_START}." >&2
-    echo "       Pass --force to overwrite (resets the iteration counter)." >&2
+    echo "       Recovery options:" >&2
+    echo "         - If the previous loop is genuinely active, let it finish." >&2
+    echo "         - If it crashed/stalled, re-run this command with --force (resets iteration to 1)." >&2
+    echo "         - Or delete the stale state file: rm \"$STATE_FILE\"" >&2
     exit 1
   fi
 fi

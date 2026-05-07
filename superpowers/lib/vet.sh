@@ -142,7 +142,10 @@ vet_phase() {
   # canonical bypass helper in utils.sh so the bypass logic lives in
   # exactly one place. need-vet is intentionally excluded from
   # is_workflow_skill (its entire purpose is to enforce vet).
-  bypass_vet_for_workflow_skill "$state_file"
+  # `|| true` is REQUIRED: under stop-hook's `set -euo pipefail`, a bare
+  # call would abort vet_phase here for non-workflow skills (helper returns 1)
+  # before the verified-tag matcher runs — silently breaking /need-vet.
+  bypass_vet_for_workflow_skill "$state_file" || true
 
   # Verified-tag match → synthesize summary and allow exit.
   local verified_text

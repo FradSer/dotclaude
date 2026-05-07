@@ -75,6 +75,7 @@ find_state_file() {
 
   local candidate
   local legacy_match=""
+  local legacy_count=0
   for candidate in $files; do
     [[ -f "$candidate" ]] || continue
     local candidate_session
@@ -83,13 +84,17 @@ find_state_file() {
       echo "$candidate"
       return
     fi
-    if [[ -z "$candidate_session" ]] && [[ -z "$legacy_match" ]]; then
-      legacy_match="$candidate"
+    if [[ -z "$candidate_session" ]]; then
+      legacy_count=$((legacy_count + 1))
+      [[ -z "$legacy_match" ]] && legacy_match="$candidate"
     fi
   done
 
   if [[ -n "$legacy_match" ]]; then
-    echo "warning: find_state_file fell back to legacy file without session_id (session_id=${session_id}, file=${legacy_match}). Cross-session crosstalk possible — consider removing stale state files." >&2
+    # Surface the count: multiple legacy files mean filesystem-order roulette
+    # is picking one and silently ignoring the rest. The first-round fix only
+    # warned about the picked file — that hid the multi-file footgun.
+    echo "warning: find_state_file fell back to legacy file without session_id (session_id=${session_id}, file=${legacy_match}, ${legacy_count} legacy file(s) total). Cross-session crosstalk possible — consider removing stale state files." >&2
     echo "$legacy_match"
   fi
 }

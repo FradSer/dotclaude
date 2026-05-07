@@ -154,8 +154,10 @@ loop_phase() {
 
   if [[ "$loop_complete" == "true" ]]; then
     _loop_clear_state "$state_file"
-    # Workflow skills skip vet (function exits when matched); others fall through.
-    bypass_vet_for_workflow_skill "$state_file" || return 0
+    # Workflow skills exit 0 from inside the helper; non-workflow skills
+    # return 1, which `|| true` swallows so we fall through to vet_phase
+    # in stop-hook.sh. Both branches eventually return 0 from loop_phase.
+    bypass_vet_for_workflow_skill "$state_file" || true
     return 0
   fi
 
