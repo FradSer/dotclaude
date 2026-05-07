@@ -609,5 +609,343 @@ class HookDepsMissingBailSoftTests(unittest.TestCase):
         self.assertIn("jq", result.stderr)
 
 
+class LoopPhaseTests(unittest.TestCase):
+    """End-to-end tests for loop_phase (lib/loop.sh) — the Superpower Loop
+    iteration logic invoked by stop-hook.sh Phase 1.
+
+    Covers the production paths that prior synthesis rounds left untested:
+    - active loop + promise match (falls through to vet)
+    - active loop + no match (emits block JSON to continue)
+    - corrupted state fields (clears loop, falls through)
+    - terminal conditions (max iterations, missing transcript)
+    """
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmpdir.name) / "state.json"
+        self.transcript = Path(self.tmpdir.name) / "transcript.jsonl"
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _write_transcript(self, last_text: str) -> None:
+        """Write a single assistant message into the transcript JSONL.
+
+        Uses compact JSON (no separator spaces) because extract_last_assistant_text
+        greps for the literal substring `"role":"assistant"` — pretty-printed
+        `"role": "assistant"` would produce a false negative."""
+        line = {
+            "role": "assistant",
+            "message": {"content": [{"type": "text", "text": last_text}]},
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+
+    def test_returns_zero_when_no_active_loop(self) -> None:
+        """Inactive loop: loop_phase returns 0 — caller falls through to vet."""
+        self.state.write_text(json.dumps({"task": "ship it"}))
+        self._write_transcript("done")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # Caller continues to next line — vet would run after.
+        self.assertIn("FELL_THROUGH", result.stdout)
+
+    def test_active_loop_no_promise_emits_block_json(self) -> None:
+        """Active loop without match: emit block JSON, exit 0, increment iteration."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "",
+        }))
+        self._write_transcript("Still working on it...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # loop_phase must exit, not fall through.
+        self.assertNotIn("FELL_THROUGH", result.stdout)
+        # Block JSON shape.
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["decision"], "block")
+        self.assertIn("Build the thing", payload["reason"])
+        self.assertIn("DONE", payload["reason"])
+        self.assertIn("iteration 2", payload["systemMessage"])
+        # Iteration incremented in state.
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["iteration"], 2)
+
+    def test_active_loop_with_promise_match_clears_state(self) -> None:
+        """Active loop + matching promise (non-workflow skill): clear loop fields,
+        fall through to vet."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 3,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "ad-hoc",
+        }))
+        self._write_transcript("Finished and verified.\n<promise>DONE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        # Loop fields must be cleared.
+        state = json.loads(self.state.read_text())
+        for field in ("active", "iteration", "max_iterations", "completion_promise",
+                      "prompt", "started_at"):
+            self.assertNotIn(field, state, msg=f"{field} not cleared")
+
+    def test_promise_match_with_workflow_skill_exits_directly(self) -> None:
+        """Active loop + matching promise + workflow skill: clear state AND exit 0
+        from inside bypass_vet_for_workflow_skill — caller must NOT fall through."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 2,
+            "max_iterations": 0,
+            "completion_promise": "PLAN_COMPLETE",
+            "prompt": "Make a plan",
+            "skill_name": "writing-plans",
+            "need_vet": True,
+        }))
+        self._write_transcript("Plan written.\n<promise>PLAN_COMPLETE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # bypass_vet_for_workflow_skill exits 0 directly — no fallthrough.
+        self.assertNotIn("FELL_THROUGH", result.stdout)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+        self.assertNotIn("need_vet", state)
+
+    def test_max_iterations_reached_clears_loop(self) -> None:
+        """Loop hits max: announce, clear, fall through."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 5,
+            "completion_promise": "DONE",
+            "prompt": "Try it",
+            "skill_name": "",
+        }))
+        self._write_transcript("attempt 5")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        self.assertIn("Max iterations", result.stdout)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+
+    def test_corrupted_iteration_field_clears_loop(self) -> None:
+        """Non-numeric iteration: warn, clear, fall through (no crash under set -e)."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": "NaN",  # corrupted
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Try",
+            "skill_name": "",
+        }))
+        self._write_transcript("anything")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        self.assertIn("not numeric", result.stderr)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+
+    def test_corrupted_max_iterations_field_clears_loop(self) -> None:
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": "infinity",  # corrupted
+            "completion_promise": "DONE",
+            "prompt": "Try",
+            "skill_name": "",
+        }))
+        self._write_transcript("anything")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        self.assertIn("not numeric", result.stderr)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+
+    def test_missing_transcript_clears_loop(self) -> None:
+        """No transcript file: clear loop silently, fall through."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Try",
+            "skill_name": "",
+        }))
+        # transcript intentionally not created.
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+
+    def test_missing_prompt_clears_loop_with_warning(self) -> None:
+        """State has no prompt: clear with warning, fall through (cannot re-inject
+        without a prompt to replay)."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "",  # missing
+            "skill_name": "",
+        }))
+        self._write_transcript("still going")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        self.assertIn("no prompt", result.stderr)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+
+    def test_skill_name_replaces_prompt_in_block_reason(self) -> None:
+        """When skill_name is set, the re-injection prompt is the concise skill
+        reference rather than the verbatim original prompt — keeps the loop
+        from re-pasting a giant prompt every iteration."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "verbose original prompt that should be replaced",
+            "skill_name": "writing-plans",
+        }))
+        self._write_transcript("working")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # Concise skill ref, not the verbose prompt.
+        self.assertIn("superpowers:writing-plans", payload["reason"])
+        self.assertNotIn("verbose original prompt", payload["reason"])
+
+
+class ExtractLastAssistantTextTests(unittest.TestCase):
+    """Tests for extract_last_assistant_text — the parser that drives whether
+    loop_phase detects the completion promise. A regression here breaks the
+    Superpower Loop's exit detection silently."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.transcript = Path(self.tmpdir.name) / "transcript.jsonl"
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _run_extract(self, max_lines: int = 100) -> subprocess.CompletedProcess:
+        return run_bash(
+            f'extract_last_assistant_text {shlex.quote(str(self.transcript))} {max_lines}'
+        )
+
+    def test_returns_empty_for_missing_transcript(self) -> None:
+        """No file → empty output, no crash."""
+        result = self._run_extract()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(result.stdout.strip(), "")
+
+    def test_returns_text_for_single_assistant_message(self) -> None:
+        line = {
+            "role": "assistant",
+            "message": {"content": [{"type": "text", "text": "hello world"}]},
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+        result = self._run_extract()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("hello world", result.stdout)
+
+    def test_returns_last_text_when_multiple_assistant_messages(self) -> None:
+        lines = [
+            {"role": "assistant",
+             "message": {"content": [{"type": "text", "text": "first"}]}},
+            {"role": "user",
+             "message": {"content": [{"type": "text", "text": "interlude"}]}},
+            {"role": "assistant",
+             "message": {"content": [{"type": "text", "text": "second"}]}},
+        ]
+        self.transcript.write_text(
+            "\n".join(json.dumps(x, separators=(",", ":")) for x in lines) + "\n"
+        )
+        result = self._run_extract()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # Latest assistant message wins.
+        self.assertIn("second", result.stdout)
+        # User message must not leak in.
+        self.assertNotIn("interlude", result.stdout)
+
+    def test_extracts_text_block_among_mixed_content_types(self) -> None:
+        """Assistant content arrays can contain tool_use blocks alongside text.
+        The extractor must isolate the text block."""
+        line = {
+            "role": "assistant",
+            "message": {
+                "content": [
+                    {"type": "tool_use", "name": "Bash", "input": {"cmd": "ls"}},
+                    {"type": "text", "text": "<promise>DONE</promise>"},
+                ]
+            },
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+        result = self._run_extract()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        # The text block is extracted; the tool_use block is ignored.
+        self.assertIn("<promise>DONE</promise>", result.stdout)
+        self.assertNotIn("Bash", result.stdout)
+
+    def test_promise_in_extracted_text_is_detected_by_extract_promise_text(self) -> None:
+        """End-to-end shape check: a transcript carrying a final <promise> tag
+        flows through extract_last_assistant_text → extract_promise_text and
+        yields the promise content. This is the exact pipeline loop_phase
+        depends on; a regression breaks loop completion."""
+        line = {
+            "role": "assistant",
+            "message": {
+                "content": [{"type": "text",
+                             "text": "Verified all checks.\n<promise>EXECUTION_COMPLETE</promise>"}]
+            },
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+        result = run_bash(
+            f'last=$(extract_last_assistant_text {shlex.quote(str(self.transcript))} 100); '
+            f'extract_promise_text "$last"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(result.stdout.strip(), "EXECUTION_COMPLETE")
+
+
 if __name__ == "__main__":
     unittest.main()
