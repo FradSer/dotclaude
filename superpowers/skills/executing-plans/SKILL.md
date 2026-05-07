@@ -49,8 +49,6 @@ Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
-3. **Evaluator Configuration** (default: on, overridable only via `harness-config.json`): Evaluator runs once per batch unless `evaluator_per_batch` is in `disabled_components` — then skip spawn and append a `harness_observation` row (see `./references/intra-plan-learning.md`). No intensity modes.
-   - **Checklist resolution**: Scan `docs/retros/checklists/` for `code-v{N}.md` (highest N). **Auto-seed when missing**: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" code docs/retros/checklists/code-v1.md`, log `Auto-seeded code-v1.md`, continue. Exit codes: 0 = seeded, 3 = already exists (proceed with existing file), 1/2 = real failure → abort.
 
 The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 

@@ -25,7 +25,8 @@ _loop_clear_state() {
   local now
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   state_update "$state_file" --arg ts "$now" \
-    'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at) | .updated_at = $ts'
+    'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at) | .updated_at = $ts' \
+    || { echo "Warning: state_update failed mid-loop, falling through" >&2; return 0; }
 }
 
 # Emit block JSON to continue the loop with the next iteration prompt.
@@ -43,7 +44,8 @@ _loop_emit_block() {
   state_update "$state_file" \
     --argjson iter "$next_iteration" \
     --arg ts "$now" \
-    '.iteration = $iter | .updated_at = $ts'
+    '.iteration = $iter | .updated_at = $ts' \
+    || { echo "Warning: state_update failed mid-loop-emit, falling through" >&2; return 0; }
 
   # System message
   local system_msg

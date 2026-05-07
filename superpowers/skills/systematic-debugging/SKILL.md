@@ -265,22 +265,21 @@ A bug requires EnterPlanMode before making changes when ANY of these apply:
    - Must understand WHAT is broken and WHY before planning
    - Gather all evidence first
 
-2. **Use EnterPlanMode**
-   - This signals to user you need approval before proceeding
-   - Allows user to review approach before implementation
+2. **Write and get approval for the implementation plan**
+   - Create a markdown file (e.g., `BUGFIX_PLAN.md`) with:
+     - Root cause summary (from Phase 1)
+     - Proposed fix strategy
+     - Files that will be modified
+     - Tests to be created/modified
+     - Potential risks and mitigation
+     - Alternative approaches considered
+   - Use AskUserQuestion to present the plan and request approval before proceeding
+   - User may suggest a different approach, provide additional context, or approve as-is
 
-3. **Write implementation plan covering:**
-   - Root cause summary (from Phase 1)
-   - Proposed fix strategy
-   - Files that will be modified
-   - Tests to be created/modified
-   - Potential risks and mitigation
-   - Alternative approaches considered
-
-4. **Wait for user approval**
-   - User may suggest different approach
-   - User may provide additional context
-   - User may approve as-is
+3. **Proceed only after user approval**
+   - Once approved, implement the plan step by step
+   - Keep implementation aligned with the approved plan
+   - If the plan needs adjustment during implementation, stop and ask again
 
 ### Why Planning for Complex Bugs
 

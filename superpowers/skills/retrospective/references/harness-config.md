@@ -48,7 +48,7 @@ configuration — the file is not required to exist.
 
 | Identifier | Effect when listed | Consumer (file + step) |
 |-----------|---------------------|----------|
-| `evaluator_per_batch` | executing-plans Phase 3 skips the superpowers-evaluator (Code mode) spawn. Sprint contract and verification gate still run. | `executing-plans/SKILL.md` Phase 1 step 4 + Phase 3 step 2.8 |
+| `evaluator_per_batch` | executing-plans Phase 3 skips the superpowers-evaluator (Code mode) spawn. Sprint contract and verification gate still run. | `executing-plans/SKILL.md` Phase 1 step 4 + Phase 3 step 2 (Spawn Batch Coordinator, item 8 — Evaluator instruction) |
 | `sprint_contract_preview` | executing-plans omits the "Evaluation Criteria Preview" section from sprint contracts. | `executing-plans/SKILL.md` Phase 3 step 0 |
 | `recurring_failure_patterns` | executing-plans Phase 4 skips the pattern-scan injection into the next sprint contract preamble. | `executing-plans/SKILL.md` Phase 4 step 2 |
 | `design_evaluator` | brainstorming Phase 2 skips the superpowers-evaluator (design mode). Sub-agent research still runs. | `brainstorming/SKILL.md` Phase 1.5 + Phase 2 Step 2 |
