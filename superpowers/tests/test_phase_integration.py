@@ -675,7 +675,9 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertEqual(payload["decision"], "block")
         self.assertIn("Build the thing", payload["reason"])
         self.assertIn("DONE", payload["reason"])
-        self.assertIn("iteration 2", payload["systemMessage"])
+        # systemMessage uses the compact "iter N" tag (no max → no /M).
+        self.assertIn("iter 2", payload["systemMessage"])
+        self.assertIn("Superpower Loop", payload["systemMessage"])
         # Iteration incremented in state.
         state = json.loads(self.state.read_text())
         self.assertEqual(state["iteration"], 2)
@@ -940,16 +942,23 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertNotIn("LOOP_REINJECT_BEGIN", payload["reason"])
         self.assertNotIn("LOOP_REINJECT_END", payload["reason"])
 
-    def test_skill_name_replaces_prompt_in_block_reason(self) -> None:
-        """When skill_name is set, the re-injection prompt is the concise skill
-        reference rather than the verbatim original prompt — keeps the loop
-        from re-pasting a giant prompt every iteration."""
+    def test_skill_name_emits_continue_header_and_preserves_prompt(self) -> None:
+        """When skill_name is set, the re-injection header reads as a
+        continuation phrase ("Continue superpowers:X — iter N/M") AND the
+        original base_prompt is preserved on the next paragraph. This is the
+        contract that replaced the previous "Use superpowers:X skill." short-
+        circuit, which empirical audit showed Claude treating as a slash-
+        command-style re-entry signal — every Stop walked SKILL.md from the
+        top, wasting a turn per loop iteration. The continuation phrase plus
+        the verbatim prompt (carrying phase-progression hints from
+        setup-superpower-loop.sh) keeps the loop anchored to its current phase
+        instead of restarting."""
         self.state.write_text(json.dumps({
             "active": True,
             "iteration": 1,
-            "max_iterations": 0,
+            "max_iterations": 100,
             "completion_promise": "DONE",
-            "prompt": "verbose original prompt that should be replaced",
+            "prompt": "Execute the plan at docs/plans/feat-plan. Continue progressing through phases.",
             "skill_name": "writing-plans",
         }))
         self._write_transcript("working")
@@ -958,9 +967,177 @@ class LoopPhaseTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
-        # Concise skill ref, not the verbose prompt.
-        self.assertIn("superpowers:writing-plans", payload["reason"])
-        self.assertNotIn("verbose original prompt", payload["reason"])
+        reason = payload["reason"]
+        # Header is a continuation phrase, not a skill-trigger phrase.
+        self.assertIn("Continue superpowers:writing-plans", reason)
+        self.assertNotIn("Use superpowers:writing-plans skill", reason)
+        # Iteration tag uses the next iteration (current+1) for orientation.
+        self.assertIn("iter 2/100", reason)
+        # Original prompt is preserved verbatim — phase hints survive.
+        self.assertIn("docs/plans/feat-plan", reason)
+        self.assertIn("Continue progressing through phases", reason)
+        # systemMessage reads as continuation, not error.
+        self.assertIn("Superpower Loop iter 2/100", payload["systemMessage"])
+        self.assertIn("Continue writing-plans", payload["systemMessage"])
+
+    def test_non_keyframe_iteration_skips_heavy_blocks(self) -> None:
+        """Iterations that are not iteration 1 and not multiples of 5 are
+        "lean" — the SKILL.md LOOP_REINJECT excerpt and the cumulative
+        "Already produced" file list are omitted, leaving only the
+        continuation header + base_prompt + LOOP COMPLETION REQUIRED tail.
+        Saves ~1.5KB per Stop in long loops where the heavy blocks would
+        otherwise be re-injected verbatim ~30 times in a 30-iteration run."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 2,  # next = 3 → non-keyframe (not 1, not %5==0)
+            "max_iterations": 100,
+            "completion_promise": "DONE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "brainstorming",
+            "modified_files": [
+                "docs/plans/feat-design/_index.md",
+                "docs/plans/feat-design/bdd-specs.md",
+            ],
+        }))
+        self._write_transcript("Phase 2 in flight...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        reason = payload["reason"]
+        # Continuation header still present.
+        self.assertIn("Continue superpowers:brainstorming", reason)
+        # Heavy blocks omitted on non-keyframe iterations.
+        self.assertNotIn("Design folder committed to git", reason,
+                         msg="LOOP_REINJECT excerpt must not appear on non-keyframe iter")
+        self.assertNotIn("Already produced this session", reason,
+                         msg="modified_files list must not appear on non-keyframe iter")
+        # Lean tail still includes the completion promise reminder — that's
+        # always required regardless of iteration parity.
+        self.assertIn("<promise>DONE</promise>", reason)
+
+    def test_keyframe_iteration_includes_heavy_blocks(self) -> None:
+        """Iteration 1 + every 5th iteration are "keyframes" that re-inject
+        the full picture: SKILL.md LOOP_REINJECT excerpt + 20-deep
+        modified_files snapshot. Acts as a periodic anchor for long loops
+        without polluting every single iteration."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 4,  # next = 5 → keyframe (multiple of 5)
+            "max_iterations": 100,
+            "completion_promise": "BRAINSTORMING_COMPLETE",
+            "prompt": "Design the feature.",
+            "skill_name": "brainstorming",
+            "modified_files": [
+                "docs/plans/feat-design/_index.md",
+            ],
+        }))
+        self._write_transcript("checkpoint")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        reason = payload["reason"]
+        # Heavy blocks present on keyframe.
+        self.assertIn("Design folder committed to git", reason)
+        self.assertIn("Already produced this session", reason)
+        self.assertIn("docs/plans/feat-design/_index.md", reason)
+
+    def test_stuck_detection_emits_recovery_hint(self) -> None:
+        """When modified_files count has not grown for 3 consecutive
+        iterations (from iteration 5 onward), the loop emits a STUCK
+        warning in both systemMessage and reason. This catches the
+        empirical pattern from real executing-plans runs where the main
+        agent stops repeatedly without spawning a sub-agent — words but
+        no artifacts. The recovery hint points at Phase 3 step 2 (spawn
+        coordinator) or the promise as the only legitimate exits."""
+        # State carries a stuck_count of 2; this iteration brings it to 3
+        # (iteration 7, files unchanged from previous_modified_count=2).
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 7,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "executing-plans",
+            "modified_files": ["docs/plans/feat-plan/handoff-state.md",
+                               "docs/plans/feat-plan/sprint-contract-batch-1.md"],
+            "previous_modified_count": 2,
+            "stuck_count": 2,
+        }))
+        self._write_transcript("I will spawn the coordinator next iteration...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # systemMessage flags STUCK with the count.
+        self.assertIn("STUCK", payload["systemMessage"])
+        # reason carries the recovery instructions.
+        self.assertIn("STUCK DETECTED", payload["reason"])
+        self.assertIn("Phase 3 step 2", payload["reason"])
+        self.assertIn("EXECUTION_COMPLETE", payload["reason"])
+        # State persists the incremented stuck_count for the next iteration.
+        state_after = json.loads(self.state.read_text())
+        self.assertGreaterEqual(state_after["stuck_count"], 3)
+
+    def test_stuck_count_resets_when_files_grow(self) -> None:
+        """A growth in modified_files count resets stuck_count to 0 — a
+        successful sub-agent invocation should clear the streak so the
+        warning does not persist past the recovery."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 8,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "executing-plans",
+            "modified_files": ["a.py", "b.py", "c.py", "d.py", "e.py"],  # 5 now
+            "previous_modified_count": 2,  # was 2 last iteration
+            "stuck_count": 3,  # had been stuck
+        }))
+        self._write_transcript("Spawned coordinator, files updated.")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # Recovery cleared — no STUCK markers.
+        self.assertNotIn("STUCK", payload["systemMessage"])
+        self.assertNotIn("STUCK DETECTED", payload["reason"])
+        state_after = json.loads(self.state.read_text())
+        self.assertEqual(state_after["stuck_count"], 0)
+        self.assertEqual(state_after["previous_modified_count"], 5)
+
+    def test_early_iterations_do_not_trigger_stuck(self) -> None:
+        """Iterations 1-4 may legitimately have no file growth — Phase 1
+        plan review and Phase 2 task creation (TaskCreate, not Edit/Write)
+        produce no Edit/Write artifacts. Stuck detection only kicks in
+        from iteration 5 onward to avoid false positives during setup."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 3,  # next = 4, still in setup window
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "executing-plans",
+            "modified_files": [],
+            "previous_modified_count": 0,
+            "stuck_count": 0,
+        }))
+        self._write_transcript("Phase 1 in progress, no files yet.")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertNotIn("STUCK", payload["systemMessage"])
+        self.assertNotIn("STUCK DETECTED", payload["reason"])
+        # stuck_count must not increment in the setup window.
+        state_after = json.loads(self.state.read_text())
+        self.assertEqual(state_after["stuck_count"], 0)
 
     def test_executing_plans_promise_match_writes_plan_completion_log(self) -> None:
         """When executing-plans loop promise matches, the hook appends a
