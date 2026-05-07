@@ -27,7 +27,22 @@ Sub-agents provide:
 
 Launch three sub-agents in parallel using the Agent tool with `subagent_type=general-purpose`. No size gates — reflection is unconditional and always uses parallel fresh contexts so review does not inherit main-agent planning bias.
 
-**Sub-agent 1: BDD Coverage Review**
+### Checklist Binding (MUST inject into every sub-agent prompt)
+
+Before sending each sub-agent prompt below, resolve the path to the latest plan checklist (`docs/retros/checklists/plan-v{N}.md`, highest N — auto-seeded by Phase 4 if missing) and **prepend** the following block to the prompt verbatim, replacing `<CHECKLIST_PATH>` with the resolved path and `<ITEM_IDS>` with the comma-separated list of checklist item IDs this sub-agent owns (see each sub-agent's "Owns checklist items" line):
+
+```
+CHECKLIST RUBRIC (REQUIRED): Read <CHECKLIST_PATH>. Your verdict for this review is a per-item PASS or FAIL judgment against the items you own: <ITEM_IDS>. For each item:
+  - Apply the item's Check method exactly as written.
+  - Capture Evidence in the format the item specifies.
+  - Emit PASS or FAIL — never "partially" or "see also".
+  - On FAIL, produce a Rework action in the item's Rework format.
+Your output is the rubric verdict plus the structural review below — both, not one or the other. If a structural finding is not covered by any rubric item, list it under "Out-of-rubric findings (advisory)" so the main agent can decide whether to add a checklist item next retrospective.
+```
+
+This binding is **mandatory**: a sub-agent without it produces an unanchored opinion rather than an evaluator verdict, and the per-feedback-memory rule that L3 references get skipped means the binding has to live inside the prompt itself, not in a separate "read this rubric" instruction further upstream.
+
+**Sub-agent 1: BDD Coverage Review** (Owns checklist items: `PLAN-COV-01`)
 
 ```
 You are reviewing an implementation plan for BDD scenario coverage.
@@ -50,7 +65,7 @@ Output format:
 - Coverage Percentage
 ```
 
-**Sub-agent 2: Dependency Graph Review**
+**Sub-agent 2: Dependency Graph Review** (Owns checklist items: `DEP-01`, `DEP-02`)
 
 ```
 You are reviewing an implementation plan for dependency correctness.
@@ -75,7 +90,7 @@ Output format:
 - Red-Green Pairing Issues (impl without test dependency)
 ```
 
-**Sub-agent 3: Task Completeness Review**
+**Sub-agent 3: Task Completeness Review** (Owns checklist items: `TEST-01`)
 
 ```
 You are reviewing an implementation plan for task structure completeness.

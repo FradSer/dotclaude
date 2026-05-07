@@ -190,7 +190,11 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
-The sub-agents above are the sole reviewer for plan quality. There is no separate formal plan-mode evaluator — structural checks (BDD coverage, dependency graph, task completeness) are fully covered by sub-agent reflection, and the user gates commit via the Phase 4 AskUserQuestion confirmation. Sub-agents read `docs/retros/checklists/plan-v{N}.md` (auto-seeded via `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" plan docs/retros/checklists/plan-v1.md` if missing) as their rubric; their findings are the verdict.
+The sub-agents above are the sole reviewer for plan quality. There is no separate formal plan-mode evaluator — structural checks (BDD coverage, dependency graph, task completeness) are fully covered by sub-agent reflection, and the user gates commit via the Phase 4 AskUserQuestion confirmation. Sub-agents read `docs/retros/checklists/plan-v{N}.md` as their rubric; their findings are the verdict.
+
+**Auto-seed checklist when missing**: before spawning the reflection sub-agents, if no `plan-v{N}.md` exists, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" plan docs/retros/checklists/plan-v1.md`. Exit codes: 0 = seeded, 3 = already exists (proceed with existing file), 1/2 = abort. Then pass the resolved checklist path to each reflection sub-agent prompt — see `./references/reflection.md` for the prompt template.
+
+**MUST: each reflection sub-agent prompt MUST include an instruction to read the resolved checklist file and apply each item as a binary PASS/FAIL rubric.** The prompt template in `references/reflection.md` carries this directive — do not strip it when adapting the prompts. A sub-agent that ignores the checklist produces an unanchored opinion, not an evaluator verdict.
 
 ## Phase 5: Git Commit
 

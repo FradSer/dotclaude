@@ -198,15 +198,18 @@ extract_promise_text() {
 
 # Extract the last assistant text block from a transcript file.
 # Returns the final text content block from assistant messages.
+# Contract: empty output and exit 0 on missing/empty input — explicit `return 0`
+# instead of bare `return` so a failed `[[ -f ... ]]` test does not silently
+# leak rc=1 to set -e callers (would abort their pipeline).
 # Usage: TEXT=$(extract_last_assistant_text "$TRANSCRIPT_PATH" [MAX_LINES])
 extract_last_assistant_text() {
   local transcript_path="$1"
   local max_lines="${2:-100}"
-  [[ -f "$transcript_path" ]] || return
+  [[ -f "$transcript_path" ]] || return 0
 
   local last_lines
   last_lines=$(grep '"role":"assistant"' "$transcript_path" | tail -n "$max_lines")
-  [[ -z "$last_lines" ]] && return
+  [[ -z "$last_lines" ]] && return 0
 
   set +e
   echo "$last_lines" | jq -rs '

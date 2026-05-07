@@ -128,7 +128,7 @@ Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highe
 - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
 - Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
 
-**Auto-seed when missing**: If `docs/retros/checklists/design-v{N}.md` does not exist, do NOT abort. Run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" design docs/retros/checklists/design-v1.md`, log `Auto-seeded design-v1.md`, then proceed with the new file. Abort only if the script exits non-zero (e.g., disk error).
+**Auto-seed when missing**: If `docs/retros/checklists/design-v{N}.md` does not exist, do NOT abort. Run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" design docs/retros/checklists/design-v1.md`, log `Auto-seeded design-v1.md`, then proceed with the new file. Exit code handling: 0 = seeded, 3 = already exists (treat as success and proceed with the existing file), 1/2 = real failure (disk/usage error → abort).
 
 **Exit**: Design folder created with all required files, QA passed.
 
