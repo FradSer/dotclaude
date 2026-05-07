@@ -832,6 +832,81 @@ class LoopPhaseTests(unittest.TestCase):
         state = json.loads(self.state.read_text())
         self.assertNotIn("active", state)
 
+    def test_modified_files_injected_into_block_reason(self) -> None:
+        """Active loop with track-changes.sh-accumulated modified_files: block
+        reason includes the cumulative artifact snapshot so iteration N+1 can
+        Read/Edit existing files instead of recreating them. Without this the
+        loop body has no progress indicator beyond what's recoverable from the
+        transcript, which compaction can drop."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build it",
+            "skill_name": "",
+            "modified_files": [
+                "docs/plans/2026-05-07-feat-design/_index.md",
+                "docs/plans/2026-05-07-feat-design/bdd-specs.md",
+            ],
+        }))
+        self._write_transcript("Working...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("Already produced this session", payload["reason"])
+        self.assertIn("docs/plans/2026-05-07-feat-design/_index.md", payload["reason"])
+        self.assertIn("docs/plans/2026-05-07-feat-design/bdd-specs.md", payload["reason"])
+
+    def test_empty_modified_files_omits_artifact_section(self) -> None:
+        """No modified_files (or empty array): omit the snapshot block entirely
+        rather than emit a section with no entries — keeps re-injection lean
+        when there's nothing to report."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build it",
+            "skill_name": "",
+            "modified_files": [],
+        }))
+        self._write_transcript("Working...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertNotIn("Already produced this session", payload["reason"])
+
+    def test_loop_reinject_block_extracted_from_skill_md(self) -> None:
+        """When skill_name resolves to a SKILL.md carrying LOOP_REINJECT
+        markers, the framed excerpt is appended to the block reason. Long
+        loops drift away from the terminate conditions otherwise; this is the
+        protocol-level (not business-aware) re-injection that fixes that."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "BRAINSTORMING_COMPLETE",
+            "prompt": "Design the feature",
+            "skill_name": "brainstorming",
+        }))
+        self._write_transcript("Working on Phase 2...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # The excerpt itself appears, but the marker delimiters do not — the
+        # awk extractor strips the LOOP_REINJECT_BEGIN/END comment lines.
+        self.assertIn("BRAINSTORMING_COMPLETE", payload["reason"])
+        self.assertIn("Design folder committed to git", payload["reason"])
+        self.assertNotIn("LOOP_REINJECT_BEGIN", payload["reason"])
+        self.assertNotIn("LOOP_REINJECT_END", payload["reason"])
+
     def test_skill_name_replaces_prompt_in_block_reason(self) -> None:
         """When skill_name is set, the re-injection prompt is the concise skill
         reference rather than the verbatim original prompt — keeps the loop

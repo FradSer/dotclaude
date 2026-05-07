@@ -32,6 +32,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
 
 This skill uses Superpower Loop to enable self-referential iteration throughout the execution process.
 
+<!-- LOOP_REINJECT_BEGIN -->
 **CRITICAL**: Throughout the process, you MUST output `<promise>EXECUTION_COMPLETE</promise>` only when:
 - Phase 1-5 (Plan Review, Task Creation, Batch Execution, Verification, Git Commit) are all complete
 - All tasks executed and verified
@@ -42,6 +43,7 @@ This skill uses Superpower Loop to enable self-referential iteration throughout 
 Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 **ABSOLUTE LAST OUTPUT RULE**: The promise tag MUST be the very last text you output. Output any transition messages or instructions to the user BEFORE the promise tag. Nothing may follow `<promise>EXECUTION_COMPLETE</promise>`.
+<!-- LOOP_REINJECT_END -->
 
 ## Initialization
 

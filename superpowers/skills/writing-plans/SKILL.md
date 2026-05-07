@@ -41,6 +41,7 @@ Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no pl
 
 This skill uses Superpower Loop to enable self-referential iteration throughout the planning process.
 
+<!-- LOOP_REINJECT_BEGIN -->
 **CRITICAL**: Throughout the process, you MUST output `<promise>PLAN_COMPLETE</promise>` only when:
 - Phase 1-4 (Plan Structure, Task Decomposition, Validation, Plan Reflection) are all complete
 - Plan folder created with all task files
@@ -50,6 +51,7 @@ This skill uses Superpower Loop to enable self-referential iteration throughout 
 Do NOT output the promise until ALL conditions are genuinely TRUE.
 
 **ABSOLUTE LAST OUTPUT RULE**: The promise tag MUST be the very last text you output. Output any transition messages or instructions to the user BEFORE the promise tag. Nothing may follow `<promise>PLAN_COMPLETE</promise>`.
+<!-- LOOP_REINJECT_END -->
 
 ## Initialization
 

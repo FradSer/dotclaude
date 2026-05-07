@@ -64,6 +64,52 @@ _loop_emit_block() {
     injected="$base_prompt"
   fi
 
+  # Re-inject the smallest fragment Claude needs every iteration: the
+  # SKILL.md "completion criteria" excerpt framed by LOOP_REINJECT markers.
+  # This is a protocol-level extraction (HTML-comment delimiters), not a
+  # business-aware read — the hook does not interpret skill content, it
+  # only forwards what the skill author tagged for re-injection. Without
+  # this, long loops drift away from the terminate conditions because the
+  # SKILL.md gets pushed out of context after a handful of iterations.
+  if [[ -n "$skill_name" ]]; then
+    local lib_dir skill_md_path reinject
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+    skill_md_path="${lib_dir}/../skills/${skill_name}/SKILL.md"
+    if [[ -f "$skill_md_path" ]]; then
+      reinject=$(awk '
+        /<!-- LOOP_REINJECT_BEGIN -->/ { in_block=1; next }
+        /<!-- LOOP_REINJECT_END -->/   { in_block=0; next }
+        in_block { print }
+      ' "$skill_md_path")
+      if [[ -n "$reinject" ]]; then
+        injected="${injected}
+
+---
+${reinject}"
+      fi
+    fi
+  fi
+
+  # Cumulative artifact snapshot from track-changes.sh — surfaces what the
+  # session has already produced so iteration N+1 picks up where N left off
+  # instead of recreating files. Hook is read-only here; track-changes.sh
+  # owns writes to .modified_files. Mirrors vet.sh's pattern verbatim.
+  local files_lines files_md
+  files_lines=$(jq -r '.modified_files // [] | .[]' "$state_file" 2>/dev/null | sort -u)
+  files_md=""
+  if [[ -n "$files_lines" ]]; then
+    while IFS= read -r f; do
+      [[ -n "$f" ]] && files_md="${files_md}- ${f}"$'\n'
+    done <<< "$files_lines"
+  fi
+  if [[ -n "$files_md" ]]; then
+    injected="${injected}
+
+---
+Already produced this session (Read or Edit existing files — do NOT recreate from scratch):
+${files_md%$'\n'}"
+  fi
+
   if [[ -n "$completion_promise" ]] && [[ "$completion_promise" != "null" ]]; then
     injected="${injected}
 

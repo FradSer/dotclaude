@@ -149,12 +149,14 @@ See `../../skills/references/git-commit.md` for detailed commit patterns.
 
 **Transition**: "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
 
+<!-- LOOP_REINJECT_BEGIN -->
 Output `<promise>BRAINSTORMING_COMPLETE</promise>` as the absolute last line. Nothing may follow the promise tag.
 
 **CRITICAL**: Only output the promise when ALL of the following are TRUE:
 - Phase 1-2 complete (scope aligned, design created, QA passed)
 - Design folder committed to git
 - User approval received in Phase 1 and Phase 2
+<!-- LOOP_REINJECT_END -->
 
 ## References
 
