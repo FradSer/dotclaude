@@ -177,7 +177,7 @@ superpowers/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest with skill and hook registration
 ├── agents/
-│   └── superpowers-evaluator.md # Independent read-only evaluator (design/plan/code modes)
+│   └── superpowers-evaluator.md # Independent read-only evaluator (design / code modes)
 ├── hooks/
 │   ├── task-start.sh            # UserPromptSubmit — persists state + detects slash commands
 │   ├── track-changes.sh         # PostToolUse (Edit/Write/MultiEdit) — tracks modified files
@@ -207,7 +207,7 @@ superpowers/
 ## Integration with Claude Code
 
 - **Skill Tool:** Load skills dynamically during workflows
-- **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / plan / code modes)
+- **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / code modes — plan-mode review is handled inline by `writing-plans` Phase 4)
 - **Task Management:** Create and track tasks during execution
 - **Hook Pipeline:** Three coordinated hooks share a per-session state file at `~/.claude/projects/<project-key>/<session_id>.superpowers.json`
   - `UserPromptSubmit` → `hooks/task-start.sh` persists task + detects slash commands
@@ -227,7 +227,9 @@ The plugin exposes a feedback loop so harness components earn their cost as mode
   - `sprint_contract_preview` — `executing-plans` omits Evaluation Criteria Preview from sprint contracts
   - `recurring_failure_patterns` — `executing-plans` skips pattern-scan injection
 - Disabled runs append to `docs/retros/harness-observations.jsonl`; the next retrospective reads those observations and decides promote / reinstate / extend
-- `context_reset_coordinator` was removed in 2.4.0 — it was listed in the schema but never had a consumer; retrospective Phase 5c now refuses to write it
+- Retrospective Phase 5c **refuses** these removed/deferred identifiers (logs `component_unsupported`, rewrites the file with an empty `disabled_components[]`):
+  - `context_reset_coordinator` — deferred in 2.4.0; the "main agent runs batches directly" alt-path was too large to land safely
+  - `plan_evaluator` — permanently removed in 2.6.0; `writing-plans` Phase 4 sub-agent reflection covers the same checks
 
 See `skills/retrospective/references/harness-config.md` for schema and lifecycle.
 
