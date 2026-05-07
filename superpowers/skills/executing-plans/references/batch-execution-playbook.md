@@ -18,6 +18,19 @@ This playbook defines the per-batch coordinator's internal process. It is invoke
 
 **Core principle:** Parallel execution for independent tasks, serial for dependent tasks. Red-Green pairs are non-negotiable.
 
+## Main Agent's Direct-Edit Allow-List (Phase 3 HARD RULE)
+
+The HARD RULE in `../SKILL.md` Phase 3 step 2 forbids the main agent from running `Edit`/`Write`/`MultiEdit` on source files during a batch — that work belongs to the spawned coordinator. The only files the main agent may write directly during Phase 3:
+
+- `handoff-state.md` (Phase 3 step 1, cross-batch memory)
+- `sprint-contract-batch-{N}.md` (Phase 3 step 0)
+- `evaluation-round-{N}-batch-{M}.md` (post-coordinator processing on the returned verdict)
+- `_index.md` (only on PIVOT, to apply the recommended plan modifications)
+
+Any other file edit — source code, tests, configs, READMEs, `__init__.py` boilerplate, `pyproject.toml`, `Makefile`, etc. — MUST go through the spawned coordinator. If the main agent reaches for `Edit` or `Write` on a non-allow-listed path, stop and spawn the Agent first.
+
+Violations of this rule trigger the loop's stuck-detection heuristic from iteration 5 onward: when `modified_files` count fails to grow across 3 consecutive iterations, the stop hook flags STUCK and points the agent at this section for recovery. The detection works because a genuine sub-agent invocation produces file modifications (its `Edit`/`Write` calls fire the main session's PostToolUse hook), so a real coordinator run breaks the streak.
+
 ## The Coordinator Process
 
 ### Step 1: Load Context

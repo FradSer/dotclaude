@@ -10,11 +10,15 @@ allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Writ
 
 Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
 
-## CRITICAL: Bail-Out Check (run first)
+## CRITICAL: Iteration Guard (resumed loop)
+
+If the loop header reads `Continue superpowers:executing-plans (iter N/M)` with N >= 2, skip Bail-Out Check, First Action, and Phase 1/2 setup. Run `TaskList`, find the next incomplete task, and resume — Phase 3 if any batch task is open, Phase 4 to verify a finished batch, Phase 5 once all tasks are `completed`. Re-running early phases wastes a turn and triggers stuck-detection.
+
+## CRITICAL: Bail-Out Check (run first — only on iteration 1)
 
 Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip loop, coordinator, sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template.
 
-## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop
+## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop (only on iteration 1)
 
 **Resolve the plan path, then unconditionally start the loop — do NOT read task files or explore the codebase first.**
 
@@ -149,6 +153,9 @@ Verification failure handling lives inside the batch coordinator (see `./referen
    - See `./references/handoff-template.md` for format.
 
 2. **Spawn Batch Coordinator** (main agent → fresh sub-agent via Agent tool):
+
+   **HARD RULE — non-negotiable**: The main agent MUST spawn a sub-agent via the Agent tool for batch task execution. Direct `Edit`/`Write`/`MultiEdit` of source files in the main agent's context during a batch is a contract violation and will trigger the loop's stuck-detection heuristic at iteration 5+. The narrow direct-edit allow-list and recovery hint live in `./references/batch-execution-playbook.md` ("Main Agent's Direct-Edit Allow-List").
+
    - Use the Agent tool with `subagent_type: "general-purpose"` and `description: "Execute batch {N} of {plan-name}"`
    - The coordinator prompt MUST be fully self-contained (the coordinator has no memory of this conversation). Include:
      1. The plan directory absolute path
