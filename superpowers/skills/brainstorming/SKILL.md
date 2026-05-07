@@ -51,7 +51,7 @@ Use the user's answer to dispatch (Bucket A / Bucket B / debugging route). The `
 2. Read `CLAUDE.md` and `README.md` to understand project constraints
 3. Start the Superpower Loop (no size gate beyond bail-out):
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: $ARGUMENTS. Progress through phases: Phase 1 (Scope Alignment) -> Phase 2 (Design with QA) -> Phase 3 (Wrap-up)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: $ARGUMENTS. Progress through phases: Phase 1 (Scope Alignment) -> Phase 1.5 (Harness Config Check) -> Phase 2 (Design with QA) -> Phase 3 (Wrap-up)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
 ```
 
 ## Core Principles

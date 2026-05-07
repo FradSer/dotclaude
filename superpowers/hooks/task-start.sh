@@ -23,6 +23,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=../lib/utils.sh
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
+# Runtime-deps check — utils.sh sets _SUPERPOWERS_DEPS_MISSING=1 + warns when
+# jq or perl is absent. Bail soft so missing tooling never blocks the user.
+[[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]] && exit 0
+
 HOOK_INPUT=$(cat)
 
 # Extract structured fields in one pass (safe for @tsv: IDs and paths only)

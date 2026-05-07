@@ -20,7 +20,7 @@ Create executable implementation plans that reduce ambiguity for whoever execute
 
 > Design has < 3 BDD scenarios; full task-decomposition pipeline is overhead. Drafting a one-page lightweight plan inline instead. To force the full pipeline, re-invoke as `/superpowers:writing-plans --force <design-path>`.
 
-Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no plan evaluator) and exit. The `--force` token bypasses this check.
+Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no plan evaluator) and exit. The `--force` token (literal in `$ARGUMENTS`, case-sensitive, matched as a whole token — not a substring of other words) bypasses this check.
 
 ## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 

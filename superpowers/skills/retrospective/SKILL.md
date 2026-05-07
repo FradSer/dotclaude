@@ -110,9 +110,11 @@ Select **at most one** candidate from 5b for the next plan run as a live assumpt
 
 **CRITICAL**: The disable must land in `docs/retros/harness-config.json` so the next plan run actually honors it. Writing only to the retrospective report is insufficient — consuming skills do not read reports. See `./references/harness-config.md` for schema, supported component identifiers, and lifecycle.
 
+**CRITICAL refusal gate (do this BEFORE step 1 below)**: The identifiers `context_reset_coordinator` and `plan_evaluator` were removed and have no consumer. If the chosen identifier matches either, REFUSE the disable: append `{"event":"component_unsupported","component":"<id>","timestamp":"<ISO 8601 UTC>","retrospective_id":"<retro report path>"}` to `docs/retros/harness-observations.jsonl`, write `{"version":1,"disabled_components":[]}` to `docs/retros/harness-config.json`, record the refusal under "Phase 5c Refusal" in the retrospective report, and skip steps 1-4 below. Do NOT rely on the reference table alone — this gate is the L2 enforcement. (See `./references/harness-config.md` for the removed-identifier rationale.)
+
 Actions (in order):
 
-1. Read `./references/harness-config.md` to confirm the chosen component identifier is supported.
+1. Read `./references/harness-config.md` to confirm the chosen component identifier is supported. Any identifier not in the supported table is treated as `component_unknown` — log it, return harness to defaults, and proceed with full pipeline next plan.
 2. Read existing `docs/retros/harness-config.json` if present; include its current content in the retrospective report under "Previous Harness Config" for audit.
 3. Write the new `docs/retros/harness-config.json` with exactly one entry (or an empty `disabled_components` array if the test is being closed — see 5d below). `mkdir -p docs/retros` first if needed.
 4. Record in the retrospective report:

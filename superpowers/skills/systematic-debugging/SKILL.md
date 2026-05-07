@@ -52,13 +52,13 @@ Random fixes waste time and create new bugs. Quick patches mask underlying issue
 
 **Violating the letter of this process is violating the spirit of debugging.**
 
-## The Iron Law
+## CRITICAL: The Iron Law
 
 ```
 NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 ```
 
-Fixes cannot be proposed without completing Phase 1.
+Fixes cannot be proposed without completing Phase 1. Each phase MUST finish before the next begins. Violating this rule produces fix-attempts that mask root causes — the failure mode this skill exists to prevent. If at any point you find yourself proposing a fix without completed Phase 1 evidence, stop and return to Phase 1.
 
 ## When to Apply
 

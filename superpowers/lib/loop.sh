@@ -28,19 +28,6 @@ _loop_clear_state() {
     'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at) | .updated_at = $ts'
 }
 
-# If the skill matches a workflow skill, skip vet (clear need_vet and exit 0).
-# Otherwise return 0 so the caller falls through to vet.
-_loop_handle_workflow_skill_bypass() {
-  local state_file="$1"
-  local skill_name
-  skill_name=$(state_read "$state_file" '.skill_name // ""')
-  if is_workflow_skill "$skill_name"; then
-    state_update "$state_file" 'del(.need_vet)'
-    exit 0
-  fi
-  return 0
-}
-
 # Emit block JSON to continue the loop with the next iteration prompt.
 # Exits with status 0 after emission.
 _loop_emit_block() {
@@ -167,8 +154,8 @@ loop_phase() {
 
   if [[ "$loop_complete" == "true" ]]; then
     _loop_clear_state "$state_file"
-    # Workflow skills skip vet; others fall through.
-    _loop_handle_workflow_skill_bypass "$state_file"
+    # Workflow skills skip vet (function exits when matched); others fall through.
+    bypass_vet_for_workflow_skill "$state_file" || return 0
     return 0
   fi
 

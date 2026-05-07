@@ -15,6 +15,7 @@ PROMPT_FILE=""
 MAX_ITERATIONS=0
 COMPLETION_PROMISE="null"
 STATE_FILE_OVERRIDE=""
+FORCE_OVERRIDE=0
 
 # Parse options and positional arguments
 while [[ $# -gt 0 ]]; do
@@ -120,6 +121,12 @@ HELP_EOF
       PROMPT_FILE="$2"
       shift 2
       ;;
+    --force)
+      # Reentry guard override — only required when an active loop already
+      # exists at the resolved state file path.
+      FORCE_OVERRIDE=1
+      shift
+      ;;
     *)
       PROMPT_PARTS+=("$1")
       shift
@@ -175,39 +182,47 @@ else
   PROMISE_JSON=$(jq -n --arg p "$COMPLETION_PROMISE" '$p')
 fi
 
-# Create or merge JSON state file
-# If the file already exists (e.g. task-start.sh created it with vet fields),
-# merge loop fields into it to preserve vet state (task, modified_files, etc.)
-if [[ -f "$STATE_FILE" ]]; then
-  state_update "$STATE_FILE" \
-    --arg session_id "$SESSION_ID" \
-    --arg prompt "$PROMPT" \
-    --argjson iteration 1 \
-    --argjson max_iterations "$MAX_ITERATIONS" \
-    --argjson completion_promise "$PROMISE_JSON" \
-    --arg started_at "$NOW" \
-    --arg updated_at "$NOW" \
-    '.session_id = $session_id | .active = true | .iteration = $iteration | .max_iterations = $max_iterations | .completion_promise = $completion_promise | .prompt = $prompt | .started_at = $started_at | .updated_at = $updated_at'
-else
-  jq -n \
-    --arg session_id "$SESSION_ID" \
-    --arg prompt "$PROMPT" \
-    --argjson iteration 1 \
-    --argjson max_iterations "$MAX_ITERATIONS" \
-    --argjson completion_promise "$PROMISE_JSON" \
-    --arg started_at "$NOW" \
-    --arg updated_at "$NOW" \
-    '{
-      session_id: $session_id,
-      active: true,
-      iteration: $iteration,
-      max_iterations: $max_iterations,
-      completion_promise: $completion_promise,
-      prompt: $prompt,
-      started_at: $started_at,
-      updated_at: $updated_at
-    }' > "$STATE_FILE"
+# Reentry guard — refuse to clobber an active loop unless --force is set.
+# Without this, a second invocation silently resets iteration/started_at
+# and effectively doubles max_iterations.
+if [[ -f "$STATE_FILE" ]] && [[ "$FORCE_OVERRIDE" != "1" ]]; then
+  if jq -e '.active == true' "$STATE_FILE" >/dev/null 2>&1; then
+    EXISTING_ITER=$(jq -r '.iteration // "?"' "$STATE_FILE" 2>/dev/null)
+    EXISTING_MAX=$(jq -r '.max_iterations // "?"' "$STATE_FILE" 2>/dev/null)
+    EXISTING_START=$(jq -r '.started_at // "?"' "$STATE_FILE" 2>/dev/null)
+    echo "Error: an active Superpower Loop already exists at $STATE_FILE." >&2
+    echo "       Iteration ${EXISTING_ITER}/${EXISTING_MAX}, started ${EXISTING_START}." >&2
+    echo "       Pass --force to overwrite (resets the iteration counter)." >&2
+    exit 1
+  fi
 fi
+
+# Create or merge JSON state file via the same locked code path for both
+# branches: pre-create an empty {} if missing, then state_update merges
+# fields preserving vet state (task, modified_files, etc.) when present.
+# This closes the previous race where the bare jq>FILE fallback could
+# clobber a stub track-changes.sh had just created.
+if [[ ! -f "$STATE_FILE" ]]; then
+  printf '{}\n' > "$STATE_FILE"
+fi
+state_update "$STATE_FILE" \
+  --arg session_id "$SESSION_ID" \
+  --arg prompt "$PROMPT" \
+  --argjson iteration 1 \
+  --argjson max_iterations "$MAX_ITERATIONS" \
+  --argjson completion_promise "$PROMISE_JSON" \
+  --arg started_at "$NOW" \
+  --arg updated_at "$NOW" \
+  '. + {
+    session_id: $session_id,
+    active: true,
+    iteration: $iteration,
+    max_iterations: $max_iterations,
+    completion_promise: $completion_promise,
+    prompt: $prompt,
+    started_at: $started_at,
+    updated_at: $updated_at
+  }'
 
 # Output setup message
 cat <<EOF

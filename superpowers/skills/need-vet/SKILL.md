@@ -21,4 +21,11 @@ Enable work verification for the current task. The stop hook will block session 
    - Test with real or representative input and inspect results
    - Simulate edge cases if possible
 
-4. **CRITICAL — Mark as verified.** Once the work is genuinely verified, append `<verified>Fully Vetted.</verified>` as the final standalone line of the response. The stop hook blocks session exit until this tag appears, so this step is non-negotiable. **Only output this tag when you have genuinely verified the work — do not lie to exit.**
+4. **CRITICAL — Mark as verified.** Once the work is genuinely verified, append `<verified>Fully Vetted.</verified>` as the **absolute last line** of the response. The stop hook blocks session exit until this tag appears, so this step is non-negotiable.
+
+   Boundary rules (the stop hook rejects anything else):
+   - Exact string `Fully Vetted.` — case-sensitive, trailing period required, no variant punctuation (`!` / Chinese full-stop / extra spaces all fail).
+   - Tag must be the very last line — nothing after it. No trailing prose, no closing remark, no markdown code fences wrapping the tag.
+   - Single line only — no embedded newlines inside the tag content.
+
+   **Only output this tag when you have genuinely verified the work — do not lie to exit.**

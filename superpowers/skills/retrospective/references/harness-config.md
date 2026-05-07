@@ -9,7 +9,7 @@ instead of being a recommendation that no downstream skill reads.
 Path: `docs/retros/harness-config.json`
 
 Written by: `retrospective` skill (Phase 5c)
-Read by: `executing-plans` skill (Phase 1), `brainstorming`, `writing-plans`
+Read by: `executing-plans` skill (Phase 1, Phase 3 step 0, Phase 4 step 2), `brainstorming` skill (Phase 1.5)
 
 This file is the **only** place where a harness component can be non-default.
 Skills that do not find the file fall back to the standard (all-components-on)

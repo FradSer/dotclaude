@@ -18,6 +18,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=../lib/utils.sh
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
+# Runtime-deps check — bail soft if jq/perl are missing.
+[[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]] && exit 0
+
 HOOK_INPUT=$(cat)
 
 SESSION_ID=$(echo "$HOOK_INPUT" | jq -r '.session_id // "default"')

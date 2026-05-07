@@ -38,7 +38,7 @@ _vet_build_system_message() {
   msg="${msg}${NL}- For web apps, open the page, click through flows, confirm rendering and interactions"
   msg="${msg}${NL}- Test with real or representative input and inspect results"
   msg="${msg}${NL}- Simulate edge cases if possible"
-  msg="${msg}${NL}${NL}Once verified, append \`<verified>${STOP_CHAR}</verified>\` as the final standalone line of your response, then report back."
+  msg="${msg}${NL}${NL}Once verified, append \`<verified>${STOP_CHAR}</verified>\` as the **absolute last line** of your response, then report back. Strict matching: exact string \`${STOP_CHAR}\` (case-sensitive, trailing period required), single line only, not wrapped in code fences, with no trailing prose. The stop hook will block again otherwise."
   msg="${msg}${NL}${NL}**Only output the verified tag when you have genuinely verified the work — do not lie to exit.**"
 
   echo "$msg"
@@ -138,14 +138,11 @@ vet_phase() {
     exit 0
   fi
 
-  # Workflow skills have built-in phase verification — skip vet.
-  # need-vet is intentionally excluded (its entire purpose is to enforce vet).
-  local skill_name
-  skill_name=$(state_read "$state_file" '.skill_name // ""')
-  if is_workflow_skill "$skill_name"; then
-    state_update "$state_file" 'del(.need_vet)'
-    exit 0
-  fi
+  # Workflow skills have built-in phase verification — skip vet via the
+  # canonical bypass helper in utils.sh so the bypass logic lives in
+  # exactly one place. need-vet is intentionally excluded from
+  # is_workflow_skill (its entire purpose is to enforce vet).
+  bypass_vet_for_workflow_skill "$state_file"
 
   # Verified-tag match → synthesize summary and allow exit.
   local verified_text

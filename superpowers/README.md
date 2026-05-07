@@ -2,7 +2,7 @@
 
 Advanced development superpowers for orchestrating complex workflows from idea to execution.
 
-**Version**: 2.4.0
+**Version**: 2.7.0
 
 ## Installation
 
@@ -27,6 +27,7 @@ Using the full pipeline for smaller work is **net negative** — the overhead (s
 | `/superpowers:brainstorming` | Trivial-scope signals in `$ARGUMENTS` (single-file change, mechanical refactor, named root cause, one-shot script, "just patch") | `/superpowers:brainstorming --force "<task>"` |
 | `/superpowers:writing-plans` | `bdd-specs.md` has < 3 scenarios AND < 5 estimated tasks | `/superpowers:writing-plans --force <design-path>` |
 | `/superpowers:executing-plans` | `_index.md` lists < 5 tasks in a single batch | `/superpowers:executing-plans --force <plan-path>` |
+| `/superpowers:systematic-debugging` | Named root cause + named fix in `$ARGUMENTS` (apply fix + write regression test directly, skip the 4-phase pipeline) | `/superpowers:systematic-debugging --force "<symptom>"` |
 
 **For incident response and root-cause work, use `/superpowers:systematic-debugging` directly** — the design pipeline is the wrong shape for unknown-root-cause bugs.
 
@@ -55,7 +56,7 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 - Produces design documents with BDD specifications (Given-When-Then)
 - Prepares the project for planning and implementation
 
-**Workflow:** Discovery → Option Analysis → Design & Commit → Transition to Writing Plans
+**Workflow:** Phase 1 (Scope Alignment) → Phase 1.5 (Harness Config Check) → Phase 2 (Design with QA) → Phase 3 (Wrap-up)
 
 **Output:** Design folder with `_index.md` and `bdd-specs.md` ready for planning
 

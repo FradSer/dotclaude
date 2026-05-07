@@ -1,9 +1,24 @@
 #!/bin/bash
 # Shared utilities for superpowers hooks and scripts
 
+# Runtime dependency check — keep one source of truth. Each hook sources
+# this file; if jq or perl are missing the hook should bail soft (exit 0)
+# rather than crash the user's session. Sets _SUPERPOWERS_DEPS_MISSING=1
+# so the caller can guard its main work with a single check.
+if [[ -z "${_SUPERPOWERS_DEPS_CHECKED:-}" ]]; then
+  _SUPERPOWERS_DEPS_CHECKED=1
+  for _sp_cmd in jq perl; do
+    if ! command -v "$_sp_cmd" >/dev/null 2>&1; then
+      echo "warning: superpowers requires '$_sp_cmd' in PATH but did not find it; hooks will skip." >&2
+      _SUPERPOWERS_DEPS_MISSING=1
+    fi
+  done
+  unset _sp_cmd
+fi
+
 # Identify whether a skill name owns its own multi-phase verification (and
 # therefore should bypass the generic vet phase). Keep this list in one place;
-# loop.sh and vet.sh both call into it.
+# loop.sh and vet.sh both call into it via bypass_vet_for_workflow_skill.
 # Usage: if is_workflow_skill "$skill"; then ...
 is_workflow_skill() {
   local skill_name="$1"
@@ -12,6 +27,23 @@ is_workflow_skill() {
       return 0
       ;;
   esac
+  return 1
+}
+
+# When the current task's skill_name is a workflow skill, clear need_vet and
+# exit 0 to bypass the vet phase. Used by both the loop completion path
+# (loop.sh) and the vet entrypoint (vet.sh) so the bypass logic lives in
+# exactly one place. Returns 1 (no bypass) when the skill is not a workflow
+# skill; never returns 0 — the bypass path exits the script directly.
+# Usage: bypass_vet_for_workflow_skill "$STATE_FILE"
+bypass_vet_for_workflow_skill() {
+  local state_file="$1"
+  local skill_name
+  skill_name=$(state_read "$state_file" '.skill_name // ""')
+  if is_workflow_skill "$skill_name"; then
+    state_update "$state_file" 'del(.need_vet)'
+    exit 0
+  fi
   return 1
 }
 
@@ -24,8 +56,11 @@ state_dir() {
 }
 
 # Find the state file owned by a given session ID.
-# Scans all *.superpowers.json files in the state dir and matches session_id.
-# Falls back to the first file without a session_id (legacy compat).
+# Scans all *.superpowers.json files in the state dir, prefers an exact
+# session_id match, and falls back to a legacy file without a session_id.
+# Emits a stderr warning on legacy fallback so cross-session crosstalk is
+# never silent — multiple concurrent Claude sessions in the same cwd are a
+# known footgun and the warning is the only visible signal.
 # Usage: FILE=$(find_state_file "$SESSION_ID")
 find_state_file() {
   local session_id="$1"
@@ -39,15 +74,24 @@ find_state_file() {
   [[ -z "$files" ]] && return 0
 
   local candidate
+  local legacy_match=""
   for candidate in $files; do
     [[ -f "$candidate" ]] || continue
     local candidate_session
     candidate_session=$(jq -r '.session_id // ""' "$candidate" 2>/dev/null || echo "")
-    if [[ -z "$candidate_session" ]] || [[ "$candidate_session" == "$session_id" ]]; then
+    if [[ "$candidate_session" == "$session_id" ]]; then
       echo "$candidate"
       return
     fi
+    if [[ -z "$candidate_session" ]] && [[ -z "$legacy_match" ]]; then
+      legacy_match="$candidate"
+    fi
   done
+
+  if [[ -n "$legacy_match" ]]; then
+    echo "warning: find_state_file fell back to legacy file without session_id (session_id=${session_id}, file=${legacy_match}). Cross-session crosstalk possible — consider removing stale state files." >&2
+    echo "$legacy_match"
+  fi
 }
 
 # Read a field from a JSON state file.

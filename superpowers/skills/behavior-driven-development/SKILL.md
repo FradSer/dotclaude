@@ -42,14 +42,15 @@ The engine of implementation:
 2.  **GREEN:** Write the minimal code to pass the test.
 3.  **REFACTOR:** Clean up the code while keeping tests passing.
 
-## Quick Reference: The Iron Law
+## CRITICAL: The Iron Law
 
 > **"No production code is written without a failing test first."**
 
-If you write code before the test:
-1.  You don't know if the test is capable of failing (false positives).
-2.  You are biased by your implementation.
-3.  You are writing legacy code from day one.
+The Red step MUST verify the test fails for the right reason (run the test and read the failure output) before writing any implementation. Skipping or rationalizing this step produces:
+
+1.  Tests that pass spuriously — you cannot tell if they are capable of failing.
+2.  Implementation-biased tests — they reflect the code that was written, not the behavior under contract.
+3.  Legacy code from day one — no behavioral safety net catches future regressions.
 
 ## References
 
