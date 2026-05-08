@@ -61,42 +61,40 @@ _loop_log_plan_completion_if_executing() {
 }
 
 # Clear all loop-related fields on the state file in one atomic update.
-# Used by every "abort the loop but stay in session" path.
+# .edits_since_last_spawn survives — it's session-scoped (track-changes.sh /
+# track-spawns.sh own it) so a follow-up loop inherits the right counter.
 _loop_clear_state() {
   local state_file="$1"
   local now
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   state_update "$state_file" --arg ts "$now" \
-    'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at, .previous_modified_count, .stuck_count) | .updated_at = $ts' \
+    'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at) | .updated_at = $ts' \
     || { echo "Warning: state_update failed mid-loop, falling through" >&2; return 0; }
-}
-
-# Decide whether a given iteration should re-inject the heavy "keyframe"
-# blocks (SKILL.md LOOP_REINJECT excerpt + cumulative file list). Empirical
-# audit (real executing-plans run, 5 consecutive Stops) showed every
-# iteration re-injecting a 30+ line system reminder while modified_files
-# barely changed — exactly the context pollution this plugin claims to
-# prevent. Heavy blocks now ride only on the first re-injection
-# (next_iteration <= 2) and every 5th iteration thereafter (5, 10, 15, ...);
-# in-between iterations get the lean header + tail only. Keeps long loops
-# anchored without burning ~1500 tokens × N turns.
-_loop_is_keyframe_iteration() {
-  local iter="$1"
-  if [[ "$iter" -le 2 ]] || [[ $((iter % 5)) -eq 0 ]]; then
-    return 0
-  fi
-  return 1
 }
 
 # Emit block JSON to continue the loop with the next iteration prompt.
 # Exits with status 0 after emission.
+#
+# Injection layout (all branches):
+#   header (Continue / STUCK / base_prompt)
+#   [modified-files snapshot — first re-injection only, next_iteration <= 2]
+#   LOOP COMPLETION REQUIRED tail (carries the promise tag + last-line rule)
+#
+# The Continue header replaces the older "Use superpowers:X skill." which
+# the harness treated as a slash-command-style re-entry signal — empirical
+# audit showed Claude walking SKILL.md from the top each loop, wasting a
+# turn per iteration. The footer's "as the very last line of your response —
+# nothing after it" is the only completion criterion the loop's promise
+# regex enforces, so we no longer extract a separate LOOP_REINJECT excerpt
+# from SKILL.md (it was redundant with the footer).
 _loop_emit_block() {
   local state_file="$1"
   local iteration="$2"
   local max_iterations="$3"
   local completion_promise="$4"
   local base_prompt="$5"
-  local stuck_count="${6:-0}"
+  local is_stuck_arg="${6:-0}"
+  local edits_since_spawn="${7:-0}"
 
   local next_iteration=$((iteration + 1))
   local now
@@ -110,15 +108,9 @@ _loop_emit_block() {
   local skill_name
   skill_name=$(state_read "$state_file" '.skill_name // ""')
 
-  # Is this iteration "stuck"? Threshold = 3 consecutive iterations with no
-  # new modified files. Flagged in both systemMessage + reason so Claude
-  # gets a strong recovery hint without being silently looped to death.
   local is_stuck=false
-  if [[ "$stuck_count" =~ ^[0-9]+$ ]] && [[ $stuck_count -ge 3 ]]; then
-    is_stuck=true
-  fi
+  [[ "$is_stuck_arg" == "1" ]] && is_stuck=true
 
-  # Build the iter-tag once — reused in systemMessage and header.
   local iter_tag
   if [[ $max_iterations -gt 0 ]]; then
     iter_tag="iter ${next_iteration}/${max_iterations}"
@@ -126,107 +118,34 @@ _loop_emit_block() {
     iter_tag="iter ${next_iteration}"
   fi
 
-  # System message — present the loop as a continuation, not an error. The
-  # harness UI prefixes blocked Stops with "Stop hook error:" which we
-  # cannot change, but we control what follows: a continuation phrase
-  # reads less alarming than the previous "To stop: output <promise>..."
-  # line that always fired even on healthy progress.
-  local system_msg
+  # systemMessage — continuation phrasing softens the harness UI's
+  # "Stop hook error:" prefix on healthy progress.
+  local system_msg label="${skill_name:-loop}"
   if [[ "$is_stuck" == "true" ]]; then
-    system_msg="Superpower Loop ${iter_tag} | STUCK — no new files in ${stuck_count} iterations. Spawn a sub-agent or emit the promise."
-  elif [[ -n "$completion_promise" ]] && [[ "$completion_promise" != "null" ]]; then
-    if [[ -n "$skill_name" ]]; then
-      system_msg="Superpower Loop ${iter_tag} | Continue ${skill_name}. Promise: <promise>${completion_promise}</promise> when DONE (only when TRUE)."
-    else
-      system_msg="Superpower Loop ${iter_tag} | Promise: <promise>${completion_promise}</promise> when DONE (only when TRUE)."
-    fi
+    system_msg="Superpower Loop ${iter_tag} | STUCK — ${edits_since_spawn} direct edits without a sub-agent spawn. Phase 3 step 2 violation."
+  elif [[ -n "$completion_promise" && "$completion_promise" != "null" ]]; then
+    system_msg="Superpower Loop ${iter_tag} | Continue ${label}. <promise>${completion_promise}</promise> when DONE (only when TRUE)."
   else
-    if [[ -n "$skill_name" ]]; then
-      system_msg="Superpower Loop ${iter_tag} | Continue ${skill_name}. No completion promise — runs to max_iterations."
-    else
-      system_msg="Superpower Loop ${iter_tag} | No completion promise — runs to max_iterations."
-    fi
+    system_msg="Superpower Loop ${iter_tag} | Continue ${label}."
   fi
 
-  # Header — first line of the reason field, which the UI surfaces directly
-  # under the "Stop hook error:" prefix. The previous "Use superpowers:X
-  # skill." form mimicked slash-command invocation syntax: empirical audit
-  # showed Claude treating it as a re-entry signal and walking SKILL.md
-  # from the top each iteration (re-evaluating "Bail-Out Check", "First
-  # Action - Start Loop"), wasting a turn per loop. "Continue ..." is an
-  # imperative continuation phrase that does not collide with skill-trigger
-  # heuristics in the harness.
+  # Reason header.
   local injected
   if [[ "$is_stuck" == "true" ]]; then
-    injected="**STUCK DETECTED** — No new files modified in ${stuck_count} consecutive loop iterations. The main agent is likely failing to spawn a sub-agent for batch work, or repeating the same reasoning without writing artifacts.
+    injected="**STUCK** — ${edits_since_spawn} direct file edits without an Agent tool call. executing-plans Phase 3 step 2 forbids inline batch execution.
 
-Recovery: spawn a fresh batch coordinator via the Agent tool (Phase 3 step 2 of executing-plans) OR, if the work is genuinely complete, emit <promise>${completion_promise:-DONE}</promise> as the final standalone line. Do NOT continue describing what you will do without producing artifacts."
+Recovery: spawn the batch coordinator via the Agent tool, OR if all batch tasks are \`completed\` (run TaskList), proceed to Phase 5 → Phase 6. See \`./references/batch-execution-playbook.md\`."
   elif [[ -n "$skill_name" ]]; then
-    injected="Continue superpowers:${skill_name} (${iter_tag}). Resume from your current phase — do NOT re-run earlier phases or re-read the SKILL.md from the top."
+    injected="Continue superpowers:${skill_name} (${iter_tag})."
   else
     injected="$base_prompt"
   fi
 
-  # Always preserve the original task prompt as the second paragraph when
-  # we have a skill_name + base_prompt. setup-superpower-loop.sh embeds the
-  # phase progression hint there ("Phase 1 → Phase 2 → ..."), and dropping
-  # it forced Claude to guess where to resume. Empirical audit showed the
-  # main agent oscillating between Phase 1 and Phase 2 across iterations
-  # because the only re-injection was "Use ... skill" with no phase hint.
-  if [[ -n "$skill_name" ]] && [[ -n "$base_prompt" ]] && [[ "$is_stuck" != "true" ]]; then
-    injected="${injected}
-
-${base_prompt}"
-  fi
-
-  # Heavy keyframe blocks only on iteration 1 + every 5th iteration (or on
-  # stuck — Claude needs the full picture to recover). In-between iterations
-  # the lean header + tail is enough for an agent that already has SKILL.md
-  # and the file list in working context.
-  local include_heavy=false
-  if [[ "$is_stuck" == "true" ]] || _loop_is_keyframe_iteration "$next_iteration"; then
-    include_heavy=true
-  fi
-
-  # Re-inject the smallest fragment Claude needs every iteration: the
-  # SKILL.md "completion criteria" excerpt framed by LOOP_REINJECT markers.
-  # This is a protocol-level extraction (HTML-comment delimiters), not a
-  # business-aware read — the hook does not interpret skill content, it
-  # only forwards what the skill author tagged for re-injection. Without
-  # this, long loops drift away from the terminate conditions because the
-  # SKILL.md gets pushed out of context after a handful of iterations.
-  if [[ "$include_heavy" == "true" ]] && [[ -n "$skill_name" ]]; then
-    local lib_dir skill_md_path reinject
-    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-    skill_md_path="${lib_dir}/../skills/${skill_name}/SKILL.md"
-    if [[ -f "$skill_md_path" ]]; then
-      reinject=$(awk '
-        /<!-- LOOP_REINJECT_BEGIN -->/ { in_block=1; next }
-        /<!-- LOOP_REINJECT_END -->/   { in_block=0; next }
-        in_block { print }
-      ' "$skill_md_path")
-      if [[ -n "$reinject" ]]; then
-        injected="${injected}
-
----
-${reinject}"
-      fi
-    fi
-  fi
-
-  # Cumulative artifact snapshot from track-changes.sh — surfaces what the
-  # session has already produced so iteration N+1 picks up where N left off
-  # instead of recreating files. Hook is read-only here; track-changes.sh
-  # owns writes to .modified_files.
-  #
-  # Capped at 20 on keyframe iterations only. Non-keyframe iterations
-  # (next_iteration > 2 and not divisible by 5) omit the section entirely
-  # — the agent already saw the list in the previous keyframe and re-pasting
-  # it 4 out of every 5 turns is exactly the working-context pollution this
-  # plugin is supposed to prevent. The previous "20 every iteration" design
-  # meant a 30-iteration loop re-injected the same 1.6KB list ~30 times
-  # even when the file set was stable.
-  if [[ "$include_heavy" == "true" ]]; then
+  # Modified-files snapshot — first re-injection only (next_iteration <= 2).
+  # After that the list is in state file and SKILL.md is in working context;
+  # re-pasting the same list every turn is the pollution this plugin
+  # claims to prevent. Capped at 20 with an overflow pointer.
+  if [[ "$is_stuck" != "true" ]] && [[ $next_iteration -le 2 ]]; then
     local files_total files_lines files_md
     files_total=$(jq -r '.modified_files // [] | length' "$state_file" 2>/dev/null)
     [[ "$files_total" =~ ^[0-9]+$ ]] || files_total=0
@@ -238,9 +157,7 @@ ${reinject}"
       done <<< "$files_lines"
     fi
     if [[ -n "$files_md" ]]; then
-      if [[ $files_total -gt 20 ]]; then
-        files_md="${files_md}- ... ($((files_total - 20)) more — see state file)"$'\n'
-      fi
+      [[ $files_total -gt 20 ]] && files_md="${files_md}- ... ($((files_total - 20)) more — see state file)"$'\n'
       injected="${injected}
 
 ---
@@ -249,7 +166,7 @@ ${files_md%$'\n'}"
     fi
   fi
 
-  if [[ -n "$completion_promise" ]] && [[ "$completion_promise" != "null" ]]; then
+  if [[ -n "$completion_promise" && "$completion_promise" != "null" ]]; then
     injected="${injected}
 
 ---
@@ -359,37 +276,22 @@ loop_phase() {
     return 0
   fi
 
-  # Stuck detection — when modified_files count has not grown for N
-  # consecutive iterations, the agent is producing words but not artifacts.
-  # Empirical audit (real executing-plans run) showed this pattern: main
-  # agent stops 5 times in a row, each iteration adds 0-2 boilerplate
-  # `__init__.py` files, and never spawns a sub-agent for actual batch
-  # work. Tracking the file-count delta is a cheap signal — sub-agent runs
-  # produce file modifications via the Edit/Write PostToolUse hook, so a
-  # genuine batch coordinator invocation breaks the streak.
-  #
-  # Only checked from iteration 5 onward — early iterations may legitimately
-  # have no file output (Phase 1 plan review, Phase 2 task creation via
-  # TaskCreate which doesn't write files).
-  local current_files_count previous_files_count stuck_count
-  current_files_count=$(state_read "$state_file" '.modified_files // [] | length')
-  [[ "$current_files_count" =~ ^[0-9]+$ ]] || current_files_count=0
-  previous_files_count=$(state_read "$state_file" '.previous_modified_count // 0')
-  [[ "$previous_files_count" =~ ^[0-9]+$ ]] || previous_files_count=0
-  stuck_count=$(state_read "$state_file" '.stuck_count // 0')
-  [[ "$stuck_count" =~ ^[0-9]+$ ]] || stuck_count=0
+  # Stuck detection — scoped to executing-plans (the only skill where
+  # main-agent direct edits past iter 1 violate a contract). Signal is
+  # `edits_since_last_spawn`, fed by track-changes.sh (+1 per Edit) and
+  # reset by track-spawns.sh (PostToolUse Agent). Threshold 5 leaves
+  # headroom for the main-agent allow-list (handoff state, sprint
+  # contract, evaluation report, maybe PIVOT _index.md).
+  local skill_name edits_since_spawn is_stuck=0
+  skill_name=$(state_read "$state_file" '.skill_name // ""')
+  edits_since_spawn=$(state_read "$state_file" '.edits_since_last_spawn // 0')
+  [[ "$edits_since_spawn" =~ ^[0-9]+$ ]] || edits_since_spawn=0
 
-  if [[ $iteration -ge 5 ]] && [[ "$current_files_count" -le "$previous_files_count" ]]; then
-    stuck_count=$((stuck_count + 1))
-  else
-    stuck_count=0
+  if [[ "$skill_name" == "executing-plans" ]] \
+     && [[ $iteration -ge 2 ]] \
+     && [[ $edits_since_spawn -gt 5 ]]; then
+    is_stuck=1
   fi
 
-  state_update "$state_file" \
-    --argjson cnt "$current_files_count" \
-    --argjson stuck "$stuck_count" \
-    '.previous_modified_count = $cnt | .stuck_count = $stuck' \
-    || echo "Warning: state_update failed mid-loop-stuck-tracking, continuing" >&2
-
-  _loop_emit_block "$state_file" "$iteration" "$max_iterations" "$completion_promise" "$prompt" "$stuck_count"
+  _loop_emit_block "$state_file" "$iteration" "$max_iterations" "$completion_promise" "$prompt" "$is_stuck" "$edits_since_spawn"
 }

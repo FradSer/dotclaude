@@ -20,16 +20,20 @@ This playbook defines the per-batch coordinator's internal process. It is invoke
 
 ## Main Agent's Direct-Edit Allow-List (Phase 3 HARD RULE)
 
-The HARD RULE in `../SKILL.md` Phase 3 step 2 forbids the main agent from running `Edit`/`Write`/`MultiEdit` on source files during a batch — that work belongs to the spawned coordinator. The only files the main agent may write directly during Phase 3:
+Files the main agent may write directly during Phase 3:
 
-- `handoff-state.md` (Phase 3 step 1, cross-batch memory)
-- `sprint-contract-batch-{N}.md` (Phase 3 step 0)
-- `evaluation-round-{N}-batch-{M}.md` (post-coordinator processing on the returned verdict)
-- `_index.md` (only on PIVOT, to apply the recommended plan modifications)
+- `handoff-state.md` — step 1, cross-batch memory
+- `sprint-contract-batch-{N}.md` — step 0
+- `evaluation-round-{N}-batch-{M}.md` — post-coordinator processing
+- `_index.md` — only on PIVOT
 
-Any other file edit — source code, tests, configs, READMEs, `__init__.py` boilerplate, `pyproject.toml`, `Makefile`, etc. — MUST go through the spawned coordinator. If the main agent reaches for `Edit` or `Write` on a non-allow-listed path, stop and spawn the Agent first.
+Anything else (source, tests, configs, `__init__.py`, `pyproject.toml`, etc.) MUST go through the spawned coordinator.
 
-Violations of this rule trigger the loop's stuck-detection heuristic from iteration 5 onward: when `modified_files` count fails to grow across 3 consecutive iterations, the stop hook flags STUCK and points the agent at this section for recovery. The detection works because a genuine sub-agent invocation produces file modifications (its `Edit`/`Write` calls fire the main session's PostToolUse hook), so a real coordinator run breaks the streak.
+Stuck-detection signal: `track-changes.sh` bumps `state.edits_since_last_spawn` on each `Edit`/`Write`/`MultiEdit`; `track-spawns.sh` resets it on each Agent PostToolUse. When the counter exceeds 5 inside an executing-plans loop past iter 1, the stop hook flags STUCK and points back here.
+
+## ATOMIC: Phase 3 Steps 0-2 in One Response
+
+Steps 0 (sprint contract) → 1 (handoff state) → 2 (Agent spawn) MUST execute in a single main-agent response, with the Agent tool call as the response's terminal action. Splitting across Stops re-fires the loop hook mid-setup and empirically lets the agent drift into inline batch execution between steps.
 
 ## The Coordinator Process
 

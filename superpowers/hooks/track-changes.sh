@@ -62,9 +62,15 @@ if ! acquire_state_lock "$STATE_FILE"; then
 fi
 
 if [[ -f "$STATE_FILE" ]]; then
-  # Append all paths to existing session state (dedup via unique)
+  # Append all paths to existing session state (dedup via unique). Bump
+  # .edits_since_last_spawn by 1 — this is one tool call regardless of how
+  # many files MultiEdit touched, because the counter measures
+  # "main-agent edit operations since the last Agent tool returned" and
+  # one tool invocation is one operation. track-spawns.sh resets it back
+  # to 0 on PostToolUse Agent.
   TEMP="${STATE_FILE}.tmp.$$"
-  jq '.modified_files = ((.modified_files // []) + $ARGS.positional | unique)' \
+  jq '.modified_files = ((.modified_files // []) + $ARGS.positional | unique)
+      | .edits_since_last_spawn = ((.edits_since_last_spawn // 0) + 1)' \
     "$STATE_FILE" --args "${FILE_PATHS[@]}" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
 else
   # State file not yet created (e.g. first prompt had @mention with null user_prompt).
@@ -72,7 +78,7 @@ else
   # populate the task field on the next prompt with real content.
   NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   jq -n --arg sid "$SESSION_ID" --arg ts "$NOW" \
-    '{session_id: $sid, task: "", created_at: $ts, updated_at: $ts, modified_files: $ARGS.positional}' \
+    '{session_id: $sid, task: "", created_at: $ts, updated_at: $ts, modified_files: $ARGS.positional, edits_since_last_spawn: 1}' \
     --args -- "${FILE_PATHS[@]}" \
     > "$STATE_FILE"
 fi

@@ -10,15 +10,15 @@ allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Writ
 
 Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
 
-## CRITICAL: Iteration Guard (resumed loop)
+## Resumed loop (iter >= 2)
 
-If the loop header reads `Continue superpowers:executing-plans (iter N/M)` with N >= 2, skip Bail-Out Check, First Action, and Phase 1/2 setup. Run `TaskList`, find the next incomplete task, and resume — Phase 3 if any batch task is open, Phase 4 to verify a finished batch, Phase 5 once all tasks are `completed`. Re-running early phases wastes a turn and triggers stuck-detection.
+Skip Bail-Out, First Action, Phase 1/2. Run `TaskList` → resume from the next incomplete task. **If the active batch has no spawned coordinator, your first tool call MUST be the Agent tool.**
 
-## CRITICAL: Bail-Out Check (run first — only on iteration 1)
+## CRITICAL: Bail-Out Check (run first)
 
 Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip loop, coordinator, sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template.
 
-## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop (only on iteration 1)
+## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop
 
 **Resolve the plan path, then unconditionally start the loop — do NOT read task files or explore the codebase first.**
 
@@ -31,23 +31,6 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
    "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
    ```
 3. Only after the loop is running, proceed with Initialization below
-
-## Superpower Loop Integration
-
-This skill uses Superpower Loop to enable self-referential iteration throughout the execution process.
-
-<!-- LOOP_REINJECT_BEGIN -->
-**CRITICAL**: Throughout the process, you MUST output `<promise>EXECUTION_COMPLETE</promise>` only when:
-- Phase 1-5 (Plan Review, Task Creation, Batch Execution, Verification, Git Commit) are all complete
-- All tasks executed and verified
-- All tasks marked `completed` (verified via TaskList — zero tasks with `in_progress` or `pending` status)
-- Every Phase 4 verification gate has passed (no failing tasks)
-- Git commit completed
-
-Do NOT output the promise until ALL conditions are genuinely TRUE.
-
-**ABSOLUTE LAST OUTPUT RULE**: The promise tag MUST be the very last text you output. Output any transition messages or instructions to the user BEFORE the promise tag. Nothing may follow `<promise>EXECUTION_COMPLETE</promise>`.
-<!-- LOOP_REINJECT_END -->
 
 ## Initialization
 
@@ -87,7 +70,7 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 1. **Read Plan**: Read `_index.md` to understand scope, architecture decisions, and extract inline YAML task metadata from the "Execution Plan" section.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
-4. **Read Harness Config** (assumption test): If `docs/retros/harness-config.json` exists, read it. For each entry in `disabled_components[]`, store the `component` identifier locally as a disabled flag honored later in Phase 3 / Phase 4. Emit one line in the batch log: `Harness disable active: <component> (from <retrospective_id>)`. See `../retrospective/references/harness-config.md` for supported identifiers. Skip this step silently when the file does not exist, is empty, or contains an empty `disabled_components[]` array (default behavior).
+4. **Read Harness Config** (assumption test): If `docs/retros/harness-config.json` exists with non-empty `disabled_components[]`, store each `component` identifier as a disabled flag honored in Phase 3 / Phase 4 and emit one log line per entry: `Harness disable active: <component> (from <retrospective_id>)`. See `../retrospective/references/harness-config.md`. Otherwise skip silently.
 
 ## Phase 2: Task Creation (MANDATORY)
 
@@ -137,6 +120,8 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 
 **For Each Batch**:
 
+**ATOMIC**: Steps 0-2 in one response, Agent tool last. See `./references/batch-execution-playbook.md`.
+
 0. **Sprint Contract** (main agent, before spawning coordinator):
    - Write `sprint-contract-batch-{N}.md` from `_index.md`, batch task files, BDD scenarios, latest `code-v{N}.md`
    - Acceptance criteria **auto-derived** from each task file's BDD Then-clauses — see `./references/sprint-contract-template.md` "Acceptance Criteria Derivation"; do NOT author new criteria
@@ -154,7 +139,7 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 
 2. **Spawn Batch Coordinator** (main agent → fresh sub-agent via Agent tool):
 
-   **HARD RULE — non-negotiable**: The main agent MUST spawn a sub-agent via the Agent tool for batch task execution. Direct `Edit`/`Write`/`MultiEdit` of source files in the main agent's context during a batch is a contract violation and will trigger the loop's stuck-detection heuristic at iteration 5+. The narrow direct-edit allow-list and recovery hint live in `./references/batch-execution-playbook.md` ("Main Agent's Direct-Edit Allow-List").
+   **HARD RULE**: Main agent MUST spawn a sub-agent for batch tasks. Direct `Edit`/`Write`/`MultiEdit` of source files violates the contract and trips stuck-detection. Allow-list: `./references/batch-execution-playbook.md`.
 
    - Use the Agent tool with `subagent_type: "general-purpose"` and `description: "Execute batch {N} of {plan-name}"`
    - The coordinator prompt MUST be fully self-contained (the coordinator has no memory of this conversation). Include:

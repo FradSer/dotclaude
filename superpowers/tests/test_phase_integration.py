@@ -23,6 +23,8 @@ LOOP = SUPERPOWERS / "lib" / "loop.sh"
 VET = SUPERPOWERS / "lib" / "vet.sh"
 SETUP = SUPERPOWERS / "scripts" / "setup-superpower-loop.sh"
 STOP_HOOK = SUPERPOWERS / "hooks" / "stop-hook.sh"
+TRACK_CHANGES = SUPERPOWERS / "hooks" / "track-changes.sh"
+TRACK_SPAWNS = SUPERPOWERS / "hooks" / "track-spawns.sh"
 
 
 def run_bash(script: str, **kwargs) -> subprocess.CompletedProcess:
@@ -916,43 +918,15 @@ class LoopPhaseTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertNotIn("Already produced this session", payload["reason"])
 
-    def test_loop_reinject_block_extracted_from_skill_md(self) -> None:
-        """When skill_name resolves to a SKILL.md carrying LOOP_REINJECT
-        markers, the framed excerpt is appended to the block reason. Long
-        loops drift away from the terminate conditions otherwise; this is the
-        protocol-level (not business-aware) re-injection that fixes that."""
-        self.state.write_text(json.dumps({
-            "active": True,
-            "iteration": 1,
-            "max_iterations": 0,
-            "completion_promise": "BRAINSTORMING_COMPLETE",
-            "prompt": "Design the feature",
-            "skill_name": "brainstorming",
-        }))
-        self._write_transcript("Working on Phase 2...")
-        result = run_bash(
-            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        payload = json.loads(result.stdout)
-        # The excerpt itself appears, but the marker delimiters do not — the
-        # awk extractor strips the LOOP_REINJECT_BEGIN/END comment lines.
-        self.assertIn("BRAINSTORMING_COMPLETE", payload["reason"])
-        self.assertIn("Design folder committed to git", payload["reason"])
-        self.assertNotIn("LOOP_REINJECT_BEGIN", payload["reason"])
-        self.assertNotIn("LOOP_REINJECT_END", payload["reason"])
-
-    def test_skill_name_emits_continue_header_and_preserves_prompt(self) -> None:
-        """When skill_name is set, the re-injection header reads as a
-        continuation phrase ("Continue superpowers:X — iter N/M") AND the
-        original base_prompt is preserved on the next paragraph. This is the
-        contract that replaced the previous "Use superpowers:X skill." short-
-        circuit, which empirical audit showed Claude treating as a slash-
-        command-style re-entry signal — every Stop walked SKILL.md from the
-        top, wasting a turn per loop iteration. The continuation phrase plus
-        the verbatim prompt (carrying phase-progression hints from
-        setup-superpower-loop.sh) keeps the loop anchored to its current phase
-        instead of restarting."""
+    def test_skill_name_emits_continue_header_without_base_prompt(self) -> None:
+        """When skill_name is set, the re-injection header is the bare
+        continuation phrase "Continue superpowers:X (iter N/M)." — no
+        verbose prompt body, no "do NOT re-run" prefix. The original
+        base_prompt is intentionally NOT re-injected: SKILL.md's
+        "Resumed loop" guard + TaskList state are the source of truth
+        for resume location, and re-pasting the same multi-sentence
+        prompt every iteration is the working-context pollution this
+        plugin is supposed to prevent."""
         self.state.write_text(json.dumps({
             "active": True,
             "iteration": 1,
@@ -968,31 +942,29 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
         reason = payload["reason"]
-        # Header is a continuation phrase, not a skill-trigger phrase.
+        # Continuation phrase, no slash-command-style re-entry signal.
         self.assertIn("Continue superpowers:writing-plans", reason)
         self.assertNotIn("Use superpowers:writing-plans skill", reason)
-        # Iteration tag uses the next iteration (current+1) for orientation.
         self.assertIn("iter 2/100", reason)
-        # Original prompt is preserved verbatim — phase hints survive.
-        self.assertIn("docs/plans/feat-plan", reason)
-        self.assertIn("Continue progressing through phases", reason)
-        # systemMessage reads as continuation, not error.
+        # base_prompt content must NOT leak into reason.
+        self.assertNotIn("docs/plans/feat-plan", reason)
+        self.assertNotIn("Continue progressing through phases", reason)
+        # systemMessage mirrors the continuation phrasing.
         self.assertIn("Superpower Loop iter 2/100", payload["systemMessage"])
         self.assertIn("Continue writing-plans", payload["systemMessage"])
 
-    def test_non_keyframe_iteration_skips_heavy_blocks(self) -> None:
-        """Iterations that are not iteration 1 and not multiples of 5 are
-        "lean" — the SKILL.md LOOP_REINJECT excerpt and the cumulative
-        "Already produced" file list are omitted, leaving only the
-        continuation header + base_prompt + LOOP COMPLETION REQUIRED tail.
-        Saves ~1.5KB per Stop in long loops where the heavy blocks would
-        otherwise be re-injected verbatim ~30 times in a 30-iteration run."""
+    def test_post_first_iteration_omits_modified_files_section(self) -> None:
+        """After the first re-injection (next_iteration > 2), the
+        cumulative modified_files snapshot is omitted entirely. The
+        list is in the state file and SKILL.md is in working context;
+        re-pasting it every turn is exactly the pollution this plugin
+        claims to prevent."""
         self.state.write_text(json.dumps({
             "active": True,
-            "iteration": 2,  # next = 3 → non-keyframe (not 1, not %5==0)
+            "iteration": 2,  # next = 3, past the first re-injection
             "max_iterations": 100,
             "completion_promise": "DONE",
-            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "prompt": "Execute the plan.",
             "skill_name": "brainstorming",
             "modified_files": [
                 "docs/plans/feat-design/_index.md",
@@ -1006,138 +978,133 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
         reason = payload["reason"]
-        # Continuation header still present.
         self.assertIn("Continue superpowers:brainstorming", reason)
-        # Heavy blocks omitted on non-keyframe iterations.
-        self.assertNotIn("Design folder committed to git", reason,
-                         msg="LOOP_REINJECT excerpt must not appear on non-keyframe iter")
-        self.assertNotIn("Already produced this session", reason,
-                         msg="modified_files list must not appear on non-keyframe iter")
-        # Lean tail still includes the completion promise reminder — that's
-        # always required regardless of iteration parity.
+        self.assertNotIn("Already produced this session", reason)
+        # Footer's promise reminder is always present.
         self.assertIn("<promise>DONE</promise>", reason)
 
-    def test_keyframe_iteration_includes_heavy_blocks(self) -> None:
-        """Iteration 1 + every 5th iteration are "keyframes" that re-inject
-        the full picture: SKILL.md LOOP_REINJECT excerpt + 20-deep
-        modified_files snapshot. Acts as a periodic anchor for long loops
-        without polluting every single iteration."""
+    def test_stuck_triggers_when_executing_plans_direct_edits_exceed_threshold(self) -> None:
+        """Stuck detection fires when the active skill is executing-plans
+        AND iteration >= 2 AND edits_since_last_spawn > 5. This catches
+        the empirical bug pattern from a real run: main agent does Phase 3
+        steps 0-1 correctly, then instead of spawning a coordinator (step 2),
+        it inline-edits batch task source files turn after turn. Each
+        Edit/Write/MultiEdit hits PostToolUse track-changes.sh which bumps
+        .edits_since_last_spawn — once the counter exceeds 5, the loop
+        flags STUCK and points the agent at Phase 3 step 2 + the
+        Main Agent's Direct-Edit Allow-List for recovery."""
         self.state.write_text(json.dumps({
             "active": True,
-            "iteration": 4,  # next = 5 → keyframe (multiple of 5)
-            "max_iterations": 100,
-            "completion_promise": "BRAINSTORMING_COMPLETE",
-            "prompt": "Design the feature.",
-            "skill_name": "brainstorming",
-            "modified_files": [
-                "docs/plans/feat-design/_index.md",
-            ],
-        }))
-        self._write_transcript("checkpoint")
-        result = run_bash(
-            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        payload = json.loads(result.stdout)
-        reason = payload["reason"]
-        # Heavy blocks present on keyframe.
-        self.assertIn("Design folder committed to git", reason)
-        self.assertIn("Already produced this session", reason)
-        self.assertIn("docs/plans/feat-design/_index.md", reason)
-
-    def test_stuck_detection_emits_recovery_hint(self) -> None:
-        """When modified_files count has not grown for 3 consecutive
-        iterations (from iteration 5 onward), the loop emits a STUCK
-        warning in both systemMessage and reason. This catches the
-        empirical pattern from real executing-plans runs where the main
-        agent stops repeatedly without spawning a sub-agent — words but
-        no artifacts. The recovery hint points at Phase 3 step 2 (spawn
-        coordinator) or the promise as the only legitimate exits."""
-        # State carries a stuck_count of 2; this iteration brings it to 3
-        # (iteration 7, files unchanged from previous_modified_count=2).
-        self.state.write_text(json.dumps({
-            "active": True,
-            "iteration": 7,
+            "iteration": 4,
             "max_iterations": 100,
             "completion_promise": "EXECUTION_COMPLETE",
             "prompt": "Execute the plan at docs/plans/feat-plan.",
             "skill_name": "executing-plans",
-            "modified_files": ["docs/plans/feat-plan/handoff-state.md",
-                               "docs/plans/feat-plan/sprint-contract-batch-1.md"],
-            "previous_modified_count": 2,
-            "stuck_count": 2,
+            "edits_since_last_spawn": 8,  # past the 5-edit threshold
         }))
-        self._write_transcript("I will spawn the coordinator next iteration...")
+        self._write_transcript("Working on the next batch...")
         result = run_bash(
             f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
-        # systemMessage flags STUCK with the count.
+        # systemMessage flags STUCK with the precise edit count and signal name.
         self.assertIn("STUCK", payload["systemMessage"])
-        # reason carries the recovery instructions.
-        self.assertIn("STUCK DETECTED", payload["reason"])
-        self.assertIn("Phase 3 step 2", payload["reason"])
+        self.assertIn("8 direct edits", payload["systemMessage"])
+        self.assertIn("Phase 3 step 2", payload["systemMessage"])
+        # reason carries the recovery instructions naming the exact mechanism.
+        self.assertIn("**STUCK**", payload["reason"])
+        self.assertIn("8 direct file edits", payload["reason"])
+        self.assertIn("Agent tool", payload["reason"])
         self.assertIn("EXECUTION_COMPLETE", payload["reason"])
-        # State persists the incremented stuck_count for the next iteration.
-        state_after = json.loads(self.state.read_text())
-        self.assertGreaterEqual(state_after["stuck_count"], 3)
+        # The base_prompt (which would carry phase hints) is intentionally
+        # OMITTED in the stuck branch — the recovery instructions take
+        # precedence over routine continuation guidance, otherwise the
+        # agent would continue acting on the original "do the plan" prompt
+        # and skip past the recovery hint.
+        self.assertNotIn(
+            "Execute the plan at docs/plans/feat-plan", payload["reason"],
+            msg="base_prompt must not be appended on stuck — recovery takes precedence",
+        )
 
-    def test_stuck_count_resets_when_files_grow(self) -> None:
-        """A growth in modified_files count resets stuck_count to 0 — a
-        successful sub-agent invocation should clear the streak so the
-        warning does not persist past the recovery."""
+    def test_stuck_does_not_trigger_for_non_executing_plans_skill(self) -> None:
+        """Stuck detection is scoped strictly to executing-plans because
+        brainstorming and writing-plans LEGITIMATELY produce many
+        main-context edits (design docs, plan files) — they have no
+        sub-agent spawn requirement, so a high edits_since_last_spawn
+        counter there is normal, not a violation. A scope leak would
+        false-positive on every brainstorming/writing-plans run."""
+        for skill in ("brainstorming", "writing-plans"):
+            with self.subTest(skill=skill):
+                self.state.write_text(json.dumps({
+                    "active": True,
+                    "iteration": 5,
+                    "max_iterations": 100,
+                    "completion_promise": "DONE",
+                    "prompt": f"Run {skill}",
+                    "skill_name": skill,
+                    "edits_since_last_spawn": 25,  # would trigger if scoped wrong
+                }))
+                self._write_transcript("Writing design doc...")
+                result = run_bash(
+                    f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+                )
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertNotIn("STUCK", payload["systemMessage"])
+                self.assertNotIn("STUCK DETECTED", payload["reason"])
+
+    def test_stuck_does_not_trigger_in_first_iteration(self) -> None:
+        """Iteration 1 is the loop's setup turn — main agent legitimately
+        writes its allow-list files (handoff-state.md, sprint-contract-
+        batch-1.md, possibly an _index.md update from PIVOT logic). The
+        stuck gate requires iteration >= 2 specifically to spare these
+        legitimate setup edits from false-positive STUCK flags."""
         self.state.write_text(json.dumps({
             "active": True,
-            "iteration": 8,
+            "iteration": 1,
             "max_iterations": 100,
             "completion_promise": "EXECUTION_COMPLETE",
             "prompt": "Execute the plan at docs/plans/feat-plan.",
             "skill_name": "executing-plans",
-            "modified_files": ["a.py", "b.py", "c.py", "d.py", "e.py"],  # 5 now
-            "previous_modified_count": 2,  # was 2 last iteration
-            "stuck_count": 3,  # had been stuck
+            "edits_since_last_spawn": 10,  # would trigger if iter gate wrong
         }))
-        self._write_transcript("Spawned coordinator, files updated.")
+        self._write_transcript("Setup batch in progress.")
         result = run_bash(
             f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
-        # Recovery cleared — no STUCK markers.
         self.assertNotIn("STUCK", payload["systemMessage"])
         self.assertNotIn("STUCK DETECTED", payload["reason"])
-        state_after = json.loads(self.state.read_text())
-        self.assertEqual(state_after["stuck_count"], 0)
-        self.assertEqual(state_after["previous_modified_count"], 5)
 
-    def test_early_iterations_do_not_trigger_stuck(self) -> None:
-        """Iterations 1-4 may legitimately have no file growth — Phase 1
-        plan review and Phase 2 task creation (TaskCreate, not Edit/Write)
-        produce no Edit/Write artifacts. Stuck detection only kicks in
-        from iteration 5 onward to avoid false positives during setup."""
-        self.state.write_text(json.dumps({
-            "active": True,
-            "iteration": 3,  # next = 4, still in setup window
-            "max_iterations": 100,
-            "completion_promise": "EXECUTION_COMPLETE",
-            "prompt": "Execute the plan at docs/plans/feat-plan.",
-            "skill_name": "executing-plans",
-            "modified_files": [],
-            "previous_modified_count": 0,
-            "stuck_count": 0,
-        }))
-        self._write_transcript("Phase 1 in progress, no files yet.")
-        result = run_bash(
-            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        payload = json.loads(result.stdout)
-        self.assertNotIn("STUCK", payload["systemMessage"])
-        self.assertNotIn("STUCK DETECTED", payload["reason"])
-        # stuck_count must not increment in the setup window.
-        state_after = json.loads(self.state.read_text())
-        self.assertEqual(state_after["stuck_count"], 0)
+    def test_stuck_does_not_trigger_at_or_below_threshold(self) -> None:
+        """Threshold semantics are strictly `> 5` (six or more), giving the
+        main agent headroom for its allow-list per batch: handoff-state +
+        sprint contract + maybe an _index.md PIVOT update + an
+        evaluation-round-N-batch-M.md = ~4. Five direct edits without a
+        spawn is borderline-but-tolerable; the sixth crosses into "this
+        is batch task work, not allow-list work" territory."""
+        for edits in (0, 3, 5):
+            with self.subTest(edits=edits):
+                self.state.write_text(json.dumps({
+                    "active": True,
+                    "iteration": 4,
+                    "max_iterations": 100,
+                    "completion_promise": "EXECUTION_COMPLETE",
+                    "prompt": "Execute the plan at docs/plans/feat-plan.",
+                    "skill_name": "executing-plans",
+                    "edits_since_last_spawn": edits,
+                }))
+                self._write_transcript("Continuing batch.")
+                result = run_bash(
+                    f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+                )
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertNotIn("STUCK", payload["systemMessage"],
+                                 msg=f"edits={edits} should not trigger STUCK")
+                self.assertNotIn("STUCK DETECTED", payload["reason"])
 
     def test_executing_plans_promise_match_writes_plan_completion_log(self) -> None:
         """When executing-plans loop promise matches, the hook appends a
@@ -1331,6 +1298,184 @@ class ExtractLastAssistantTextTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertEqual(result.stdout.strip(), "EXECUTION_COMPLETE")
+
+
+class EditsSinceLastSpawnHookTests(unittest.TestCase):
+    """Tests for the hook pair that drives stuck detection:
+    track-changes.sh increments .edits_since_last_spawn on every
+    Edit/Write/MultiEdit; track-spawns.sh resets it on every Agent
+    PostToolUse. The previous modified_files-growth signal had the
+    wrong sign (it grew during the bug it tried to catch); this pair
+    measures the precise anti-pattern executing-plans Phase 3 step 2
+    forbids."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        # Hooks resolve the state directory from $HOME/.claude/projects/<key>/
+        # where <key> is $PWD with '/' → '-'. We override $HOME to isolate
+        # state files between test runs and from the user's real session.
+        self.fake_home = Path(self.tmpdir.name) / "home"
+        self.fake_home.mkdir()
+        self.cwd = Path(self.tmpdir.name) / "project"
+        self.cwd.mkdir()
+        project_key = str(self.cwd).replace("/", "-")
+        self.state_dir = self.fake_home / ".claude" / "projects" / project_key
+        self.state_dir.mkdir(parents=True)
+        self.session_id = "test-session-123"
+        self.state_file = self.state_dir / f"{self.session_id}.superpowers.json"
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _run_hook(self, hook_path: Path, hook_input: dict) -> subprocess.CompletedProcess:
+        """Run a hook with $HOME pointed at the fake home dir so state_dir()
+        resolves to our isolated location."""
+        env = {
+            **os.environ,
+            "HOME": str(self.fake_home),
+            "PWD": str(self.cwd),
+        }
+        return subprocess.run(
+            ["bash", str(hook_path)],
+            input=json.dumps(hook_input),
+            text=True,
+            capture_output=True,
+            env=env,
+            cwd=str(self.cwd),
+        )
+
+    def test_track_changes_creates_state_with_counter_at_one(self) -> None:
+        """First Edit/Write in a fresh session: hook creates the state stub
+        with edits_since_last_spawn=1. This is the path that runs when
+        track-changes.sh fires before task-start.sh has had a chance to
+        seed the file (e.g. an @mention that suppressed the user_prompt)."""
+        result = self._run_hook(TRACK_CHANGES, {
+            "session_id": self.session_id,
+            "tool_input": {"file_path": "/abs/path/foo.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(self.state_file.exists())
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 1)
+        self.assertIn("/abs/path/foo.py", state["modified_files"])
+
+    def test_track_changes_increments_counter_on_each_call(self) -> None:
+        """Each Edit/Write/MultiEdit invocation increments the counter by 1
+        regardless of how many file paths the call touched. The counter
+        measures tool-call count (= main-agent edit operations), not
+        file-path count, because the bug pattern is "agent makes many
+        edit calls without ever calling Agent" — one MultiEdit touching
+        five files is one operation, not five."""
+        # Seed state with counter=2 so we can observe a clean increment.
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "modified_files": ["a.py", "b.py"],
+            "edits_since_last_spawn": 2,
+        }))
+
+        # MultiEdit-style hook input: nested edits[].file_path.
+        result = self._run_hook(TRACK_CHANGES, {
+            "session_id": self.session_id,
+            "tool_input": {
+                "edits": [
+                    {"file_path": "/abs/c.py"},
+                    {"file_path": "/abs/d.py"},
+                    {"file_path": "/abs/e.py"},
+                ],
+            },
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        # +1 per tool call, not +3 per file.
+        self.assertEqual(state["edits_since_last_spawn"], 3)
+        # All files still recorded in modified_files (dedup with prior).
+        for f in ("a.py", "b.py", "/abs/c.py", "/abs/d.py", "/abs/e.py"):
+            self.assertIn(f, state["modified_files"])
+
+    def test_track_spawns_resets_counter_to_zero(self) -> None:
+        """Agent tool PostToolUse zeroes edits_since_last_spawn. Counter
+        increments from sub-agent tool calls during the spawn (those
+        Edit/Write hooks fire in the main session too) get discarded
+        cleanly along with the main-agent edits that preceded the spawn.
+        Net semantic: 'edits the main agent has made since the last
+        sub-agent returned'."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "edits_since_last_spawn": 17,  # was high
+        }))
+
+        result = self._run_hook(TRACK_SPAWNS, {
+            "session_id": self.session_id,
+            "tool_name": "Agent",
+            "tool_input": {"description": "Run batch 1"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 0)
+
+    def test_track_spawns_initializes_counter_when_state_lacks_it(self) -> None:
+        """Backward compat: a state file from before this hook existed
+        has no edits_since_last_spawn. track-spawns.sh must set it via
+        `// 0` default rather than crash on the missing key."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "task": "old session",
+        }))
+
+        result = self._run_hook(TRACK_SPAWNS, {
+            "session_id": self.session_id,
+            "tool_name": "Agent",
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 0)
+        # Other fields preserved.
+        self.assertEqual(state["task"], "old session")
+
+    def test_track_spawns_no_state_file_is_a_noop(self) -> None:
+        """No state file means no active task tracking and no
+        stuck-detection consumer; the hook exits 0 without creating
+        anything. Avoids the surprise of an Agent tool call in an
+        unrelated session creating spurious state files."""
+        # state_file intentionally not created.
+        result = self._run_hook(TRACK_SPAWNS, {
+            "session_id": self.session_id,
+            "tool_name": "Agent",
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertFalse(self.state_file.exists())
+
+    def test_full_cycle_edits_then_spawn_then_edits(self) -> None:
+        """End-to-end: 3 Edits → counter=3, then Agent → counter=0, then
+        2 more Edits → counter=2. This mirrors the real flow during a
+        well-behaved batch (main agent writes contract + handoff state,
+        spawns coordinator, then on next batch starts with contract +
+        handoff state again from a clean counter)."""
+        # Three pre-spawn edits.
+        for path in ("/abs/contract.md", "/abs/handoff.md", "/abs/_index.md"):
+            self._run_hook(TRACK_CHANGES, {
+                "session_id": self.session_id,
+                "tool_input": {"file_path": path},
+            })
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 3)
+
+        # Spawn resets counter.
+        self._run_hook(TRACK_SPAWNS, {
+            "session_id": self.session_id,
+            "tool_name": "Agent",
+        })
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 0)
+
+        # Two post-spawn edits (next batch's contract + handoff).
+        for path in ("/abs/contract2.md", "/abs/handoff2.md"):
+            self._run_hook(TRACK_CHANGES, {
+                "session_id": self.session_id,
+                "tool_input": {"file_path": path},
+            })
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 2)
 
 
 if __name__ == "__main__":
