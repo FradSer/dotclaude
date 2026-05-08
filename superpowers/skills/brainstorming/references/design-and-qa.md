@@ -32,10 +32,11 @@ MUST use these exact section headings in this order:
 
 1. `## Context` -- Original request and Q&A history
 2. `## Discovery Results` -- Codebase exploration findings
-3. `## Requirements` -- Finalized requirements and constraints
-4. `## Rationale` -- Why this approach was chosen over alternatives
-5. `## Detailed Design` -- Components, interfaces, implementation approach
-6. `## Design Documents` -- Links to companion documents
+3. `## Glossary` -- Canonical labels for domain nouns; populated by the vocabulary reconciliation pass below. Required even when no reconciliation conflict was found (record the canonical labels for the concepts the design names so future readers and downstream skills don't reintroduce divergent forms).
+4. `## Requirements` -- Finalized requirements and constraints
+5. `## Rationale` -- Why this approach was chosen over alternatives
+6. `## Detailed Design` -- Components, interfaces, implementation approach
+7. `## Design Documents` -- Links to companion documents
 
 ## `bdd-specs.md` Content
 
@@ -76,12 +77,29 @@ Launch 3+ sub-agents in parallel via the Agent tool. No size gates — research 
 
 **Conflict resolution**: Favor codebase patterns over external recommendations. Verify disagreements with WebSearch. Document trade-offs.
 
+**Vocabulary reconciliation (mandatory, before integration)**:
+
+Sub-agents running in parallel will independently fill in vocabulary gaps for any concept the user did not name explicitly. If they pick different labels for the same concept (e.g. privacy tiers as `public/project/local` vs `local-only/cross-session/cross-project/external`), and the main agent integrates without reconciling, the four design files end up using divergent vocabularies — a defect that is hard to catch by content review and produces real downstream confusion.
+
+Before integration:
+
+1. Scan each sub-agent's output for **domain-noun vocabulary**: privacy tiers, channel names, role names, schema field names, capability/component names, status flag values. Anything that names a concept rather than describing it.
+2. Build a glossary: rows = concept, columns = each sub-agent's chosen label. Rows with divergent columns need reconciliation.
+3. For each divergent concept, pick **one canonical label** — prefer the most-precise / most-discriminating form; prefer codebase patterns over external recommendations; prefer forms that already appear in shipped `superpowers/lib/` or `docs/retros/` schema rows. Note rejected variants briefly so the choice is auditable.
+4. Rewrite divergent labels in the affected sub-agent outputs **before** producing the integrated four files. Reconciling after-the-fact across four already-written files is more error-prone and frequently missed.
+5. Record canonical labels in `_index.md` under a `## Glossary` section directly after `## Discovery Results`.
+
+**Verification**: After integration, `grep -oE "<concept-noun>" docs/plans/<folder>/*` returns only the canonical label across all four files. Any rejected variant surfacing means step 4 missed a file.
+
+**Inciting case**: `docs/retros/2026-05-09-v3-considered-deferred.md` records a brainstorm where three sub-agents produced three privacy-tier vocabularies that were never reconciled, and two evaluator rounds passed the resulting design without flagging the divergence. JUST-01 in `docs/retros/checklists/design-v1.md` blocks the produce-then-evaluate path; this vocab-reconciliation step blocks the produce-divergent-vocab path at write time.
+
 **Integration workflow**:
 1. Start with context and requirements from Synthesis sub-agent
 2. Incorporate architecture recommendations
 3. Add BDD scenarios and best practices
-4. Resolve conflicts between sub-agent findings
-5. Create unified design documents
+4. Run vocabulary reconciliation pass (above) before producing the integrated files
+5. Resolve remaining conflicts between sub-agent findings
+6. Create unified design documents (with `## Glossary` section in `_index.md` recording canonical labels)
 
 ## Integrated QA (Evaluator Mode, mandatory)
 

@@ -33,6 +33,33 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans <event> "<short reaso
 
 Where `<event>` is `bail_out` when the gate fires or `force_override` when `--force` bypasses it.
 
+## CRITICAL: Justification Check (run after bail-out, before loop start)
+
+**Read `_index.md` from the resolved design folder. Bail out — do NOT start the loop, do NOT decompose tasks — when grep matches any of:**
+
+```bash
+grep -nE "STATUS:.*NOT.JUSTIFIED|DESIGN-NOT-YET-JUSTIFIED|DESIGN-CONSIDERED-DEFERRED|DO NOT IMPLEMENT" "<resolved-design-folder>/_index.md"
+```
+
+This catches designs the maintainer or a prior brainstorming sub-agent has explicitly marked as "not approved to advance" (see `docs/retros/checklists/design-v1.md` JUST-01 for full semantics, and `docs/retros/2026-05-09-v3-considered-deferred.md` for the inciting case). The marker is dispositive — do not interpret it away.
+
+**On match, use AskUserQuestion (NOT plain text) to surface the gate**:
+
+- Question: "_index.md is marked NOT-JUSTIFIED at line {N}: '{matched text}'. The maintainer or a prior brainstorming sub-agent has signalled this design should not advance to plan-writing. How do you want to proceed?"
+- Options:
+  - **Refuse — return to brainstorming or activate gate (default)**: emit a one-line note explaining the matched line + path, log via `bail-log.sh` with reason `design_not_justified`, then exit without starting the loop:
+    ```bash
+    bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans bail_out "design_not_justified: <matched marker>" "$ARGUMENTS"
+    ```
+  - **Override — proceed despite NOT-JUSTIFIED status**: log the override and continue to First Action below. Use `force_override` event:
+    ```bash
+    bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans force_override "design_not_justified: <matched marker>" "$ARGUMENTS"
+    ```
+
+**PROHIBITED**: Do NOT silently skip the gate when `--force` is passed (the `--force` flag bypasses the bail-out size gate above, NOT this justification gate — they are independent failure modes). Do NOT prompt the user for an override default value other than "Refuse" — the default is intentionally conservative so a user pressing through without reading still gets blocked.
+
+The gate is non-destructive: it surfaces the situation and lets the user choose. The "Override" path produces a `force_override` audit row so retrospective Phase 5a can spot designs that were advanced despite NOT-JUSTIFIED status.
+
 ## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 
 **Resolve the design path, then unconditionally start the loop — do NOT read design files fully or explore the codebase first.**

@@ -52,13 +52,14 @@ If the context says `plan`, refuse with: "Plan-mode evaluation is handled inline
 ## Design Mode
 
 1. **Read artifacts**: `_index.md`, `bdd-specs.md`, `architecture.md`, `best-practices.md` from the design folder. Missing `_index.md` -> blocker, stop.
-2. **Read checklist**: from the spawn-provided path (default: `docs/retros/checklists/design-v1.md`).
-3. **Apply checklist**: PASS or FAIL per item. Evidence is `file:line` or a quoted phrase.
-4. **Produce rework items**: for each FAIL -- Item ID, file, location, what failed, corrective action.
-5. **Output report** (filename hint at top: `evaluation-design-round-{N}.md`):
+2. **Justification pre-check (JUST-01)**: before applying the rest of the checklist, scan `_index.md` (first 100 lines is sufficient — these markers are conventionally placed in §0 / status header) for any of: `STATUS:.*NOT.JUSTIFIED`, `DESIGN-NOT-YET-JUSTIFIED`, `DESIGN-CONSIDERED-DEFERRED`, `DO NOT IMPLEMENT`. If any match exists, record JUST-01 as FAIL with the matched `file:line` as evidence. Do not stop early — continue with steps 3–5 so the maintainer sees full content-quality state in the report, but the verdict is already locked to REWORK regardless of how the remaining items resolve. The maintainer's self-declared status is dispositive; do not interpret it away.
+3. **Read checklist**: from the spawn-provided path (default: `docs/retros/checklists/design-v1.md`).
+4. **Apply checklist**: PASS or FAIL per item. Evidence is `file:line` or a quoted phrase. JUST-01 result was already recorded in step 2; record the remaining items here.
+5. **Produce rework items**: for each FAIL -- Item ID, file, location, what failed, corrective action. JUST-01 rework template: see `docs/retros/checklists/design-v1.md` JUST-01 Rework format (the two paths: remove the marker after fixing the activation gate, or move to a single-file reject-form retro under `docs/retros/`).
+6. **Output report** (filename hint at top: `evaluation-design-round-{N}.md`):
    - Checklist Results table (Item ID | Check | Result | Evidence)
    - Rework Items table (empty if no FAIL)
-   - Verdict: **PASS** when zero FAIL, **REWORK** otherwise (with FAIL count and IDs)
+   - Verdict: **PASS** when zero FAIL, **REWORK** otherwise (with FAIL count and IDs). When JUST-01 is the failing item, the verdict is REWORK even if all other items PASS — the maintainer's self-declared NOT-JUSTIFIED status overrides any number of content-quality passes. Inciting case: `docs/retros/2026-05-09-v3-considered-deferred.md` (collapsed from a 6-file design folder that passed two prior evaluator rounds despite an explicit NOT-JUSTIFIED status in §0).
 
 ## Code Mode
 

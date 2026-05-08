@@ -113,7 +113,7 @@ Create design documents with integrated quality assurance. All research runs in 
 - `architecture.md` -- System overview, components, data structures, integration points
 - `best-practices.md` -- Security, performance, code quality, common pitfalls
 
-**`_index.md` MUST use these exact section headings in order**: Context, Discovery Results, Requirements, Rationale, Detailed Design, Design Documents.
+**`_index.md` MUST use these exact section headings in order**: Context, Discovery Results, Glossary, Requirements, Rationale, Detailed Design, Design Documents. The `## Glossary` section is populated by the vocabulary reconciliation pass below — required even when no divergence was found, so canonical labels are recorded for future readers.
 
 **`bdd-specs.md`**: Write all Gherkin scenarios directly in this file. Do NOT create separate `.feature` files -- those belong to the implementation phase.
 
@@ -123,7 +123,19 @@ Create design documents with integrated quality assurance. All research runs in 
 3. **Context & Requirements Synthesis** — consolidates discovery into requirements, success criteria, rationale.
 4. **Additional sub-agents**: launch for distinct research-intensive aspects as needed.
 
-The main agent integrates returned results, resolves conflicts favoring codebase patterns, and writes the 4 design files.
+**Vocabulary reconciliation (MANDATORY, before integration)**: After all sub-agents return and before integrating their outputs into design files, the main agent runs one explicit pass:
+
+1. Scan each sub-agent's output for **domain-noun vocabulary**: privacy tiers, channel names, role names, schema field names, capability/component names, status flag values. Anything that names a concept rather than describing it.
+2. Build a glossary table: rows = concept (one per distinct concept), columns = each sub-agent's chosen label. If a row has divergent labels across sub-agents, that concept needs reconciliation.
+3. For each divergent concept, pick **one canonical label** — prefer the most-precise / most-discriminating form, prefer codebase patterns over external recommendations, prefer single-word forms only when they don't introduce ambiguity. Document the rejected variants alongside the canonical choice (so future maintainers see what was considered).
+4. Rewrite divergent labels in the affected sub-agent outputs **before** producing the integrated `_index.md` / `architecture.md` / `bdd-specs.md` / `best-practices.md`. Do not write the four files first and reconcile after — divergent labels in the integrated output are an outcome to prevent at write time.
+5. Record the canonical labels in `_index.md` under a `## Glossary` section directly after `## Discovery Results`.
+
+**Verification (after integration)**: `grep -oE "<concept-noun>"` across the four files must return only the canonical label, never any rejected variant. If any rejected variant appears in any file, the integration step has not closed the loop — return to step 4 above.
+
+**Why this exists**: The 2026-05-09 v3.x knowledge platform brainstorm produced three different privacy-tier vocabularies across `_index.md` (`public/project/local`), `architecture.md` (`local-only/cross-session/cross-project/external`), and `bdd-specs.md` (the latter). The divergence was not a content disagreement — sub-agents independently filled in vocabulary gaps and the main agent integrated all three without reconciliation. See `docs/retros/2026-05-09-v3-considered-deferred.md` for the inciting case.
+
+**Integration**: After reconciliation, the main agent integrates returned results, resolves remaining conflicts favoring codebase patterns, and writes the 4 design files.
 
 **Step 2: Integrated QA (default: on, overridable only via `harness-config.json`)**
 

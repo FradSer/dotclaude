@@ -76,6 +76,26 @@ Binary PASS/FAIL checklist for evaluating design artifacts. Each item produces a
 
 ## Checklist Items
 
+### JUST-01 -- Design must not self-declare NOT-JUSTIFIED
+
+**Description:** A design folder whose `_index.md` carries an explicit "not yet justified" / "do not implement" status declared by the maintainer or a prior brainstorming sub-agent must not pass evaluation. The design's own §0-style status is dispositive — content-quality items below cannot override it. This is the meta-check that prevents the v2.8.x add-bias pattern from being replicated at the design layer: a design folder can pass content-quality items while being self-declared as N=0-justified or activation-gated.
+
+**Check method:**
+```bash
+grep -nE "STATUS:.*NOT.JUSTIFIED|DESIGN-NOT-YET-JUSTIFIED|DESIGN-CONSIDERED-DEFERRED|DO NOT IMPLEMENT" _index.md
+```
+Any match is a FAIL. Zero matches is PASS.
+
+**Evidence format:** `_index.md:{line} -- "{matched line text}"`
+
+**Rework format:** Either (a) remove the NOT-JUSTIFIED status from `_index.md` after addressing the underlying activation gate, or (b) move the design folder to `docs/retros/<date>-<topic>-considered-deferred.md` (single-file reject form).
+
+**Verdict precedence:** A JUST-01 FAIL produces REWORK regardless of how content-quality items resolve. Other items still run for completeness in the report, but no combination of content-quality PASS results can override a self-declared NOT-JUSTIFIED status.
+
+`# Type: computational` -- grep against fixed-phrase list produces deterministic match.
+
+---
+
 ### REQ-TRACE-01 -- Every requirement ID in _index.md appears in at least one scenario in bdd-specs.md
 
 **Description:** Each requirement identifier (pattern: `REQ-NNN`) listed in the Requirements section of _index.md must be referenced by at least one scenario in bdd-specs.md.
@@ -159,7 +179,7 @@ Confirm the flagged verb is the primary action (not a supplement to a concrete m
 1. Run each check method against the design artifacts in the plan folder.
 2. Record PASS or FAIL for each item.
 3. For each FAIL, capture evidence in the specified format and produce a rework item with file, line, and corrective instruction.
-4. Verdict: all items PASS = **PASS**. Any item FAIL = **REWORK** with itemized rework list.
+4. Verdict: all items PASS = **PASS**. Any item FAIL = **REWORK** with itemized rework list. JUST-01 has verdict precedence: a JUST-01 FAIL produces REWORK regardless of how the content-quality items resolve.
 EOF
     ;;
   plan)

@@ -19,6 +19,29 @@ Binary PASS/FAIL checklist for evaluating design artifacts. Each item produces a
 
 ## Checklist Items
 
+### JUST-01: Design must not self-declare NOT-JUSTIFIED
+
+**Description:** A design folder whose `_index.md` carries an explicit "not yet justified" / "do not implement" status declared by the maintainer or a prior brainstorming sub-agent must not pass evaluation. The design's own §0-style status is dispositive — content-quality items below cannot override it. This is the meta-check that prevents the v2.8.x add-bias pattern (see `docs/retros/meta-retro-2026-05-08-superpowers-v2.8.x.md` and `docs/retros/2026-05-09-v3-considered-deferred.md`) from being replicated at the design layer: a design folder can pass SCEN-CONC-01 / REQ-TRACE-01 / ARCH-01 / RISK-02 while being self-declared as N=0-justified or activation-gated.
+
+**Check method:**
+```bash
+grep -nE "STATUS:.*NOT.JUSTIFIED|DESIGN-NOT-YET-JUSTIFIED|DESIGN-CONSIDERED-DEFERRED|DO NOT IMPLEMENT" _index.md
+```
+Any match is a FAIL. Zero matches is PASS.
+
+**Anchor constraint:** The grep is case-sensitive and pattern-anchored. A match on any of the four canonical phrases is sufficient to FAIL — the maintainer using any one of these forms is signalling the same intent. Do not interpret a match away ("but the rest of the document looks ready") — that interpretation is exactly the failure mode this item exists to block.
+
+**Evidence format:** `_index.md:{line} -- "{matched line text}"`
+Example: `_index.md:4 -- "**Status**: ⚠ DESIGN-NOT-YET-JUSTIFIED"`
+
+**Rework format:** "Either (a) remove the NOT-JUSTIFIED status from `_index.md` line {N} after addressing the underlying activation gate, or (b) move the design folder to `docs/retros/<date>-<topic>-considered-deferred.md` (single-file reject form, see `docs/retros/2026-05-09-v3-considered-deferred.md` for template) and stop attempting to advance it through `superpowers:writing-plans`."
+
+**Verdict precedence:** If JUST-01 fails, the verdict is **REWORK** regardless of other items. The remaining items still run for completeness so the user sees full content-quality state, but a JUST-01 FAIL cannot be overridden by other items passing.
+
+`# Type: computational` -- grep against fixed-phrase list produces deterministic match.
+
+---
+
 ### SCEN-CONC-01: All Given clauses use specific data values
 
 **Description:** Every `Given` clause in bdd-specs.md must use concrete, specific data values. Vague placeholders such as "some", "valid", "appropriate", or "relevant" are not permitted.
@@ -124,4 +147,4 @@ Example: `_index.md -- mitigation 'monitor closely' specifies no concrete action
 2. Record PASS or FAIL for each item.
 3. For each FAIL, capture evidence in the specified format and produce a rework item with file, line, and corrective instruction.
 4. For inferential items that produce a borderline result, note the ambiguity in the evidence field but still commit to PASS or FAIL -- do not leave items unresolved.
-5. Verdict: all items PASS = **PASS**. Any item FAIL = **REWORK** with itemized rework list.
+5. Verdict: all items PASS = **PASS**. Any item FAIL = **REWORK** with itemized rework list. JUST-01 has verdict precedence: a JUST-01 FAIL produces REWORK regardless of how the content-quality items resolve — the remaining items still run for completeness so the maintainer sees full state, but no combination of content-quality PASS results can override a self-declared NOT-JUSTIFIED status.
