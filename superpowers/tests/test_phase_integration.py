@@ -15,6 +15,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from conftest import commit, make_git_repo
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SUPERPOWERS = ROOT / "superpowers"
@@ -1145,7 +1147,12 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertEqual(len(lines), 1)
         entry = json.loads(lines[0])
         self.assertEqual(entry["event"], "plan_completed")
-        self.assertIn("2026-05-07-banner-plan", entry["plan"])
+        # v2.8.2: plan field is repo-relative (no /Users/ or /tmp/ prefix —
+        # cross-worktree / cross-clone stable so dedup matches reliably).
+        self.assertEqual(entry["plan"], "docs/plans/2026-05-07-banner-plan")
+        self.assertNotIn("/Users/", entry["plan"])
+        self.assertNotIn("/tmp/", entry["plan"])
+        self.assertNotIn(str(project_root), entry["plan"])
         self.assertRegex(entry["timestamp"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
     def test_writing_plans_promise_match_does_not_write_completion_log(self) -> None:
@@ -1250,8 +1257,273 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertEqual(entry["batch_count"], 0)
         # Required fields all present even on empty enrichment.
         self.assertEqual(entry["event"], "plan_completed")
-        self.assertIn("ghost-plan", entry["plan"])
+        # v2.8.2: plan stays repo-relative even when the dir doesn't exist.
+        self.assertEqual(entry["plan"], "docs/plans/2026-05-07-ghost-plan")
         self.assertRegex(entry["timestamp"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+    def test_plan_completion_log_includes_completion_commit_when_in_git_repo(self) -> None:
+        """v2.8.1: plan_completed entries capture completion_commit (HEAD SHA
+        at completion) so retrospective Phase 1 step 8 can run a post-plan
+        diff. Empirical motivation: user-simulation 2026-05-08 retrospective
+        ran 16 minutes after plan completion and disabled
+        recurring_failure_patterns based on blank-injection signal alone —
+        the user's 5 refactor commits arrived 12-13h later and were never
+        seen. Hook-side capture closes that data gap mechanically."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        (plan_dir / "_index.md").write_text("# banner plan\n")
+        make_git_repo(project_root)
+        expected_sha = commit(project_root, "feat: completion baseline",
+                              {"_baseline.txt": "x\n"})
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+            "modified_files": ["src/foo.py", "tests/test_foo.py"],
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        entry = json.loads(log_file.read_text().strip().split("\n")[0])
+        self.assertEqual(entry["completion_commit"], expected_sha)
+        self.assertEqual(entry["completion_modified_files"], ["src/foo.py", "tests/test_foo.py"])
+
+    def test_plan_completion_log_completion_commit_empty_outside_git_repo(self) -> None:
+        """When the project root is not a git repo (rare but possible —
+        sandboxed plan directory, archive extraction), completion_commit
+        falls back to empty string and modified_files defaults to []. The
+        canonical event still lands so downstream consumers (retrospective
+        auto-scope, RETROSPECTIVE DUE counter) keep working."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        (plan_dir / "_index.md").write_text("# banner plan\n")
+        # Deliberately NOT calling git init — completion_commit must fall back.
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+            # state without modified_files — defaults to [].
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        entry = json.loads(log_file.read_text().strip().split("\n")[0])
+        self.assertEqual(entry["completion_commit"], "")
+        self.assertEqual(entry["completion_modified_files"], [])
+
+    def test_plan_completion_log_dedups_same_plan_across_re_entries(self) -> None:
+        """v2.8.2: plans-completed.jsonl is "first completion per plan".
+        Multiple promise fires on the same plan (re-entry, amendment,
+        partial rerun) must NOT produce multiple entries — that would
+        inflate RETROSPECTIVE DUE counts and pollute retrospective auto-scope.
+        Empirical motivation: user-simulation 2026-05-08 logged the same
+        plan twice (once with trailing slash + no enrichment, once without
+        + with enrichment) because v2.7.0 had no dedup gate."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        (plan_dir / "_index.md").write_text("# banner plan\n")
+
+        # Fire promise once — should write 1 line.
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        # Fire promise a second time on the same plan — must NOT append.
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 8,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done again\n<promise>EXECUTION_COMPLETE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        lines = log_file.read_text().strip().split("\n")
+        self.assertEqual(len(lines), 1, msg=f"expected exactly 1 entry, got: {lines}")
+
+    def test_plan_completion_log_dedup_normalizes_trailing_slash(self) -> None:
+        """v2.8.2: 'docs/plans/foo-plan' and 'docs/plans/foo-plan/' refer to
+        the same plan. The hook strips trailing slash before dedup so a
+        prompt with slash followed by a prompt without slash (or vice-versa)
+        produces exactly 1 entry, not 2 — the empirical user-simulation
+        bug shape."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+
+        # Round 1: prompt has TRAILING SLASH on plan path.
+        self.state.write_text(json.dumps({
+            "active": True, "iteration": 5, "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan/.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+        run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+
+        # Round 2: prompt WITHOUT trailing slash, same plan.
+        self.state.write_text(json.dumps({
+            "active": True, "iteration": 9, "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+        run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        lines = log_file.read_text().strip().split("\n")
+        self.assertEqual(len(lines), 1, msg=f"trailing-slash dedup failed: {lines}")
+        # Stored value MUST be the no-slash form (canonical).
+        entry = json.loads(lines[0])
+        self.assertEqual(entry["plan"], "docs/plans/2026-05-07-banner-plan")
+
+    def test_plan_completion_log_repo_root_uses_git_toplevel(self) -> None:
+        """v2.8.2: when cwd is inside a git work tree, repo_root is the
+        git toplevel — even when the loop fires from a deeper subdir.
+        Pre-v2.8.2 used $PWD blindly which broke for nested invocations
+        (Claude cd'd into a subfolder mid-session)."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        (plan_dir / "_index.md").write_text("# plan\n")
+        make_git_repo(project_root)
+        commit(project_root, "init", {"_baseline.txt": "x\n"})
+
+        # Run loop_phase from a NESTED subdir, not project_root itself.
+        nested = plan_dir  # project_root/docs/plans/2026-05-07-banner-plan
+        self.state.write_text(json.dumps({
+            "active": True, "iteration": 5, "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(nested),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        # Log lands in <repo_root>/docs/retros, NOT <nested>/docs/retros.
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        self.assertTrue(log_file.exists(),
+                        msg="log must land at repo toplevel, not at the nested cwd")
+        entry = json.loads(log_file.read_text().strip().split("\n")[0])
+        # repo_root field carries the absolute toplevel for audit.
+        self.assertEqual(Path(entry["repo_root"]).resolve(), project_root.resolve())
+        # plan stays repo-relative.
+        self.assertEqual(entry["plan"], "docs/plans/2026-05-07-banner-plan")
+
+    def test_plan_completion_log_repo_root_falls_back_to_pwd_outside_git(self) -> None:
+        """v2.8.2: when cwd is not inside a git work tree, repo_root falls
+        back to $PWD so the canonical event still lands. Sandboxed plan
+        dirs and tarball-extracted projects must keep working."""
+        project_root = Path(self.tmpdir.name) / "non-git-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        # Deliberately no `git init` — repo_root must fall back to PWD.
+
+        self.state.write_text(json.dumps({
+            "active": True, "iteration": 5, "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        entry = json.loads(log_file.read_text().strip().split("\n")[0])
+        self.assertEqual(Path(entry["repo_root"]).resolve(), project_root.resolve())
+        # completion_commit is empty when not in a git repo.
+        self.assertEqual(entry["completion_commit"], "")
+
+    def test_plan_completion_log_dedup_survives_corrupt_existing_line(self) -> None:
+        """v2.8.2: dedup uses jq with try/catch — a single corrupt jsonl
+        line doesn't disable the dedup gate or crash the hook. Defensive
+        against external tools / manual edits that wrote a malformed row."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        retros_dir = project_root / "docs" / "retros"
+        retros_dir.mkdir(parents=True)
+        # Pre-seed jsonl with corrupt + valid entries. The valid entry's
+        # plan field MATCHES what the hook is about to write.
+        (retros_dir / "plans-completed.jsonl").write_text(
+            "this is not json\n"
+            '{"event":"plan_completed","plan":"docs/plans/2026-05-07-banner-plan","timestamp":"2026-05-01T00:00:00Z"}\n'
+        )
+
+        self.state.write_text(json.dumps({
+            "active": True, "iteration": 5, "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        # Dedup must trigger — the file still has 2 lines (corrupt + the
+        # pre-existing valid match), no third line appended.
+        lines = (retros_dir / "plans-completed.jsonl").read_text().strip().split("\n")
+        self.assertEqual(len(lines), 2,
+                         msg=f"dedup must not bypass on corrupt prior line: {lines}")
 
     def test_executing_plans_without_plan_path_in_prompt_skips_log(self) -> None:
         """Defensive: if for any reason state.prompt does not contain a

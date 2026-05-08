@@ -99,12 +99,25 @@ find_state_file() {
   fi
 }
 
-# Read a field from a JSON state file.
+# Read a field from a JSON state file as a raw string (jq -r).
 # Usage: VAL=$(state_read "$STATE_FILE" ".field")
 state_read() {
   local file="$1"
   local query="$2"
   jq -r "$query" "$file" 2>/dev/null || echo ""
+}
+
+# Read a field from a JSON state file as compact JSON (jq -c). Use when the
+# value will be passed back to jq via --argjson — state_read's `-r` would
+# unwrap arrays/objects to text and break the round-trip.
+# Usage: JSON=$(state_read_json "$STATE_FILE" '.modified_files // []')
+state_read_json() {
+  local file="$1"
+  local query="$2"
+  local out
+  out=$(jq -c "$query" "$file" 2>/dev/null || true)
+  [[ -z "$out" ]] && out="null"
+  printf '%s' "$out"
 }
 
 # Acquire an exclusive lock on a state file using mkdir (POSIX atomic).

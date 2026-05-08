@@ -33,56 +33,82 @@ _loop_log_plan_completion_if_executing() {
   local state_file="$1"
   local skill_name prompt plan_path log_dir log_file now
   local index_file task_count=0 batch_count=0
+  local completion_commit="" modified_files_json="[]"
+  local repo_root="$PWD" git_lines=""
 
   skill_name=$(state_read "$state_file" '.skill_name // ""')
   [[ "$skill_name" != "executing-plans" ]] && return 0
 
-  # State.prompt carries the project-relative plan path embedded by
-  # executing-plans first action. Pattern: `docs/plans/<topic>-plan` with
-  # optional trailing slash. `|| true` swallows grep-no-match: under
-  # `set -euo pipefail` an assignment whose command substitution returns
-  # non-zero DOES propagate (despite folklore) — the regression test
-  # `test_executing_plans_without_plan_path_in_prompt_skips_log` caught
-  # exactly that.
+  # `|| true` swallows grep-no-match: under `set -euo pipefail` an assignment
+  # whose command substitution returns non-zero DOES propagate (despite
+  # folklore) — the regression test
+  # `test_executing_plans_without_plan_path_in_prompt_skips_log` caught that.
   prompt=$(state_read "$state_file" '.prompt // ""')
   plan_path=$(printf '%s' "$prompt" | grep -oE 'docs/plans/[A-Za-z0-9_/.-]+-plan/?' | head -1) || true
   [[ -z "$plan_path" ]] && return 0
-  plan_path="${plan_path%/}"
+  plan_path="${plan_path%/}"  # normalize so trailing-slash variants dedup
 
-  log_dir="${PWD}/docs/retros"
+  # One git fork resolves both repo_root and HEAD: `rev-parse` accepts
+  # multiple revs and prints them line-by-line. Falls back gracefully when
+  # not in a git repo (output empty → repo_root stays $PWD, commit stays "").
+  # repo-relative `plan` field stays cross-worktree / cross-clone stable;
+  # pre-v2.8.2 absolute-path entries age out naturally because dedup matches
+  # on the new form, not the old.
+  git_lines=$(git -C "$PWD" rev-parse --show-toplevel HEAD 2>/dev/null || true)
+  if [[ -n "$git_lines" ]]; then
+    repo_root=${git_lines%%$'\n'*}
+    completion_commit=${git_lines##*$'\n'}
+    [[ "$completion_commit" =~ ^[a-f0-9]{7,40}$ ]] || completion_commit=""
+  fi
+
+  log_dir="${repo_root}/docs/retros"
   log_file="${log_dir}/plans-completed.jsonl"
   mkdir -p "$log_dir" 2>/dev/null || return 0
 
-  # Best-effort enrichment: task_count from _index.md YAML (`- id:` lines in
-  # the Execution Plan block), batch_count from sprint-contract-batch-*.md
-  # file count. Both default to 0 on any failure so the write still lands —
-  # the canonical event was previously fields-light by design (empirical
-  # audit of 2 completed plans found the file missing entirely), and the
-  # downstream consumers (retrospective Phase 1, executing-plans Phase 6
-  # retro-due reminder) treat 0 as "unknown" rather than aborting.
-  #
-  # Both branches stay friendly to `set -euo pipefail` (this lib is sourced
-  # by stop-hook.sh which mirrors that mode):
-  #   - grep -c uses `|| true` because exit 1 (no matches) + pipefail = abort
-  #   - batch_count uses an inline glob loop instead of `find | wc -l` so a
-  #     missing plan dir doesn't propagate find's exit-1 through the pipeline
-  index_file="${PWD}/${plan_path}/_index.md"
+  # plans-completed.jsonl is "first completion per plan" — multiple promise
+  # fires (re-entry, amendment, partial rerun) on the same plan must not
+  # inflate RETROSPECTIVE DUE counts. Empirical evidence: user-simulation
+  # 2026-05-08 logged the same plan twice (slash + no-slash variants, 7.5h
+  # apart). Tail-bounded grep is fast even on long-lived logs and survives
+  # corrupt prior lines; anchored on the canonical `,"plan":"<path>",` form
+  # so a substring of an unrelated field can't false-match.
+  if [[ -f "$log_file" ]] \
+     && tail -n 200 "$log_file" 2>/dev/null \
+        | grep -qF ",\"plan\":\"${plan_path}\","; then
+    return 0
+  fi
+
+  # Best-effort enrichment: 0 means "unknown" to retrospective, never aborts.
+  # `grep -c || true` is required under set -euo pipefail (no-match returns 1).
+  # batch_count uses an inline glob loop instead of `find | wc -l` so a
+  # missing plan dir doesn't propagate find's exit-1 through the pipeline.
+  index_file="${repo_root}/${plan_path}/_index.md"
   if [[ -f "$index_file" ]]; then
     task_count=$(grep -cE '^[[:space:]]*-[[:space:]]*id:' "$index_file" 2>/dev/null || true)
     [[ "$task_count" =~ ^[0-9]+$ ]] || task_count=0
   fi
   local _bc_file
-  for _bc_file in "${PWD}/${plan_path}"/sprint-contract-batch-*.md; do
+  for _bc_file in "${repo_root}/${plan_path}"/sprint-contract-batch-*.md; do
     [[ -e "$_bc_file" ]] && batch_count=$((batch_count + 1))
   done
 
+  # modified_files is the cross-batch accumulator written by track-changes.sh
+  # (PostToolUse Edit/Write/MultiEdit). At plan completion it scopes
+  # post-plan-diff to plan-touched files only — changes outside this set
+  # are user evolution, not feedback on superpowers output.
+  modified_files_json=$(state_read_json "$state_file" '.modified_files // []')
+  [[ "$modified_files_json" == "null" ]] && modified_files_json="[]"
+
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   jq -nc \
-    --arg plan "${PWD}/${plan_path}" \
+    --arg plan "$plan_path" \
+    --arg root "$repo_root" \
     --arg ts "$now" \
+    --arg commit "$completion_commit" \
     --argjson tc "$task_count" \
     --argjson bc "$batch_count" \
-    '{event: "plan_completed", plan: $plan, task_count: $tc, batch_count: $bc, timestamp: $ts}' \
+    --argjson mf "$modified_files_json" \
+    '{event: "plan_completed", plan: $plan, repo_root: $root, task_count: $tc, batch_count: $bc, completion_commit: $commit, completion_modified_files: $mf, timestamp: $ts}' \
     >> "$log_file" 2>/dev/null || true
 }
 

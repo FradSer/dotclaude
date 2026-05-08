@@ -3,7 +3,7 @@ name: retrospective
 description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective".
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)"]
 ---
 
 # Retrospective
@@ -12,7 +12,13 @@ Analyze evaluation patterns across completed plans, identify recurring failures,
 
 **Chain position**: This skill is the downstream consumer of executing-plans Phase 4 "Checklist Evolution Candidates". It aggregates signals across plans and produces versioned checklist updates.
 
-## Pre-Check: LOW-YIELD self-test (run before Phase 0)
+## Pre-Check A: INSUFFICIENT-POST-PLAN gate (run first, before LOW-YIELD)
+
+Read the most recent `plan_completed` event from `docs/retros/plans-completed.jsonl`. If `hours_since_completion < 24h` AND `bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" summary <completion_commit> <files...>` returns `total == 0`, output the INSUFFICIENT-POST-PLAN reminder and call AskUserQuestion (see `./references/post-plan-diff.md` §Pre-Check A for the verbatim reminder, the AskUserQuestion options, and dispatch rules).
+
+Skip silently when `completion_commit` is missing (pre-v2.8.1 logs). Always run Pre-Check B after this completes.
+
+## Pre-Check B: LOW-YIELD self-test (run after Pre-Check A)
 
 Before Bootstrap, read the most recent `retrospective_run` event from `docs/retros/evolution-log.jsonl` (if the file exists). If `.self_value.consecutive_zero_change >= 2`, surface this reminder verbatim **before** running any subsequent phase:
 
@@ -53,7 +59,9 @@ The canonical v1 template content lives in `lib/seed-checklists.sh`. To inspect 
 5. **Read evolution history** (calibration input): Read `docs/retros/evolution-log.jsonl` if present. Build a history table keyed by `item_id` with: most recent event (`item_added|item_removed|item_modified|item_promoted`), timestamp, rationale. This history feeds Phase 3 — do NOT re-propose an `ADD` for an item `REMOVE`d in the most recent retrospective unless the new evidence is materially different from the original removal rationale. Cite the historical entry in any such proposal.
 6. **Read harness config and observations** (Phase 5c feedback loop): If `docs/retros/harness-config.json` exists and contains a non-empty `disabled_components[]`, read the entry and read all matching rows from `docs/retros/harness-observations.jsonl`. Feed this into Phase 5 so the prior disable test can be judged (promote / reinstate / extend). See `./references/harness-config.md`.
 7. **Read bail-out events** (calibration input for Phase 5a): If `docs/retros/bail-out-events.jsonl` exists, read every row and aggregate counts by `(skill, event)` plus distinct `args_hash` values per skill. Pass the aggregate to Phase 5a — frequent `force_override` against many distinct inputs surfaces a too-aggressive bail threshold; high `bail_out` counts on near-identical `args_hash` values flag user habits the skill could short-circuit earlier. Skip silently when the file does not exist (first-run state).
-8. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.
+8. **Read post-plan diff** (v2.8.1): For each plan with a `completion_commit` field, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" list <completion_commit> <completion_modified_files...>` and pass the classified commit list to Phase 5a + 5b. See `./references/post-plan-diff.md` §"Phase 1 step 8" for classification rules and skip conditions.
+
+9. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.
 
 ## Phase 2: Pattern Analysis
 
@@ -108,6 +116,7 @@ See `./references/analysis-patterns.md` for criteria.
 - If a mode's checklist has only regression items all passing consistently, recommend spot-check mode (every 3rd batch)
 - If the Superpower Loop iterated ≤2 times across the analyzed plans (state file `iteration` field or plan handoff), the loop's retry budget is unused — surface as a note in the report. **Informational only**: there is no `harness-config.json` identifier for the loop; do not list it in 5b.
 - If `bail-out-events.jsonl` shows `--force` overrides on ≥3 distinct trivial-scope inputs for a single skill, the bail-out threshold for that skill is too aggressive — surface as a MODIFY-bail-threshold candidate in the report (no automated config change).
+- **Post-plan corrections** (from Phase 1 step 8 — v2.8.1): when `feedback`-classified commits ≥ 2 on plan-modified files, render the corrections table and surface "likely missed pattern" rows. **1-plan ADD evidence override**: if a missed pattern was not flagged by any batch evaluator, it graduates to a Phase 3 ADD proposal at 1-plan evidence. Table format, scope-match rules for the 5b veto, and veto-note template all live in `./references/post-plan-diff.md` §Phase 5a / §Phase 5b.
 
 ### 5b. Load-Bearing Candidate Identification
 
@@ -121,6 +130,10 @@ Flag a component as a **removal candidate** when it satisfies any of the followi
 | Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles | `recurring_failure_patterns` |
 
 Every component listed in 5b MUST have a harness-config identifier — if it has no consumer-side disable, it belongs in 5a (informational) instead. The Superpower Loop is intentionally absent here for that reason.
+
+**Post-plan diff veto** (v2.8.1) — run BEFORE listing any candidate as a removal candidate. For each candidate, check Phase 1 step 8 results: if `feedback`-classified post-plan commits ≥ 2 on plan-modified files AND the missed-pattern maps to this component's defensive scope, **VETO**. The veto emits a `component_reinstated` event (see `./references/evolution-protocol.md`) instead of a disable test. Scope-match table, exact veto-note template, and full rationale: `./references/post-plan-diff.md` §Phase 5b.
+
+This veto is the direct fix for the v2.7.0 systemic miscalibration (user-simulation 2026-05-08 disabled `recurring_failure_patterns` on blank-injection signal alone; 5 post-plan refactor commits later showed the patterns existed and the evaluator missed them).
 
 Checklist items with zero failures are covered by Phase 3 REMOVE proposals — cross-reference here, do not duplicate.
 
@@ -180,5 +193,6 @@ This entry is the closure marker that executing-plans Phase 6 uses to compute re
 ## References
 
 - `./references/analysis-patterns.md` - Failure frequency, plateau detection, never-failing analysis, harness health criteria
-- `./references/evolution-protocol.md` - Proposal types, thresholds, version management, evolution log schema, pre-edit snapshot
+- `./references/evolution-protocol.md` - Proposal types, thresholds, version management, evolution log schema, pre-edit snapshot, `component_reinstated` event schema
 - `./references/harness-config.md` - `harness-config.json` schema and lifecycle for one-at-a-time component disable
+- `${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh` (v2.8.1) - classifies post-plan commits as `feedback` (refactor/fix/style/perf — user correcting superpowers output) or `evolution` (feat/chore/docs/build/ci/test — user adding new requirements). Used by Pre-Check A and Phase 1 step 8 to close the calibration loop's largest blind spot
