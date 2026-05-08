@@ -3,7 +3,7 @@ name: systematic-debugging
 description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes.
 argument-hint: "<bug description or symptom>"
 user-invocable: true
-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)"]
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
 ---
 
 # Systematic Debugging
@@ -41,6 +41,14 @@ Examples that DO NOT bail out (proceed to Phase 1):
 > Detected named root cause and named fix. Skipping the 4-phase pipeline (calibrated for unknown root causes). Applying the fix and writing a regression test directly. To force the full pipeline, re-invoke as `/superpowers:systematic-debugging --force "<symptom>"`.
 
 When the user passes `--force` (literal token in `$ARGUMENTS`), skip this bail-out and proceed to Phase 1 unconditionally.
+
+**Calibration log** (regardless of branch — bail or `--force`):
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" systematic-debugging <event> "<short reason>" "$ARGUMENTS"
+```
+
+`<event>` is `bail_out` when the named-root-cause+named-fix gate fires (and the direct-edit-plus-regression-test path is taken), or `force_override` when `--force` bypasses the gate into Phase 1. The log feeds retrospective Phase 5a — repeated `force_override` on inputs that look bail-eligible suggests the third gate condition (single-file-or-string-substitution) is too restrictive.
 
 **Iron Law remains** for non-bail-out paths: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST. The bail-out only fires when the user has *already done* the root cause work and is handing the conclusion to Claude.
 
@@ -244,13 +252,13 @@ Each phase must be completed before proceeding to the next.
 
    This is not a failed hypothesis - this is wrong architecture.
 
-## Complex Bugs and Planning
+## Complex Bugs: Inline Plan Summary (no file written)
 
-**For complex bugs, planning must precede any code changes:**
+**For complex bugs, get approval on a compact plan before any code change.** This section is consistent with the Slash-command Usage rule at the top of this skill: do NOT create `docs/plans/` folders or `BUGFIX_PLAN.md` files — the deliverable is still `the fix + a regression test`, never a planning document.
 
-### When Bug is Complex
+### When the Inline Plan Is Required
 
-A bug requires EnterPlanMode before making changes when ANY of these apply:
+A bug requires the inline-plan step before edits when ANY of these apply:
 
 - **Multi-component involvement** - Issue spans multiple files, modules, or subsystems
 - **Architecture implications** - Fix may affect system design, contracts, or interfaces
@@ -259,36 +267,39 @@ A bug requires EnterPlanMode before making changes when ANY of these apply:
 - **Requires refactoring** - Fix needs structural changes beyond minimal patch
 - **Not fully understood** - After Phase 1 investigation, root cause is still unclear
 
-### Planning Process
+### Inline Plan Format
 
-1. **Complete Phase 1 (Root Cause Investigation)**
-   - Must understand WHAT is broken and WHY before planning
-   - Gather all evidence first
+After Phase 1 (Root Cause Investigation), present the plan **inline in your turn output** (not in a file) using this six-line shape, then call AskUserQuestion to gate approval:
 
-2. **Write and get approval for the implementation plan**
-   - Create a markdown file (e.g., `BUGFIX_PLAN.md`) with:
-     - Root cause summary (from Phase 1)
-     - Proposed fix strategy
-     - Files that will be modified
-     - Tests to be created/modified
-     - Potential risks and mitigation
-     - Alternative approaches considered
-   - Use AskUserQuestion to present the plan and request approval before proceeding
-   - User may suggest a different approach, provide additional context, or approve as-is
+```
+ROOT CAUSE: <one-line summary from Phase 1 evidence>
+FIX STRATEGY: <what change resolves the cause, in one sentence>
+FILES: <comma-separated paths that will be modified>
+TESTS: <regression test path(s) + scenario name>
+RISKS: <one line — side effects, blast radius, or "low: localized to <subsystem>">
+ALTERNATIVES: <one line — rejected approaches + why>
+```
 
-3. **Proceed only after user approval**
-   - Once approved, implement the plan step by step
-   - Keep implementation aligned with the approved plan
-   - If the plan needs adjustment during implementation, stop and ask again
+Then:
 
-### Why Planning for Complex Bugs
+```
+AskUserQuestion: "Approve this fix plan?"
+  options: ["Approve", "Suggest different approach", "Need more investigation"]
+```
 
-- Prevents expensive rework from wrong architectural choices
-- Ensures alignment with user preferences and constraints
-- Catches overlooked dependencies early
-- Provides visibility into proposed changes before execution
+Behavior on each branch:
 
-**For simple bugs:** Continue with Phase 2-4 directly without planning.
+- **Approve** — Proceed to Phase 2-4 with this plan as the contract; do not deviate without re-asking
+- **Suggest different approach** — Re-enter Phase 1 with the user's hypothesis as a new lead, then re-present
+- **Need more investigation** — Loop back to Phase 1 step 4 (Multi-component layered tracing); do not propose a fix until evidence covers the new question
+
+### Why Inline (not BUGFIX_PLAN.md)
+
+- The deliverable contract is "fix + regression test", not a planning artifact — a saved plan file would survive the bug fix in the repo as orphan documentation
+- An inline summary is short enough that the user can review it in the AskUserQuestion turn without context-switching to a file
+- Removes the wording conflict with the top-of-file rule "Do NOT write design documents or task files"
+
+**For simple bugs:** Continue with Phase 2-4 directly — no inline plan needed.
 
 ## Red Flags
 

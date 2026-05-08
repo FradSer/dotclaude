@@ -1178,6 +1178,81 @@ class LoopPhaseTests(unittest.TestCase):
             "writing-plans completion must not pollute plans-completed.jsonl",
         )
 
+    def test_plan_completion_log_includes_task_and_batch_counts(self) -> None:
+        """plan_completed entries enrich with task_count + batch_count when the
+        plan dir contains _index.md (with `- id:` YAML rows) and at least one
+        sprint-contract-batch-*.md file. Retrospective Phase 1 + executing-plans
+        Phase 6 retro-due reminder both treat 0 as 'unknown' but a real
+        non-zero value lets retrospective compute task density across plans."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        plan_dir = project_root / "docs" / "plans" / "2026-05-07-banner-plan"
+        plan_dir.mkdir(parents=True)
+        (plan_dir / "_index.md").write_text(
+            "# banner plan\n\n## Execution Plan\n\n```yaml\n"
+            "tasks:\n"
+            "  - id: \"001\"\n    subject: setup\n"
+            "  - id: \"002\"\n    subject: red\n"
+            "  - id: \"003\"\n    subject: green\n"
+            "  - id: \"004\"\n    subject: refactor\n"
+            "```\n"
+        )
+        (plan_dir / "sprint-contract-batch-1.md").write_text("contract 1\n")
+        (plan_dir / "sprint-contract-batch-2.md").write_text("contract 2\n")
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-banner-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        entry = json.loads(log_file.read_text().strip().split("\n")[0])
+        self.assertEqual(entry["task_count"], 4)
+        self.assertEqual(entry["batch_count"], 2)
+
+    def test_plan_completion_log_zero_counts_when_files_missing(self) -> None:
+        """When the prompt resolves a plan dir that does not exist on disk
+        (e.g., the user committed the plan and wiped the worktree before the
+        promise fired), task_count + batch_count default to 0 but the entry
+        is still written. Downstream consumers treat 0 as 'unknown'."""
+        project_root = Path(self.tmpdir.name) / "fake-project"
+        project_root.mkdir()
+
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 0,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/2026-05-07-ghost-plan.",
+            "skill_name": "executing-plans",
+        }))
+        self._write_transcript("done\n<promise>EXECUTION_COMPLETE</promise>")
+
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        log_file = project_root / "docs" / "retros" / "plans-completed.jsonl"
+        entry = json.loads(log_file.read_text().strip().split("\n")[0])
+        self.assertEqual(entry["task_count"], 0)
+        self.assertEqual(entry["batch_count"], 0)
+        # Required fields all present even on empty enrichment.
+        self.assertEqual(entry["event"], "plan_completed")
+        self.assertIn("ghost-plan", entry["plan"])
+        self.assertRegex(entry["timestamp"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
     def test_executing_plans_without_plan_path_in_prompt_skips_log(self) -> None:
         """Defensive: if for any reason state.prompt does not contain a
         recognizable `docs/plans/<topic>-plan` path, the log helper returns

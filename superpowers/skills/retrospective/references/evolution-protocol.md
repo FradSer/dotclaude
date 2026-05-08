@@ -106,9 +106,24 @@ Append to `docs/retros/evolution-log.jsonl` (one JSON object per line, append-on
   "report": "docs/retros/retro-2026-04-07-error-specificity.md",
   "proposals_approved": 2,
   "proposals_rejected": 1,
-  "disable_test": "Superpower Loop in executing-plans"
+  "disable_test": "evaluator_per_batch",
+  "self_value": {
+    "proposals_total": 3,
+    "disable_test_set": true,
+    "consecutive_zero_change": 0
+  }
 }
 ```
+
+`disable_test` MUST be either `null` (no component disabled this run) or one of the supported `harness-config.json` identifiers listed in `harness-config.md`. **Do not** write a free-text component name (e.g., "Superpower Loop in executing-plans") — those are unsupported and will fail the calibration-loop self-check. See SKILL.md Phase 5c refusal gate.
+
+`self_value` records this run's own productivity for the next retrospective's LOW-YIELD self-check:
+
+- `proposals_total`: `proposals_approved + proposals_rejected`
+- `disable_test_set`: `true` when `disable_test` is non-null (a real assumption test was launched)
+- `consecutive_zero_change`: count of consecutive prior `retrospective_run` events with `proposals_approved == 0 AND disable_test_set == false`, plus 1 if this run is also zero-change (else reset to 0). Computed at write time by reading the previous `retrospective_run` event in this log.
+
+When `consecutive_zero_change >= 2`, `retrospective` Phase 0 and `executing-plans` Phase 6 should surface a "RETROSPECTIVE LOW-YIELD" hint instead of the standard RETROSPECTIVE DUE reminder.
 
 Never edit or remove past entries. The log is the audit trail for all checklist evolution **and** the closure marker for the calibration loop.
 

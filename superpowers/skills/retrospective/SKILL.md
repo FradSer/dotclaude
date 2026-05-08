@@ -12,6 +12,20 @@ Analyze evaluation patterns across completed plans, identify recurring failures,
 
 **Chain position**: This skill is the downstream consumer of executing-plans Phase 4 "Checklist Evolution Candidates". It aggregates signals across plans and produces versioned checklist updates.
 
+## Pre-Check: LOW-YIELD self-test (run before Phase 0)
+
+Before Bootstrap, read the most recent `retrospective_run` event from `docs/retros/evolution-log.jsonl` (if the file exists). If `.self_value.consecutive_zero_change >= 2`, surface this reminder verbatim **before** running any subsequent phase:
+
+> **RETROSPECTIVE LOW-YIELD**: the last {N} consecutive runs produced zero approved proposals and no assumption test. The calibration loop is not currently earning its cost. Recommend skipping this run unless you have new evidence the previous loops missed; re-invoke after 2+ more plans complete to give the data more signal.
+
+After surfacing, call `AskUserQuestion` with options `["Run anyway (I have new evidence)", "Skip this run", "Show me the prior zero-change events"]` and dispatch on the answer:
+
+- **Run anyway** — proceed to Phase 0 normally; the next `retrospective_run` event resets `consecutive_zero_change` to 0 only if this run produces a non-zero change
+- **Skip this run** — exit without writing any file; do NOT append a `retrospective_run` event (the calibration loop is paused, not falsified)
+- **Show me the prior zero-change events** — print the last `N+1` `retrospective_run` JSON lines, then re-ask the question
+
+If the file does not exist or the most recent event lacks `self_value`, treat as `consecutive_zero_change=0` and skip the pre-check silently.
+
 ## Phase 0: Bootstrap (run only when no checklists exist)
 
 Before Phase 1, check whether `docs/retros/checklists/` contains `{mode}-v1.md` for each mode (design / plan / code).
@@ -38,7 +52,8 @@ The canonical v1 template content lives in `lib/seed-checklists.sh`. To inspect 
 4. **Read reports**: For each plan, read all evaluation report files. Extract per-item results (Item ID, Result, Evidence) and rework items.
 5. **Read evolution history** (calibration input): Read `docs/retros/evolution-log.jsonl` if present. Build a history table keyed by `item_id` with: most recent event (`item_added|item_removed|item_modified|item_promoted`), timestamp, rationale. This history feeds Phase 3 — do NOT re-propose an `ADD` for an item `REMOVE`d in the most recent retrospective unless the new evidence is materially different from the original removal rationale. Cite the historical entry in any such proposal.
 6. **Read harness config and observations** (Phase 5c feedback loop): If `docs/retros/harness-config.json` exists and contains a non-empty `disabled_components[]`, read the entry and read all matching rows from `docs/retros/harness-observations.jsonl`. Feed this into Phase 5 so the prior disable test can be judged (promote / reinstate / extend). See `./references/harness-config.md`.
-7. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.
+7. **Read bail-out events** (calibration input for Phase 5a): If `docs/retros/bail-out-events.jsonl` exists, read every row and aggregate counts by `(skill, event)` plus distinct `args_hash` values per skill. Pass the aggregate to Phase 5a — frequent `force_override` against many distinct inputs surfaces a too-aggressive bail threshold; high `bail_out` counts on near-identical `args_hash` values flag user habits the skill could short-circuit earlier. Skip silently when the file does not exist (first-run state).
+8. **Minimum data check**: If only 1 plan provided, warn that ADD proposals require 2+ plans. If fewer than 10 reports per item, warn that REMOVE proposals require 10+ reports.
 
 ## Phase 2: Pattern Analysis
 
@@ -91,6 +106,8 @@ See `./references/analysis-patterns.md` for criteria.
 - If all tasks in recent plans pass on first round (no REWORK), recommend reducing evaluation frequency
 - If "Recurring Failure Patterns" injections never improve outcomes, recommend revising intra-plan learning
 - If a mode's checklist has only regression items all passing consistently, recommend spot-check mode (every 3rd batch)
+- If the Superpower Loop iterated ≤2 times across the analyzed plans (state file `iteration` field or plan handoff), the loop's retry budget is unused — surface as a note in the report. **Informational only**: there is no `harness-config.json` identifier for the loop; do not list it in 5b.
+- If `bail-out-events.jsonl` shows `--force` overrides on ≥3 distinct trivial-scope inputs for a single skill, the bail-out threshold for that skill is too aggressive — surface as a MODIFY-bail-threshold candidate in the report (no automated config change).
 
 ### 5b. Load-Bearing Candidate Identification
 
@@ -102,7 +119,8 @@ Flag a component as a **removal candidate** when it satisfies any of the followi
 | Design evaluator | Zero design-mode rework items in 3+ designs | `evaluation-design-round-*.md` | `design_evaluator` |
 | Sprint contract Evaluation Criteria Preview | First-pass output PASSes every preview item | per-batch evaluation reports | `sprint_contract_preview` |
 | Per-batch "Recurring Failure Patterns" injection | Empty across all batches | sprint contract preambles | `recurring_failure_patterns` |
-| Superpower Loop | Loop iterated ≤2 times (retry unused) | state file `iteration` field or plan handoff | (no identifier — informational only) |
+
+Every component listed in 5b MUST have a harness-config identifier — if it has no consumer-side disable, it belongs in 5a (informational) instead. The Superpower Loop is intentionally absent here for that reason.
 
 Checklist items with zero failures are covered by Phase 3 REMOVE proposals — cross-reference here, do not duplicate.
 
@@ -142,13 +160,22 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
    - 5c selected one-at-a-time disable test (if any), with quality delta thresholds
 5. Summary: N proposals approved, M rejected, checklists updated to version X, harness component disabled for next run (if any)
 
-**Close the calibration loop** (mandatory): Append one JSON line to `docs/retros/evolution-log.jsonl` marking this retrospective run:
+**Close the calibration loop** (mandatory): Append one JSON line to `docs/retros/evolution-log.jsonl` marking this retrospective run, including the self_value sub-object:
 
 ```json
-{"event":"retrospective_run","timestamp":"<ISO8601 UTC>","plans_analyzed":["<plan dir>",...],"report":"docs/retros/retro-{date}-{topic}.md","proposals_approved":N,"proposals_rejected":M,"disable_test":"<component or null>"}
+{"event":"retrospective_run","timestamp":"<ISO8601 UTC>","plans_analyzed":["<plan dir>",...],"report":"docs/retros/retro-{date}-{topic}.md","proposals_approved":N,"proposals_rejected":M,"disable_test":"<supported identifier or null>","self_value":{"proposals_total":N+M,"disable_test_set":<true|false>,"consecutive_zero_change":<C>}}
 ```
 
-This entry is the closure marker that executing-plans Phase 6 uses to compute retrospective-due reminders. Do NOT skip it even when zero proposals were approved — the run itself is the signal.
+Compute `consecutive_zero_change` (`C`) at write time:
+
+1. Define this run as **zero-change** when `proposals_approved == 0 AND disable_test_set == false`
+2. Read the previous `retrospective_run` event in this log (none on first run)
+3. If this run is zero-change: `C = (prior_event.self_value.consecutive_zero_change // 0) + 1`
+4. If this run is NOT zero-change: `C = 0` (resets the counter)
+
+`disable_test` MUST be either `null` or one of the supported `harness-config.json` identifiers (see `./references/harness-config.md`) — **never** a free-text component name.
+
+This entry is the closure marker that executing-plans Phase 6 uses to compute retrospective-due reminders, **and** the input to the Pre-Check LOW-YIELD self-test on the next run. Do NOT skip it even when zero proposals were approved — the run itself is the signal that produced `consecutive_zero_change++`.
 
 ## References
 

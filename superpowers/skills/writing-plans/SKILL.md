@@ -3,7 +3,7 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
 ---
 
 # Writing Plans
@@ -12,15 +12,26 @@ Create executable implementation plans that reduce ambiguity for whoever execute
 
 ## CRITICAL: Bail-Out Check (run first)
 
-**Read `bdd-specs.md` from the resolved design folder. Count `Scenario:` occurrences. Bail out — do NOT start the loop, do NOT decompose tasks — when:**
+**Read `bdd-specs.md` from the resolved design folder. Count `Scenario:` occurrences. Bail out — do NOT start the loop, do NOT decompose tasks — when EITHER:**
 
-- BDD scenarios < 3 AND total estimated tasks < 5
+- BDD scenarios in `bdd-specs.md` < 3, **OR**
+- Total estimated task count < 5 (use `2× BDD scenarios + 1 setup task` as a rough estimate; if the design `_index.md` carries an explicit "Task Estimate" hint, prefer that)
+
+The OR-gate (was AND prior to v2.8.0) catches the common "2 BDD + many setup tasks" shape where the AND-gate previously let thin designs through into the full 6-phase pipeline.
 
 **Bail-out response (output verbatim):**
 
-> Design has < 3 BDD scenarios; full task-decomposition pipeline is overhead. Drafting a one-page lightweight plan inline instead. To force the full pipeline, re-invoke as `/superpowers:writing-plans --force <design-path>`.
+> Design too thin for full task-decomposition pipeline (BDD < 3 OR estimated tasks < 5). Drafting a one-page lightweight plan inline instead. To force the full pipeline, re-invoke as `/superpowers:writing-plans --force <design-path>`.
 
 Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no plan evaluator) and exit. The `--force` token (literal in `$ARGUMENTS`, case-sensitive, matched as a whole token — not a substring of other words) bypasses this check.
+
+**Log the bail outcome** before exiting (and on `--force` override) so retrospective Phase 5a can spot frequent overrides:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans <event> "<short reason>" "$ARGUMENTS"
+```
+
+Where `<event>` is `bail_out` when the gate fires or `force_override` when `--force` bypasses it.
 
 ## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 

@@ -32,6 +32,7 @@
 _loop_log_plan_completion_if_executing() {
   local state_file="$1"
   local skill_name prompt plan_path log_dir log_file now
+  local index_file task_count=0 batch_count=0
 
   skill_name=$(state_read "$state_file" '.skill_name // ""')
   [[ "$skill_name" != "executing-plans" ]] && return 0
@@ -52,11 +53,36 @@ _loop_log_plan_completion_if_executing() {
   log_file="${log_dir}/plans-completed.jsonl"
   mkdir -p "$log_dir" 2>/dev/null || return 0
 
+  # Best-effort enrichment: task_count from _index.md YAML (`- id:` lines in
+  # the Execution Plan block), batch_count from sprint-contract-batch-*.md
+  # file count. Both default to 0 on any failure so the write still lands —
+  # the canonical event was previously fields-light by design (empirical
+  # audit of 2 completed plans found the file missing entirely), and the
+  # downstream consumers (retrospective Phase 1, executing-plans Phase 6
+  # retro-due reminder) treat 0 as "unknown" rather than aborting.
+  #
+  # Both branches stay friendly to `set -euo pipefail` (this lib is sourced
+  # by stop-hook.sh which mirrors that mode):
+  #   - grep -c uses `|| true` because exit 1 (no matches) + pipefail = abort
+  #   - batch_count uses an inline glob loop instead of `find | wc -l` so a
+  #     missing plan dir doesn't propagate find's exit-1 through the pipeline
+  index_file="${PWD}/${plan_path}/_index.md"
+  if [[ -f "$index_file" ]]; then
+    task_count=$(grep -cE '^[[:space:]]*-[[:space:]]*id:' "$index_file" 2>/dev/null || true)
+    [[ "$task_count" =~ ^[0-9]+$ ]] || task_count=0
+  fi
+  local _bc_file
+  for _bc_file in "${PWD}/${plan_path}"/sprint-contract-batch-*.md; do
+    [[ -e "$_bc_file" ]] && batch_count=$((batch_count + 1))
+  done
+
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   jq -nc \
     --arg plan "${PWD}/${plan_path}" \
     --arg ts "$now" \
-    '{event: "plan_completed", plan: $plan, timestamp: $ts}' \
+    --argjson tc "$task_count" \
+    --argjson bc "$batch_count" \
+    '{event: "plan_completed", plan: $plan, task_count: $tc, batch_count: $bc, timestamp: $ts}' \
     >> "$log_file" 2>/dev/null || true
 }
 

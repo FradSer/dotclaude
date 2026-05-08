@@ -25,3 +25,13 @@ Skip: sprint contract, handoff-state.md, sprint-contract-batch-N.md, evaluation-
 ## Override
 
 `--force` as a literal token anywhere in `$ARGUMENTS` bypasses the check. Do not infer override from prose ("please force this") — only the literal token counts, to avoid accidental over-invocation.
+
+## Calibration log
+
+Always log the outcome — both bail-out and `--force` override — so retrospective Phase 5a can detect frequent override patterns:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" executing-plans <event> "<short reason>" "$ARGUMENTS"
+```
+
+`<event>` is `bail_out` when running inline-execution mode, or `force_override` when `--force` bypassed the gate and the loop is being started. Run this once per invocation; it appends to `docs/retros/bail-out-events.jsonl` and never blocks.

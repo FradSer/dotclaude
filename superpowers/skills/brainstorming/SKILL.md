@@ -2,7 +2,7 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -44,6 +44,14 @@ Use the user's answer to dispatch (Bucket A / Bucket B / debugging route). The `
 **Bail-out response (Bucket A, output verbatim, then proceed with direct edit OR hand off):**
 
 > Detected trivial-scope work. Skipping the brainstorming pipeline (calibrated for open-ended multi-component problems). To force the full pipeline, re-invoke as `/superpowers:brainstorming --force "<task>"`.
+
+**Calibration log** (run regardless of which branch fired — Bucket A bail, `--force` override, or Bucket C user-chose-skip):
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" brainstorming <event> "<short reason>" "$ARGUMENTS"
+```
+
+Where `<event>` is `bail_out` for a Bucket A skip, `force_override` for the `--force` branch entering Initialization, or `user_chose_skip` for a Bucket C user-chose-quick-edit. Skip the call only when the user routes to `/superpowers:systematic-debugging` (that skill writes its own log entry). The log feeds retrospective Phase 5a — frequent `force_override` against trivial-shaped inputs surfaces the bail-out threshold being too aggressive.
 
 ## Initialization
 

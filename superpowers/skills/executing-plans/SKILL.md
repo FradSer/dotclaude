@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
 ---
 
 # Executing Plans
@@ -219,10 +219,14 @@ Verify all tasks are complete, log plan completion, then output the promise as t
 
 1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
 2. **Log Plan Completion** (handled automatically by Stop hook): When you emit `<promise>EXECUTION_COMPLETE</promise>`, the loop hook (`lib/loop.sh:_loop_log_plan_completion_if_executing`) appends a `{event:"plan_completed",plan,timestamp}` line to `docs/retros/plans-completed.jsonl`. No manual write needed — empirical audit showed the previous Claude-instructed write was silently dropped, so this is now mechanical. If you want richer fields (`task_count`, `batch_count`) for downstream retro analysis, append a supplementary line yourself **before** the promise tag; the hook entry stands as the canonical event.
-3. **Retrospective-Due Reminder**: Count `plan_completed` entries in `plans-completed.jsonl` whose timestamp is later than the most recent `retrospective_run` timestamp in `docs/retros/evolution-log.jsonl`. If the count is `>= 3`, emit a visible reminder in the summary:
-   > **RETROSPECTIVE DUE**: {count} plans completed since the last retrospective. Run `/superpowers:retrospective --across-all` to evolve checklists before the next plan.
+3. **Retrospective-Due Reminder**: Count `plan_completed` entries in `plans-completed.jsonl` whose timestamp is later than the most recent `retrospective_run` timestamp in `docs/retros/evolution-log.jsonl`. If the count is `>= 3`, check the most recent `retrospective_run.self_value.consecutive_zero_change` (default to 0 if the field is missing — pre-v2.8.0 logs):
 
-   If the count is `< 3`, skip the reminder silently. If `evolution-log.jsonl` does not exist, treat "since last retrospective" as "since forever".
+   - If `consecutive_zero_change < 2`, emit:
+     > **RETROSPECTIVE DUE**: {count} plans completed since the last retrospective. Run `/superpowers:retrospective --across-all` to evolve checklists before the next plan.
+   - If `consecutive_zero_change >= 2`, emit instead (the calibration loop is in low-yield state — keep the user informed without nagging):
+     > **RETROSPECTIVE LOW-YIELD** ({count} plans since last run, last {consecutive_zero_change} retrospectives produced zero changes). Consider letting more plans accumulate before the next `/superpowers:retrospective` run.
+
+   If the count is `< 3`, skip the reminder silently. If `evolution-log.jsonl` does not exist, treat "since last retrospective" as "since forever" and emit the standard RETROSPECTIVE DUE reminder.
 4. Summary message: "Plan execution complete. All [N] tasks verified and committed." (append the retrospective-due reminder from step 3 if applicable).
 5. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
 
