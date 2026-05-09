@@ -23,7 +23,7 @@ The v3.x design was produced by `superpowers:brainstorming` Phase 2 spawning thr
 | **SC-NN are circular** | "Criteria assume v3.1 has shipped — the real SC should be 'should v3.0 ship at all'" |
 | **NFR-01 numbers are fabricated** | "50 ms p50 / 200 ms p99 has no baseline measurement backing" |
 | **Structurally replicates v2.8.x add-bias** | "28 requirements / 4 phases / multi-channel architecture, no external review gate, no 'don't do' path" |
-| **What should have been written** | "v3.x not yet justified. Recommend: dogfood v2.8.2 + Phase 0 channels on ≥3 projects, measure read-rate, collect friction points in `docs/retros/v3-evidence.jsonl` as real-data basis before designing v3.x" |
+| **What should have been written** | "v3.x not yet justified. Recommend: dogfood v2.8.2 + Phase 0 channels on ≥3 projects, measure read-rate, collect friction points in `docs/retros/harness-evidence.jsonl` (event=v3_friction) as real-data basis before designing v3.x" |
 
 The original folder's §0 took a non-destructive `C-variant` (keep folder, mark status, do not advance). This retro takes the destructive `B-variant`: collapse to a single retro file, delete the elaboration. Reason: the folder's own §0 ↔ §1+ contradiction was itself the v2.8.x **add-bias pattern replicated at the document layer** — ~880 lines of mechanism elaboration on N=0 evidence. Banner-form would preserve the plan-shape four-source/four-phase model as reference; reject-form removes the model and keeps the reasoning.
 
@@ -58,13 +58,13 @@ These rules do **not** make repeating the v2.8.x spiral impossible inside v3.x �
 Before any v3.x scope advances to `superpowers:writing-plans`, all four conditions must hold:
 
 1. **≥3 distinct projects** have completed at least one full plan cycle using v2.8.2 (post-plan-diff + bail-log + plans-completed channels in steady use).
-2. **`docs/retros/v3-evidence.jsonl`** in each project records concrete friction points the user encountered that v3.x would have addressed — at least one per project, append-only, format: `{"event":"v3_friction","timestamp":"...","class":"between_plan|ai_dialogue|external|cross_project","description":"...","could_phase_0_handle":false,"workaround_used":"..."}`.
+2. **`docs/retros/harness-evidence.jsonl`** in each project records concrete friction points (event=`v3_friction`) the user encountered that v3.x would have addressed — at least one per project, append-only via `lib/harness-evidence.sh emit-v3-friction`. Schema unchanged from the original v3 retro (class / description / could_phase_0_handle / workaround_used) plus the standard wrapper fields (schema_version, timestamp, git_root, session_id, skill_name). See `docs/plans/2026-05-09-harness-evidence-channel-design/` for the channel design.
 3. **Phase 0 read-rate measurement** across the same ≥3 projects shows consumers (retrospective Phase 5a, executing-plans Phase 6) actually read post-plan-diff / bail-log / plans-completed data with non-trivial frequency.
 4. **A formal `meta-retrospective` skill run** (out-of-band, not a normal `retrospective`) reviews the v3-evidence corpus and emits PASS / REWORK on whether v3.x scope still matches user friction.
 
-**Gate-trigger note (critical)**: condition 2 references `v3-evidence.jsonl` as a channel that does not exist in `superpowers/lib/` and has no shipped writer. Condition 4 references a `meta-retrospective` skill that is not registered in any `plugin.json`. **The gate is currently un-triggerable.** If v3.x is to be activated later, condition 2's channel and condition 4's skill must each be independently brainstormed with their own retract triggers — they are themselves new mechanisms with the same N=0 risk. **Do not bundle the gate's infrastructure into v3.x scope.**
+**Gate-trigger note (historical)**: condition 2 originally referenced a `v3-evidence.jsonl` channel that did not exist in `superpowers/lib/` and had no shipped writer. As of the 2026-05-09 follow-on design (`docs/plans/2026-05-09-harness-evidence-channel-design/`), the channel ships as `lib/harness-evidence.sh` writing `docs/retros/harness-evidence.jsonl`. Condition 2 is now triggerable. Condition 4 (`meta-retrospective` skill) is still not registered in any `plugin.json` and remains un-triggerable. If v3.x is to be activated later, condition 4's skill must be independently brainstormed with its own retract triggers — it is itself a new mechanism with the same N=0 risk. **Do not bundle the gate's infrastructure into v3.x scope.**
 
-If activation passes, this retro is the starting reference; sub-agents in a fresh brainstorming session re-examine the §2 scope against the v3-evidence corpus and prune anything that wasn't real friction (sub-agent self-prediction: 30–50% pruning factor per quadrant).
+If activation passes, this retro is the starting reference; sub-agents in a fresh brainstorming session re-examine the §2 scope against the harness-evidence corpus (filtered to event=v3_friction) and prune anything that wasn't real friction (sub-agent self-prediction: 30–50% pruning factor per quadrant).
 
 If activation fails (≥3 projects use v2.8.2 happily without missing v3.x scope), this file ages out as audit evidence that v3.x was considered and deemed unnecessary.
 
@@ -96,7 +96,7 @@ Mirroring `meta-retro-2026-05-08-superpowers-v2.8.x.md` §6, the activation cond
 
 | Trigger | Threshold | Source of truth |
 |---|---|---|
-| **T1: Activation gate satisfied** | All four §4 conditions hold | `docs/retros/v3-evidence.jsonl` across ≥3 projects + meta-retrospective skill emit |
+| **T1: Activation gate satisfied** | All four §4 conditions hold | `docs/retros/harness-evidence.jsonl` (event=v3_friction) across ≥3 projects + meta-retrospective skill emit |
 | **T2: New friction class** | A user reports a friction class outside the four §2 quadrants — between-plan / AI dialogue / external / cross-project — that is genuinely common | external — maintainer observation |
 | **T3: Calendar age-out** | 365 days from this retro (i.e., 2027-05-09) without T1 or T2 — folder ages out as "considered, deemed unnecessary" | calendar |
 | **T4: Counter-evidence** | ≥3 projects use v2.8.2 happily and in §5 (Phase 0 partial-ship) the manual writes also stay un-promoted with zero friction — confirms v3.x scope was hypothetical | observation |
@@ -116,6 +116,7 @@ Mirroring `meta-retro-2026-05-08-superpowers-v2.8.x.md` §6, the activation cond
   - A: keep folder, add NOT-JUSTIFIED banners + reconcile vocab — rejected because plan-shape four-source/four-phase model would survive
   - C: original folder's choice (keep + status flag) — rejected because §0 ↔ §1+ contradiction would persist
 - **Co-author**: Claude Opus 4.7
+- **2026-05-09 follow-on**: condition-2 channel designed and named `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open. See `docs/plans/2026-05-09-harness-evidence-channel-design/` (`_index.md`, `architecture.md`, `bdd-specs.md`, `best-practices.md`, `evaluation-design-round-1.md` PASS).
 
 ---
 
