@@ -53,13 +53,29 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" brainstorming <event> "<short reaso
 
 Where `<event>` is `bail_out` for a Bucket A skip, `force_override` for the `--force` branch entering Initialization, or `user_chose_skip` for a Bucket C user-chose-quick-edit. Skip the call only when the user routes to `/superpowers:systematic-debugging` (that skill writes its own log entry). The log feeds retrospective Phase 5a — frequent `force_override` against trivial-shaped inputs surfaces the bail-out threshold being too aggressive.
 
+## Pre-loop Resolution (run before Initialization step 1)
+
+The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes it** (`lib/loop.sh` re-reads `prompt` at line 254 but never mutates it; only `_loop_clear_state` at line 122-124 deletes it on completion). Resolve `$ARGUMENTS` to its anchored form **before** invoking the script.
+
+1. **Strip the `--force` token** from `$ARGUMENTS` if present (already consumed by the bail-out check above). Preserve every other token verbatim.
+2. **Reduce the remainder to a single declarative sentence** under ~150 chars: the problem to brainstorm, in the user's own framing. Do NOT paraphrase, summarize away constraints, or introduce vocabulary the user did not use. If `$ARGUMENTS` is already a one-line problem statement, pass it through.
+3. **Substitute** the resolved string for `<one-line-problem-statement>` in the bash invocation in Initialization step 3.
+
+**Examples**:
+- `$ARGUMENTS = "design v3.x knowledge platform with privacy tiers"` → `design v3.x knowledge platform with privacy tiers` (already one-liner)
+- `$ARGUMENTS = "--force redesign auth"` → `redesign auth` (`--force` stripped, already consumed)
+- `$ARGUMENTS = "正式设计"` (vague) → use the working-context problem statement the user just established in conversation
+- `$ARGUMENTS = ""` (empty) → use `the open problem the user just described in conversation`
+
+**Why this is documented explicitly**: The anchored prompt is what the harness re-injects as the iteration-1 base prompt and the fallback when `skill_name` is missing from state (see `lib/loop.sh:_loop_emit_block` lines 190-193). A vague raw `$ARGUMENTS` like `正式设计` ("formally design [it]") produces a useless anchor. Sibling skills (writing-plans line 67-71, executing-plans line 25-28) do this resolution implicitly via path resolution; brainstorming's input is free-form so the resolution step must be explicit.
+
 ## Initialization
 
-1. Capture `$ARGUMENTS` as the initial prompt
+1. Capture the **resolved** `$ARGUMENTS` (per Pre-loop Resolution above) as the initial prompt
 2. Read `CLAUDE.md` and `README.md` to understand project constraints
 3. Start the Superpower Loop (no size gate beyond bail-out):
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: $ARGUMENTS. Progress through phases: Phase 1 (Scope Alignment) -> Phase 1.5 (Harness Config Check) -> Phase 2 (Design with QA) -> Phase 3 (Wrap-up)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: <one-line-problem-statement>. Progress through phases: Phase 1 (Scope Alignment) -> Phase 1.5 (Read Harness Config — assumption test) -> Phase 2 (Design with QA + vocabulary reconciliation) -> Phase 3 (Wrap-up)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
 ```
 
 ## Core Principles
@@ -89,8 +105,8 @@ Explore codebase, propose approach, get user approval.
 **Exit**: User-approved approach, clear requirements and constraints.
 
 **On user rejection of the sprint contract** (response says "no", "wrong", "different approach", names specific objections):
-- Do NOT auto-loop with the same proposal. The Stop hook will re-inject the same prompt; absorb the rejection in the next iteration by regenerating the contract from scratch with the user's objections as new constraints.
-- If the user names a different problem entirely ("actually this is about X"), reset captured `$ARGUMENTS` to the new framing and re-run Phase 1 step 1 (codebase exploration with the new scope).
+- Do NOT auto-loop with the same proposal. The loop's `state.prompt` is immutable after setup; the Stop hook re-injects the same anchored prompt every iteration. Absorb the rejection by regenerating the sprint contract from scratch with the user's objections as new constraints — keep the working-context framing in your synthesis, not in the anchor.
+- If the user names a different problem entirely ("actually this is about X"), treat the new framing as a **scope override layered on top of the anchored prompt**: re-run Phase 1 step 1 (codebase exploration with the new scope) and let your in-turn working context carry the new framing. Do NOT attempt to rewrite `state.prompt` — there is no API for that, and the iter-2+ re-injection uses the `Continue superpowers:brainstorming` short header (skill_name branch in `lib/loop.sh:_loop_emit_block`), so the original anchor only matters for iteration 1. If the override is fundamental (the user wants a completely unrelated brainstorm), output `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line note explaining the pivot, and have the user re-invoke `/superpowers:brainstorming` with the new framing.
 - If the user says "abort" or "cancel", emit `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line cancellation note. Do not write design files.
 
 See `./references/scope-alignment.md` for exploration patterns, question guidelines, and trade-off templates.
@@ -99,9 +115,9 @@ See `./references/scope-alignment.md` for exploration patterns, question guideli
 
 **CRITICAL**: Before Phase 2, if `docs/retros/harness-config.json` exists and lists `design_evaluator` in `disabled_components[]`, set a local flag `_DESIGN_EVALUATOR_DISABLED=true`. Honor that flag in Phase 2 Step 2 (skip evaluator spawn) AND append one row to `docs/retros/harness-observations.jsonl` after Phase 2 completes (schema: `../executing-plans/references/intra-plan-learning.md`). Skip silently when the file does not exist or `disabled_components[]` is empty. See `../retrospective/references/harness-config.md` for supported identifiers.
 
-## Phase 2: Design with QA
+## Phase 2: Design with QA + Vocabulary Reconciliation
 
-Create design documents with integrated quality assurance. All research runs in fresh sub-agent contexts; the main agent only synthesizes.
+Create design documents with integrated quality assurance, then reconcile cross-sub-agent vocabulary into a canonical glossary before integration. All research runs in fresh sub-agent contexts; the main agent only synthesizes and reconciles — it does not author content.
 
 **Step 1: Create Design Documents**
 
