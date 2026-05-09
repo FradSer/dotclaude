@@ -61,13 +61,13 @@ The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes
 2. **Reduce the remainder to a single declarative sentence** under ~150 chars: the problem to brainstorm, in the user's own framing. Do NOT paraphrase, summarize away constraints, or introduce vocabulary the user did not use. If `$ARGUMENTS` is already a one-line problem statement, pass it through.
 3. **Substitute** the resolved string for `<one-line-problem-statement>` in the bash invocation in Initialization step 3.
 
-**Examples**:
-- `$ARGUMENTS = "design v3.x knowledge platform with privacy tiers"` → `design v3.x knowledge platform with privacy tiers` (already one-liner)
-- `$ARGUMENTS = "--force redesign auth"` → `redesign auth` (`--force` stripped, already consumed)
-- `$ARGUMENTS = "正式设计"` (vague) → use the working-context problem statement the user just established in conversation
+**Examples (pattern → resolution)**:
+- `$ARGUMENTS = "<full one-line problem statement>"` → pass through unchanged (already a one-liner)
+- `$ARGUMENTS = "--force <task>"` → `<task>` (strip `--force`, already consumed by bail-out)
+- `$ARGUMENTS = "<single vague word or short phrase with no scope cues>"` → use the working-context problem statement the user just established in conversation; do NOT substitute the literal vague string
 - `$ARGUMENTS = ""` (empty) → use `the open problem the user just described in conversation`
 
-**Why this is documented explicitly**: The anchored prompt is what the harness re-injects as the iteration-1 base prompt and the fallback when `skill_name` is missing from state (see `lib/loop.sh:_loop_emit_block` lines 190-193). A vague raw `$ARGUMENTS` like `正式设计` ("formally design [it]") produces a useless anchor. Sibling skills (writing-plans line 67-71, executing-plans line 25-28) do this resolution implicitly via path resolution; brainstorming's input is free-form so the resolution step must be explicit.
+**Why this is documented explicitly**: The anchored prompt is what the harness re-injects as the iteration-1 base prompt and the fallback when `skill_name` is missing from state (see `lib/loop.sh:_loop_emit_block` lines 190-193). A vague raw `$ARGUMENTS` (a single bare verb-phrase like "redesign it" or a referent-less noun like "the system") produces a useless anchor. Sibling skills (writing-plans line 67-71, executing-plans line 25-28) do this resolution implicitly via path resolution; brainstorming's input is free-form so the resolution step must be explicit.
 
 ## Initialization
 
