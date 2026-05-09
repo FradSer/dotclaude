@@ -185,6 +185,7 @@ Empty `last_ts` → no filter applied, read all rows. First-retrospective semant
 
 §7 audit trail addendum (append at end):
 > - 2026-05-09: condition-2 channel designed and shipped as `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open.
+> - 2026-05-09 follow-on: as a downstream consequence of this design, `superpowers/skills/brainstorming/SKILL.md` was updated to (a) rename Phase 1.5 in the loop template to "Read Harness Config — assumption test" matching the actual heading at line 98, (b) promote vocabulary reconciliation to Phase 2's heading ("Design with QA + Vocabulary Reconciliation"), (c) document `state.prompt` immutability in a new "Pre-loop Resolution" section before Initialization, and (d) reword the Phase 1 rejection branch to remove the "reset captured `$ARGUMENTS`" no-op. Item (b) is the direct downstream of the §2 privacy-tier divergence symptom this design's Glossary requirement first systematized.
 
 ## E. Path resolution: $PWD vs git_root
 

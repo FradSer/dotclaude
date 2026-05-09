@@ -117,6 +117,7 @@ Mirroring `meta-retro-2026-05-08-superpowers-v2.8.x.md` §6, the activation cond
   - C: original folder's choice (keep + status flag) — rejected because §0 ↔ §1+ contradiction would persist
 - **Co-author**: Claude Opus 4.7
 - **2026-05-09 follow-on**: condition-2 channel designed and named `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open. See `docs/plans/2026-05-09-harness-evidence-channel-design/` (`_index.md`, `architecture.md`, `bdd-specs.md`, `best-practices.md`, `evaluation-design-round-1.md` PASS).
+- **2026-05-09 follow-on (brainstorming SKILL.md drift fix)**: `superpowers/skills/brainstorming/SKILL.md` template updated to formalize lessons surfaced during the harness-evidence design — Phase 1.5 in the loop template renamed to "Read Harness Config — assumption test" matching the actual heading, Phase 2 promoted to "Design with QA + Vocabulary Reconciliation" (formalizing the §2 privacy-tier divergence prevention into the iteration-1 anchor), new "Pre-loop Resolution" section documents `state.prompt` immutability and `$ARGUMENTS` resolution, and the Phase 1 rejection branch reworded to drop the "reset captured `$ARGUMENTS`" no-op. The rename of Phase 2 specifically promotes the failure-mode prevention from a buried sub-step into header-level signal.
 
 ---
 

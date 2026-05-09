@@ -115,7 +115,7 @@ Add scenarios:
 - **Do not pre-classify `file_change_summary` paths at write time** — reader does this on demand via `post-plan-diff.sh classify`; pre-storing freezes a classification that may evolve
 - **Do not add a 4th event type** — REQ-012 30-day audit catches this; the temptation to add `ad_hoc_capture` or `external_reading` is exactly the v3 four-quadrant model the retro rejected
 - **Do not write to `harness-evidence.jsonl` from anywhere except `lib/harness-evidence.sh`** — direct `>>` writes from skill bash blocks bypass schema validation
-- **Do not add `harness-evidence.jsonl` reading to brainstorming Phase 1.5 or executing-plans Phase 6** — v3 retro forbids bundling consumers with the writer; reader scope is retrospective Phase 1 step 8 only
+- **Do not add `harness-evidence.jsonl` reading to brainstorming Phase 1.5 (Read Harness Config — assumption test) or executing-plans Phase 6** — v3 retro forbids bundling consumers with the writer; reader scope is retrospective Phase 1 step 8 only
 
 ## Security considerations
 
