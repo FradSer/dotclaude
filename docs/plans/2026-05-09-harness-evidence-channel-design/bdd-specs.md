@@ -3,29 +3,30 @@
 Channel path: `<git_root>/docs/retros/harness-evidence.jsonl`
 Schema: NDJSON, `schema_version=1`, `event ∈ {v3_friction, session_recap, file_change_summary}`
 Writer entry: `bash superpowers/lib/harness-evidence.sh <subcmd> [args]`
-Hook coupling: Stop hook always invokes; filtering applied inside helper
-Reader entry: retrospective Phase 1 step 8 — distill rows with `timestamp > <last evolution-log.jsonl retrospective_run.timestamp>`
+Hook coupling: Stop hook always invokes; filtering applied inside helper. **Writer is path-only — no LLM call.**
+Reader entry: retrospective Phase 1 step 8 — distill rows with `timestamp > <last evolution-log.jsonl retrospective_run.timestamp>` via **one** `run_haiku_merge` call per run
+Audit entry: `bash superpowers/lib/harness-evidence.sh audit` — independent of retrospective
 
 ## Requirement coverage map
 
 | REQ | Covered by Feature |
 |---|---|
-| REQ-001 | Writer — session_recap event / Writer — v3_friction event / Writer — file_change_summary event |
-| REQ-002 | Writer — session_recap event (empty-session filter scenarios) |
+| REQ-001 | Writer — session_recap event / Writer — v3_friction event / Writer — file_change_summary event / Writer — CLI dispatcher shape |
+| REQ-002 | Writer — session_recap event (empty-session filter, path-only no-LLM contract) |
 | REQ-003 | Writer — file_change_summary event |
 | REQ-004 | Reader — retrospective Phase 1 consumption |
-| REQ-005 | Retract trigger detection |
+| REQ-005 | Retract trigger detection (T3 + T4, via audit CLI) |
 | REQ-006 | Reader — schema versioning compatibility |
-| REQ-007 | Writer — Sonnet latency containment (latency-budget scenario) |
+| REQ-007 | Writer — latency budget (no-LLM-on-hot-path scenario) |
 | REQ-008 | Writer — concurrent append + disk-full + jsonl integrity |
-| REQ-009 | Writer — Sonnet failure fallback |
-| REQ-010 | Retract trigger detection (T4 read-rate) |
-| REQ-011 | Retract trigger detection (T5 writer reliability) |
-| REQ-012 | Schema event-type allowlist audit |
+| REQ-009 | Audit CLI — independent run path |
+| REQ-010 | Pending N=1 observation (no automated scenario; verified by file existence at week 1) |
+| REQ-011 | Writer — CLI dispatcher shape + Audit — allowlist invariant |
+| REQ-012 | Writer — CLI dispatcher shape + Audit — allowlist invariant |
 
 ## Feature: Writer — session_recap event
 
-Stop hook captures one paragraph per non-empty session so retrospective has prose-grained "what happened" evidence beyond `plan_completed` deltas.
+Stop hook captures path-only inputs per non-empty session: the already-distilled 1-sentence task summary, the last-assistant tail (truncated to 500 bytes), and the modified-files list. No LLM call at write time.
 
 ```gherkin
 Background:
@@ -40,30 +41,36 @@ Scenario: happy path — executing-plans session with code changes
   And the session state file has task="Implement post-plan-diff classifier"
   And the session state file has modified_files=["lib/post-plan-diff.sh","tests/test_post_plan_diff_sh.py"]
   And the session state file has pending_prompt=""
+  And the last-assistant transcript tail is "Done. Classifier returns feedback/evolution/unknown."
   When the Stop hook calls "harness-evidence.sh emit-session-recap"
   Then "/tmp/ws/proj/docs/retros/harness-evidence.jsonl" gains exactly one new line
   And that line parses as JSON
   And the line has event="session_recap"
   And the line has schema_version=1
   And the line has skill_name="executing-plans"
-  And the line has task="Implement post-plan-diff classifier"
-  And the line has recap_paragraph of byte length between 200 and 500
-  And the line has fallback=false
+  And the line has recap_one_sentence="Implement post-plan-diff classifier"
+  And the line has last_assistant_tail="Done. Classifier returns feedback/evolution/unknown."
+  And the line has modified_files=["lib/post-plan-diff.sh","tests/test_post_plan_diff_sh.py"]
+  And the line has no field named "recap_paragraph"
+  And the line has no field named "fallback"
   And the line has timestamp matching ISO8601 UTC
   And the line has session_id of 12 hex chars
+  And no claude CLI subprocess was spawned
   And the Stop hook exits 0
 
-# REQ-001, REQ-002
-Scenario: happy path — brainstorming session with no file changes
-  Given the session state file has skill_name="brainstorming"
-  And the session state file has task="Design harness-evidence channel"
-  And the session state file has modified_files=[]
-  And the session state file has pending_prompt="next: write plan"
+# REQ-002, REQ-007
+Scenario: writer adds no LLM call to the Stop-hook critical path
+  Given a non-empty session_recap candidate
   When the Stop hook calls "harness-evidence.sh emit-session-recap"
-  Then exactly one new line is appended
-  And the line has event="session_recap"
-  And the line has skill_name="brainstorming"
-  And the line has modified_files=[]
+  Then no fork to the "claude" executable occurs
+  And the writer wall-clock is below 100 ms p95 in CI
+
+# REQ-002
+Scenario: last_assistant_tail longer than 500 bytes is truncated
+  Given the last-assistant transcript tail is 800 bytes of prose
+  When the Stop hook calls "harness-evidence.sh emit-session-recap"
+  Then the appended line has last_assistant_tail of length exactly 500
+  And the truncation matches "${var:0:500}" semantics (no UTF-8 boundary repair)
 
 # REQ-002
 Scenario: empty session is silently skipped
@@ -85,17 +92,6 @@ Scenario: non-superpowers skill still records — collection is opportunistic
   Then exactly one new line is appended
   And the line has skill_name="git:commit"
 
-# REQ-009
-Scenario: Sonnet recap call fails — write fallback row using state.task
-  Given Sonnet is unreachable (HARNESS_EVIDENCE_SKIP_SONNET=1)
-  And vet.sh has produced state.task="Refactored utils.sh acquire_state_lock"
-  When the Stop hook calls "harness-evidence.sh emit-session-recap"
-  Then exactly one new line is appended
-  And the line has fallback=true
-  And the line has recap_paragraph="Refactored utils.sh acquire_state_lock"
-  And the line has all other required fields populated normally
-  And the Stop hook exits 0
-
 # REQ-008
 Scenario: concurrent Stop hooks append without corruption
   Given two Stop hooks fire within 50 ms
@@ -106,11 +102,10 @@ Scenario: concurrent Stop hooks append without corruption
   And no line is interleaved or truncated
 
 # REQ-001
-Scenario: not inside a git repository — silent skip
+Scenario: not inside a git repository — fall back to $PWD
   Given the cwd "/tmp/scratch" has no ancestor with a ".git" directory
   When the Stop hook calls "harness-evidence.sh emit-session-recap"
-  Then no file is created anywhere
-  And a single-line warning is printed to stderr
+  Then exactly one line is appended to "/tmp/scratch/docs/retros/harness-evidence.jsonl"
   And the Stop hook exits 0
 
 # REQ-008
@@ -127,14 +122,31 @@ Scenario: jq is missing from PATH
   When the Stop hook calls "harness-evidence.sh emit-session-recap"
   Then no line is appended
   And the helper returns 0
+```
 
-# REQ-007
-Scenario: Sonnet latency 8s timeout enforced
-  Given Sonnet is slow (8.5s response)
-  And the helper's Sonnet timeout is 8s
-  When the Stop hook calls "harness-evidence.sh emit-session-recap"
-  Then _run_sonnet_recap returns empty within 8.5s wall-clock
-  And the row is written with fallback=true
+## Feature: Writer — CLI dispatcher shape
+
+The CLI dispatcher is the architectural lock for REQ-011 / REQ-012. Exactly 4 verbs; no `--event` argument anywhere.
+
+```gherkin
+# REQ-001, REQ-011, REQ-012
+Scenario: CLI dispatcher exposes exactly four verbs
+  When the user runs "bash harness-evidence.sh"
+  Then stderr contains exactly these verb names: emit-session-recap, emit-v3-friction, emit-file-change-summary, audit
+  And exit code is 2
+
+# REQ-011, REQ-012
+Scenario: passing --event to any emit verb is rejected
+  When the user runs "bash harness-evidence.sh emit-session-recap --event ad_hoc /tmp/state.json"
+  Then no line is appended to harness-evidence.jsonl
+  And exit code is 2
+  And stderr contains "unknown argument" or equivalent
+
+# REQ-011, REQ-012
+Scenario: the bash allowlist constant matches the expected set verbatim
+  Given the file superpowers/lib/harness-evidence.sh is sourced
+  When the test reads HARNESS_EVIDENCE_EVENT_ALLOWLIST
+  Then it equals the string "file_change_summary session_recap v3_friction" by exact equality
 ```
 
 ## Feature: Writer — v3_friction event
@@ -224,14 +236,24 @@ Background:
   Given evolution-log.jsonl records last retrospective_run.timestamp = "2026-04-01T00:00:00Z" (T0)
 
 # REQ-004
-Scenario: distill N un-distilled rows
-  Given harness-evidence.jsonl has 7 rows after T0 and 3 rows before T0
+Scenario: distill N un-distilled rows via ONE Haiku call
+  Given harness-evidence.jsonl has 7 session_recap rows after T0 and 3 rows before T0
   When retrospective Phase 1 step 8 reads the channel
   Then Phase 1 processes exactly the 7 rows after T0
+  And exactly one run_haiku_merge call is made over the concatenated content
   And Phase 1 includes counts per event type in the retro report
-  And Phase 1 includes at least one verbatim recap_paragraph in the report
+  And the distilled paragraph appears under section 4.5a of the retro report
 
-# REQ-004, REQ-010
+# REQ-004
+Scenario: Haiku distill fails — fall back to raw evidence dump
+  Given harness-evidence.jsonl has 5 session_recap rows after T0
+  And run_haiku_merge returns ""
+  When retrospective Phase 1 step 8 reads the channel
+  Then section 4.5a of the retro report contains up to 5 verbatim recap_one_sentence strings
+  And no warning aborts the retrospective
+  And Phase 1 exits 0
+
+# REQ-004
 Scenario: zero un-distilled rows
   Given harness-evidence.jsonl has 0 rows after T0
   When retrospective Phase 1 step 8 reads the channel
@@ -279,67 +301,54 @@ Scenario: reader flags unknown major schema_version
   And Phase 1 still completes successfully on the remainder
 ```
 
-## Feature: Retract trigger detection
+## Feature: Audit CLI — independent run path
 
-Three triggers, all surface via AskUserQuestion in the retrospective report; never auto-disable.
+`harness-evidence.sh audit` runs anywhere — cron, CI, manual, retrospective Phase 1. Same code path; same trigger logic. Removes the "retract triggers fire only when retrospective is run" circular dependency.
 
 ```gherkin
-# REQ-005
-Scenario: T3 calendar age-out reached
-  Given today's date is 2027-05-09 or later (HARNESS_EVIDENCE_NOW="2027-05-09T00:00:00Z")
-  When retrospective Phase 1 step 8 runs
-  Then the retro report contains the literal string "harness-evidence T3 age-out reached, AskUserQuestion to confirm retract"
-  And the retro report block is rendered prominently as top-level
+# REQ-009
+Scenario: audit exits 0 when no triggers fire and allowlist is intact
+  Given today's date is 2026-05-15
+  And a retro report dated 2026-05-12 in the project contains the substring "harness-evidence"
+  And harness-evidence.jsonl contains only allowlisted event values
+  When the operator runs "bash superpowers/lib/harness-evidence.sh audit"
+  Then exit code is 0
+  And stderr is empty
 
-# REQ-005, REQ-010
+# REQ-005, REQ-009
+Scenario: T3 calendar age-out reached
+  Given today's date is 2027-05-09 (HARNESS_EVIDENCE_NOW="2027-05-09T00:00:00Z")
+  When the operator runs "bash superpowers/lib/harness-evidence.sh audit"
+  Then stderr contains the literal string "harness-evidence T3 age-out reached, AskUserQuestion to confirm retract"
+  And exit code is 1
+
+# REQ-005, REQ-009
 Scenario: T4 read-rate trigger — 30 days of zero references
   Given the last 30 days of retro reports never contain the literal substring "harness-evidence"
-  When retrospective Phase 1 step 8 runs
-  Then the retro report contains "harness-evidence T4 read-rate trigger, AskUserQuestion to confirm retract"
+  When the operator runs "bash superpowers/lib/harness-evidence.sh audit"
+  Then stderr contains "harness-evidence T4 read-rate trigger, AskUserQuestion to confirm retract"
+  And exit code is 1
 
-# REQ-005
+# REQ-009
 Scenario: T4 not triggered — channel was referenced last week
   Given the retro report dated 2026-05-12 contains the substring "harness-evidence"
-  When retrospective Phase 1 step 8 runs
-  Then no T4 marker is emitted
+  When the operator runs "bash superpowers/lib/harness-evidence.sh audit"
+  Then stderr contains no T4 marker
+  And exit code is 0
 
-# REQ-005, REQ-011
-Scenario: T5 writer reliability trigger — fallback ratio above 5%
-  Given the last 30 days have 100 session_recap rows of which 6 have fallback=true
-  When retrospective Phase 1 step 8 runs
-  Then the retro report contains "harness-evidence T5 writer-reliability trigger, AskUserQuestion to confirm retract"
-
-# REQ-005
-Scenario: T5 not triggered — fallback ratio below 5%
-  Given the last 30 days have 100 session_recap rows of which 4 have fallback=true
-  When retrospective Phase 1 step 8 runs
-  Then no T5 marker is emitted
-
-# REQ-005
-Scenario: T3 and T4 both fire — single coalesced AskUserQuestion
+# REQ-005, REQ-009
+Scenario: T3 and T4 both fire — both surfaced, single non-zero exit
   Given today is 2027-05-09 (HARNESS_EVIDENCE_NOW="2027-05-09T00:00:00Z")
   And the last 30 days of retro reports never contain "harness-evidence"
-  When retrospective Phase 1 step 8 runs
-  Then both T3 and T4 markers are present in the retro report
-  And Phase 6 instructs a single AskUserQuestion that lists both reasons
-  And no two separate AskUserQuestion calls fire in the same retrospective run
-```
+  When the operator runs "bash superpowers/lib/harness-evidence.sh audit"
+  Then stderr contains both T3 and T4 markers on separate lines
+  And exit code is 1
+  And the retrospective Phase 1 step 8 reader, on parsing this, emits one coalesced AskUserQuestion listing both reasons
 
-## Feature: Schema event-type allowlist
-
-Audit the channel's discipline against silent type growth (covers REQ-012).
-
-```gherkin
-# REQ-012
-Scenario: 30-day audit produces only 3 distinct event values
-  Given 30 days of harness-evidence.jsonl rows from a project
-  When the auditor runs "jq -r .event harness-evidence.jsonl | sort -u"
-  Then the output is a subset of {"file_change_summary","session_recap","v3_friction"}
-  And no other event value appears
-
-# REQ-012
-Scenario: smuggled fourth event type FAILS the audit
-  Given the channel contains one row with event="ad_hoc_capture"
-  When the 30-day audit runs
-  Then the audit FAILS with "unexpected event values: ad_hoc_capture"
+# REQ-011, REQ-012
+Scenario: audit detects an out-of-band allowlist violation
+  Given a row with event="ad_hoc_capture" was written directly via `>>` (bypassing the CLI dispatcher)
+  When the operator runs "bash superpowers/lib/harness-evidence.sh audit"
+  Then stderr contains "harness-evidence allowlist violation: unexpected event(s): ad_hoc_capture"
+  And exit code is 2
 ```

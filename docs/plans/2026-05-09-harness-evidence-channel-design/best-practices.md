@@ -16,19 +16,23 @@ Sibling channels (`bail-out-events.jsonl`, `plans-completed.jsonl`, `evolution-l
 
 `session_id` is a 12-hex within-session correlation key. It does not encode user identity, but it IS stable for one session — anyone with read access to the jsonl file can correlate multiple recap rows to the same session. Treat its disclosure scope as identical to the file's disclosure scope.
 
-### Sonnet network dependency
+### No LLM call on the Stop-hook critical path
 
-The Sonnet recap call is on the Stop hook critical path. `_run_sonnet_recap` sets timeout to 8 seconds; on any non-zero exit (timeout, network, auth), `emit_session_recap` writes a row with `fallback=true` and copies `recap_paragraph` from `state.task` (vet.sh's already-produced 1-sentence Haiku recap). No retry. No extension of the timeout. T5 retract trigger fires when the 30-day `fallback=true` ratio exceeds 5%.
+The writer is path-only. Nothing in `harness-evidence.sh` forks to `claude`. The Stop-hook latency added by the channel is bounded above by one `jq -n` + one `>>` append — measured on the order of milliseconds, not the 600-1500 ms range an LLM streaming call would introduce.
+
+Distillation happens at retrospective Phase 1 step 8 via one `run_haiku_merge` call over all rows in the un-distilled window. That code path already exists (used by `vet.sh::_vet_synthesize_final_task` for the per-session 1-sentence summary) and degrades gracefully — on Haiku failure the reader falls back to emitting up to 5 verbatim `recap_one_sentence` strings as a raw evidence dump.
+
+If a future patch is tempted to "just call Sonnet here for richer prose", read `_index.md` §Rationale row C-v0 first. The pivot's reasoning is recorded against re-introduction.
 
 ## Known issues (deliberately not fixed in this PR)
 
-### `bail-log.sh` `$PWD` vs. harness-evidence `git_root` divergence
+### Cross-channel debt → `superpowers/TODO-v3.md`
 
-`superpowers/lib/bail-log.sh:39` writes to `${PWD}/docs/retros`. `superpowers/lib/loop.sh:57-66` and the new `superpowers/lib/harness-evidence.sh` both use `git rev-parse --show-toplevel` with `$PWD` fallback. When a Stop hook fires from a sub-directory, `bail-log.sh` writes a *new* `docs/retros/` under that sub-dir while `harness-evidence.sh` writes to the repo-root one.
+Two known v3.0-target debt items affect this channel:
+- `bail-log.sh` `$PWD` vs. `loop.sh` / `harness-evidence.sh` `git_root` path divergence — when a Stop hook fires from a sub-directory, the channels write to different `docs/retros/` directories.
+- Manual-write channels `harness-observations.jsonl` and `evolution-log.jsonl` are still Claude-instructed writes from SKILL.md without lib helpers (per v3 retro §5 audit).
 
-YAGNI guidance: do not fix `bail-log.sh` in this PR. Fixing it requires updating `tests/test_bail_log_sh.py:62` whose contract IS PWD-anchored, plus a regression-test sweep. No empirical incident shows bail-log writing to a wrong directory in practice. Bundle the fix only when it surfaces with a real bug. Bundling unrelated fixes is the add-bias pattern v3 retro §6 flagged.
-
-The harness-evidence header comment cites `loop.sh` as the canonical precedent and references this section.
+Do not restate these here. The single tracker is `superpowers/TODO-v3.md`; this section is the link, not the explanation. The harness-evidence source file header references `TODO-v3.md` directly so operators reading the code do not have to triangulate.
 
 ## Schema versioning policy
 
@@ -58,26 +62,23 @@ Never. Append-only. Old rows stay at their original `schema_version` forever. Re
 
 ### Unit tests — `superpowers/tests/test_harness_evidence_sh.py`
 
-Mirror `test_bail_log_sh.py` shape: five `unittest.TestCase` classes — Executed / Sourced / GitRoot / Degradation / Schema. ~22 cases total. See `architecture.md` §F for the case list with REQ-ID coverage.
+Six `unittest.TestCase` classes — Writer / Dispatcher / GitRoot / Degradation / Schema / Audit. ~14 cases total (post-pivot slim). See `architecture.md` §F for the case list with REQ-ID coverage.
 
 **Test environment overrides**:
-- `HARNESS_EVIDENCE_SKIP_SONNET=1` → `_run_sonnet_recap` returns "" without invoking claude (default in CI)
-- `HARNESS_EVIDENCE_NOW=<ISO8601>` → freezes the helper's notion of "now" for retract-trigger tests
+- `HARNESS_EVIDENCE_NOW=<ISO8601>` → freezes the audit CLI's notion of "now" for retract-trigger tests
 
-**LLM policy**: do not mock or call Sonnet in unit tests. Test the fallback path explicitly by setting `HARNESS_EVIDENCE_SKIP_SONNET=1` and asserting `fallback=true` on the resulting row. The Sonnet call wrapper is a thin shell function; quality of recap text is not a regression risk worth gating CI on.
+**LLM policy**: writer makes no LLM call; no test mocks or invokes claude at write-time. Read-time Haiku distill is exercised by the Phase 1 step 8 integration test only, with `run_haiku_merge` either real (when CI has auth) or stubbed via a process-substitution `claude` shim that echoes a fixed string. Quality of the merged paragraph is not a regression target.
 
 ### Integration tests — `superpowers/tests/test_phase_integration.py`
 
 Add scenarios:
-- `test_stop_hook_writes_session_recap_then_retro_consumes_it` — full Stop → Phase 1 step 8 cycle (REQ-002, REQ-004)
-- `test_t3_calendar_trigger_marker` — `HARNESS_EVIDENCE_NOW="2027-05-09T00:00:00Z"` → T3 marker present in retro report (REQ-005)
-- `test_t4_read_rate_marker` — pre-populate 30 days of retros without `harness-evidence` substring → T4 marker (REQ-005, REQ-010)
-- `test_t5_writer_reliability_marker` — synthesize >5% `fallback=true` ratio → T5 marker (REQ-005, REQ-011)
+- `test_stop_hook_writes_session_recap_then_retro_consumes_it` — full Stop → Phase 1 step 8 cycle, one Haiku call per run (REQ-002, REQ-004)
+- `test_audit_cli_callable_outside_retrospective` — REQ-009 independent surface
 - `test_triggers_coalesce_into_single_askuserquestion` — multiple triggers fire → one prompt (REQ-005)
 
 ### Out of scope
 
-- Sonnet recap content quality (subjective)
+- Haiku distill content quality at read-time (subjective; reader degrades to raw evidence dump on failure)
 - Real `claude` CLI invocation (network dependency, flaky CI)
 - `AskUserQuestion` rendering (skill-instruction layer, not lib layer)
 - `.gitignore` recommendation enforcement (operator decision)
@@ -86,19 +87,21 @@ Add scenarios:
 
 | Item | Estimate | Notes |
 |---|---|---|
-| `session_recap` row size | ~1.2 KB | 200-500 char paragraph + wrapper fields + modified_files paths |
+| `session_recap` row size | ~0.8 KB | state.task (~150c) + last_assistant_tail (500c truncated) + wrapper + modified_files paths |
 | `v3_friction` row size | ~0.5 KB | description + workaround_used dominate |
 | `file_change_summary` row size | ~0.3 KB + 60 B/path | path-only, scales with plan size |
-| Daily volume @ N=10 sessions, 2 plans | ~13 KB/day | empty sessions skipped before write |
-| 1-year volume @ N=10 | ~5 MB | well below git-friendliness threshold |
-| 1-year volume @ N=50 (heavy use) | ~24 MB | tolerable; rotation not required |
+| Daily volume @ N=10 sessions, 2 plans | ~10 KB/day | empty sessions skipped before write |
+| 1-year volume @ N=10 | ~4 MB | well below git-friendliness threshold |
+| 1-year volume @ N=50 (heavy use) | ~20 MB | tolerable; rotation not required |
 | Rotation trigger (future-work, not MVP) | size > 50 MB OR age > 18 months | rotate to `harness-evidence.YYYY-MM.jsonl`, reader globs both |
-| Sonnet input per call | task (~200c) + last_assistant tail (~500c) + skill_name + modified_files (~10 lines) ≈ 250 input tokens + ~200 system prompt = ~450 input | |
-| Sonnet output per call | ~250 words ≈ ~350 output tokens | helper truncates upstream prose >4 KiB before write |
-| Per-session cost (Sonnet 4.x rates 2026-05) | ~$0.0008 input + $0.0053 output ≈ $0.006 | N=10/day → ~$22/year/project |
-| Stop-hook wall-clock added | ~600-1500 ms (Sonnet streaming) | sequential v0; backgrounded async deferred per REQ-007 |
+| Read-time Haiku input per retrospective run | N rows × ~600B aggregated content ≈ 1.5 K input tokens at N=10 | runs at most once per retrospective |
+| Read-time Haiku output per retrospective run | ~250 words ≈ 350 output tokens | |
+| Per-retrospective Haiku cost (Haiku 4.5 rates) | < $0.001 per run | one call per retrospective, not per row |
+| Stop-hook wall-clock added | ≤ 20 ms p95 | bare `jq -n` + `>>` append, no fork to claude |
 
-**MVP guidance**: rotation is not implemented. At ~5 MB/year worst-case the file is fine inline in `docs/retros/` for ≥3 years. Revisit only if a project hits 50 MB or `git status` becomes noticeably slow.
+**Pending N=1 baseline**: the table above is upper-bound estimation, not measurement. After 7 days of N=1 dogfooding (start date = implementation merge), `evaluation-data-week-1.md` in this folder records actual numbers and the SC table moves from "pending" to numeric thresholds. Per REQ-010, design is not "shipped for retract-monitoring" until that file exists.
+
+**MVP guidance**: rotation is not implemented. At ~4 MB/year worst-case the file is fine inline in `docs/retros/` for ≥3 years. Revisit only if a project hits 50 MB or `git status` becomes noticeably slow.
 
 ## Code quality
 
@@ -110,19 +113,19 @@ Add scenarios:
 
 ## Common pitfalls
 
-- **Do not call `_run_sonnet_recap` from inside `_run_sonnet_recap`** — the recursion guard `SUPERPOWERS_MERGE_SESSION=1` short-circuits this, but adding a wrapping function defeats the guard
-- **Do not emit `session_recap` with `recap_paragraph` longer than 500 characters** — helper truncates; do not bypass the truncation
+- **Do not introduce a write-time LLM call** — the round-1 design's Sonnet recap path was rejected. See `_index.md` §Rationale row C-v0 for the recorded reasoning before re-proposing.
+- **Do not emit `last_assistant_tail` longer than 500 bytes** — writer truncates via `${var:0:500}`; do not bypass the truncation
 - **Do not pre-classify `file_change_summary` paths at write time** — reader does this on demand via `post-plan-diff.sh classify`; pre-storing freezes a classification that may evolve
-- **Do not add a 4th event type** — REQ-012 30-day audit catches this; the temptation to add `ad_hoc_capture` or `external_reading` is exactly the v3 four-quadrant model the retro rejected
-- **Do not write to `harness-evidence.jsonl` from anywhere except `lib/harness-evidence.sh`** — direct `>>` writes from skill bash blocks bypass schema validation
-- **Do not add `harness-evidence.jsonl` reading to brainstorming Phase 1.5 (Read Harness Config — assumption test) or executing-plans Phase 6** — v3 retro forbids bundling consumers with the writer; reader scope is retrospective Phase 1 step 8 only
+- **Do not add a 4th event type** — the CLI dispatcher has 3 emit verbs and each emit hardcodes its `event` field; adding a fourth requires editing the dispatcher table, the per-function literal, and the CI string-equality assertion on `HARNESS_EVIDENCE_EVENT_ALLOWLIST`. That two-site-plus-CI change is the structural choke; the temptation to add `ad_hoc_capture` or `external_reading` is the v3 four-quadrant model the retro rejected.
+- **Do not write to `harness-evidence.jsonl` from anywhere except `lib/harness-evidence.sh`** — direct `>>` writes from skill bash blocks bypass the allowlist and surface as `audit` non-zero exit
+- **Do not add `harness-evidence.jsonl` reading to brainstorming Phase 1.5 (Read Harness Config — assumption test) or executing-plans Phase 6** — v3 retro forbids bundling consumers with the writer; reader scope is retrospective Phase 1 step 8 + the `audit` CLI only
 
 ## Security considerations
 
 - jsonl is written with default umask; on multi-user systems set `chmod 600` on the file or its parent dir
-- `claude --bare` inherits the calling user's API auth; harness-evidence does not introduce new credential paths
-- The recursion guard `SUPERPOWERS_MERGE_SESSION=1` prevents Sonnet sub-sessions from recursively invoking the Stop hook chain — verify on the install path that `task-start.sh:20`, `track-changes.sh:15`, `stop-hook.sh:17` all check the guard
-- No content is fetched over the network except via `claude --bare`; no curl, no wget, no third-party dependencies
+- Writer makes no network call; the only out-of-process invocation is `jq`
+- The recursion guard `SUPERPOWERS_SUBSESSION=1` (umbrella) prevents LLM sub-sessions from recursively invoking the Stop hook chain — verify on the install path that `task-start.sh`, `track-changes.sh`, `track-spawns.sh`, `stop-hook.sh` all check the guard. `utils.sh::run_haiku_merge` exports both `SUPERPOWERS_SUBSESSION=1` and the per-purpose `SUPERPOWERS_MERGE_SESSION=1` (backward compatibility window).
+- Read-time `run_haiku_merge` inherits the calling user's API auth via `claude --bare`; harness-evidence does not introduce new credential paths.
 
 ## References
 

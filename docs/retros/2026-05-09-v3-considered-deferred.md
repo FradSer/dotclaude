@@ -116,8 +116,22 @@ Mirroring `meta-retro-2026-05-08-superpowers-v2.8.x.md` §6, the activation cond
   - A: keep folder, add NOT-JUSTIFIED banners + reconcile vocab — rejected because plan-shape four-source/four-phase model would survive
   - C: original folder's choice (keep + status flag) — rejected because §0 ↔ §1+ contradiction would persist
 - **Co-author**: Claude Opus 4.7
-- **2026-05-09 follow-on**: condition-2 channel designed and named `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open. See `docs/plans/2026-05-09-harness-evidence-channel-design/` (`_index.md`, `architecture.md`, `bdd-specs.md`, `best-practices.md`, `evaluation-design-round-1.md` PASS).
-- **2026-05-09 follow-on (brainstorming SKILL.md drift fix)**: `superpowers/skills/brainstorming/SKILL.md` template updated to formalize lessons surfaced during the harness-evidence design — Phase 1.5 in the loop template renamed to "Read Harness Config — assumption test" matching the actual heading, Phase 2 promoted to "Design with QA + Vocabulary Reconciliation" (formalizing the §2 privacy-tier divergence prevention into the iteration-1 anchor), new "Pre-loop Resolution" section documents `state.prompt` immutability and `$ARGUMENTS` resolution, and the Phase 1 rejection branch reworded to drop the "reset captured `$ARGUMENTS`" no-op. The rename of Phase 2 specifically promotes the failure-mode prevention from a buried sub-step into header-level signal.
+- **2026-05-09 follow-on**: condition-2 channel designed and named `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open (see ownership table below). See `docs/plans/2026-05-09-harness-evidence-channel-design/`.
+- **2026-05-10 follow-on (harness-evidence design pivot)**: design rewritten post-round-1 review. See `docs/plans/2026-05-09-harness-evidence-channel-design/evaluation-design-round-2.md` for the rewrite summary and the round-2 PASS verdict.
+- **2026-05-10 follow-on (brainstorming reform extracted)**: the four brainstorming SKILL.md changes that landed 2026-05-09 are now recorded in their dedicated retro `docs/plans/2026-05-10-brainstorming-vocab-reform-retro.md` rather than as a bullet here. Cleaving the audit trail follows design checklist v2 SCOPE-CREEP-01.
+
+### v3.x activation-gate ownership (filled 2026-05-10)
+
+The activation gate (§4) has four conditions. Condition 2 is now triggerable. Conditions 1, 3, 4 are open. Without explicit ownership those conditions will be forgotten and a future maintainer will re-design v3.x without knowing this retro existed. Recorded here:
+
+| Condition | What it means | Owner / mechanism | Trigger checkpoint |
+|---|---|---|---|
+| 1: ≥3 distinct projects on v2.8.2+ | Three projects must complete a full plan cycle using post-plan-diff + bail-log + plans-completed channels | retrospective Phase 5a aggregates across projects when invoked with `--cross-project` | check on 2026-08-01 (target N=3 reached); if not reached, push to 2026-11-01 |
+| 2: harness-evidence.jsonl recording v3_friction | At least one v3_friction row per project | **satisfied** — `lib/harness-evidence.sh emit-v3-friction` ships | n/a |
+| 3: Phase 0 read-rate measurement | Retrospective Phase 5a / executing-plans Phase 6 reads post-plan-diff / bail-log / plans-completed channels with non-trivial frequency | `harness-evidence.sh audit` T4 trigger surfaces zero-read-rate; cross-channel read-rate stays manual until T4 fires on any channel | re-check whenever T4 fires on any channel; otherwise quarterly review |
+| 4: meta-retrospective skill | A formal skill that reviews the v3-evidence corpus and emits PASS/REWORK | not yet registered in `plugin.json`; **owner pending — requires independent brainstorm** | not before 2026-07-01; do not advance until conditions 1 and 3 are also met |
+
+**Discipline**: do not start condition 4's brainstorm until 1 and 3 are met. Condition 4 carries the same N=0 risk this entire retro warns against; designing it speculatively before evidence exists is the failure mode this whole audit trail is meant to prevent.
 
 ---
 

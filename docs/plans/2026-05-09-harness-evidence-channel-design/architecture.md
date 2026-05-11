@@ -4,19 +4,22 @@
 
 **File**: `superpowers/lib/harness-evidence.sh` (new, sibling to `bail-log.sh`, `post-plan-diff.sh`, `loop.sh`).
 
+**Critical posture**: zero LLM calls inside this file. All distillation happens at retrospective Phase 1 step 8 via `utils.sh::run_haiku_merge`. The writer is a path-only NDJSON appender.
+
 **Header conventions** (mirror `post-plan-diff.sh:1-33`):
 - Sourceable + executable dual mode via `BASH_SOURCE[0] != $0` guard at tail (pattern from `bail-log.sh:66-68`, `post-plan-diff.sh:154-164`)
 - No top-level `set -e` — sourcing must not perturb caller's regime
-- Best-effort throughout: missing `jq` / missing `git` / missing `claude` CLI / unwritable `docs/retros/` / Sonnet timeout — all fall through to `return 0`
-- Recursion guard: `[[ "${SUPERPOWERS_MERGE_SESSION:-}" == "1" ]] && return 0` at the top of `emit_session_recap` and `_run_sonnet_recap` (matches the Haiku merge pattern in `utils.sh:260`)
-- Header comment must cite `loop.sh` as the canonical path-resolution precedent and document why `bail-log.sh`'s `$PWD` is not followed
+- Best-effort throughout: missing `jq` / missing `git` / unwritable `docs/retros/` — all fall through to `return 0`
+- Recursion guard: `[[ "${SUPERPOWERS_SUBSESSION:-}" == "1" ]] && return 0` at the top of `emit_session_recap`
+- Path resolution: call `utils.sh::repo_root` (recommended — extract `loop.sh:57-66`'s inline pattern into `utils.sh` during implementation; per `TODO-v3.md` T-001 this is the third would-be copy and meets the rule-of-three promotion bar)
 
 ### Function declarations
 
 ```
-# Resolve the writable root for harness-evidence.jsonl. Prefers
-# `git rev-parse --show-toplevel` (matches loop.sh:57). Falls back to
-# $PWD when not in a repo so the writer still exits 0 in scratch dirs.
+# Resolve the writable root for harness-evidence.jsonl. RECOMMENDED:
+# call utils.sh::repo_root (the shared helper extracted at implementation
+# time per TODO-v3.md T-001). If T-001 is not yet acted on at implementation,
+# inline `git rev-parse --show-toplevel` with $PWD fallback (matches loop.sh:57-66).
 # Echoes the resolved path; never errors.
 _harness_evidence_root()
 
@@ -35,26 +38,27 @@ _harness_evidence_path()
 #      tmp+mv cycles, not append-only logs.
 _harness_evidence_append <json_line>
 
-# Emit one event=session_recap row. Reads from state file, no-ops on
-# empty session, calls Sonnet for the recap paragraph, appends NDJSON.
+# Emit one event=session_recap row. PATH-ONLY WRITER — no LLM call.
 # Empty-session filter (REQ-002):
 #   task == "" AND modified_files == [] AND pending_prompt == "" → return 0
-# When the filter passes:
-#   recap_one_sentence is read VERBATIM from state.task (vet.sh already
-#     wrote that one-sentence summary via _vet_synthesize_final_task —
-#     never recompute, never re-call Haiku)
-#   modified_files comes from state.modified_files (track-changes.sh
-#     accumulator, paths only)
-#   recap_paragraph is the _run_sonnet_recap return; on empty (Sonnet
-#     failed) write a row with fallback=true and recap_paragraph =
-#     state.task verbatim (REQ-009)
-emit_session_recap <state_file>
+# Composes the row from already-derived state:
+#   recap_one_sentence    = state.task verbatim (vet.sh's Haiku-produced
+#                           one-sentence summary; never recomputed)
+#   last_assistant_tail   = transcript-tail extracted by stop-hook.sh,
+#                           truncated to first 500 BYTES via "${var:0:500}"
+#                           slice (matches vet.sh:75); empty when absent
+#   modified_files        = state.modified_files (track-changes.sh
+#                           accumulator, paths only)
+# `event` field is hardcoded inside the function body. This function
+# does NOT accept an --event arg. (REQ-001 + REQ-012 enforcement.)
+emit_session_recap <state_file> [<last_assistant_tail>]
 
 # CLI entry for the v3_friction event. Schema fields verbatim from v3
 # retro §4 condition 2 (class / description / could_phase_0_handle /
 # workaround_used) plus wrapper fields. Validates class enum against
 # {between_plan, ai_dialogue, external, cross_project}. Missing required
 # field or invalid enum → exit 2, write nothing.
+# `event` field is hardcoded inside the function body.
 # Usage:
 #   bash harness-evidence.sh emit-v3-friction --class <enum>
 #     --description "..." --could-phase-0-handle <true|false>
@@ -66,21 +70,30 @@ emit_v3_friction <args>
 # 1 step 8) reconstructs classify by calling post-plan-diff.sh classify
 # per file as needed. Reads .modified_files from state, dedupes, emits
 # {path}-only objects. Empty paths → exit 2, write nothing.
+# `event` field is hardcoded inside the function body.
 emit_file_change_summary <state_file> <completion_commit>
 
-# Sonnet caller — sourceable, mirrors run_haiku_merge (utils.sh:254-271).
-# Differences:
-#   model:    claude-sonnet-4-6 (NOT claude-haiku-4-5-20251001)
-#   prompt:   tuned for 200-500 word recap paragraph
-#   timeout:  8s (REQ-009 reliability ceiling)
-# Same guards: SUPERPOWERS_MERGE_SESSION=1 export before claude --bare,
-# so recursion guards in stop-hook.sh:17 / task-start.sh:20 / track-
-# changes.sh:15 short-circuit the sub-session.
-# Returns empty string on any failure — caller decides fallback.
-# Test override: HARNESS_EVIDENCE_SKIP_SONNET=1 short-circuits the call
-# (returns "" without invoking claude). Used by test_harness_evidence_sh.py
-# to avoid network dependency.
-_run_sonnet_recap <task> <prompt> <last_assistant>
+# Audit retract triggers — REQ-005 + REQ-009. Independent of retrospective.
+# Reads harness-evidence.jsonl and the project's retro reports;
+# emits one stderr line per fired trigger; exits 0 if none fire, 1 if any.
+# Triggers checked:
+#   T3 calendar:   today (or HARNESS_EVIDENCE_NOW) ≥ 2027-05-09
+#   T4 read-rate:  no retro report in last 30 days contains the literal
+#                  substring "harness-evidence"
+# T5 (writer-reliability) does NOT exist — the writer no longer has a
+# fallible LLM path.
+# Allowlist invariant check (REQ-011): `jq -r .event harness-evidence.jsonl
+#                                       | sort -u` is a subset of
+#                                       {file_change_summary, session_recap,
+#                                        v3_friction}. Non-subset → exit 2
+#                                       with "allowlist violation".
+# Usage:
+#   bash harness-evidence.sh audit
+# Output (when triggers fire, one per line, stderr):
+#   harness-evidence T3 age-out reached, AskUserQuestion to confirm retract
+#   harness-evidence T4 read-rate trigger, AskUserQuestion to confirm retract
+#   harness-evidence allowlist violation: unexpected event(s) <list>
+harness_evidence_audit
 ```
 
 ### CLI dispatcher (mirrors `post-plan-diff.sh:154-164`)
@@ -90,11 +103,26 @@ case "${1:-}" in
   emit-session-recap)        shift; emit_session_recap "$@" ;;
   emit-v3-friction)          shift; emit_v3_friction "$@" ;;
   emit-file-change-summary)  shift; emit_file_change_summary "$@" ;;
+  audit)                     shift; harness_evidence_audit "$@" ;;
   *)
-    echo "usage: harness-evidence.sh {emit-session-recap <state_file> | emit-v3-friction --class <enum> --description ... --could-phase-0-handle <true|false> --workaround-used ... | emit-file-change-summary <state_file> <commit>}" >&2
+    echo "usage: harness-evidence.sh {emit-session-recap <state_file> [tail] | emit-v3-friction --class <enum> --description ... --could-phase-0-handle <true|false> --workaround-used ... | emit-file-change-summary <state_file> <commit> | audit}" >&2
     exit 2
     ;;
 esac
+```
+
+The dispatcher exposes exactly 4 verbs. There is no `--event` argument anywhere; the `event` JSON field is hardcoded inside each emit function. Lifting the 3-event lock requires editing both the dispatcher table and the per-function literal — this two-site change is the structural choke that REQ-011/REQ-012 rely on.
+
+### Allowlist constant (REQ-011, REQ-012)
+
+```
+# Single source of truth for the harness-evidence event allowlist.
+# Adding a 4th value here REQUIRES updating both:
+#   1. tests/test_harness_evidence_sh.py::HarnessEvidenceSchemaTests::
+#      test_event_type_allowlist (assertEqual string-equality)
+#   2. A fresh brainstorm cycle producing an explicit waiver design doc
+# Do not edit this constant casually — it is the architectural lock.
+HARNESS_EVIDENCE_EVENT_ALLOWLIST="file_change_summary session_recap v3_friction"
 ```
 
 ### Error path matrix
@@ -104,10 +132,10 @@ esac
 | `git rev-parse` non-zero | `_harness_evidence_root` falls back to `$PWD` |
 | `mkdir -p docs/retros` fails (read-only fs) | `_harness_evidence_path` returns 1; emit functions check `[[ -z "$path" ]]` and `return 0` |
 | Disk full / `>>` fails | `_harness_evidence_append` already has `\|\| true` |
-| `claude --bare` fails (Sonnet down, no auth, timeout) | `_run_sonnet_recap` returns empty; `emit_session_recap` writes row with `fallback=true` and `recap_paragraph` = `state.task` verbatim |
 | `jq` missing | First-line `command -v jq >/dev/null 2>&1 \|\| return 0` |
 | Corrupted state file JSON | `state_read` already returns "" on failure; empty-session filter trips → `return 0` |
-| `claude --bare` not on PATH | `_run_sonnet_recap` returns empty as above |
+| Audit reads a row with unknown `event` value | `harness_evidence_audit` exits 2 with "allowlist violation: <values>" — a regression-net, since reaching this state means an out-of-band write happened |
+| Audit invoked with no retros directory yet | T4 trigger does not fire (0/0 ratio undefined); allowlist check still runs against empty file (always passes) |
 
 ## B. stop-hook.sh integration patch
 
@@ -115,8 +143,9 @@ esac
 
 **Order rationale**:
 1. **Loop first** (unchanged) — `loop_phase` either `exit 0`s (mid-iteration) or returns to fall through. Evidence emit is meaningless mid-loop iteration; only end-of-session.
-2. **Evidence between loop and vet** — `emit_session_recap` reads state but does not mutate it (Sonnet recap is logged externally, not back to state). Critically must run BEFORE `vet_phase` because `vet_phase` may `exit 0` early (need_vet not set, line 137-139) without falling through to a "post-vet" hook.
-3. **`emit_file_change_summary`** runs from a different code path: only when a plan completes. Call site is **inside `_loop_log_plan_completion_if_executing`** (`superpowers/lib/loop.sh:32-113`), specifically after the `jq -nc ... >> "$log_file"` line at `loop.sh:103-112` (the `plan_completed` event append). Same `completion_commit` and `modified_files_json` already in scope:
+2. **Evidence between loop and vet** — `emit_session_recap` reads state but does not mutate it. Critically must run BEFORE `vet_phase` because `vet_phase` may `exit 0` early (need_vet not set, line 137-139) without falling through to a "post-vet" hook.
+3. **Last-assistant tail extraction**: the writer accepts an optional second arg; stop-hook.sh extracts it via `extract_last_assistant_text "$TRANSCRIPT_PATH" 100` (existing helper, `utils.sh:218`) and passes it. The emit function does its own 500-byte truncate before composing the row.
+4. **`emit_file_change_summary`** runs from a different code path: only when a plan completes. Call site is **inside `_loop_log_plan_completion_if_executing`** (`superpowers/lib/loop.sh:32-113`), specifically after the `jq -nc ... >> "$log_file"` line at `loop.sh:103-112` (the `plan_completed` event append). Same `completion_commit` and `modified_files_json` already in scope:
    ```
    bash "${SCRIPT_DIR}/../lib/harness-evidence.sh" emit-file-change-summary \
         "$state_file" "$completion_commit" 2>/dev/null || true
@@ -124,10 +153,10 @@ esac
    `SCRIPT_DIR` resolves to stop-hook.sh's directory.
 
 **Failure containment**:
-- `stop-hook.sh` runs under `set -euo pipefail` (line 14). New emit call MUST be wrapped: `emit_session_recap "$STATE_FILE" 2>/dev/null || true`. Unhandled non-zero would abort before `vet_phase` runs and break verification. The `|| true` guarantees the stop hook still vets when Sonnet/disk/git fails.
+- `stop-hook.sh` runs under `set -euo pipefail` (line 14). New emit call MUST be wrapped: `emit_session_recap "$STATE_FILE" "$LAST_ASSISTANT_TAIL" 2>/dev/null || true`. Unhandled non-zero would abort before `vet_phase` runs and break verification. The `|| true` guarantees the stop hook still vets when disk/git/jq fails.
 - `|| true` matches `bail-log.sh:61` and `loop.sh:112` precedent.
 
-**Latency budget (REQ-007)**: Sonnet adds ~600-1500 ms (streaming) per non-empty Stop. v0 ships sequential. Backgrounded async (`( emit_session_recap "$STATE_FILE" ; ) &`) introduces tail-end races between stop-hook exit and Sonnet completion; deferred until telemetry shows pain.
+**Latency budget (REQ-007)**: ≤ 20 ms p95 added to non-empty Stop hooks. Operations: one `state_read` (jq), one `extract_last_assistant_text` (already done if vet_phase needs it — can be hoisted), one in-memory truncate, one `jq -n` to compose the row, one `>>` append. Empty sessions skip after the first state read (≤ 2 ms). **No fork to `claude`, no network, no streaming.** This is upper-bounded by `bail-log.sh`'s measured behavior (one jq + one append) and is intentionally indistinguishable from sibling channel writes in cost.
 
 ## C. retrospective SKILL.md integration
 
@@ -137,16 +166,14 @@ Insert as **step 8** (renumber existing 8 → 9, 9 → 10):
 
 > **8. Read harness-evidence channel** (covers REQ-004): If `docs/retros/harness-evidence.jsonl` exists, filter rows by `timestamp > <last evolution-log.jsonl retrospective_run.timestamp>`. Bucket by `event`:
 > - `v3_friction` rows → pass through to **Phase 5a** verbatim for read-rate calibration; do NOT modify `class` / `description` / `could_phase_0_handle` / `workaround_used` fields
-> - `session_recap` rows → distill into a "What happened between plans" summary using Haiku via `lib/utils.sh::run_haiku_merge`. See `./references/harness-evidence.md` for the merge prompt
+> - `session_recap` rows → aggregate all N rows in the window into one prompt (concatenated `recap_one_sentence` + `last_assistant_tail` per row, separated by `---`), then distill via a single `lib/utils.sh::run_haiku_merge` call. See `./references/harness-evidence.md` for the merge prompt. **One LLM call per retrospective run**, never per row.
 > - `file_change_summary` rows → for any row with `completion_commit` not present in `plans-completed.jsonl` (cross-channel correlation), surface as "untracked completion" — typically means a Stop hook fired without the loop hook detecting plan completion
 >
 > Skip silently when the file does not exist (first-retrospective state).
 >
-> **Retract trigger detection** (covers REQ-005):
-> - T3: if today's date ≥ 2027-05-09, mark "harness-evidence T3 age-out reached, AskUserQuestion to confirm retract" prominently in the retrospective report
-> - T4: if no retro report in the last 30 days contains the literal substring "harness-evidence", mark "harness-evidence T4 read-rate trigger, AskUserQuestion to confirm retract"
-> - T5: if `fallback=true` row count / total `session_recap` row count > 5% over rolling 30-day window, mark "harness-evidence T5 writer-reliability trigger, AskUserQuestion to confirm retract"
-> - When multiple triggers fire, emit one coalesced AskUserQuestion listing all reasons in Phase 6.
+> **Retract trigger detection** (covers REQ-005, REQ-009): Phase 1 step 8 shells out to `bash superpowers/lib/harness-evidence.sh audit` and parses the stderr output. Trigger lines are surfaced into the retro report under Phase 6 / "4.5d Retract trigger markers". When multiple triggers fire, emit one coalesced AskUserQuestion listing all reasons. **Reading and detection are the same path**; both retrospective and ad-hoc CLI use the same audit logic.
+>
+> The `audit` shell-out has no data dependency on the Haiku distill — implementation may run both concurrently (e.g., `audit ... &` then `wait`) since `audit` is local-only (`jq` + `grep`) and Haiku is network-bound. Defer the actual parallelization to the implementation plan only if measured audit latency exceeds ~50 ms.
 
 **Filter logic** (mirrors step 7 bail-out — read all rows, in-process timestamp filter):
 ```
@@ -157,17 +184,19 @@ jq -c --arg ts "$last_ts" 'select(.timestamp > $ts)' \
 ```
 Empty `last_ts` → no filter applied, read all rows. First-retrospective semantics.
 
-**Distill model recommendation: Haiku, not Sonnet.**
-- Recap rows already each contain a 200-500 word Sonnet-produced paragraph (the expensive step happened at write time)
-- Phase 1 step 8 distill is "summarize N already-summarized paragraphs into one paragraph" — Haiku territory, mirrors `vet.sh:_vet_synthesize_final_task`
-- Token estimate: 5 recaps × 400 words ≈ 2.7 K input + ~200 output — Haiku is 60-100× cheaper at this volume
-- Sonnet at write time + Haiku at read time mirrors existing harness asymmetry: `vet.sh` is Haiku, evaluator is Sonnet
+**Distill model: Haiku, single call.**
+- Each `session_recap` row stores raw inputs (state.task verbatim — a 1-sentence Haiku summary already — plus the last-assistant tail truncated to 500 bytes). No write-time LLM call exists.
+- Phase 1 step 8 calls `run_haiku_merge` exactly once per retrospective run with all N rows concatenated.
+- Token estimate: 10 rows × ~600 bytes = ~1.5K input + ~300 output. Haiku territory by a wide margin.
+- Established asymmetry preserved: vet.sh and harness-evidence distill use Haiku; evaluator uses Sonnet. No Sonnet anywhere near the Stop-hook critical path.
+
+**Failure path**: `run_haiku_merge` returns "" on any failure (utils.sh:268). Reader falls back to emitting up to 5 verbatim `recap_one_sentence` strings as a "raw evidence dump" sub-section instead of distilled prose. Phase 1 step 8 still exits 0; retrospective is not blocked.
 
 **Distill output format**: inject under a new "4.5 Harness Evidence" sub-section in the retrospective report (Phase 6 in `SKILL.md:163-175`):
-- 4.5a `session_recap` distillation: 1-paragraph summary of distilled rows in window
+- 4.5a `session_recap` distillation: 1-paragraph Haiku merge over the window (or raw evidence dump on Haiku failure)
 - 4.5b `v3_friction` list: one row per event (verbatim — class / description / workaround_used), feeds meta-retrospective gate condition 2
 - 4.5c `file_change_summary` untracked-completion warnings (if any)
-- 4.5d Retract trigger markers (T3 / T4 / T5)
+- 4.5d Retract trigger markers from `audit` CLI (T3 / T4 only; T5 retired)
 
 ## D. v3 retro reconciliation patches
 
@@ -184,8 +213,9 @@ Empty `last_ts` → no filter applied, read all rows. First-retrospective semant
 §4 condition 2 schema body itself is preserved verbatim — `harness-evidence.sh emit-v3-friction` writes the exact same fields. Only file path string and "un-triggerable" framing change.
 
 §7 audit trail addendum (append at end):
-> - 2026-05-09: condition-2 channel designed and shipped as `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open.
-> - 2026-05-09 follow-on: as a downstream consequence of this design, `superpowers/skills/brainstorming/SKILL.md` was updated to (a) rename Phase 1.5 in the loop template to "Read Harness Config — assumption test" matching the actual heading at line 98, (b) promote vocabulary reconciliation to Phase 2's heading ("Design with QA + Vocabulary Reconciliation"), (c) document `state.prompt` immutability in a new "Pre-loop Resolution" section before Initialization, and (d) reword the Phase 1 rejection branch to remove the "reset captured `$ARGUMENTS`" no-op. Item (b) is the direct downstream of the §2 privacy-tier divergence symptom this design's Glossary requirement first systematized.
+> - 2026-05-09: condition-2 channel designed and shipped as `harness-evidence.jsonl`. v3.x activation gate's condition 2 is now structurally satisfiable; conditions 1, 3, 4 remain open (see §7 ownership table).
+> - 2026-05-10 (post round-1 evaluation pivot): design rewritten to remove Sonnet from the Stop-hook critical path. Writer is now path-only NDJSON append (≤ 20 ms p95). Distill happens at retrospective Phase 1 step 8 via one `run_haiku_merge` call per run. T5 (writer-reliability) trigger and `fallback=true` field were retired with the Sonnet removal. Audit CLI subcommand added so retract triggers fire without depending on retrospectives being run.
+> - 2026-05-09 follow-on (brainstorming reform): four downstream brainstorming SKILL.md changes recorded in `docs/plans/2026-05-10-brainstorming-vocab-reform-retro.md`, not bundled into this PR.
 
 ## E. Path resolution: $PWD vs git_root
 
@@ -193,66 +223,62 @@ Empty `last_ts` → no filter applied, read all rows. First-retrospective semant
 - `bail-log.sh:39` — `local log_dir="${PWD}/docs/retros"` (CWD-anchored)
 - `loop.sh:57-66` — `git rev-parse --show-toplevel`, falls back to `$PWD`, derives `repo_root/docs/retros` (git-anchored)
 
-**`harness-evidence.sh` follows `loop.sh`** — git-anchored with `$PWD` fallback.
-
-Rationale:
+**`harness-evidence.sh` follows `loop.sh`** — git-anchored with `$PWD` fallback. Rationale:
 - Retrospective reads `<repo_root>/docs/retros/*.jsonl` — git-anchored is the consumer contract
 - session_recap writes can fire from any subdir; `$PWD` would scatter recaps across multiple `docs/retros/` directories if user `cd`s mid-session
 - `loop.sh` has the right precedent — same hook chain (Stop), same JSONL target dir, same retrospective reader
 
-**Should `bail-log.sh` be fixed in the same patch? No (YAGNI).**
-- bail-log fires from inside skill bash blocks where SKILL.md instructions run from project root; CWD ≈ git_root in practice
-- `test_bail_log_sh.py:62` asserts `Path(entry["cwd"]).resolve() == self.cwd.resolve()` — current contract IS PWD-anchored
-- No empirical incident shows bail-log writing to wrong dir
-- The divergence is documented in this design's `best-practices.md` §Known issues
+**`bail-log.sh` divergence**: not fixed in this PR. Tracked in `superpowers/TODO-v3.md` as a single-source debt item; do not restate the rationale in multiple design docs. Header comment in `harness-evidence.sh` cites `loop.sh` as the canonical precedent and links to `TODO-v3.md` instead of carrying the divergence explanation inline.
 
 ## F. Test scaffolding
 
 **File**: `superpowers/tests/test_harness_evidence_sh.py` (new, mirrors `test_bail_log_sh.py` shape).
 
+Target shape: ~14 cases mapped 1:1 to bdd-specs.md scenarios. Parametrize across rows where the assertion is identical — e.g., "all 3 event types carry schema_version=1" is one parameterized case, not three.
+
 Test classes:
-- **`HarnessEvidenceExecutedTests`** — CLI mode (mirrors `BailLogExecutedTests`)
-  - `test_emit_session_recap_writes_required_fields` — REQ-001
-  - `test_emit_v3_friction_writes_required_fields` — REQ-001
-  - `test_emit_file_change_summary_writes_paths` — REQ-001, REQ-003
-  - `test_session_recap_skipped_when_all_inputs_empty` — REQ-002
-  - `test_emit_session_recap_records_non_superpowers_skill` — REQ-002
-  - `test_appends_multiple_events_keeps_ndjson_integrity` — REQ-008
-  - `test_v3_friction_missing_description_rejects_with_exit_2` — REQ-001
-  - `test_v3_friction_invalid_class_rejects_with_exit_2` — REQ-001
-  - `test_file_change_summary_empty_paths_rejects` — REQ-003
-  - `test_creates_docs_retros_when_missing` — REQ-001
-- **`HarnessEvidenceSourcedTests`** — sourced mode (mirrors `BailLogSourcedTests`)
-  - `test_sourced_then_called_writes_entry`
-  - `test_sourcing_does_not_run_main`
-  - `test_sourcing_under_set_e_does_not_abort_caller`
-- **`HarnessEvidenceGitRootTests`** — path resolution (no bail-log analog)
+- **`HarnessEvidenceWriterTests`** — covers all 3 emit verbs (Executed + Sourced merged via class-level setUp toggle)
+  - `test_emit_session_recap_writes_required_fields` — REQ-001, REQ-002
+  - `test_emit_session_recap_skipped_when_all_inputs_empty` — REQ-002
+  - `test_emit_session_recap_truncates_last_assistant_tail_to_500_bytes` — REQ-002
+  - `test_emit_v3_friction_validates_class_and_required_fields` — REQ-001 (parameterized: missing-description, invalid-class)
+  - `test_emit_file_change_summary_writes_paths_only` — REQ-001, REQ-003 (parameterized: with paths, empty paths rejects)
+  - `test_session_recap_recap_one_sentence_copied_from_state_task_verbatim` — REQ-002
+- **`HarnessEvidenceDispatcherTests`** — covers the architectural lock
+  - `test_cli_exposes_exactly_four_verbs` — REQ-001 (string equality on usage line)
+  - `test_no_event_flag_accepted_anywhere` — REQ-001 + REQ-012 (passing `--event ad_hoc` exits 2)
+- **`HarnessEvidenceGitRootTests`** — path resolution
   - `test_uses_git_root_not_pwd_when_in_repo` — REQ-001 path contract
   - `test_falls_back_to_pwd_when_not_in_repo`
-- **`HarnessEvidenceDegradationTests`** — robustness (mirrors `BailLogDegradationTests`)
+- **`HarnessEvidenceDegradationTests`** — robustness
   - `test_silent_skip_when_jq_missing` — REQ-001 best-effort
-  - `test_silent_skip_when_claude_cli_missing` — REQ-009 fallback
   - `test_disk_full_does_not_corrupt_existing_lines` — REQ-008
-  - `test_sonnet_failure_writes_fallback_row` — REQ-009 (uses `HARNESS_EVIDENCE_SKIP_SONNET=1`)
   - `test_concurrent_writes_no_interleaving` — REQ-008 atomicity
-- **`HarnessEvidenceSchemaTests`** — schema invariants (mirrors none directly)
-  - `test_all_events_carry_schema_version_1` — REQ-006
-  - `test_v3_friction_field_exact_match` — REQ-001 (exact set: class / description / could_phase_0_handle / workaround_used)
-  - `test_session_recap_recap_one_sentence_copied_from_state_task` — REQ-002
-  - `test_event_type_allowlist` — REQ-012 (only 3 values across all rows)
+- **`HarnessEvidenceSchemaTests`** — schema invariants
+  - `test_all_events_carry_required_wrapper_fields` — REQ-001, REQ-006 (parameterized over the 3 event types)
+  - `test_event_allowlist_constant_string_equality` — REQ-011, REQ-012 (asserts the bash constant matches `{file_change_summary, session_recap, v3_friction}` literally; the CI choke-point per Rationale row C)
+- **`HarnessEvidenceAuditTests`** — covers REQ-009 audit subcommand
+  - `test_audit_exit_zero_when_no_triggers` — REQ-009
+  - `test_audit_t3_calendar` — REQ-005 (uses `HARNESS_EVIDENCE_NOW=2027-05-09T00:00:00Z`)
+  - `test_audit_t4_read_rate` — REQ-005 (pre-populates 30 days of retros without the substring)
+  - `test_audit_detects_allowlist_violation` — REQ-011, REQ-012 (smuggles `event="ad_hoc_capture"` in directly; audit exits 2)
 
 **Test override env vars**:
-- `HARNESS_EVIDENCE_SKIP_SONNET=1` → `_run_sonnet_recap` returns "" without invoking claude
-- `HARNESS_EVIDENCE_NOW=<ISO8601>` → freezes timestamp for retract-trigger tests
+- `HARNESS_EVIDENCE_NOW=<ISO8601>` → freezes the audit's notion of "now" for retract-trigger tests
+- No `HARNESS_EVIDENCE_SKIP_SONNET` — writer no longer calls Sonnet, the override is moot
 
 **Integration**: `tests/test_phase_integration.py` adds:
-- `test_stop_hook_writes_session_recap_then_retro_consumes_it` — full Stop → Phase 1 step 8 cycle
-- `test_t3_calendar_trigger_marker` — `HARNESS_EVIDENCE_NOW=2027-05-09` → T3 marker present in retro report
-- `test_t4_read_rate_marker` — pre-populate 30 days of retros without `harness-evidence` substring → T4 marker
-- `test_t5_writer_reliability_marker` — synthesize >5% `fallback=true` ratio → T5 marker
+- `test_stop_hook_writes_session_recap_then_retro_consumes_it` — full Stop → Phase 1 step 8 cycle (one Haiku call merged across rows)
+- `test_audit_cli_callable_outside_retrospective` — REQ-009 independent surface
 - `test_triggers_coalesce_into_single_askuserquestion` — multiple triggers fire → one prompt
 
+**Removed tests (vs. pre-pivot scaffolding)**:
+- `test_silent_skip_when_claude_cli_missing` — no claude call at write time
+- `test_sonnet_failure_writes_fallback_row` — no fallback path exists
+- `test_t5_writer_reliability_marker` — T5 retired
+- Sourced-mode duplicates merged into `HarnessEvidenceWriterTests` via parameterized setUp
+
 **LLM-touching tests deliberately not included**:
-- Sonnet recap quality (subjective, not regression risk)
-- Real claude CLI invocation (network dependency, flaky CI)
+- Haiku distill quality at read-time (subjective, not regression risk; reader degrades to raw evidence dump on Haiku failure, which is the testable invariant)
+- Real `claude` CLI invocation (network dependency, flaky CI)
 - `AskUserQuestion` rendering (skill-instruction layer, not lib layer)
