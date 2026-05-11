@@ -13,8 +13,9 @@
 
 set -euo pipefail
 
-# Guard: running inside the merge sub-session — exit immediately
-[[ "${SUPERPOWERS_MERGE_SESSION:-}" == "1" ]] && exit 0
+# Short-circuit when running inside an LLM sub-session.
+# Two-flag rationale: utils.sh::run_haiku_merge + TODO-v3.md T-003.
+[[ "${SUPERPOWERS_SUBSESSION:-}" == "1" || "${SUPERPOWERS_MERGE_SESSION:-}" == "1" ]] && exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 # shellcheck source=../lib/utils.sh
