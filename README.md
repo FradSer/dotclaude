@@ -163,17 +163,6 @@ claude plugin install utils@frad-dotclaude
 
 ---
 
-### [meeseeks-vetted](meeseeks-vetted/)
-
-Enforces task clarity before execution and requires verified work before exit.
-
-**Installation:**
-```bash
-claude plugin install meeseeks-vetted@frad-dotclaude
-```
-
----
-
 ## Adding a New Plugin
 
 1. Create a plugin directory under `plugin-name/`.

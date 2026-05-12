@@ -163,17 +163,6 @@ claude plugin install utils@frad-dotclaude
 
 ---
 
-### [meeseeks-vetted](meeseeks-vetted/)
-
-执行前确保任务清晰，完成后要求验证工作。
-
-**安装：**
-```bash
-claude plugin install meeseeks-vetted@frad-dotclaude
-```
-
----
-
 ## 添加新插件
 
 1. 在 `plugin-name/` 下创建插件目录。
