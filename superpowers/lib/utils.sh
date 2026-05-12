@@ -254,26 +254,3 @@ extract_last_assistant_text() {
   set -e
 }
 
-# Send a prompt to Claude Haiku and return the text response.
-# Uses Claude Code native auth via `claude --bare` (no API key env vars needed).
-# Exports SUPERPOWERS_SUBSESSION=1 so any hook that does fire in the sub-shell
-# short-circuits. Hooks also accept the legacy SUPERPOWERS_MERGE_SESSION flag
-# for external operator scripts; see TODO-v3.md T-003 for removal timing.
-# Usage: RESULT=$(run_haiku_merge "Synthesize a summary from: ...")
-run_haiku_merge() {
-  local prompt="${1:-}"
-  [[ -z "$prompt" ]] && return 0
-
-  # --bare already skips hook loading; the export is defense in depth.
-  export SUPERPOWERS_SUBSESSION=1
-
-  # Use Claude Code native auth. --bare skips hooks/plugins to prevent recursion.
-  local result
-  result=$(claude --bare \
-    --model claude-haiku-4-5-20251001 \
-    --output-format text \
-    -p "$prompt" \
-    2>/dev/null) || return 0
-
-  echo "$result"
-}
