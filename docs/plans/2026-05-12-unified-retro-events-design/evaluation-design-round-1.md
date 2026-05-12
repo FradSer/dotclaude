@@ -1,0 +1,28 @@
+# Design Evaluation Round 1
+
+**Verdict**: PASS
+**Checklist version**: design-v2.md
+**Evaluated**: 2026-05-12
+
+## JUST-01 Scan
+
+`grep -nE "STATUS:.*NOT.JUSTIFIED|DESIGN-NOT-YET-JUSTIFIED|DESIGN-CONSIDERED-DEFERRED|DO NOT IMPLEMENT" _index.md` → zero matches. `_index.md:3` reads "**Status**: DESIGN-IN-PROGRESS — brainstorming output, awaits round-1 evaluation." Clean.
+
+## Checklist Results
+
+| ID | Verdict | Evidence | Justification |
+|---|---|---|---|
+| JUST-01 | PASS | `_index.md:3` "DESIGN-IN-PROGRESS" | No NOT-JUSTIFIED / DEFERRED / DO-NOT-IMPLEMENT markers in first 100 lines. |
+| SCEN-CONC-01 | PASS | `bdd-specs.md` grep for `Given.*\bsome\b\|valid\|appropriate\|relevant` returns zero matches | Every Given uses concrete data (`PATH stripped of jq`, `CLAUDE_PROJECT_DIR unset`, `mkdir -p docs/retros fails`, specific event names, etc.). |
+| REQ-TRACE-01 | PASS | `_index.md` declares F1-F6, NF1-NF4, BC1-BC3 (lines 199-276); `bdd-specs.md` sections `## 1. Helper Functional Behavior` (covers F1-F4, F5), `## 2. Best-effort Degradation` (NF2-NF3), `## 3. Migration Parity` (F2-F3, BC2), `## 4. systematic-debugging Phase 4 Emission` (F5), `## 5. Backward Compatibility` (BC1-BC2) | Literal `REQ-NNN` grep returns zero (vacuously true). The design uses F/NF/BC IDs each accompanied by an inline `*Verifiable*` clause naming the scenario (e.g. `_index.md:226-227, 232-233`). Section-level mapping is clear. |
+| ARCH-01 | PASS | `architecture.md` Dependency Graph (lines 330-341): skill SKILL.md → wrapper helpers → `retro-events.sh` → `utils.sh::repo_root`. Inward-only. | No instances of `domain.*infra|cli|http|database` or `application.*infra|cli|http|handler`. The shared core sources only `utils.sh`; wrappers source only the core. |
+| RISK-02 | PASS | Mitigation-style discussion at `architecture.md:324-328` (rollback path: "writes degrade to no-row appended... readers handle missing rows as missing file"), `architecture.md:322` (snapshot tests gate migration), `_index.md:436-444` (parity tests gate the swap) | All mitigations name concrete actions: snapshot tests, `jq with try/catch`, single-commit revert, isolated migration steps. No bare "monitor/ensure/handle/manage". |
+| PERF-01 | PASS | `grep -niE "(stop[- ]hook\|posttooluse\|userpromptsubmit).*\b(claude\|sonnet\|haiku\|llm\|gpt)\b" architecture.md _index.md` returns zero | No synchronous LLM call on any hook critical path. Helpers spawn `jq -nc`, `date -u`, and optionally `shasum` only (`best-practices.md:65-68` "at most three short-lived processes per call"). |
+| DECOUPLE-01 | PASS | `_SUPERPOWERS_DEPS_CHECKED` (architecture.md:38; bdd-specs.md:66, 290; best-practices.md:109) — single purpose: utils.sh deps re-source guard. `_RETRO_EVENTS_LOADED` (best-practices.md:90-92) — single purpose: retro-events.sh double-source protection. | Each flag has one named semantic meaning. No flag set by multiple disjoint LLM-call types. No overload pattern present. |
+| AUDIT-RUN-01 | PASS | `grep -niE "retract.*trigger\|T[1-9].*(trigger\|calendar\|read-rate\|reliability)"` returns one match at `_index.md:346` discussing rationale ("...would need its own retract trigger") — this is a counter-argument against unifying file layouts, not a trigger declaration | This design declares no retract triggers (T1/T2/T3), so the entry-point requirement does not apply. |
+| N0-NFR-01 | PASS | NF1-NF4 (`_index.md:236-256`) are qualitative behavioral contracts ("returns 0 and writes nothing"; "no top-level set -e"; "tail -n 200 dedup primitive"). No numeric success-criterion thresholds present. The 200/12-char numbers are implementation bounds (dedup window, sha1 truncation) anchored to existing `bail-log.sh` precedent (`_index.md:103-105`). | No "30 days × 3 projects" style un-anchored SC thresholds. Implementation bounds cite the precedent file/lines. |
+| SCOPE-CREEP-01 | PASS | `grep -niE "follow-on\|downstream consequence\|while.*working on\|surfaced during\|also (fixed\|updated\|reworked)"` returns zero matches | Scope is explicitly bounded (`_index.md:7-11`) and reiterated in `architecture.md:345-353` §Out of Scope (bail-log.sh retrofit / rich-row producers / cleared marker / DUE graduation / plans-completed helper all deferred). No bundled unrelated subsystem fixes. |
+
+## Reasons for PASS
+
+The design discharges T-002 cleanly: rule-of-three triggers (two existing manual-write channels + one new `systematic-debugging` emission), one shared core (`lib/retro-events.sh`) plus three thin wrappers (`observations.sh`, `evolution-log.sh`, `skill-events.sh`), all mirroring `bail-log.sh`'s shipped contract (sourceable/executable dual-mode, best-effort degradation, no top-level `set -e`, `repo_root` via `utils.sh`). Vocabulary is reconciled across all four files (helper / channel / event / skill / emission point / migration parity) with a binding rejection list (`_index.md:184-194`, `architecture.md:5-13`); rejected synonyms appear only inside the rejection table and the vocabulary-policy section, as the spawn context asserted. BDD scenarios use concrete Givens, cover every functional/non-functional/BC group either explicitly or through section organisation, and include the load-bearing migration parity TestCase (`bdd-specs.md:312-329`). Architecture preserves the four existing channel schemas byte-for-byte at the JSON-value level, with snapshot tests gating each migration step. No NOT-JUSTIFIED self-declaration. No LLM-on-hot-path. No overloaded state flags. No retract triggers (so the entry-point requirement is vacuously satisfied). No un-anchored numeric SC thresholds. No bundled unrelated subsystem fixes. All ten checklist items PASS.
