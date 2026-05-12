@@ -3,7 +3,7 @@ name: retrospective
 description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective".
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/observations.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/evolution-log.sh:*)"]
 ---
 
 # Retrospective
@@ -101,7 +101,20 @@ After all proposals reviewed:
 
 1. **Pre-edit snapshot**: Write current checklist content to the retrospective report under "Pre-Edit Snapshot" with rollback instructions
 2. **Create new version**: Write `{mode}-v{N+1}.md` with all approved changes applied. Version increments once per run (not per proposal). Original version preserved unchanged.
-3. **Log evolution**: Append one JSON object per approved proposal to `docs/retros/evolution-log.jsonl`. See `./references/evolution-protocol.md` for schema.
+3. **Log evolution**: For each approved proposal, emit one row via the helper. The event_type is one of `item_added | item_removed | item_modified | item_promoted`. Payload-only filter omits `event` and `timestamp` — the envelope merges those (reference `$event`/`$timestamp` inside the filter to pin their row position per legacy parity).
+
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/evolution-log.sh" \
+     item_added \
+     '{timestamp: $timestamp, event: $event, mode: $mode, item_id: $item_id, description: $description, rationale: $rationale, driving_plans: ($driving_plans | split(",")), checklist_version: $checklist_version, retrospective_report: $retrospective_report}' \
+     --arg mode "<design|plan|code>" --arg item_id "<ITEM-ID>" \
+     --arg description "<...>" --arg rationale "<...>" \
+     --arg driving_plans "<plan1,plan2>" \
+     --arg checklist_version "<{mode}-v{N+1}.md>" \
+     --arg retrospective_report "<docs/retros/retro-{date}-{topic}.md>"
+   ```
+
+   Substitute `item_removed | item_modified | item_promoted` for the event_type as appropriate. See `./references/evolution-protocol.md` for per-event-kind payload schemas.
 
 ## Phase 5: Harness Health and Load-Bearing Audit
 
@@ -143,11 +156,23 @@ Select **at most one** candidate from 5b for the next plan run as a live assumpt
 
 **CRITICAL**: The disable must land in `docs/retros/harness-config.json` so the next plan run actually honors it. Writing only to the retrospective report is insufficient — consuming skills do not read reports. See `./references/harness-config.md` for schema, supported component identifiers, and lifecycle.
 
-**CRITICAL refusal gate (do this BEFORE step 1 below)**: The identifiers `context_reset_coordinator` and `plan_evaluator` were removed and have no consumer. If the chosen identifier matches either, REFUSE the disable: append `{"event":"component_unsupported","component":"<id>","timestamp":"<ISO 8601 UTC>","retrospective_id":"<retro report path>"}` to `docs/retros/harness-observations.jsonl`, write `{"version":1,"disabled_components":[]}` to `docs/retros/harness-config.json`, record the refusal under "Phase 5c Refusal" in the retrospective report, and skip steps 1-4 below. Do NOT rely on the reference table alone — this gate is the L2 enforcement. (See `./references/harness-config.md` for the removed-identifier rationale.)
+**CRITICAL refusal gate (do this BEFORE step 1 below)**: The identifiers `context_reset_coordinator` and `plan_evaluator` were removed and have no consumer. If the chosen identifier matches either, REFUSE the disable: (a) emit the observation, (b) write `{"version":1,"disabled_components":[]}` to `docs/retros/harness-config.json` inline (see "Writing the file" in `./references/harness-config.md`), (c) record the refusal under "Phase 5c Refusal" in the retrospective report, and (d) skip steps 1-4 below.
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/observations.sh" \
+  "<id>" component_unsupported "refused: <retro report path>"
+```
+
+Do NOT rely on the reference table alone — this gate is L2 enforcement. (See `./references/harness-config.md` for rationale.)
 
 Actions (in order):
 
-1. Read `./references/harness-config.md` to confirm the chosen component identifier is supported. Any identifier not in the supported table is treated as `component_unknown` — log it, return harness to defaults, and proceed with full pipeline next plan.
+1. Read `./references/harness-config.md` to confirm the chosen component identifier is supported. Unsupported identifier → emit `component_unknown` via the helper, write the empty-disable JSON inline (same path as the refusal gate), and proceed with full pipeline next plan:
+
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/observations.sh" \
+     "<id>" component_unknown "unknown: <retro report path>"
+   ```
 2. Read existing `docs/retros/harness-config.json` if present; include its current content in the retrospective report under "Previous Harness Config" for audit.
 3. Write the new `docs/retros/harness-config.json` with exactly one entry (or an empty `disabled_components` array if the test is being closed — see 5d below). `mkdir -p docs/retros` first if needed.
 4. Record in the retrospective report:
@@ -173,22 +198,30 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
    - 5c selected one-at-a-time disable test (if any), with quality delta thresholds
 5. Summary: N proposals approved, M rejected, checklists updated to version X, harness component disabled for next run (if any)
 
-**Close the calibration loop** (mandatory): Append one JSON line to `docs/retros/evolution-log.jsonl` marking this retrospective run, including the self_value sub-object:
+**Close the calibration loop** (mandatory): Emit one `retrospective_run` row via the helper. Payload-only filter omits `event`/`timestamp` (envelope sets them); reference `$event`/`$timestamp` inside the filter to pin row position.
 
-```json
-{"event":"retrospective_run","timestamp":"<ISO8601 UTC>","plans_analyzed":["<plan dir>",...],"report":"docs/retros/retro-{date}-{topic}.md","proposals_approved":N,"proposals_rejected":M,"disable_test":"<supported identifier or null>","self_value":{"proposals_total":N+M,"disable_test_set":<true|false>,"consecutive_zero_change":<C>}}
+Compute `consecutive_zero_change` (`C`) inline, BEFORE invoking the helper — this computation stays in SKILL.md, not in the helper:
+
+1. Zero-change run iff `proposals_approved == 0 AND disable_test_set == false`
+2. Read the previous `retrospective_run` event in `docs/retros/evolution-log.jsonl` (none on first run)
+3. If zero-change: `C = (prior.self_value.consecutive_zero_change // 0) + 1`; else `C = 0`
+
+Then:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/evolution-log.sh" \
+  retrospective_run \
+  '{event: $event, timestamp: $timestamp, plans_analyzed: ($plans | split(",")), report: $report, proposals_approved: $approved, proposals_rejected: $rejected, disable_test: (if $disable_test == "" then null else $disable_test end), self_value: {proposals_total: ($approved + $rejected), disable_test_set: ($disable_test != ""), consecutive_zero_change: $C}}' \
+  --arg plans "<plan1,plan2>" --arg report "<retro-md>" \
+  --argjson approved <N> --argjson rejected <M> \
+  --arg disable_test "<supported id or empty for null>" --argjson C <C>
 ```
 
-Compute `consecutive_zero_change` (`C`) at write time:
+`disable_test` MUST be either empty (rendered as `null`) or a supported `harness-config.json` identifier (`./references/harness-config.md`) — never free-text.
 
-1. Define this run as **zero-change** when `proposals_approved == 0 AND disable_test_set == false`
-2. Read the previous `retrospective_run` event in this log (none on first run)
-3. If this run is zero-change: `C = (prior_event.self_value.consecutive_zero_change // 0) + 1`
-4. If this run is NOT zero-change: `C = 0` (resets the counter)
+When this run is also a Phase 5b post-plan-diff veto, emit a `component_reinstated` row via the same helper (see `./references/evolution-protocol.md` for the full payload schema — fields `component`, `previously_disabled_in`, `reinstatement_method`, `evidence`, `rationale`, `follow_up`).
 
-`disable_test` MUST be either `null` or one of the supported `harness-config.json` identifiers (see `./references/harness-config.md`) — **never** a free-text component name.
-
-This entry is the closure marker that executing-plans Phase 6 uses to compute retrospective-due reminders, **and** the input to the Pre-Check LOW-YIELD self-test on the next run. Do NOT skip it even when zero proposals were approved — the run itself is the signal that produced `consecutive_zero_change++`.
+The `retrospective_run` entry is the closure marker — do not skip it even when zero proposals approved (the run is the signal that produced `consecutive_zero_change++`).
 
 ## References
 

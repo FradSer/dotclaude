@@ -3,7 +3,7 @@ name: systematic-debugging
 description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes.
 argument-hint: "<bug description or symptom>"
 user-invocable: true
-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/skill-events.sh:*)"]
 ---
 
 # Systematic Debugging
@@ -229,6 +229,45 @@ Each phase must be completed before proceeding to the next.
    - Test now passes?
    - No other tests broken?
    - Issue actually resolved?
+
+   On success — and ONLY on success, never on the bail-out branch (§4.2) or the architecture-questioning branch (§4.4) — emit one `fix_completed` event. Read `skill_name` from the session state file via `state_read` (same pattern as `loop.sh::_loop_log_plan_completion_if_executing`); do NOT hardcode `"systematic-debugging"` as the helper's $1. Silently skip when the state file is missing or `skill_name` is empty. Dedup-check the last 200 lines of `skill-events.jsonl` for the matching `args_hash` before emitting. Payload carries `root_cause`, `regression_test_path`, `investigation_phase_count` — and NEVER `test_stdout`, `test_stderr`, or `fix_diff` (per `best-practices.md` "No transcript content").
+
+   ```bash
+   source "${CLAUDE_PLUGIN_ROOT}/lib/utils.sh"
+   source "${CLAUDE_PLUGIN_ROOT}/lib/retro-events.sh"
+
+   state_file=$(find_state_file "${CLAUDE_SESSION_ID:-}")
+   skill_name=""
+   if [[ -n "$state_file" && -f "$state_file" ]]; then
+     skill_name=$(state_read "$state_file" '.skill_name // ""')
+   fi
+   if [[ -n "$skill_name" ]]; then
+     ROOT_CAUSE="<one-line root cause>"
+     REGRESSION_TEST_PATH="<tests/path::case>"
+     PHASE_COUNT=4
+
+     joined=$(printf '%s\n' --arg rc "$ROOT_CAUSE" --arg rt "$REGRESSION_TEST_PATH" --argjson count "$PHASE_COUNT")
+     if command -v shasum >/dev/null 2>&1; then
+       args_hash=$(printf '%s' "$joined" | shasum -a 1 2>/dev/null | awk '{print $1}' | cut -c1-12)
+     elif command -v sha1sum >/dev/null 2>&1; then
+       args_hash=$(printf '%s' "$joined" | sha1sum 2>/dev/null | awk '{print $1}' | cut -c1-12)
+     else
+       args_hash=""
+     fi
+
+     log="$(repo_root)/docs/retros/skill-events.jsonl"
+     if [[ -n "$args_hash" ]] && dedup_check "$log" "\"args_hash\":\"$args_hash\""; then
+       :
+     else
+       bash "${CLAUDE_PLUGIN_ROOT}/lib/skill-events.sh" \
+         "$skill_name" fix_completed \
+         '{root_cause: $rc, regression_test_path: $rt, investigation_phase_count: $count}' \
+         --arg rc "$ROOT_CAUSE" \
+         --arg rt "$REGRESSION_TEST_PATH" \
+         --argjson count "$PHASE_COUNT"
+     fi
+   fi
+   ```
 
 4. **If Fix Doesn't Work**
    - Stop
