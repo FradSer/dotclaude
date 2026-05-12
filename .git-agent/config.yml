@@ -1,27 +1,21 @@
 scopes:
     - name: acpx
-      description: Agent-to-agent communication plugin and skill
-    - name: cconfig
-      description: Claude configuration plugin assets and scripts
-    - name: cod
-      description: Code context plugin for external data fetching
+      description: agent-to-agent communication via acpx/; does not cover general automation
+    - name: cfg
+      description: claude configuration, templates, and fragments in claude-config/; does not cover specific plugin skills
+    - name: cctx
+      description: code context and environment researcher in code-context/; does not cover documentation
     - name: fe
-      description: Frontend skill definitions and synchronization scripts
+      description: frontend skill definitions, rules, and sync scripts in frontend/; does not cover design docs
     - name: git
-      description: Git plugin with skills and configuration
-    - name: gitflow
-      description: Gitflow branch management skills
-    - name: github
-      description: GitHub issue and PR automation skills
-    - name: meeseeks
-      description: Meeseeks vetted plugin with verification hooks
-    - name: office
-      description: Office productivity skills for Lark and others
+      description: git plugin, commands, and commit handling in git/; does not cover gitflow branches
+    - name: gf
+      description: gitflow branch management and workflow templates in gitflow/; does not cover base git operations
+    - name: gh
+      description: github issue and pull request automation in github/; does not cover general git tasks
+    - name: "off"
+      description: office productivity tools, including lark and prd generation in office/; does not cover general code skills
     - name: po
-      description: Plugin optimization and best practices skills
+      description: plugin optimization agents and validation scripts in plugin-optimizer/; does not cover general plugin config
     - name: sp
-      description: Superpowers framework for planning, execution, and evaluation
-    - name: swiftui
-      description: SwiftUI review and architecture skills
-    - name: utils
-      description: Utility functions and plugins
+      description: superpowers framework for planning, evaluation, and execution in superpowers/; does not cover general utilities
