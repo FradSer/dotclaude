@@ -212,6 +212,17 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 - Cancellation ("abort", "cancel", "start over"): emit `<promise>PLAN_COMPLETE</promise>` after a one-line cancellation note. Do not commit; do not advance to Phase 5.
 - The Stop hook will re-inject the original prompt; route the next iteration based on which phase the rejection targeted, not blindly re-run the full pipeline.
 
+**Loop stall recovery**: when a re-injection arrives with no fresh artifact list and just the `Continue superpowers:writing-plans (iter X/Y). Re-check SKILL.md...` header, **do not restart from Phase 1**. The state file's `modified_files` and the actual filesystem already record prior progress:
+
+1. `Glob "docs/plans/*-plan/_index.md"` to find the in-progress plan folder.
+2. Read `_index.md` and list the task files alongside — that's the current Phase 2 output.
+3. Decide the next phase from observed state:
+   - Task files exist but `_index.md` lacks the YAML `tasks:` block or "Task File References" / "BDD Coverage" sections → Phase 3 (Validation), then AskUserQuestion confirm.
+   - `_index.md` complete but no "Dependency Chain" graph → Phase 4 (reflection sub-agents).
+   - Plan complete, no commit → Phase 5. Already committed → Phase 6 transition + `<promise>PLAN_COMPLETE</promise>`.
+
+If the Stop hook **force-clears** the loop with a `Superpower Loop force-cleared: stalled N iterations...` systemMessage, treat that as a hard reset signal — the loop will not auto-restart. Either re-invoke `/superpowers:writing-plans <path>` explicitly, or finish the remaining phases inline without the loop.
+
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
 The sub-agents above are the sole reviewer for plan quality. There is no separate formal plan-mode evaluator — structural checks (BDD coverage, dependency graph, task completeness) are fully covered by sub-agent reflection, and the user gates commit via the Phase 4 AskUserQuestion confirmation. Sub-agents read `docs/retros/checklists/plan-v{N}.md` as their rubric; their findings are the verdict.

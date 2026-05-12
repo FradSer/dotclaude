@@ -111,12 +111,15 @@ _loop_log_plan_completion_if_executing() {
 # Clear all loop-related fields on the state file in one atomic update.
 # .edits_since_last_spawn survives — it's session-scoped (track-changes.sh /
 # track-spawns.sh own it) so a follow-up loop inherits the right counter.
+# .stall_count / .last_output_hash are loop-scoped (set only by the stall
+# detector below) and must be deleted here so a follow-up loop starts fresh
+# at 0 instead of inheriting a stale near-threshold counter.
 _loop_clear_state() {
   local state_file="$1"
   local now
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   state_update "$state_file" --arg ts "$now" \
-    'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at) | .updated_at = $ts' \
+    'del(.active, .iteration, .max_iterations, .completion_promise, .prompt, .started_at, .stall_count, .last_output_hash) | .updated_at = $ts' \
     || { echo "Warning: state_update failed mid-loop, falling through" >&2; return 0; }
 }
 
@@ -184,7 +187,15 @@ _loop_emit_block() {
 
 Recovery: spawn the batch coordinator via the Agent tool, OR if all batch tasks are \`completed\` (run TaskList), proceed to Phase 5 → Phase 6. See \`./references/batch-execution-playbook.md\`."
   elif [[ -n "$skill_name" ]]; then
-    injected="Continue superpowers:${skill_name} (${iter_tag})."
+    # Generic phase-pointer hint (Fix A'). The bare "Continue X" header
+    # dropped Claude's sense of which phase remained when SKILL.md fell
+    # out of the working context (post-compact). Instead of re-pasting the
+    # full base_prompt every iteration (4 KB / 50-iter pollution), surface
+    # one actionable line that promotes a SKILL.md re-read. The promise
+    # tag itself is appended by the LOOP COMPLETION REQUIRED footer below,
+    # so this line stays promise-agnostic — no double-mention, no risk of
+    # nested `<promise></promise>` when completion_promise is empty.
+    injected="Continue superpowers:${skill_name} (${iter_tag}). Re-check SKILL.md for the current phase; do not restart from Phase 1 — resume from the next incomplete phase."
   else
     injected="$base_prompt"
   fi
@@ -319,6 +330,47 @@ loop_phase() {
     _loop_clear_state "$state_file"
     return 0
   fi
+
+  # Stall detection (Fix B). The promise regex is the ONLY completion
+  # criterion the loop honours, so a skill that produces all artifacts in
+  # iter 1 but never closes with `<promise>X</promise>` would otherwise
+  # burn the entire max_iterations budget — empirically observed in
+  # writing-plans where Phase 2 batch-completes Phase 3-6 ceremonial steps
+  # get skipped, and "Continue superpowers:writing-plans" produces an
+  # empty / identical re-output every iteration. Three consecutive
+  # identical-or-empty outputs is the bound where retry stops being
+  # productive: Agent spawns are single-turn (never cross Stop hook), and
+  # AskUserQuestion blocks the harness UI before Stop fires, so neither
+  # legitimate long-running path produces repeated identical outputs.
+  local new_hash prior_hash stall_count
+  new_hash=$(printf '%s' "$last_output" | shasum 2>/dev/null | awk '{print $1}')
+  prior_hash=$(state_read "$state_file" '.last_output_hash // ""')
+  stall_count=$(state_read "$state_file" '.stall_count // 0')
+  [[ "$stall_count" =~ ^[0-9]+$ ]] || stall_count=0
+
+  if [[ -z "$last_output" ]] || [[ "$new_hash" == "$prior_hash" ]]; then
+    stall_count=$((stall_count + 1))
+  else
+    stall_count=0
+  fi
+
+  if [[ $stall_count -ge 3 ]]; then
+    echo "Superpower loop: Stalled ${stall_count} iterations (no output progress) — force-clearing state." >&2
+    _loop_clear_state "$state_file"
+    # Surface to the user so the cleared state is observable, not silent.
+    # `continue: true` lets the session exit cleanly (stop hook already
+    # returned 0 effectively); the message names the failure mode so
+    # follow-up debugging starts from the right hypothesis.
+    jq -n --arg msg "Superpower Loop force-cleared: stalled ${stall_count} iterations with no output progress. State reset; re-invoke the skill if this was unintentional." \
+      '{continue: true, systemMessage: $msg}'
+    exit 0
+  fi
+
+  state_update "$state_file" \
+    --arg h "$new_hash" \
+    --argjson sc "$stall_count" \
+    '.last_output_hash = $h | .stall_count = $sc' \
+    || { echo "Warning: state_update failed mid-stall-track, continuing" >&2; }
 
   # Stuck detection — scoped to executing-plans (the only skill where
   # main-agent direct edits past iter 1 violate a contract). Signal is

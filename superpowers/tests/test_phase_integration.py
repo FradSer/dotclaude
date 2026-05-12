@@ -1307,6 +1307,160 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertNotIn("active", state)
 
 
+class LoopStallDetectionTests(unittest.TestCase):
+    """Tests for the loop_phase stall detector — three consecutive identical
+    (or empty) last_output payloads force-clear the loop and emit a
+    systemMessage. Empirically observed lockup: writing-plans batch-completes
+    Phase 2 in iter 1, then iter 2..N produce near-identical 'Continue' echoes
+    that never close with `<promise>...</promise>` and burn the full
+    max_iterations budget. The detector caps that to 3-after-baseline."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmpdir.name) / "state.json"
+        self.transcript = Path(self.tmpdir.name) / "transcript.jsonl"
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _write_transcript(self, last_text: str) -> None:
+        line = {
+            "role": "assistant",
+            "message": {"content": [{"type": "text", "text": last_text}]},
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+
+    def _call_loop_phase(self) -> subprocess.CompletedProcess:
+        """Invoke loop_phase once. Uses a fall-through sentinel so callers
+        can distinguish 'emitted block + exit' from 'cleared + return 0'."""
+        return run_bash(
+            f"loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n"
+            'echo "FELL_THROUGH"'
+        )
+
+    def test_stall_detector_clears_after_three_identical_outputs(self) -> None:
+        """Baseline + 3 identical repeats triggers force-clear on the 4th call."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 50,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "writing-plans",
+        }))
+        self._write_transcript("Continuing the plan work.")
+
+        # Call 1: establishes baseline hash. stall_count stays at 0.
+        r1 = self._call_loop_phase()
+        self.assertEqual(r1.returncode, 0, msg=r1.stderr)
+        self.assertNotIn("FELL_THROUGH", r1.stdout)
+        self.assertEqual(json.loads(r1.stdout)["decision"], "block")
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["stall_count"], 0)
+        self.assertNotEqual(state["last_output_hash"], "")
+
+        # Calls 2 and 3: same output → stall_count climbs to 2, still emits block.
+        for expected in (1, 2):
+            r = self._call_loop_phase()
+            self.assertEqual(r.returncode, 0, msg=r.stderr)
+            self.assertEqual(json.loads(r.stdout)["decision"], "block")
+            self.assertEqual(json.loads(self.state.read_text())["stall_count"], expected)
+
+        # Call 4: stall_count hits 3 → force-clear + systemMessage, no block.
+        r4 = self._call_loop_phase()
+        self.assertEqual(r4.returncode, 0, msg=r4.stderr)
+        # Force-clear path uses exit 0, so the fall-through sentinel must not appear.
+        self.assertNotIn("FELL_THROUGH", r4.stdout)
+        payload = json.loads(r4.stdout)
+        self.assertTrue(payload.get("continue"))
+        self.assertIn("force-cleared", payload["systemMessage"])
+        self.assertIn("stalled", payload["systemMessage"])
+        self.assertIn("Stalled 3 iterations", r4.stderr)
+        # Loop fields cleared (incl. the new stall_count / last_output_hash).
+        state = json.loads(self.state.read_text())
+        for field in ("active", "iteration", "completion_promise", "prompt",
+                      "stall_count", "last_output_hash"):
+            self.assertNotIn(field, state, msg=f"{field} not cleared on force-clear")
+
+    def test_stall_count_resets_on_new_output(self) -> None:
+        """A near-threshold stall that recovers (different last_output) must
+        zero the counter — otherwise the next-iter identical re-output would
+        trip force-clear on a healthy loop."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 3,
+            "max_iterations": 50,
+            "completion_promise": "DONE",
+            "prompt": "Build",
+            "skill_name": "writing-plans",
+            "stall_count": 2,
+            "last_output_hash": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        }))
+        self._write_transcript("Fresh new progress message.")
+
+        result = run_bash(
+            f"loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}"
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["decision"], "block")  # Not force-cleared.
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["stall_count"], 0)
+        self.assertNotEqual(state["last_output_hash"], "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+
+    def test_promise_match_clears_stall_fields_too(self) -> None:
+        """Normal completion (promise detected) must wipe stall_count and
+        last_output_hash alongside the other loop fields — a follow-up loop
+        starting in the same session must not inherit a near-threshold counter."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 3,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "writing-plans",
+            "stall_count": 2,
+            "last_output_hash": "abc123",
+        }))
+        self._write_transcript("All done.\n<promise>DONE</promise>")
+        result = run_bash(
+            f"loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n"
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("FELL_THROUGH", result.stdout)
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("stall_count", state)
+        self.assertNotIn("last_output_hash", state)
+
+    def test_skill_name_branch_emits_phase_pointer_hint(self) -> None:
+        """Fix A' — when skill_name is set the re-injection header carries a
+        'Re-check SKILL.md for the current phase' hint so Claude resumes from
+        the next incomplete phase instead of bare 'Continue' (which lost phase
+        position once SKILL.md was compacted out of working context)."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 4,
+            "max_iterations": 50,
+            "completion_promise": "PLAN_COMPLETE",
+            "prompt": "Write a plan for X",
+            "skill_name": "writing-plans",
+        }))
+        self._write_transcript("Working on phase 2 still.")
+        result = run_bash(
+            f"loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}"
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["decision"], "block")
+        self.assertIn("Continue superpowers:writing-plans", payload["reason"])
+        self.assertIn("Re-check SKILL.md", payload["reason"])
+        self.assertIn("resume from the next incomplete phase", payload["reason"])
+        # The LOOP COMPLETION REQUIRED footer (separate from the Fix A' line)
+        # still carries the actual promise tag.
+        self.assertIn("PLAN_COMPLETE", payload["reason"])
+
+
 class ExtractLastAssistantTextTests(unittest.TestCase):
     """Tests for extract_last_assistant_text — the parser that drives whether
     loop_phase detects the completion promise. A regression here breaks the
