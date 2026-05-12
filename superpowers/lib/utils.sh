@@ -7,44 +7,63 @@
 # so the caller can guard its main work with a single check.
 if [[ -z "${_SUPERPOWERS_DEPS_CHECKED:-}" ]]; then
   _SUPERPOWERS_DEPS_CHECKED=1
+  _SUPERPOWERS_DEPS_MISSING_NAMES=""
   for _sp_cmd in jq perl; do
     if ! command -v "$_sp_cmd" >/dev/null 2>&1; then
       echo "warning: superpowers requires '$_sp_cmd' in PATH but did not find it; hooks will skip." >&2
       _SUPERPOWERS_DEPS_MISSING=1
+      if [[ -n "$_SUPERPOWERS_DEPS_MISSING_NAMES" ]]; then
+        _SUPERPOWERS_DEPS_MISSING_NAMES="${_SUPERPOWERS_DEPS_MISSING_NAMES}, ${_sp_cmd}"
+      else
+        _SUPERPOWERS_DEPS_MISSING_NAMES="$_sp_cmd"
+      fi
     fi
   done
   unset _sp_cmd
 fi
 
-# Identify whether a skill name owns its own multi-phase verification (and
-# therefore should bypass the generic vet phase). Keep this list in one place;
-# loop.sh and vet.sh both call into it via bypass_vet_for_workflow_skill.
-# Usage: if is_workflow_skill "$skill"; then ...
-is_workflow_skill() {
-  local skill_name="$1"
-  case "$skill_name" in
-    brainstorming|writing-plans|executing-plans|retrospective)
-      return 0
-      ;;
-  esac
-  return 1
+# Emit a Claude-Code-visible warning JSON to stdout (per the official hook
+# protocol: stdout JSON + exit 0 surfaces a `systemMessage` to the user
+# without blocking the event). Used by sync hooks (UserPromptSubmit, Stop)
+# when _SUPERPOWERS_DEPS_MISSING=1 — replaces the previous silent `exit 0`
+# that left the user unable to tell hooks had been skipped.
+#
+# This helper must NOT use jq (jq itself may be the missing dep). The
+# message is fixed, embedded single-line, with no untrusted interpolation
+# — `printf` produces valid JSON deterministically.
+#
+# Usage: emit_deps_missing_systemmessage
+emit_deps_missing_systemmessage() {
+  local names="${_SUPERPOWERS_DEPS_MISSING_NAMES:-jq/perl}"
+  printf '{"continue":true,"systemMessage":"superpowers: missing runtime deps (%s) — hooks skipped this event. Install with `brew install jq` and/or `brew install perl`, then re-run."}\n' "$names"
 }
 
-# When the current task's skill_name is a workflow skill, clear need_vet and
-# exit 0 to bypass the vet phase. Used by both the loop completion path
-# (loop.sh) and the vet entrypoint (vet.sh) so the bypass logic lives in
-# exactly one place. Returns 1 (no bypass) when the skill is not a workflow
-# skill; never returns 0 — the bypass path exits the script directly.
-# Usage: bypass_vet_for_workflow_skill "$STATE_FILE"
-bypass_vet_for_workflow_skill() {
-  local state_file="$1"
-  local skill_name
-  skill_name=$(state_read "$state_file" '.skill_name // ""')
-  if is_workflow_skill "$skill_name"; then
-    state_update "$state_file" 'del(.need_vet)'
-    exit 0
+# Resolve the project (repo) root path used by every writer that targets
+# docs/retros/* under the project root.
+#
+# Resolution order:
+#   1. ${CLAUDE_PROJECT_DIR}  — official Claude Code env var (set in every
+#      hook event, and `claude` exports it in non-hook contexts as well).
+#   2. `git rev-parse --show-toplevel` — fallback when running outside the
+#      hook harness (e.g. test fixtures, direct CLI invocations).
+#   3. ${PWD} — last-resort fallback when not in a git repo and the env var
+#      is absent; preserves the pre-T-001 PWD-anchored behavior.
+#
+# Single source of truth — bail-log.sh, loop.sh, and any future writer in
+# this lib must call this helper rather than re-implementing the resolution.
+# Usage: ROOT=$(repo_root)
+repo_root() {
+  if [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then
+    printf '%s' "$CLAUDE_PROJECT_DIR"
+    return 0
   fi
-  return 1
+  local git_root
+  git_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  if [[ -n "$git_root" ]]; then
+    printf '%s' "$git_root"
+    return 0
+  fi
+  printf '%s' "${PWD:-}"
 }
 
 # Return the project-scoped state directory path (~/.claude/projects/<key>/)
@@ -172,9 +191,15 @@ release_state_lock() {
 # Uses tmp+mv for in-place atomic replacement and an inter-process mkdir
 # lock to serialize concurrent writers — async PostToolUse hooks can
 # otherwise race with sync UserPromptSubmit / Stop hooks and clobber state.
-# On lock-acquisition timeout, falls back to an unlocked write rather than
-# silently dropping the update — pre-locking behavior was racy but never
-# silent, and silent drops would lose vet's task-synthesis result.
+# On lock-acquisition timeout, the function FAILS LOUDLY (rc=2 + stderr)
+# rather than falling back to an unlocked write. The previous fallback
+# traded silent clobber risk for "update applied" — empirically the
+# clobber path was the bigger hazard because async PostToolUse and sync
+# Stop racing on the same state file produced corrupted JSON that
+# stop-hook's corruption guard then rm'd. Callers that genuinely need a
+# best-effort write must check the return value and decide how to surface
+# the failure (sync hooks should emit_deps_missing_systemmessage-style
+# JSON; async hooks should exit 0 quietly since their stdout is not UI).
 # Usage: state_update "$STATE_FILE" --arg key val '.field = $key'
 state_update() {
   local file="$1"
@@ -189,14 +214,12 @@ state_update() {
     return $rc
   fi
 
-  # Lock contention timed out — fall back to unlocked write so the caller
-  # sees their update applied. Surfaces a stderr warning so the failure
-  # isn't invisible.
-  echo "warning: state_update lock timeout on $file — falling back to unlocked write" >&2
-  jq "$@" "$file" > "$temp" && mv "$temp" "$file"
-  local rc=$?
-  [[ -f "$temp" ]] && rm -f "$temp"
-  return $rc
+  # Lock contention timed out — fail loudly. Returning non-zero lets sync
+  # hooks surface a systemMessage; async hooks ignoring the return are
+  # losing this single update, which is strictly safer than risking an
+  # unlocked clobber of a concurrent writer's in-progress tmp+mv.
+  echo "warning: state_update lock timeout on $file — update dropped (no unlocked-write fallback)" >&2
+  return 2
 }
 
 # Extract text from a final standalone <promise>...</promise> tag.
@@ -229,22 +252,6 @@ extract_last_assistant_text() {
     map(.message.content[]? | select(.type == "text") | .text) | last // ""
   ' 2>/dev/null
   set -e
-}
-
-# --- Vet utilities ---
-
-# Canonical verified-tag content marker
-STOP_CHAR="Fully Vetted."
-
-# Extract content from a final standalone <verified>...</verified> tag.
-# macOS-compatible: uses Perl instead of grep -P.
-# Usage: TEXT=$(extract_verified_text "$MESSAGE")
-extract_verified_text() {
-  local msg="${1:-}"
-  [[ -z "$msg" ]] && return 0
-  printf '%s' "$msg" | perl -0777 -ne \
-    's/\s+\z//; if (/(?:^|\n)[ \t]*<verified>([^<]*)<\/verified>[ \t]*\z/) { $x = $1; $x =~ s/^\s+|\s+$//g; $x =~ s/\s+/ /g; print $x }' \
-    2>/dev/null || echo ""
 }
 
 # Send a prompt to Claude Haiku and return the text response.

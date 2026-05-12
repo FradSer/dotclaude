@@ -2,12 +2,9 @@
 #
 # stop-hook.sh — Stop hook entry point.
 #
-# Thin dispatcher that delegates to two responsibilities:
-#   Phase 1 (lib/loop.sh) — Superpower Loop iteration
-#   Phase 2 (lib/vet.sh)  — Work verification (need-vet)
-#
-# Phase 1 either exits (loop is actively iterating) or returns so Phase 2 runs.
-# Phase 2 always exits.
+# Delegates to lib/loop.sh::loop_phase for Superpower Loop iteration.
+# loop_phase either exits (loop is actively iterating) or returns 0 to allow
+# session exit.
 #
 # State file: ~/.claude/projects/<project-key>/<session_id>.superpowers.json
 
@@ -22,17 +19,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 # shellcheck source=../lib/loop.sh
 source "${SCRIPT_DIR}/../lib/loop.sh"
-# shellcheck source=../lib/vet.sh
-source "${SCRIPT_DIR}/../lib/vet.sh"
 
 # Runtime-deps check — bail soft if jq/perl are missing so the user can
-# always Stop the session cleanly.
-[[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]] && exit 0
+# always Stop the session cleanly. Surface a Claude-Code-visible
+# systemMessage (stdout JSON + exit 0) so the silent skip is observable —
+# previously the Stop hook went mute on missing deps and the user could
+# not tell loop continuation / state writes had been disabled.
+if [[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]]; then
+  emit_deps_missing_systemmessage
+  exit 0
+fi
 
 HOOK_INPUT=$(cat)
 HOOK_SESSION=$(echo "$HOOK_INPUT" | jq -r '.session_id // ""')
 TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path // ""')
-LAST_MSG=$(echo "$HOOK_INPUT" | jq -r '.last_assistant_message // ""')
 
 STATE_FILE=$(find_state_file "$HOOK_SESSION")
 [[ -z "$STATE_FILE" ]] && exit 0
@@ -52,8 +52,5 @@ if ! jq empty "$STATE_FILE" 2>/dev/null; then
   exit 0
 fi
 
-# Phase 1: loop iteration (may exit; returns 0 to fall through)
+# Loop iteration (may exit; returns 0 to allow session exit)
 loop_phase "$STATE_FILE" "$TRANSCRIPT_PATH"
-
-# Phase 2: work verification (always exits)
-vet_phase "$STATE_FILE" "$LAST_MSG" "$TRANSCRIPT_PATH"

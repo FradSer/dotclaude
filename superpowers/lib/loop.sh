@@ -1,18 +1,16 @@
 #!/bin/bash
 #
-# lib/loop.sh — Phase 1 of the Stop hook: Superpower Loop iteration.
+# lib/loop.sh — Stop hook: Superpower Loop iteration.
 #
 # Sourced by hooks/stop-hook.sh. Exposes:
 #   loop_phase "<state_file>" "<transcript_path>"
 #
 # Behavior:
-#   - If no active loop → return 0 (fall through to Phase 2 / vet)
+#   - If no active loop → return 0 (allow session exit)
 #   - If loop state is corrupted / max iterations / no transcript → clear loop
-#     fields on state file, return 0 (fall through)
-#   - If loop is active and completion promise detected → clear loop fields.
-#       - Workflow skills (brainstorming|writing-plans|executing-plans|retrospective)
-#         skip vet and the function calls `exit 0`.
-#       - Other skills return 0 (fall through to vet).
+#     fields on state file, return 0 (allow exit)
+#   - If loop is active and completion promise detected → clear loop fields,
+#     return 0 (allow exit)
 #   - If loop is active and promise NOT detected → emit block JSON and `exit 0`
 #     to continue the loop.
 #
@@ -34,7 +32,7 @@ _loop_log_plan_completion_if_executing() {
   local skill_name prompt plan_path log_dir log_file now
   local index_file task_count=0 batch_count=0
   local completion_commit="" modified_files_json="[]"
-  local repo_root="$PWD" git_lines=""
+  local root
 
   skill_name=$(state_read "$state_file" '.skill_name // ""')
   [[ "$skill_name" != "executing-plans" ]] && return 0
@@ -48,20 +46,18 @@ _loop_log_plan_completion_if_executing() {
   [[ -z "$plan_path" ]] && return 0
   plan_path="${plan_path%/}"  # normalize so trailing-slash variants dedup
 
-  # One git fork resolves both repo_root and HEAD: `rev-parse` accepts
-  # multiple revs and prints them line-by-line. Falls back gracefully when
-  # not in a git repo (output empty → repo_root stays $PWD, commit stays "").
-  # repo-relative `plan` field stays cross-worktree / cross-clone stable;
-  # pre-v2.8.2 absolute-path entries age out naturally because dedup matches
-  # on the new form, not the old.
-  git_lines=$(git -C "$PWD" rev-parse --show-toplevel HEAD 2>/dev/null || true)
-  if [[ -n "$git_lines" ]]; then
-    repo_root=${git_lines%%$'\n'*}
-    completion_commit=${git_lines##*$'\n'}
-    [[ "$completion_commit" =~ ^[a-f0-9]{7,40}$ ]] || completion_commit=""
-  fi
+  # Project root via the shared utils.sh::repo_root helper (T-001 fix):
+  # CLAUDE_PROJECT_DIR first, then git rev-parse, then PWD. HEAD is fetched
+  # separately so we can keep the commit-hash enrichment without re-resolving
+  # the root. Falls back gracefully when not in a git repo (HEAD output empty
+  # → completion_commit stays ""). repo-relative `plan` field stays
+  # cross-worktree / cross-clone stable; pre-v2.8.2 absolute-path entries age
+  # out naturally because dedup matches on the new form, not the old.
+  root="$(repo_root)"
+  completion_commit=$(git -C "$root" rev-parse HEAD 2>/dev/null || true)
+  [[ "$completion_commit" =~ ^[a-f0-9]{7,40}$ ]] || completion_commit=""
 
-  log_dir="${repo_root}/docs/retros"
+  log_dir="${root}/docs/retros"
   log_file="${log_dir}/plans-completed.jsonl"
   mkdir -p "$log_dir" 2>/dev/null || return 0
 
@@ -82,13 +78,13 @@ _loop_log_plan_completion_if_executing() {
   # `grep -c || true` is required under set -euo pipefail (no-match returns 1).
   # batch_count uses an inline glob loop instead of `find | wc -l` so a
   # missing plan dir doesn't propagate find's exit-1 through the pipeline.
-  index_file="${repo_root}/${plan_path}/_index.md"
+  index_file="${root}/${plan_path}/_index.md"
   if [[ -f "$index_file" ]]; then
     task_count=$(grep -cE '^[[:space:]]*-[[:space:]]*id:' "$index_file" 2>/dev/null || true)
     [[ "$task_count" =~ ^[0-9]+$ ]] || task_count=0
   fi
   local _bc_file
-  for _bc_file in "${repo_root}/${plan_path}"/sprint-contract-batch-*.md; do
+  for _bc_file in "${root}/${plan_path}"/sprint-contract-batch-*.md; do
     [[ -e "$_bc_file" ]] && batch_count=$((batch_count + 1))
   done
 
@@ -102,7 +98,7 @@ _loop_log_plan_completion_if_executing() {
   now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   jq -nc \
     --arg plan "$plan_path" \
-    --arg root "$repo_root" \
+    --arg root "$root" \
     --arg ts "$now" \
     --arg commit "$completion_commit" \
     --argjson tc "$task_count" \
@@ -237,8 +233,8 @@ LOOP COMPLETION REQUIRED: When the above task is genuinely complete, output the 
   exit 0
 }
 
-# Main entry point for Phase 1.
-# Returns 0 (fall through to vet) or exits 0 (loop handled).
+# Main loop entry point.
+# Returns 0 (allow session exit) or exits 0 (loop handled).
 loop_phase() {
   local state_file="$1"
   local transcript_path="$2"
@@ -253,7 +249,7 @@ loop_phase() {
   completion_promise=$(state_read "$state_file" '.completion_promise // ""')
   prompt=$(state_read "$state_file" '.prompt // ""')
 
-  # Numeric-field validation — clear loop state on corruption, fall through to vet.
+  # Numeric-field validation — clear loop state on corruption, allow exit.
   if [[ ! "$iteration" =~ ^[0-9]+$ ]]; then
     echo "Warning: Superpower loop: 'iteration' is not numeric (got: '$iteration')" >&2
     echo "   Loop stopping. Run /superpower-loop again to start fresh." >&2
@@ -313,10 +309,6 @@ loop_phase() {
     # state.prompt to extract the plan path, which clear_state deletes.
     _loop_log_plan_completion_if_executing "$state_file"
     _loop_clear_state "$state_file"
-    # Workflow skills exit 0 from inside the helper; non-workflow skills
-    # return 1, which `|| true` swallows so we fall through to vet_phase
-    # in stop-hook.sh. Both branches eventually return 0 from loop_phase.
-    bypass_vet_for_workflow_skill "$state_file" || true
     return 0
   fi
 

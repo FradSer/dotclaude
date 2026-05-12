@@ -1,14 +1,12 @@
 #!/bin/bash
 #
-# task-start.sh — UserPromptSubmit hook: persist task state and enable verification
+# task-start.sh — UserPromptSubmit hook: persist task state
 #
-# Fires when the user submits a prompt. Responsibilities:
-#   1. Persists the user's prompt to a session-scoped state file.
-#      - First prompt: task = user_prompt (verbatim).
-#      - Subsequent prompts: saved as pending_prompt; stop-hook.sh
-#        merges it with the assistant's response into one coherent task.
-#   2. Sets need_vet flag when /need-vet skill is invoked.
-#      Flag persists until stop-hook.sh detects <verified> tag.
+# Fires when the user submits a prompt. Persists the user's prompt to a
+# session-scoped state file:
+#   - First prompt: task = user_prompt (verbatim).
+#   - Subsequent prompts: saved as pending_prompt; stop-hook.sh / loop.sh
+#     merge it with the assistant's response into one coherent task.
 #
 # State file: ~/.claude/projects/<project-key>/<session_id>.superpowers.json
 #   project-key = $PWD with '/' replaced by '-'
@@ -25,8 +23,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${SCRIPT_DIR}/../lib/utils.sh"
 
 # Runtime-deps check — utils.sh sets _SUPERPOWERS_DEPS_MISSING=1 + warns when
-# jq or perl is absent. Bail soft so missing tooling never blocks the user.
-[[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]] && exit 0
+# jq or perl is absent. Bail soft so missing tooling never blocks the user,
+# but surface a Claude-Code-visible systemMessage (stdout JSON + exit 0)
+# instead of dying silently — previously the hook went mute and the user
+# had no way to know task-start was skipping work.
+if [[ "${_SUPERPOWERS_DEPS_MISSING:-}" == "1" ]]; then
+  emit_deps_missing_systemmessage
+  exit 0
+fi
 
 HOOK_INPUT=$(cat)
 
@@ -113,21 +117,6 @@ if [[ -f "$STATE_FILE" ]] && ! jq empty "$STATE_FILE" 2>/dev/null; then
   rm -f "$STATE_FILE"
 fi
 
-# Opt-in verification: /need-vet skill enables verification for this task
-# Persists until stop-hook.sh detects <verified> tag — not cleared by follow-up prompts
-# Skip when superpower loop is active — during a loop, need-vet is ignored
-NEED_VET=false
-if [[ "$IS_SLASH_COMMAND" == "true" && "$SKILL_SHORT" == "need-vet" ]]; then
-  LOOP_ACTIVE=false
-  if [[ -f "$STATE_FILE" ]] && jq -e '.active == true' "$STATE_FILE" >/dev/null 2>&1; then
-    LOOP_ACTIVE=true
-  fi
-
-  if [[ "$LOOP_ACTIVE" == "false" ]]; then
-    NEED_VET=true
-  fi
-fi
-
 if [[ -f "$STATE_FILE" ]]; then
   # Existing session — queue prompt for merge at Stop time
   if [[ -n "$USER_PROMPT" && "$USER_PROMPT" != "null" ]]; then
@@ -136,18 +125,16 @@ if [[ -f "$STATE_FILE" ]]; then
       jq \
         --arg prompt "$USER_PROMPT" \
         --arg skill "$SKILL_SHORT" \
-        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
-        '.pending_prompt = $prompt | .skill_name = $skill | .updated_at = $ts | if $vet then .need_vet = true else . end' \
+        '.pending_prompt = $prompt | .skill_name = $skill | .updated_at = $ts' \
         "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
     else
       # Preserve skill_name when loop is active — non-slash-command prompts
       # during a loop should not clear the skill context
       jq \
         --arg prompt "$USER_PROMPT" \
-        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
-        '(if .active == true then . else del(.skill_name) end) | .pending_prompt = $prompt | .updated_at = $ts | if $vet then .need_vet = true else . end' \
+        '(if .active == true then . else del(.skill_name) end) | .pending_prompt = $prompt | .updated_at = $ts' \
         "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
     fi
   fi
@@ -159,7 +146,6 @@ else
         --arg session "$SESSION_ID" \
         --arg task "$USER_PROMPT" \
         --arg skill "$SKILL_SHORT" \
-        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
         '{
           session_id: $session,
@@ -167,19 +153,18 @@ else
           skill_name: $skill,
           created_at: $ts,
           updated_at: $ts
-        } | if $vet then .need_vet = true else . end' > "$STATE_FILE"
+        }' > "$STATE_FILE"
     else
       jq -n \
         --arg session "$SESSION_ID" \
         --arg task "$USER_PROMPT" \
-        --argjson vet "$NEED_VET" \
         --arg ts "$NOW" \
         '{
           session_id: $session,
           task: $task,
           created_at: $ts,
           updated_at: $ts
-        } | if $vet then .need_vet = true else . end' > "$STATE_FILE"
+        }' > "$STATE_FILE"
     fi
   fi
 fi

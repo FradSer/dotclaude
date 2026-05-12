@@ -113,29 +113,5 @@ class SuperpowersRegressionTests(unittest.TestCase):
             ),
         )
 
-    def test_verified_text_requires_final_standalone_tag(self) -> None:
-        self.assertEqual(
-            "Fully Vetted.",
-            call_bash_function(
-                "extract_verified_text",
-                "Verified by running the test suite.\n<verified>Fully Vetted.</verified>",
-            ),
-        )
-        self.assertEqual(
-            "",
-            call_bash_function(
-                "extract_verified_text",
-                "<verified>Fully Vetted.</verified>\nExtra text after the tag.",
-            ),
-        )
-        self.assertEqual(
-            "",
-            call_bash_function(
-                "extract_verified_text",
-                "Mentioning <verified>Fully Vetted.</verified> inline is not verification.",
-            ),
-        )
-
-
 if __name__ == "__main__":
     unittest.main()

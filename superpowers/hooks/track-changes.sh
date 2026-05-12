@@ -54,10 +54,10 @@ trap 'release_state_lock "$STATE_FILE"; rm -f "${STATE_FILE}.tmp.$$" 2>/dev/null
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# Acquire exclusive lock — concurrent writers (task-start.sh, vet.sh via
-# state_update, parallel track-changes invocations) would otherwise clobber
-# the state file via interleaved tmp+mv. Drop this update on contention
-# rather than blocking tool execution.
+# Acquire exclusive lock — concurrent writers (task-start.sh, parallel
+# track-changes invocations) would otherwise clobber the state file via
+# interleaved tmp+mv. Drop this update on contention rather than blocking
+# tool execution.
 if ! acquire_state_lock "$STATE_FILE"; then
   exit 0
 fi

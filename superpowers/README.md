@@ -112,16 +112,6 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 
 **Output**: root cause one-liner + fix diff summary + regression test path
 
-### `/superpowers:need-vet`
-
-Opt-in work verification for the current task.
-
-- Sets a `need_vet` flag on the session state file
-- The Stop hook (`hooks/stop-hook.sh`) blocks session exit until Claude emits `<verified>Fully Vetted.</verified>` as the final standalone line after actually running the code / opening the UI / testing edge cases
-- Workflow skills (brainstorming / writing-plans / executing-plans / retrospective) have their own phase verification and bypass this check automatically
-
-**Output:** A Verification Checkpoint system message that lists the current task, modified files, and required verification steps
-
 ## Internal Skills (Loaded Automatically)
 
 ### Behavior-Driven Development
@@ -181,11 +171,10 @@ superpowers/
 ├── hooks/
 │   ├── task-start.sh            # UserPromptSubmit — persists state + detects slash commands
 │   ├── track-changes.sh         # PostToolUse (Edit/Write/MultiEdit) — tracks modified files
-│   └── stop-hook.sh             # Stop — thin dispatcher calling loop.sh + vet.sh
+│   └── stop-hook.sh             # Stop — delegates to loop.sh for loop iteration
 ├── lib/
 │   ├── utils.sh                 # Shared helpers (state I/O, Haiku merge, tag extraction)
-│   ├── loop.sh                  # Stop hook Phase 1 — Superpower Loop iteration
-│   └── vet.sh                   # Stop hook Phase 2 — need-vet verification
+│   └── loop.sh                  # Stop hook — Superpower Loop iteration
 ├── scripts/
 │   └── setup-superpower-loop.sh # Entry point skills call to enter the loop
 ├── skills/
@@ -194,7 +183,6 @@ superpowers/
 │   ├── executing-plans/         # Plan → verified code via per-batch coordinator (user-invocable)
 │   ├── retrospective/           # Evolve checklists + audit harness health (user-invocable)
 │   ├── systematic-debugging/    # 4-phase root cause analysis (user-invocable, 2.4.0+)
-│   ├── need-vet/                # Opt-in work verification (user-invocable)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
 │   ├── build-like-iphone-team/  # Project Purple design philosophy (internal)
 │   └── references/

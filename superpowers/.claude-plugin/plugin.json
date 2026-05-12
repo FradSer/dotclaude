@@ -1,7 +1,7 @@
 {
   "name": "superpowers",
   "version": "2.8.2",
-  "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop and work verification",
+  "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
@@ -12,8 +12,7 @@
     "brainstorming",
     "bdd",
     "teams",
-    "execution",
-    "verification"
+    "execution"
   ],
   "agents": [
     "./agents/superpowers-evaluator.md"
@@ -23,8 +22,7 @@
     "./skills/writing-plans/",
     "./skills/executing-plans/",
     "./skills/retrospective/",
-    "./skills/systematic-debugging/",
-    "./skills/need-vet/"
+    "./skills/systematic-debugging/"
   ],
   "skills": [
     "./skills/behavior-driven-development/",

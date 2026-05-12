@@ -215,7 +215,7 @@ fi
 
 # Create or merge JSON state file via the same locked code path for both
 # branches: pre-create an empty {} if missing, then state_update merges
-# fields preserving vet state (task, modified_files, etc.) when present.
+# fields preserving prior state (task, modified_files, etc.) when present.
 # This closes the previous race where the bare jq>FILE fallback could
 # clobber a stub track-changes.sh had just created.
 if [[ ! -f "$STATE_FILE" ]]; then

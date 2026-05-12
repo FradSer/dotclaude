@@ -58,8 +58,12 @@ class BailLogExecutedTests(unittest.TestCase):
         self.assertEqual(entry["event"], "bail_out")
         self.assertEqual(entry["skill"], "writing-plans")
         self.assertEqual(entry["reason"], "thin design")
-        # macOS resolves /var → /private/var via PWD; compare via realpath.
-        self.assertEqual(Path(entry["cwd"]).resolve(), self.cwd.resolve())
+        # T-001 fix: field renamed from `cwd` to `repo_root`; resolution now
+        # uses utils.sh::repo_root (CLAUDE_PROJECT_DIR → git → PWD). With
+        # CLAUDE_PROJECT_DIR unset and tmpdir not a git repo, repo_root falls
+        # back to PWD which still equals self.cwd. macOS resolves /var →
+        # /private/var via PWD; compare via realpath.
+        self.assertEqual(Path(entry["repo_root"]).resolve(), self.cwd.resolve())
         self.assertRegex(entry["timestamp"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
         # args_hash is sha1[:12] when shasum is available.
         self.assertRegex(entry["args_hash"], r"^[a-f0-9]{0,12}$")

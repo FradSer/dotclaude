@@ -4,7 +4,7 @@ Covers the async race fix between PostToolUse track-changes.sh and sync
 UserPromptSubmit task-start.sh, plus the deep-fix follow-ups:
   * release_state_lock must be PID-aware (don't clobber another holder)
   * state_update must fall back to unlocked write on lock timeout
-    (silent drops would lose vet's task-synthesis result)
+    (silent drops would lose track-changes / task-start updates)
 """
 
 import json
@@ -159,22 +159,34 @@ class StateLockTests(unittest.TestCase):
         self.assertEqual(set(items), {f"item_{i}" for i in range(5)})
         self.assertFalse(self.lockdir.exists())
 
-    def test_state_update_falls_back_to_unlocked_write_on_lock_timeout(self) -> None:
+    def test_state_update_fails_loudly_on_lock_timeout(self) -> None:
         # Force the timeout branch by overriding acquire_state_lock to fail.
-        # The fallback must STILL apply the update and emit a stderr warning,
-        # otherwise vet's task synthesis would silently drop on contention.
+        # Contract change (Batch D, 2026-05-12): the previous behavior was
+        # to fall back to an unlocked write to guarantee "update applied".
+        # That traded silent clobber risk for write-applied-ness — empirically
+        # the clobber path was the bigger hazard (async PostToolUse + sync
+        # Stop racing the same tmp+mv corrupted state, which the corruption
+        # guard then rm'd). state_update now returns rc=2 with a stderr
+        # warning instead. Callers in sync hooks must handle non-zero;
+        # async hooks may ignore the dropped update since their stdout is
+        # not user-visible and the next sync hook re-establishes state.
+        self.state.write_text(json.dumps({"x": 0}))
         script = f"""
 acquire_state_lock() {{ return 1; }}
+set +e
 state_update {shlex.quote(str(self.state))} --argjson n 99 '.x = $n'
+echo "RC=$?"
 """
         result = run_bash(script)
         self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("RC=2", result.stdout)
         self.assertIn("warning", result.stderr.lower())
         self.assertIn("lock timeout", result.stderr.lower())
+        # State file must be UNCHANGED — no unlocked clobber happened.
         self.assertEqual(
             json.loads(self.state.read_text())["x"],
-            99,
-            msg="state_update silently dropped update on lock timeout",
+            0,
+            msg="state_update should leave state untouched on lock timeout",
         )
 
 

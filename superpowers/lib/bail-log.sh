@@ -11,22 +11,35 @@
 #   force_override  — `--force` token detected and the skill is bypassing the check
 #
 # Append-only; never blocks the caller. Best-effort throughout — missing jq,
-# unwritable cwd, or missing docs/retros all silently skip the write. The
-# helper deliberately has no `set -e` so sourcing does not alter the caller's
-# error-handling regime.
+# unwritable repo_root, or missing docs/retros all silently skip the write.
+# The helper deliberately has no `set -e` so sourcing does not alter the
+# caller's error-handling regime.
 #
 # Schema per line (NDJSON):
 #   {"event":"bail_out|force_override",
 #    "skill":"<skill>",
 #    "reason":"<short>",
 #    "args_hash":"<sha1[:12] of args>",
-#    "cwd":"<PWD>",
+#    "repo_root":"<project root>",
 #    "timestamp":"<ISO8601 UTC>"}
+#
+# `repo_root` resolves via utils.sh::repo_root — CLAUDE_PROJECT_DIR first,
+# then `git rev-parse --show-toplevel`, then PWD. This replaces the pre-T-001
+# PWD-only path that wrote bail logs under sub-dirs when the Stop hook fired
+# from a nested cwd, leaving retrospective Phase 5a unable to find them.
 #
 # args_hash is a salt-free first-12-chars sha1 of the supplied args string —
 # enough to group repeat invocations of the same trivial input across a
 # session, not enough to recover the original prose. Empty when neither
 # shasum nor sha1sum is in PATH.
+
+# Source the shared lib for repo_root(). Sourcing utils.sh is safe: it has
+# no top-level `set -e`, only emits a stderr warning when deps are missing,
+# and exposes pure helper functions — none of which perturb the caller's
+# error-handling regime, preserving bail-log's "never block caller" contract.
+_BAIL_LOG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+# shellcheck source=./utils.sh
+source "${_BAIL_LOG_DIR}/utils.sh"
 
 bail_log() {
   local skill="${1:-unknown}"
@@ -36,7 +49,11 @@ bail_log() {
 
   command -v jq >/dev/null 2>&1 || return 0
 
-  local log_dir="${PWD}/docs/retros"
+  local root
+  root="$(repo_root)"
+  [[ -z "$root" ]] && return 0
+
+  local log_dir="${root}/docs/retros"
   local log_file="${log_dir}/bail-out-events.jsonl"
   mkdir -p "$log_dir" 2>/dev/null || return 0
 
@@ -55,9 +72,9 @@ bail_log() {
     --arg skill "$skill" \
     --arg reason "$reason" \
     --arg args_hash "$args_hash" \
-    --arg cwd "$PWD" \
+    --arg repo_root "$root" \
     --arg ts "$now" \
-    '{event:$event, skill:$skill, reason:$reason, args_hash:$args_hash, cwd:$cwd, timestamp:$ts}' \
+    '{event:$event, skill:$skill, reason:$reason, args_hash:$args_hash, repo_root:$repo_root, timestamp:$ts}' \
     >> "$log_file" 2>/dev/null || true
 }
 

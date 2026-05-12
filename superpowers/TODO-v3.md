@@ -6,23 +6,23 @@ This file replaces the previous practice of restating "known issues" inline acro
 
 ## TODO list (v3.0 target)
 
-### T-001: Unify path-resolution across `lib/*.sh` writers
+### T-001: ~~Unify path-resolution across `lib/*.sh` writers~~ — RESOLVED 2026-05-12
 
-**Symptom**: three different `repo_root` resolutions will coexist once `harness-evidence.sh` lands —
+**Symptom (historical)**: three different `repo_root` resolutions were going to coexist once `harness-evidence.sh` landed —
 - `superpowers/lib/bail-log.sh:39` — `${PWD}/docs/retros` (PWD-only)
 - `superpowers/lib/loop.sh:57-66` — inline `git rev-parse --show-toplevel` with `$PWD` fallback
-- `superpowers/lib/harness-evidence.sh::_harness_evidence_root` (planned) — same pattern as `loop.sh` but as a private helper, a third copy of the same logic.
+- `superpowers/lib/harness-evidence.sh::_harness_evidence_root` (planned) — third copy.
 
-When a Stop hook fires from a sub-directory, `bail-log.sh` writes a new `docs/retros/` under the sub-dir while the other two write to the repo root. The 3-way divergence (PWD vs. inline git+PWD vs. private-helper git+PWD) is the structural debt this item now tracks; per T-002's "rule of three" promotion bar, this is the moment to extract a shared `utils.sh::repo_root` helper rather than ship a third copy.
+When a Stop hook fired from a sub-directory, `bail-log.sh` wrote `docs/retros/` under the sub-dir while the other two wrote to the repo root, leaving retrospective Phase 5a unable to find the rows.
 
-**Why accepted (v2.x)**:
-- `bail-log` fires from inside skill bash blocks where SKILL.md instructions run from project root; CWD ≈ git_root in practice
-- `tests/test_bail_log_sh.py:62` asserts `Path(entry["cwd"]).resolve() == self.cwd.resolve()` — current contract is PWD-anchored, fix requires test-contract update
-- No empirical incident shows bail-log writing to a wrong directory
+**Resolution**:
+1. `utils.sh::repo_root` helper added (`${CLAUDE_PROJECT_DIR}` → `git rev-parse --show-toplevel` → `${PWD}`, in that order). `CLAUDE_PROJECT_DIR` is the officially documented Claude Code env var available in every hook event, so the helper inherits the harness's project-root resolution and only falls back when invoked outside hooks (test fixtures, direct CLI runs).
+2. `bail-log.sh` now sources `utils.sh` and calls `repo_root()` for the log directory.
+3. `loop.sh::_loop_log_plan_completion_if_executing` uses `repo_root()` for `root`; HEAD commit is fetched separately.
+4. Future `harness-evidence.sh` lands with `repo_root()` from day one — no third copy.
+5. NDJSON field renamed `cwd` → `repo_root` (bail-log) so the schema describes what it actually stores. `tests/test_bail_log_sh.py:62` updated to assert against the new field name.
 
-**Fix-now bar**: an actual incident in any project where a retrospective consumer cannot find bail-log rows because they landed under a sub-dir. Until that incident, deferring honors v3 retro §6 add-bias warning.
-
-**Tracked by**: `docs/plans/2026-05-09-harness-evidence-channel-design/architecture.md` §E (link target).
+**Why this happened earlier than the original fix-now bar**: the original bar was "wait for an empirical sub-dir incident". The 2026-05-12 audit found that `tests/test_bail_log_sh.py` was the only consumer asserting against the `cwd` field, no retrospective consumer ever read it, and the upcoming `harness-evidence.sh` PR would have shipped the third copy. Doing the extraction now (~50 LOC) was cheaper than landing a third copy and the inevitable cleanup later.
 
 ### T-002: Promote manual-write channels to lib helpers
 
