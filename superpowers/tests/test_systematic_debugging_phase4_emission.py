@@ -17,18 +17,15 @@ Two layers cover the contract:
    `skill_name`, dropping `dedup_check`, or sneaking a forbidden payload
    key into SKILL.md surfaces here as a failing test.
 
-The harness tests pin the contract; the extraction tests pin SKILL.md to
-that contract.
-
 Spec source: docs/plans/2026-05-12-unified-retro-events-design/bdd-specs.md
 §4 (all four scenarios), §6 (both dedup scenarios).
 """
 from __future__ import annotations
 
+import functools
 import json
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 import unittest
@@ -595,27 +592,21 @@ class Phase4SkillMdContractTests(unittest.TestCase):
         self.assertNotIn("fix_abandoned", text)
 
 
-# ---------------------------------------------------------------------------
-# SKILL.md execution-layer tests — pin the actual ```bash``` block to the
-# contract, not a mirror harness. Removing the block, hardcoding skill_name,
-# dropping dedup_check, or sneaking a forbidden payload key into SKILL.md
-# surfaces here as a failing test rather than slipping past the harness.
-# ---------------------------------------------------------------------------
-
-_PHASE4_BASH_BLOCK_PATTERN = re.compile(
-    r"On success — and ONLY on success.*?\n\s*```bash\n(?P<body>.*?)\n\s*```",
-    re.DOTALL,
-)
+DEFAULT_SKILL_NAME = "systematic-debugging"
+FORBIDDEN_PAYLOAD_KEYS = ("test_stdout", "test_stderr", "fix_diff")
+DEFAULT_ROOT_CAUSE = "off-by-one in pagination boundary"
+DEFAULT_REGRESSION_PATH = "tests/regression/test_pagination.py::test_offset"
 
 
+@functools.lru_cache(maxsize=1)
 def _extract_phase4_bash_block() -> str:
-    """Return the bash code block following the Phase 4 'On success' marker.
-
-    Raises if the SKILL.md has been refactored away from the documented shape
-    — that's the load-bearing signal this test exists to surface.
-    """
+    """Return the bash code block following the Phase 4 'On success' marker."""
     text = SKILL_MD.read_text()
-    match = _PHASE4_BASH_BLOCK_PATTERN.search(text)
+    pattern = re.compile(
+        r"On success — and ONLY on success.*?\n\s*```bash\n(?P<body>.*?)\n\s*```",
+        re.DOTALL,
+    )
+    match = pattern.search(text)
     if match is None:
         raise AssertionError(
             "SKILL.md no longer contains a Phase 4 'On success' marker followed "
@@ -623,26 +614,26 @@ def _extract_phase4_bash_block() -> str:
             "regex; if the block was removed, restore it (009-impl contract)."
         )
     body = match.group("body")
-    # The markdown indents each code line with 3 leading spaces — strip them
-    # so the body executes as plain bash.
+    # Markdown indents each code line with 3 leading spaces — strip them so
+    # the body executes as plain bash.
     return "\n".join(line[3:] if line.startswith("   ") else line for line in body.splitlines())
 
 
 def _build_sandbox(
     tmp: Path,
     *,
-    skill_name: str | None,
+    write_state: bool = True,
+    skill_name: str = DEFAULT_SKILL_NAME,
     session_id: str = "test-session-phase4",
 ) -> tuple[Path, dict[str, str], Path]:
     """Set up a hermetic project + state environment for SKILL.md execution.
 
-    Returns (project_dir, env_vars, log_file_path). The project directory
-    becomes both `CLAUDE_PROJECT_DIR` and PWD; the state file lives under a
-    sandboxed `$HOME/.claude/projects/<key>/` so `find_state_file` resolves
-    deterministically without touching the real user state.
+    Returns (project_dir, env_vars, log_file_path). `CLAUDE_PLUGIN_ROOT` is
+    aliased to the real `SUPERPOWERS_DIR` — the SKILL.md block only sources
+    lib files (read-only), writes go to the sandboxed `CLAUDE_PROJECT_DIR`.
 
-    `skill_name=None` means: create no state file at all. An empty-string
-    skill_name creates a state file whose `.skill_name` field is empty.
+    `write_state=False` skips state-file creation entirely so `find_state_file`
+    returns empty, exercising the missing-file branch.
     """
     project = tmp / "project"
     project.mkdir()
@@ -654,7 +645,7 @@ def _build_sandbox(
     state_dir = fake_home / ".claude" / "projects" / project_key
     state_dir.mkdir(parents=True)
 
-    if skill_name is not None:
+    if write_state:
         state_file = state_dir / f"{session_id}.superpowers.json"
         state_file.write_text(
             json.dumps(
@@ -666,15 +657,12 @@ def _build_sandbox(
             )
         )
 
-    plugin_root = tmp / "plugin"
-    (plugin_root / "lib").mkdir(parents=True)
-    for fname in ("utils.sh", "retro-events.sh", "skill-events.sh", "bail-log.sh"):
-        shutil.copy(LIB_DIR / fname, plugin_root / "lib" / fname)
-
-    env = os.environ.copy()
+    # Strip parent CLAUDE_* env vars so a developer's shell state cannot leak
+    # into the sandbox and mask CI failures.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE_")}
     env["HOME"] = str(fake_home)
     env["CLAUDE_PROJECT_DIR"] = str(project)
-    env["CLAUDE_PLUGIN_ROOT"] = str(plugin_root)
+    env["CLAUDE_PLUGIN_ROOT"] = str(SUPERPOWERS_DIR)
     env["CLAUDE_SESSION_ID"] = session_id
 
     log = project / "docs" / "retros" / "skill-events.jsonl"
@@ -687,20 +675,14 @@ def _run_extracted_block(
     env: dict[str, str],
     *,
     repeats: int = 1,
-    root_cause: str = "off-by-one in pagination boundary",
-    regression_path: str = "tests/regression/test_pagination.py::test_offset",
+    root_cause: str = DEFAULT_ROOT_CAUSE,
+    regression_path: str = DEFAULT_REGRESSION_PATH,
 ) -> subprocess.CompletedProcess[str]:
-    """Substitute SKILL.md placeholders with test values and execute the block.
-
-    Returns the CompletedProcess so callers can assert on exit code + stderr.
-    """
+    """Substitute SKILL.md placeholders with test values and execute the block."""
     substituted = block.replace("<one-line root cause>", root_cause).replace(
         "<tests/path::case>", regression_path
     )
-    script = (
-        f"cd {project}\n"
-        + (substituted + "\n") * repeats
-    )
+    script = f"cd {project}\n" + (substituted + "\n") * repeats
     return subprocess.run(
         ["bash", "-c", script],
         env=env,
@@ -711,131 +693,77 @@ def _run_extracted_block(
 
 
 class Phase4SkillMdExecutionTests(unittest.TestCase):
-    """Execute the actual ```bash``` block from SKILL.md and verify its output.
+    block: str
 
-    This is the canonical regression guard for the SKILL.md prose. If the
-    block is removed, refactored, or drifts from the contract, these tests
-    are what fail — not the mirror harnesses above.
-    """
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.block = _extract_phase4_bash_block()
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.tmp_path = Path(self._tmp.name)
 
     def test_block_extraction_succeeds(self) -> None:
-        """Sanity check: the regex still finds the block."""
-        block = _extract_phase4_bash_block()
-        # Spot-check known idioms are inside what we extracted.
-        self.assertIn("state_read", block)
-        self.assertIn("dedup_check", block)
-        self.assertIn("lib/skill-events.sh", block)
-        self.assertIn("fix_completed", block)
+        for idiom in ("state_read", "dedup_check", "lib/skill-events.sh", "fix_completed"):
+            self.assertIn(idiom, self.block)
 
     def test_block_executes_and_emits_expected_row(self) -> None:
-        """Run the SKILL.md block once; assert exactly one fix_completed row."""
-        block = _extract_phase4_bash_block()
-        with tempfile.TemporaryDirectory() as tmp:
-            project, env, log = _build_sandbox(
-                Path(tmp), skill_name="systematic-debugging"
-            )
-            result = _run_extracted_block(block, project, env)
-            self.assertEqual(
-                result.returncode,
-                0,
-                msg=f"stderr: {result.stderr}\nstdout: {result.stdout}",
-            )
-            self.assertTrue(
-                log.exists(),
-                msg=f"skill-events.jsonl missing; stderr={result.stderr}",
-            )
-            rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
-            self.assertEqual(len(rows), 1, msg=f"rows={rows!r}")
-            row = rows[0]
-            self.assertEqual(row["skill"], "systematic-debugging")
-            self.assertEqual(row["event"], "fix_completed")
-            self.assertEqual(row["payload"]["root_cause"], "off-by-one in pagination boundary")
-            self.assertEqual(
-                row["payload"]["regression_test_path"],
-                "tests/regression/test_pagination.py::test_offset",
-            )
-            self.assertEqual(row["payload"]["investigation_phase_count"], 4)
-            for forbidden in ("test_stdout", "test_stderr", "fix_diff"):
-                self.assertNotIn(forbidden, row["payload"])
+        project, env, log = _build_sandbox(self.tmp_path)
+        result = _run_extracted_block(self.block, project, env)
+        self.assertEqual(
+            result.returncode, 0, msg=f"stderr: {result.stderr}\nstdout: {result.stdout}"
+        )
+        self.assertTrue(log.exists(), msg=f"skill-events.jsonl missing; stderr={result.stderr}")
+        rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
+        self.assertEqual(len(rows), 1, msg=f"rows={rows!r}")
+        row = rows[0]
+        self.assertEqual(row["skill"], DEFAULT_SKILL_NAME)
+        self.assertEqual(row["event"], "fix_completed")
+        self.assertEqual(row["payload"]["root_cause"], DEFAULT_ROOT_CAUSE)
+        self.assertEqual(row["payload"]["regression_test_path"], DEFAULT_REGRESSION_PATH)
+        self.assertEqual(row["payload"]["investigation_phase_count"], 4)
+        for forbidden in FORBIDDEN_PAYLOAD_KEYS:
+            self.assertNotIn(forbidden, row["payload"])
 
     def test_block_dedups_within_same_invocation(self) -> None:
-        """Re-running the block in the same shell with identical args writes one row."""
-        block = _extract_phase4_bash_block()
-        with tempfile.TemporaryDirectory() as tmp:
-            project, env, log = _build_sandbox(
-                Path(tmp), skill_name="systematic-debugging"
-            )
-            result = _run_extracted_block(block, project, env, repeats=2)
-            self.assertEqual(result.returncode, 0, msg=result.stderr)
-            rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
-            self.assertEqual(
-                len(rows),
-                1,
-                msg=f"dedup_check failed in SKILL.md block: got {len(rows)} rows",
-            )
+        project, env, log = _build_sandbox(self.tmp_path)
+        result = _run_extracted_block(self.block, project, env, repeats=2)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
+        self.assertEqual(
+            len(rows), 1, msg=f"dedup_check failed in SKILL.md block: got {len(rows)} rows"
+        )
 
     def test_block_skips_when_state_file_missing(self) -> None:
-        """No state file → no skill_name → no row."""
-        block = _extract_phase4_bash_block()
-        with tempfile.TemporaryDirectory() as tmp:
-            project, env, log = _build_sandbox(Path(tmp), skill_name=None)
-            result = _run_extracted_block(block, project, env)
-            self.assertEqual(result.returncode, 0, msg=result.stderr)
-            self.assertFalse(
-                log.exists() and log.read_text().strip(),
-                msg=f"expected no row; got {log.read_text() if log.exists() else 'no file'!r}",
-            )
+        project, env, log = _build_sandbox(self.tmp_path, write_state=False)
+        result = _run_extracted_block(self.block, project, env)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertFalse(log.exists(), msg=f"unexpected file: {log.read_text() if log.exists() else ''!r}")
 
     def test_block_skips_when_skill_name_empty(self) -> None:
-        """Empty skill_name in state → silent skip."""
-        block = _extract_phase4_bash_block()
-        with tempfile.TemporaryDirectory() as tmp:
-            project, env, log = _build_sandbox(Path(tmp), skill_name="")
-            result = _run_extracted_block(block, project, env)
-            self.assertEqual(result.returncode, 0, msg=result.stderr)
-            self.assertFalse(
-                log.exists() and log.read_text().strip(),
-                msg=f"expected no row; got {log.read_text() if log.exists() else 'no file'!r}",
-            )
+        project, env, log = _build_sandbox(self.tmp_path, skill_name="")
+        result = _run_extracted_block(self.block, project, env)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertFalse(log.exists(), msg=f"unexpected file: {log.read_text() if log.exists() else ''!r}")
 
     def test_block_skill_name_comes_from_state_not_hardcoded(self) -> None:
-        """Set state's skill_name to a sentinel; assert the row carries the sentinel.
-
-        This is the load-bearing check: if SKILL.md is ever changed to
-        hardcode `"systematic-debugging"` as the helper's $1, this test fails
-        because the sentinel won't appear in the row.
-        """
-        block = _extract_phase4_bash_block()
+        # Sentinel skill_name in state must appear in the row. If SKILL.md
+        # regresses to hardcoding "systematic-debugging" as the helper's $1,
+        # the sentinel won't appear and this test fails.
         sentinel = "sentinel-skill-xyz"
-        with tempfile.TemporaryDirectory() as tmp:
-            project, env, log = _build_sandbox(Path(tmp), skill_name=sentinel)
-            result = _run_extracted_block(block, project, env)
-            self.assertEqual(result.returncode, 0, msg=result.stderr)
-            rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(
-                rows[0]["skill"],
-                sentinel,
-                msg=(
-                    "skill_name in the emitted row must echo the state file's "
-                    "skill_name, not a hardcoded literal — SKILL.md may have "
-                    "regressed to hardcoding."
-                ),
-            )
+        project, env, log = _build_sandbox(self.tmp_path, skill_name=sentinel)
+        result = _run_extracted_block(self.block, project, env)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["skill"], sentinel)
 
     def test_block_never_emits_transcript_content(self) -> None:
-        """Re-extract block and assert the emission filter cannot include
-        test_stdout / test_stderr / fix_diff keys regardless of payload state.
-
-        Static check on the source text of the extracted block — a defense in
-        depth against a future edit that adds a transcript key into the jq
-        payload filter.
-        """
-        block = _extract_phase4_bash_block()
-        for forbidden in ("test_stdout", "test_stderr", "fix_diff"):
+        for forbidden in FORBIDDEN_PAYLOAD_KEYS:
             self.assertNotIn(
                 forbidden,
-                block,
+                self.block,
                 msg=f"SKILL.md Phase 4 block must not reference {forbidden}",
             )
 
