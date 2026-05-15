@@ -33,7 +33,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" summary "<completion_commit>"
 
 | `hours_since_completion` | post-plan `total` | Decision |
 |---|---|---|
-| < 24h | 0 | Output INSUFFICIENT-POST-PLAN reminder + AskUserQuestion |
+| < 24h | 0 | Output INSUFFICIENT-POST-PLAN reminder, then proceed |
 | < 24h | ≥ 1 | Proceed; surface a brief warning |
 | ≥ 24h | any | Proceed normally |
 
@@ -46,17 +46,19 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" summary "<completion_commit>"
 > user `refactor:` commits typically 12–72h after completion. Running now
 > will likely produce an over-aggressive disable test on a defensive
 > harness component (e.g., `recurring_failure_patterns`) on weak evidence.
+> Proceeding anyway — the `retrospective_run` event will record
+> `post_plan_diff.window_hours_at_run` so the next retrospective can
+> flag this as a known weak-evidence run.
 
-Then call AskUserQuestion with options:
-
-1. **Wait — I'll re-run after more post-plan activity** — exit without
-   writing any file; do NOT append a `retrospective_run` event
-2. **Run anyway (I have other reasons)** — proceed; the resulting
-   `retrospective_run` event records `post_plan_diff.window_hours_at_run`
-   so the next retrospective can flag this as a known weak-evidence run
-3. **Greenfield with no follow-up** — proceed; record
-   `post_plan_diff.greenfield_no_followup: true` so future retrospectives
-   don't expect post-plan signal
+After surfacing the reminder, proceed to Pre-Check B without pausing.
+Record `post_plan_diff.window_hours_at_run: {hours_since_completion}` in
+the Phase 6 `retrospective_run` event so future retrospectives can
+weight this run's proposals as weak-evidence. If the plan is greenfield
+with no expected follow-up (no `feedback`-classified commits ever
+expected on these files), also record
+`post_plan_diff.greenfield_no_followup: true` based on the file list
+(e.g., one-off migration scripts) — emit this self-classification
+without asking the user.
 
 ## Phase 1 step 8 — Data Collection Contract
 

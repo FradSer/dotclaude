@@ -2,7 +2,7 @@
 name: brainstorming
 description: Structures collaborative dialogue to turn rough ideas into implementation-ready designs. This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -27,19 +27,13 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 - Ambiguous requirements that the user expects to be clarified through dialogue
 - Greenfield feature with explicit "design first" / "brainstorm" framing
 
-**Bucket C — Ambiguous (use `AskUserQuestion` to decide; do NOT pick a default):**
+**Bucket C — Ambiguous (default to Bucket B, do NOT pause to ask):**
 
 - `$ARGUMENTS` is brief and could go either way (e.g., a single sentence with no scope cues)
 - Mixes trivial signals with open-ended language
 - Names an outcome but not a scope (e.g., "improve performance", "make it faster")
 
-For Bucket A, output the bail-out response below and stop. For Bucket B, proceed to Initialization. For Bucket C, ask the user via `AskUserQuestion` with three options:
-
-1. **Quick edit / direct change** — skip the pipeline, edit directly
-2. **Run brainstorming pipeline** — full Discovery → Design → Wrap-up
-3. **Route to `/superpowers:systematic-debugging`** — if the user actually meant a bug
-
-Use the user's answer to dispatch (Bucket A / Bucket B / debugging route). The `--force` token (literal in `$ARGUMENTS`) bypasses this entire check and proceeds to Initialization unconditionally.
+For Bucket A, output the bail-out response below and stop. For Bucket B (including all Bucket C cases), proceed to Initialization. The `--force` token (literal in `$ARGUMENTS`) is preserved for backward compatibility; it now no-ops since the loop always proceeds on non-Bucket-A inputs. If the user later signals the scope is wrong, the Phase 1 rejection-handling block at the bottom of this section absorbs the pivot.
 
 **Bail-out response (Bucket A, output verbatim, then proceed with direct edit OR hand off):**
 
@@ -51,7 +45,7 @@ Use the user's answer to dispatch (Bucket A / Bucket B / debugging route). The `
 bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" brainstorming <event> "<short reason>" "$ARGUMENTS"
 ```
 
-Where `<event>` is `bail_out` for a Bucket A skip, `force_override` for the `--force` branch entering Initialization, or `user_chose_skip` for a Bucket C user-chose-quick-edit. Skip the call only when the user routes to `/superpowers:systematic-debugging` (that skill writes its own log entry). The log feeds retrospective Phase 5a — frequent `force_override` against trivial-shaped inputs surfaces the bail-out threshold being too aggressive.
+Where `<event>` is `bail_out` for a Bucket A skip, or `force_override` for the `--force` branch entering Initialization. The legacy `user_chose_skip` event is no longer emitted (Bucket C now auto-routes to Bucket B). The log feeds retrospective Phase 5a — frequent `force_override` against trivial-shaped inputs surfaces the bail-out threshold being too aggressive.
 
 ## Pre-loop Resolution (run before Initialization step 1)
 
@@ -88,25 +82,25 @@ The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes
 
 ## Phase 1: Scope Alignment
 
-Explore codebase, propose approach, get user approval.
+Explore codebase, lock the approach inline, proceed to Phase 1.5 in the same iteration.
 
 **Actions**:
 
-1. **Explore codebase**: Use Read/Grep/Glob to find relevant files, patterns, docs, recent commits. Build context before asking anything.
-2. **Sprint contract**: Present a structured proposal to the user:
+1. **Explore codebase**: Use Read/Grep/Glob to find relevant files, patterns, docs, recent commits. Build context before recording the contract.
+2. **Sprint contract**: Record a structured proposal inline in your turn output:
    - "Here is my understanding of [problem]"
    - "I recommend [approach] because [rationale]"
    - "Alternatives considered: [brief list with trade-offs]"
-   - "Key questions: [batch independent questions; sequence dependent ones]"
-3. **Get approval**: Use AskUserQuestion with the structured proposal. Iterate (2-3 rounds) until the scope is locked.
+   - "Open questions absorbed: [questions you answered yourself from codebase evidence; never punt these to the user]"
+3. **Lock and advance**: Treat the sprint contract as the locked scope and proceed to Phase 1.5. Do NOT pause to ask for approval — the evaluator at Phase 2 plus the user's post-commit review are the quality gates. If a question genuinely cannot be answered from the codebase, pick the safest default, document the assumption in the sprint contract, and surface it in Phase 2's design files so the evaluator can flag it.
 
 **Open-Ended Problems**: If the problem requires challenging assumptions or radical innovation, load `superpowers:build-like-iphone-team` skill in the sprint contract phase.
 
-**Exit**: User-approved approach, clear requirements and constraints.
+**Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 1.5.
 
-**On user rejection of the sprint contract** (response says "no", "wrong", "different approach", names specific objections):
-- Do NOT auto-loop with the same proposal. The loop's `state.prompt` is immutable after setup; the Stop hook re-injects the same anchored prompt every iteration. Absorb the rejection by regenerating the sprint contract from scratch with the user's objections as new constraints — keep the working-context framing in your synthesis, not in the anchor.
-- If the user names a different problem entirely ("actually this is about X"), treat the new framing as a **scope override layered on top of the anchored prompt**: re-run Phase 1 step 1 (codebase exploration with the new scope) and let your in-turn working context carry the new framing. Do NOT attempt to rewrite `state.prompt` — there is no API for that, and the iter-2+ re-injection uses the `Continue superpowers:brainstorming` short header (skill_name branch in `lib/loop.sh:_loop_emit_block`), so the original anchor only matters for iteration 1. If the override is fundamental (the user wants a completely unrelated brainstorm), output `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line note explaining the pivot, and have the user re-invoke `/superpowers:brainstorming` with the new framing.
+**Mid-stream pivots** (user injects "actually this is about X" or "wrong direction" in a later turn):
+- The loop's `state.prompt` is immutable after setup; the Stop hook re-injects the same anchored prompt every iteration. Absorb the new framing in working context by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint. Do NOT attempt to rewrite `state.prompt` — there is no API for that, and the iter-2+ re-injection uses the `Continue superpowers:brainstorming` short header (skill_name branch in `lib/loop.sh:_loop_emit_block`), so the original anchor only matters for iteration 1.
+- If the override is fundamental (the user wants a completely unrelated brainstorm), output `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line note explaining the pivot, and have the user re-invoke `/superpowers:brainstorming` with the new framing.
 - If the user says "abort" or "cancel", emit `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line cancellation note. Do not write design files.
 
 See `./references/scope-alignment.md` for exploration patterns, question guidelines, and trade-off templates.
@@ -155,14 +149,13 @@ Create design documents with integrated quality assurance, then reconcile cross-
 
 **Step 2: Integrated QA (default: on, overridable only via `harness-config.json`)**
 
-**CRITICAL**: When `_DESIGN_EVALUATOR_DISABLED=true` (set in Phase 1.5), skip the evaluator spawn entirely, treat verdict as PASS, proceed to user confirmation, and append one `harness_observation` row to `docs/retros/harness-observations.jsonl`. Otherwise, run the evaluator pass below.
+**CRITICAL**: When `_DESIGN_EVALUATOR_DISABLED=true` (set in Phase 1.5), skip the evaluator spawn entirely, treat verdict as PASS, proceed to Phase 3 wrap-up, and append one `harness_observation` row to `docs/retros/harness-observations.jsonl`. Otherwise, run the evaluator pass below.
 
 Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. The evaluator outputs report content as text; write it to the design folder as `evaluation-design-round-{N}.md`. Then read the report verdict:
 
-- PASS: proceed to lightweight user confirmation
+- PASS: proceed directly to Phase 3 wrap-up — do NOT pause for user confirmation. The evaluator PASS verdict plus the post-commit git diff are the review surface; the user audits via `git show` if they want a check.
 - REWORK: fix issues, re-run evaluator if needed (writes `evaluation-design-round-2.md`, etc.)
 - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
-- Use AskUserQuestion: "Design complete. [Brief summary]. Any concerns before commit?"
 
 **Auto-seed when missing**: If `docs/retros/checklists/design-v{N}.md` does not exist, do NOT abort. Run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" design docs/retros/checklists/design-v1.md`, log `Auto-seeded design-v1.md`, then proceed with the new file. Exit code handling: 0 = seeded, 3 = already exists (treat as success and proceed with the existing file), 1/2 = real failure (disk/usage error → abort).
 

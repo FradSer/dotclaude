@@ -20,16 +20,17 @@ Maximum 3 proposals per mode per retrospective run. If analysis produces more:
 
 ## Proposal Presentation
 
-Each proposal presented via AskUserQuestion:
+Each proposal is recorded inline in the retrospective report (Phase 6) using this shape, then auto-applied in Phase 4 — there is no per-proposal approval gate. The post-commit `git show docs/retros/checklists/` diff is the audit surface.
 
 ```
 Proposal: [ADD/REMOVE/MODIFY/PROMOTE] [mode]/[Item ID]
 Description: [what the item checks]
 Rationale: [why this change is needed]
 Evidence: [plan-1 tasks X, Y -- plan-2 task Z -- specific failure pattern]
+Outcome: applied | self-rejected: <reason citing Phase 1 step 5 history>
 ```
 
-Options: "Approve", "Reject", "Defer to next run"
+`Outcome` is set by Phase 4: `applied` for proposals that became checklist edits, `self-rejected` only when the proposal duplicates a recent removal (Phase 1 step 5) without materially new evidence. EVO-6 (max 3 per mode per run) and the threshold gates in this file are the upstream rate limits.
 
 ## Pre-Edit Snapshot
 

@@ -3,34 +3,28 @@ name: retrospective
 description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective".
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "AskUserQuestion", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/observations.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/evolution-log.sh:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/observations.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/evolution-log.sh:*)"]
 ---
 
 # Retrospective
 
-Analyze evaluation patterns across completed plans, identify recurring failures, and propose checklist evolution with user approval.
+Analyze evaluation patterns across completed plans, identify recurring failures, and auto-apply checklist evolution. The user reviews post-commit via `git show docs/retros/checklists/`.
 
 **Chain position**: This skill is the downstream consumer of executing-plans Phase 4 "Checklist Evolution Candidates". It aggregates signals across plans and produces versioned checklist updates.
 
-## Pre-Check A: INSUFFICIENT-POST-PLAN gate (run first, before LOW-YIELD)
+## Pre-Check A: INSUFFICIENT-POST-PLAN advisory (informational, run first)
 
-Read the most recent `plan_completed` event from `docs/retros/plans-completed.jsonl`. If `hours_since_completion < 24h` AND `bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" summary <completion_commit> <files...>` returns `total == 0`, output the INSUFFICIENT-POST-PLAN reminder and call AskUserQuestion (see `./references/post-plan-diff.md` §Pre-Check A for the verbatim reminder, the AskUserQuestion options, and dispatch rules).
+Read the most recent `plan_completed` event from `docs/retros/plans-completed.jsonl`. If `hours_since_completion < 24h` AND `bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" summary <completion_commit> <files...>` returns `total == 0`, output the INSUFFICIENT-POST-PLAN reminder verbatim (see `./references/post-plan-diff.md` §Pre-Check A) and proceed to Pre-Check B — do NOT pause. The Phase 6 `retrospective_run` event records `consecutive_zero_change` so next-run LOW-YIELD self-corrects.
 
-Skip silently when `completion_commit` is missing (pre-v2.8.1 logs). Always run Pre-Check B after this completes.
+Skip silently when `completion_commit` is missing (pre-v2.8.1 logs). Always run Pre-Check B after.
 
-## Pre-Check B: LOW-YIELD self-test (run after Pre-Check A)
+## Pre-Check B: LOW-YIELD advisory (informational, run after Pre-Check A)
 
-Before Bootstrap, read the most recent `retrospective_run` event from `docs/retros/evolution-log.jsonl` (if the file exists). If `.self_value.consecutive_zero_change >= 2`, surface this reminder verbatim **before** running any subsequent phase:
+Read the most recent `retrospective_run` event from `docs/retros/evolution-log.jsonl`. If `.self_value.consecutive_zero_change >= 2`, surface this reminder verbatim, then proceed to Phase 0 — do NOT pause:
 
-> **RETROSPECTIVE LOW-YIELD**: the last {N} consecutive runs produced zero approved proposals and no assumption test. The calibration loop is not currently earning its cost. Recommend skipping this run unless you have new evidence the previous loops missed; re-invoke after 2+ more plans complete to give the data more signal.
+> **RETROSPECTIVE LOW-YIELD**: the last {N} consecutive runs produced zero approved proposals and no assumption test. Proceeding anyway — the next `retrospective_run` event captures whether this run breaks the streak.
 
-After surfacing, call `AskUserQuestion` with options `["Run anyway (I have new evidence)", "Skip this run", "Show me the prior zero-change events"]` and dispatch on the answer:
-
-- **Run anyway** — proceed to Phase 0 normally; the next `retrospective_run` event resets `consecutive_zero_change` to 0 only if this run produces a non-zero change
-- **Skip this run** — exit without writing any file; do NOT append a `retrospective_run` event (the calibration loop is paused, not falsified)
-- **Show me the prior zero-change events** — print the last `N+1` `retrospective_run` JSON lines, then re-ask the question
-
-If the file does not exist or the most recent event lacks `self_value`, treat as `consecutive_zero_change=0` and skip the pre-check silently.
+If the file does not exist or the most recent event lacks `self_value`, treat as `consecutive_zero_change=0` and skip silently.
 
 ## Phase 0: Bootstrap (run only when no checklists exist)
 
@@ -89,19 +83,15 @@ Generate proposals from analysis results. See `./references/evolution-protocol.m
 
 Each proposal includes: type, target checklist, item ID, description, rationale with plan evidence.
 
-## Phase 4: User Approval and Apply
+## Phase 4: Auto-Apply Proposals
 
-For each proposal (ordered by priority: regression breaks first, then by frequency):
+Apply every Phase 3 proposal (ordered by priority: regression breaks first, then by frequency). No per-proposal approval gate — EVO-6 (max 3/mode/run) + Phase 3 thresholds + post-commit `git show docs/retros/checklists/` are the quality surface. `proposals_rejected` is reserved for self-rejection at apply time: when a proposal duplicates a recent removal (Phase 1 step 5 history) without materially new evidence, log to the report under "Self-Rejected Proposals" with the cited historical entry, increment `proposals_rejected`, and skip the checklist row. All other proposals advance.
 
-1. Present via AskUserQuestion with: proposal type, item ID, description, rationale, driving plan evidence
-2. **Approved**: Queue for checklist update
-3. **Rejected**: Record rejection in retrospective report; no file change
-
-After all proposals reviewed:
+Apply steps:
 
 1. **Pre-edit snapshot**: Write current checklist content to the retrospective report under "Pre-Edit Snapshot" with rollback instructions
-2. **Create new version**: Write `{mode}-v{N+1}.md` with all approved changes applied. Version increments once per run (not per proposal). Original version preserved unchanged.
-3. **Log evolution**: For each approved proposal, emit one row via the helper. The event_type is one of `item_added | item_removed | item_modified | item_promoted`. Payload-only filter omits `event` and `timestamp` — the envelope merges those (reference `$event`/`$timestamp` inside the filter to pin their row position per legacy parity).
+2. **Create new version**: Write `{mode}-v{N+1}.md` with all applied changes. Version increments once per run (not per proposal). Original version preserved unchanged.
+3. **Log evolution**: For each applied proposal, emit one row via the helper. The event_type is one of `item_added | item_removed | item_modified | item_promoted`. Payload-only filter omits `event` and `timestamp` — the envelope merges those (reference `$event`/`$timestamp` inside the filter to pin their row position per legacy parity).
 
    ```bash
    bash "${CLAUDE_PLUGIN_ROOT}/lib/evolution-log.sh" \
@@ -118,7 +108,7 @@ After all proposals reviewed:
 
 ## Phase 5: Harness Health and Load-Bearing Audit
 
-Assess whether each harness component still earns its cost as models improve. Every harness piece encodes an assumption about model limitations; as those limitations change, some components become pure overhead (see Anthropic harness-design blog: "assumption testing"). All output in this phase is advisory — **never auto-remove components**. The retrospective report (Phase 6) surfaces candidates; the user approves changes in Phase 4 of the *next* retrospective run, not this one.
+Assess whether each harness component still earns its cost as models improve. Every harness piece encodes an assumption about model limitations; as those limitations change, some components become pure overhead (see Anthropic harness-design blog: "assumption testing"). All output in this phase is advisory — **never auto-remove components**. The retrospective report (Phase 6) surfaces candidates; the *next* retrospective run's Phase 3 turns them into REMOVE/MODIFY proposals that Phase 4 auto-applies. Phase 5 itself never mutates components — it only writes the assumption test via the 5c one-at-a-time disable protocol.
 
 ### 5a. Usage-Driven Recommendations
 

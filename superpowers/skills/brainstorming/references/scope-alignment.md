@@ -2,22 +2,22 @@
 
 ## Goal
 
-Understand what's being built by exploring the codebase, align on approach via sprint contract, and get user approval.
+Understand what's being built by exploring the codebase, then record a sprint contract inline that locks the chosen approach for Phase 1.5+. No approval gate — the evaluator at Phase 2 and the post-commit `git show` diff are the quality surface.
 
 ## Explore Codebase First
 
-**Before asking any questions**, build context from existing code:
+**Before recording the sprint contract**, build context from existing code:
 
 1. **Find relevant files**: Match patterns (e.g., `**/*.ts`, `src/**/*.py`), search for similar implementations
 2. **Review project context**: Check `docs/`, `README.md`, `CLAUDE.md`, run `git log --oneline -20`
 3. **Identify gaps**: Which requirements are ambiguous? What constraints are undocumented? What success criteria need clarification?
 4. **Build mental model**: Synthesize exploration into requirements, constraints, and relevant patterns
 
-**Key Principle**: Explore extensively before asking. Questions should fill gaps that codebase exploration cannot answer.
+**Key Principle**: Explore extensively, answer every question you can from codebase evidence, and only surface questions the user MUST answer (e.g., product intent the code can't reveal). The sprint contract is recorded inline and locks the scope without pausing.
 
 ## Sprint Contract Pattern
 
-Instead of asking questions one at a time, present a structured proposal:
+Record a structured proposal inline in your turn output:
 
 ```
 I explored [relevant files/patterns] and here is my understanding:
@@ -30,17 +30,16 @@ I explored [relevant files/patterns] and here is my understanding:
 - [Option B]: [trade-off]. Not recommended because [reason].
 - [Option C]: [trade-off]. Not recommended because [reason].
 
-**Key questions** (need your input):
-1. [Question about scope/constraint] -- Options: A) ..., B) ..., C) ...
-2. [Question about edge case] -- Options: A) ..., B) ...
+**Assumptions absorbed** (answered from codebase, surfaced for evaluator review):
+1. [Question that could go either way] -- Resolved to [choice] because [codebase evidence]
+2. [Question about edge case] -- Resolved to [choice] because [precedent in path/to/file]
 ```
 
-### Question Guidelines
+### Assumption Guidelines
 
-- **Batch independent questions** into the sprint contract (scope, constraints, edge cases that don't depend on each other)
-- **Sequence dependent questions**: If answer to Q1 changes Q2, ask Q1 first, then Q2 in the next round
-- **Prefer multiple choice** with 2-4 options to reduce cognitive load
-- **Ground in codebase**: "I found [pattern X] in [file]. Should this follow the same approach?"
+- **Absorb everything you can**: Codebase precedent, existing patterns, recent commits, and project conventions answer most questions. Cite the file/line where the precedent lives so the evaluator can audit.
+- **Pick the safest default** when codebase evidence is ambiguous: prefer the choice that keeps options open (additive, reversible) over the choice that locks behavior in.
+- **Surface, do not ask**: Document every absorbed assumption in the "Assumptions absorbed" block. The Phase 2 evaluator reads this block as part of design review and flags assumptions that look load-bearing-but-unjustified.
 
 ### Example Sprint Contract
 

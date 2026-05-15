@@ -60,7 +60,7 @@ Every supported identifier above MUST have a corresponding `if-disabled` branch 
 | Identifier | Why removed |
 |-----------|---|
 | `context_reset_coordinator` | The "main agent runs batches directly" alt-path was too large to land safely (would require inlining the entire batch-execution-playbook into the main agent). Re-introduce only after a dedicated design pass. Retrospective Phase 5c MUST refuse this identifier; if selected, log an observation `component_unsupported` and rewrite `harness-config.json` with an empty `disabled_components[]`. |
-| `plan_evaluator` | Plan-mode evaluator was permanently removed in 2.6.0. writing-plans Phase 4 sub-agent reflection covers the same structural checks (BDD coverage, dependency graph, task completeness) and the user gates commit via AskUserQuestion. Retrospective Phase 5c MUST refuse this identifier; if selected, log `component_unsupported` and rewrite `harness-config.json` with an empty `disabled_components[]`. |
+| `plan_evaluator` | Plan-mode evaluator was permanently removed in 2.6.0. writing-plans Phase 4 sub-agent reflection covers the same structural checks (BDD coverage, dependency graph, task completeness); unaddressed sub-agent FAILs are fixed in Phase 4 step 3 before the Phase 5 commit. Retrospective Phase 5c MUST refuse this identifier; if selected, log `component_unsupported` and rewrite `harness-config.json` with an empty `disabled_components[]`. |
 
 Any identifier not in the supported table is treated as unknown — the consuming skill
 logs an observation (`component_unknown`) and proceeds with the full pipeline.

@@ -81,7 +81,7 @@ For independent multi-task batches:
 
 For single-task batches or unavoidable sequential dependencies:
 
-1. Plan and get approval
+1. Record the per-task plan inline (no user approval — this skill is fully autonomous)
 2. Execute task directly or via single subagent following BDD principles
 3. Verify and mark complete
 

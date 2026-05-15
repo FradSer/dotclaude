@@ -253,7 +253,7 @@ If verdict is PASS, the Rework Items table remains present but empty.
 | Rework Items | Yes | Empty table if no FAIL items; keep the section |
 | Verdict | Yes | PASS (all items PASS) or REWORK (count and IDs of FAIL items) |
 
-(Plan-mode evaluation has no formal report. writing-plans Phase 4 sub-agent reflection produces an inline summary that the main agent presents to the user via AskUserQuestion; no `evaluation-plan-round-*.md` file is written.)
+(Plan-mode evaluation has no formal report. writing-plans Phase 4 sub-agent reflection produces an inline summary recorded in the main agent's turn output; sub-agent FAILs are addressed in Phase 4 step 3 before the Phase 5 commit, and the post-commit `git show` diff is the user's audit surface. No `evaluation-plan-round-*.md` file is written.)
 
 ## 5. REWORK Resolution Protocol
 

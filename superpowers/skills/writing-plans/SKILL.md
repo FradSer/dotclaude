@@ -3,7 +3,7 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "AskUserQuestion", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
 ---
 
 # Writing Plans
@@ -43,22 +43,24 @@ grep -nE "STATUS:.*NOT.JUSTIFIED|DESIGN-NOT-YET-JUSTIFIED|DESIGN-CONSIDERED-DEFE
 
 This catches designs the maintainer or a prior brainstorming sub-agent has explicitly marked as "not approved to advance" (see `docs/retros/checklists/design-v1.md` JUST-01 for full semantics, and `docs/retros/2026-05-09-v3-considered-deferred.md` for the inciting case). The marker is dispositive — do not interpret it away.
 
-**On match, use AskUserQuestion (NOT plain text) to surface the gate**:
+**On match, refuse deterministically (the marker is dispositive — do not interpret it away)**:
 
-- Question: "_index.md is marked NOT-JUSTIFIED at line {N}: '{matched text}'. The maintainer or a prior brainstorming sub-agent has signalled this design should not advance to plan-writing. How do you want to proceed?"
-- Options:
-  - **Refuse — return to brainstorming or activate gate (default)**: emit a one-line note explaining the matched line + path, log via `bail-log.sh` with reason `design_not_justified`, then exit without starting the loop:
-    ```bash
-    bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans bail_out "design_not_justified: <matched marker>" "$ARGUMENTS"
-    ```
-  - **Override — proceed despite NOT-JUSTIFIED status**: log the override and continue to First Action below. Use `force_override` event:
-    ```bash
-    bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans force_override "design_not_justified: <matched marker>" "$ARGUMENTS"
-    ```
+1. Output a one-line note explaining the matched line + path: `Refusing: <design-path>/_index.md:{N} is marked NOT-JUSTIFIED — '{matched text}'. Re-invoke /superpowers:brainstorming to revise the design, or pass --justify-override to bypass this gate.`
+2. Log via `bail-log.sh` with reason `design_not_justified`:
+   ```bash
+   bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans bail_out "design_not_justified: <matched marker>" "$ARGUMENTS"
+   ```
+3. Exit without starting the loop.
 
-**PROHIBITED**: Do NOT silently skip the gate when `--force` is passed (the `--force` flag bypasses the bail-out size gate above, NOT this justification gate — they are independent failure modes). Do NOT prompt the user for an override default value other than "Refuse" — the default is intentionally conservative so a user pressing through without reading still gets blocked.
+**Override**: Pass `--justify-override` (literal token in `$ARGUMENTS`, case-sensitive, whole-token match) to bypass this refusal. When the override token is present, log a `force_override` event instead of `bail_out` and continue to First Action:
 
-The gate is non-destructive: it surfaces the situation and lets the user choose. The "Override" path produces a `force_override` audit row so retrospective Phase 5a can spot designs that were advanced despite NOT-JUSTIFIED status.
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans force_override "design_not_justified: <matched marker>" "$ARGUMENTS"
+```
+
+**PROHIBITED**: Do NOT conflate `--force` (which bypasses the bail-out size gate above) with `--justify-override` (which bypasses this justification gate). They are independent failure modes and need independent overrides — a user passing `--force` for a thin design should still be refused if the design is also NOT-JUSTIFIED.
+
+The gate is non-destructive: refusal logs to `bail-out-events.jsonl`, override logs to the same file with `force_override` event. Retrospective Phase 5a reads both to spot designs that were advanced despite NOT-JUSTIFIED status.
 
 ## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 
@@ -66,9 +68,8 @@ The gate is non-destructive: it surfaces the situation and lets the user choose.
 
 1. Resolve the design path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
-   - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/`
-   - If found without explicit argument, confirm with user: "Use this design: [path]?"
-   - If not found or user declines, ask the user for the design folder path
+   - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/` and use it directly (do NOT pause to confirm)
+   - If no `*-design/` folder exists in `docs/plans/`, refuse with: `Refusing: no design folder found under docs/plans/. Run /superpowers:brainstorming first, or pass the design folder path explicitly.` Log via `bail-log.sh writing-plans bail_out "no_design_folder" "$ARGUMENTS"` and exit.
 2. **Start the loop** (no size gate — this skill's default user plans large multi-scenario work):
    ```bash
    "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition). Emit <promise>PLAN_COMPLETE</promise> as your final line immediately after the Phase 5 commit succeeds — do not run an extra validation/polish pass." --completion-promise "PLAN_COMPLETE" --max-iterations 50
@@ -110,7 +111,7 @@ Define goal, architecture, constraints, and context.
 
 Break into small tasks mapped to specific BDD scenarios.
 
-**PROHIBITED**: Do not ask the user to choose task granularity or approve decomposition mid-process. Apply the rules in steps 1-6 below plus these additions automatically; user approval comes on the completed plan (Phase 3) and after reflection (Phase 4).
+**PROHIBITED**: Do not ask the user to choose task granularity, approve decomposition, or confirm the plan mid-process. Apply the rules in steps 1-6 below plus these additions automatically; the Phase 4 sub-agent reflection is the quality gate and the post-commit `git show` diff is the user's audit surface. There is no in-skill approval step.
 
 - Foundation tasks (setup, shared schema, types, config, storage) take lower `NNN` before feature pairs
 - Bundle all scenarios of a Feature into one test file; split only when the Feature crosses independent service boundaries (e.g., frontend vs backend)
@@ -145,11 +146,10 @@ Break into small tasks mapped to specific BDD scenarios.
 
 ## Phase 3: Validation & Documentation
 
-Verify completeness, confirm with user, and save.
+Verify completeness, save, advance to Phase 4 in the same iteration.
 
-1. **Verify**: Check for valid commit boundaries and no vague tasks.
-2. **Confirm**: Use AskUserQuestion to get user approval on the plan. AskUserQuestion pauses within the turn, ensuring the user can respond before the loop re-injects.
-3. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
+1. **Verify**: Check for valid commit boundaries and no vague tasks. If validation fails (vague tasks present, commit boundaries unclear), do NOT pause — re-enter Phase 2 in the same iteration to fix the offending tasks, then re-verify.
+2. **Save**: Write to `docs/plans/YYYY-MM-DD-<topic>-plan/` folder.
    - **CRITICAL**: `_index.md` MUST include "Execution Plan" section with **inline YAML metadata** (see template in `./references/structure-template.md`)
    - **CRITICAL**: `_index.md` MUST include "Task File References" section with links to full task files for detailed BDD scenarios
    - **CRITICAL**: `_index.md` MUST include "BDD Coverage" section confirming all scenarios are covered
@@ -202,22 +202,20 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 3. Update plan files to fix issues
 4. **MANDATORY**: Add dependency graph from Sub-agent 2 to `_index.md` in "Dependency Chain" section
 5. Re-verify updated sections
-6. **Confirm with user**: Use AskUserQuestion to present the reflection summary and get approval before committing
+6. **Record reflection summary inline** in your turn output (1-line per sub-agent verdict + what was changed). This summary is the audit trail the user reads post-commit via `git show`; do NOT pause for approval.
 
-**Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, and user approval received.
+**Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, reflection summary recorded inline, ready for Phase 5 commit.
 
-**On user rejection in Phase 3 or Phase 4 AskUserQuestion**:
-- Rejection in Phase 3 (`Confirm` step): user disagrees with task list. Re-enter Phase 2 — regenerate task decomposition with the user's objections as new constraints. Do not just re-run validation.
-- Rejection in Phase 4 (`Confirm with user` step): user disagrees with reflection conclusions. Re-enter Phase 4 — relaunch the 3 sub-agents with the user's specific objections appended to each sub-agent prompt as additional review criteria.
-- Cancellation ("abort", "cancel", "start over"): emit `<promise>PLAN_COMPLETE</promise>` after a one-line cancellation note. Do not commit; do not advance to Phase 5.
-- The Stop hook will re-inject the original prompt; route the next iteration based on which phase the rejection targeted, not blindly re-run the full pipeline.
+**Mid-stream cancellation** (user injects "abort", "cancel", "start over" in a later turn):
+- Emit `<promise>PLAN_COMPLETE</promise>` after a one-line cancellation note. Do not commit; do not advance to Phase 5.
+- The Stop hook will re-inject the original prompt; if the user wants a revised plan, they re-invoke the skill with the new framing.
 
 **Loop stall recovery**: when a re-injection arrives with no fresh artifact list and just the `Continue superpowers:writing-plans (iter X/Y). Re-check SKILL.md...` header, **do not restart from Phase 1**. The state file's `modified_files` and the actual filesystem already record prior progress:
 
 1. `Glob "docs/plans/*-plan/_index.md"` to find the in-progress plan folder.
 2. Read `_index.md` and list the task files alongside — that's the current Phase 2 output.
 3. Decide the next phase from observed state:
-   - Task files exist but `_index.md` lacks the YAML `tasks:` block or "Task File References" / "BDD Coverage" sections → Phase 3 (Validation), then AskUserQuestion confirm.
+   - Task files exist but `_index.md` lacks the YAML `tasks:` block or "Task File References" / "BDD Coverage" sections → Phase 3 (Validation), then proceed to Phase 4.
    - `_index.md` complete but no "Dependency Chain" graph → Phase 4 (reflection sub-agents).
    - Plan complete, no commit → Phase 5. Already committed → Phase 6 transition + `<promise>PLAN_COMPLETE</promise>`.
 
@@ -225,7 +223,7 @@ If the Stop hook **force-clears** the loop with a `Superpower Loop force-cleared
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
-The sub-agents above are the sole reviewer for plan quality. There is no separate formal plan-mode evaluator — structural checks (BDD coverage, dependency graph, task completeness) are fully covered by sub-agent reflection, and the user gates commit via the Phase 4 AskUserQuestion confirmation. Sub-agents read `docs/retros/checklists/plan-v{N}.md` as their rubric; their findings are the verdict.
+The sub-agents above are the sole reviewer for plan quality. There is no separate formal plan-mode evaluator — structural checks (BDD coverage, dependency graph, task completeness) are fully covered by sub-agent reflection, and the user reviews post-commit via `git show`. Sub-agents read `docs/retros/checklists/plan-v{N}.md` as their rubric; their findings are the verdict. If any sub-agent returns FAIL on a checklist item, fix the offending plan files in Phase 4 step 3 and rerun the affected sub-agent before advancing to Phase 5 — do NOT commit a plan with an unaddressed FAIL.
 
 **Auto-seed checklist when missing**: before spawning the reflection sub-agents, if no `plan-v{N}.md` exists, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" plan docs/retros/checklists/plan-v1.md`. Exit codes: 0 = seeded, 3 = already exists (proceed with existing file), 1/2 = abort. Then pass the resolved checklist path to each reflection sub-agent prompt — see `./references/reflection.md` for the prompt template.
 
@@ -255,7 +253,7 @@ Output in this exact order:
 
 ## Exit Criteria
 
-Plan created with clear goal/constraints, decomposed tasks with file lists and verification, BDD steps, commit boundaries, no vague tasks, reflection completed, user approval.
+Plan created with clear goal/constraints, decomposed tasks with file lists and verification, BDD steps, commit boundaries, no vague tasks, reflection completed, sub-agent FAILs all addressed, git commit landed.
 
 ## References
 

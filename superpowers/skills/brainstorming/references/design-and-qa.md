@@ -107,10 +107,9 @@ Before integration:
 2. Spawn `superpowers:superpowers-evaluator` agent (design mode) with context: "Evaluate the design at [path] using the design checklist at [checklist-path]."
 3. Evaluator outputs report content as text; main agent writes it to the design folder
 4. Read the report:
-   - **PASS**: Proceed to lightweight user confirmation
+   - **PASS**: Proceed directly to Phase 3 wrap-up — do NOT pause for user confirmation. The PASS verdict plus the post-commit `git show` diff are the review surface.
    - **REWORK**: Fix identified issues, re-run evaluator if needed
    - **REWORK 2+ rounds**: Consider pivoting back to Phase 1 to realign approach rather than repeatedly patching the same design
-5. Present to user via AskUserQuestion: "Design complete. [Brief summary of what was created]. Any concerns before commit?"
 
 See `./evaluation-checklist-reference.md` for checklist categories, verdict rules, and calibration examples.
 

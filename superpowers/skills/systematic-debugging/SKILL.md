@@ -293,7 +293,7 @@ Each phase must be completed before proceeding to the next.
 
 ## Complex Bugs: Inline Plan Summary (no file written)
 
-**For complex bugs, get approval on a compact plan before any code change.** This section is consistent with the Slash-command Usage rule at the top of this skill: do NOT create `docs/plans/` folders or `BUGFIX_PLAN.md` files — the deliverable is still `the fix + a regression test`, never a planning document.
+**For complex bugs, record a compact plan inline before any code change.** This section is consistent with the Slash-command Usage rule at the top of this skill: do NOT create `docs/plans/` folders or `BUGFIX_PLAN.md` files — the deliverable is still `the fix + a regression test`, never a planning document. The inline plan is the contract the skill holds itself to during Phase 2-4 and the audit surface the user reviews post-fix.
 
 ### When the Inline Plan Is Required
 
@@ -308,7 +308,7 @@ A bug requires the inline-plan step before edits when ANY of these apply:
 
 ### Inline Plan Format
 
-After Phase 1 (Root Cause Investigation), present the plan **inline in your turn output** (not in a file) using this six-line shape, then call AskUserQuestion to gate approval:
+After Phase 1 (Root Cause Investigation), record the plan **inline in your turn output** (not in a file) using this six-line shape, then proceed directly to Phase 2 with this plan as the contract:
 
 ```
 ROOT CAUSE: <one-line summary from Phase 1 evidence>
@@ -319,23 +319,12 @@ RISKS: <one line — side effects, blast radius, or "low: localized to <subsyste
 ALTERNATIVES: <one line — rejected approaches + why>
 ```
 
-Then:
-
-```
-AskUserQuestion: "Approve this fix plan?"
-  options: ["Approve", "Suggest different approach", "Need more investigation"]
-```
-
-Behavior on each branch:
-
-- **Approve** — Proceed to Phase 2-4 with this plan as the contract; do not deviate without re-asking
-- **Suggest different approach** — Re-enter Phase 1 with the user's hypothesis as a new lead, then re-present
-- **Need more investigation** — Loop back to Phase 1 step 4 (Multi-component layered tracing); do not propose a fix until evidence covers the new question
+Do NOT pause for approval. The plan stays the contract through Phase 2-4; deviation requires re-running Phase 1 and re-recording a new six-line shape (do not silently mutate the fix mid-stream). If Phase 1 evidence is too thin to fill any of the six lines confidently, loop back to Phase 1 step 4 (Multi-component layered tracing) before recording the plan — never paper over weak evidence by writing a vague line.
 
 ### Why Inline (not BUGFIX_PLAN.md)
 
 - The deliverable contract is "fix + regression test", not a planning artifact — a saved plan file would survive the bug fix in the repo as orphan documentation
-- An inline summary is short enough that the user can review it in the AskUserQuestion turn without context-switching to a file
+- An inline summary keeps the contract visible in the same turn that applies it, so the executor (this skill) can re-check the six lines against the diff before committing
 - Removes the wording conflict with the top-of-file rule "Do NOT write design documents or task files"
 
 **For simple bugs:** Continue with Phase 2-4 directly — no inline plan needed.
