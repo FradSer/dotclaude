@@ -26,6 +26,7 @@ SETUP = SUPERPOWERS / "scripts" / "setup-superpower-loop.sh"
 STOP_HOOK = SUPERPOWERS / "hooks" / "stop-hook.sh"
 TRACK_CHANGES = SUPERPOWERS / "hooks" / "track-changes.sh"
 TRACK_SPAWNS = SUPERPOWERS / "hooks" / "track-spawns.sh"
+TRACK_READS = SUPERPOWERS / "hooks" / "track-reads.sh"
 
 
 def run_bash(script: str, **kwargs) -> subprocess.CompletedProcess:
@@ -914,6 +915,155 @@ class LoopPhaseTests(unittest.TestCase):
                                  msg=f"edits={edits} should not trigger STUCK")
                 self.assertNotIn("STUCK DETECTED", payload["reason"])
 
+    def test_stuck_read_triggers_when_executing_plans_reads_exceed_threshold(self) -> None:
+        """Stuck-read detection catches the empirical "42 tools, 7 shell
+        commands, no Agent spawn" pattern: the main agent in iter >= 2 does
+        only read-only exploration (Read / Glob / Grep / Bash) to rediscover
+        plan state instead of acting. track-reads.sh bumps
+        .reads_since_last_spawn; threshold > 15 flags STUCK with a recovery
+        message naming the precise tool count and the required next action.
+        Threshold is generous (legitimate Phase 3 step 0-1 setup is ~5-10
+        Reads on task files) — 16+ reads without a single Agent spawn since
+        the last batch returned is "agent is re-exploring, not acting"."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 4,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "executing-plans",
+            "edits_since_last_spawn": 1,  # well below edits-stuck threshold
+            "reads_since_last_spawn": 18,  # past the 15-read threshold
+        }))
+        self._write_transcript("Reading more task files...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # systemMessage flags STUCK with the read count and the read symptom.
+        self.assertIn("STUCK", payload["systemMessage"])
+        self.assertIn("18 reads", payload["systemMessage"])
+        self.assertIn("read-only", payload["systemMessage"].lower())
+        # reason carries the recovery directive naming Agent / TaskList as
+        # the legitimate next actions.
+        self.assertIn("**STUCK**", payload["reason"])
+        self.assertIn("18 reads", payload["reason"])
+        self.assertIn("Agent tool", payload["reason"])
+        self.assertIn("TaskList", payload["reason"])
+        # base_prompt must NOT leak (same rationale as edits-stuck: recovery
+        # takes precedence over routine continuation guidance).
+        self.assertNotIn("Execute the plan at docs/plans/feat-plan", payload["reason"])
+
+    def test_stuck_read_does_not_trigger_for_non_executing_plans_skill(self) -> None:
+        """Like edits-stuck, the read-stuck detection is executing-plans-
+        scoped — other workflow skills legitimately read many files
+        (brainstorming reads design specs, writing-plans reads task
+        templates), and a leak would false-positive on every run."""
+        for skill in ("brainstorming", "writing-plans", "retrospective"):
+            with self.subTest(skill=skill):
+                self.state.write_text(json.dumps({
+                    "active": True,
+                    "iteration": 5,
+                    "max_iterations": 100,
+                    "completion_promise": "DONE",
+                    "prompt": f"Run {skill}",
+                    "skill_name": skill,
+                    "edits_since_last_spawn": 1,
+                    "reads_since_last_spawn": 50,  # extreme; would trigger if scoped wrong
+                }))
+                self._write_transcript("Reading...")
+                result = run_bash(
+                    f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+                )
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertNotIn("STUCK", payload["systemMessage"])
+                self.assertNotIn("**STUCK**", payload["reason"])
+
+    def test_stuck_read_does_not_trigger_in_iter_1(self) -> None:
+        """Iter 1 is the loop's setup turn — main agent legitimately
+        reads _index.md, task files, and the retrospective harness config
+        to establish Phase 1/2 context. The iter >= 2 gate spares these
+        legitimate setup reads from false-positive STUCK flags."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "executing-plans",
+            "edits_since_last_spawn": 0,
+            "reads_since_last_spawn": 30,  # high — would trigger if iter gate wrong
+        }))
+        self._write_transcript("Phase 1 context gathering.")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertNotIn("STUCK", payload["systemMessage"])
+        self.assertNotIn("**STUCK**", payload["reason"])
+
+    def test_stuck_read_does_not_trigger_at_or_below_threshold(self) -> None:
+        """Threshold semantics are strictly `> 15` (sixteen or more). The
+        15-read ceiling gives the main agent headroom for legitimate
+        per-batch reading: handoff-state read (1) + sprint contract read
+        (1) + evaluation report read after coordinator returns (1) +
+        a few task files referenced during PIVOT scope adjustment (~5).
+        Crossing 15 means "this is exploration, not preparation"."""
+        for reads in (0, 5, 10, 15):
+            with self.subTest(reads=reads):
+                self.state.write_text(json.dumps({
+                    "active": True,
+                    "iteration": 4,
+                    "max_iterations": 100,
+                    "completion_promise": "EXECUTION_COMPLETE",
+                    "prompt": "Execute the plan at docs/plans/feat-plan.",
+                    "skill_name": "executing-plans",
+                    "edits_since_last_spawn": 0,
+                    "reads_since_last_spawn": reads,
+                }))
+                self._write_transcript("Continuing batch.")
+                result = run_bash(
+                    f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+                )
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertNotIn("STUCK", payload["systemMessage"],
+                                 msg=f"reads={reads} should not trigger STUCK")
+
+    def test_edits_stuck_takes_precedence_over_read_stuck(self) -> None:
+        """When BOTH counters cross their threshold simultaneously, the
+        edits-stuck branch wins — direct-edit violations are the more
+        severe contract breach (Phase 3 step 2 forbids inline batch
+        execution). Mixing both recovery messages would dilute the more
+        actionable one (edits-stuck names the Direct-Edit Allow-List,
+        read-stuck names the Agent tool — they point at different
+        recovery paths)."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 4,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": "Execute the plan at docs/plans/feat-plan.",
+            "skill_name": "executing-plans",
+            "edits_since_last_spawn": 8,  # past edits threshold
+            "reads_since_last_spawn": 20,  # past reads threshold
+        }))
+        self._write_transcript("Editing AND reading...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        # Edits-stuck phrasing wins.
+        self.assertIn("8 direct edits", payload["systemMessage"])
+        self.assertIn("8 direct file edits", payload["reason"])
+        # Read-stuck phrasing absent.
+        self.assertNotIn("20 reads", payload["reason"])
+        self.assertNotIn("read-only thrash", payload["reason"].lower())
+
     def test_executing_plans_promise_match_writes_plan_completion_log(self) -> None:
         """When executing-plans loop promise matches, the hook appends a
         plan_completed entry to <project>/docs/retros/plans-completed.jsonl.
@@ -1609,6 +1759,213 @@ class ExtractLastAssistantTextTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "EXECUTION_COMPLETE")
 
 
+class ExecutingPlansBatchProgressHintTests(unittest.TestCase):
+    """Tests for the executing-plans-only batch progress hint that
+    `_loop_emit_block` inlines into the re-injection `reason`.
+
+    Empirical bug: when SKILL.md aged out of working context (post-compact
+    or just after iter 3+), the generic "Re-check SKILL.md for the current
+    phase" header gave Claude no concrete next action. The main agent
+    re-explored the plan dir via `ls`/`stat`/Read every iter to reconstruct
+    "where am I?" — visible as iter 2 burning 42 tool calls without
+    spawning a coordinator. Counting `sprint-contract-batch-*.md` and
+    `handoff-summary-*.md` on disk turns the re-injection into a single
+    actionable directive: "Batch N is active, sprint contract exists / does
+    not exist, your first tool call MUST be X."
+    """
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmpdir.name) / "state.json"
+        self.transcript = Path(self.tmpdir.name) / "transcript.jsonl"
+        self.project_root = Path(self.tmpdir.name) / "fake-project"
+        self.plan_path = "docs/plans/2026-05-15-engine-plan"
+        self.plan_dir = self.project_root / self.plan_path
+        self.plan_dir.mkdir(parents=True)
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _write_transcript(self, last_text: str) -> None:
+        line = {
+            "role": "assistant",
+            "message": {"content": [{"type": "text", "text": last_text}]},
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+
+    def _seed_state(self, *, iteration: int = 3, skill: str = "executing-plans",
+                    plan_path: str | None = None) -> None:
+        """Seed an active executing-plans loop state pointing at self.plan_dir."""
+        prompt_plan = plan_path if plan_path is not None else self.plan_path
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": iteration,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": f"Execute the plan at {prompt_plan}/. Continue progressing.",
+            "skill_name": skill,
+        }))
+
+    def _run_loop(self) -> dict:
+        """Run loop_phase and return parsed block JSON payload."""
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}',
+            cwd=str(self.project_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        return json.loads(result.stdout)
+
+    def test_pending_coordinator_when_contract_exists_without_summary(self) -> None:
+        """Batch 2 has a sprint contract but no handoff summary → the
+        coordinator has not returned yet (or was never spawned). The hint
+        must tell the main agent its first tool call MUST be Agent, not
+        another round of plan-dir exploration."""
+        (self.plan_dir / "sprint-contract-batch-1.md").write_text("c1")
+        (self.plan_dir / "handoff-summary-1.md").write_text("h1")
+        (self.plan_dir / "sprint-contract-batch-2.md").write_text("c2")
+        # NO handoff-summary-2.md — Batch 2 coordinator pending.
+        self._seed_state(iteration=3)
+        self._write_transcript("Working on batch 2...")
+
+        payload = self._run_loop()
+        reason = payload["reason"]
+        # Batch progress is surfaced numerically — claude does not have to
+        # recompute it from the filesystem.
+        self.assertIn("Plan: docs/plans/2026-05-15-engine-plan", reason)
+        self.assertIn("Batch 2", reason)
+        self.assertIn("2 sprint contracts", reason)
+        self.assertIn("1 handoff summary", reason)
+        # Action directive — singular and unambiguous.
+        self.assertIn("coordinator", reason.lower())
+        self.assertIn("Agent tool", reason)
+
+    def test_phase3_start_when_no_contract_for_current_batch(self) -> None:
+        """Batch 1 has a contract+summary, Batch 2 has neither → Phase 3
+        is about to start for Batch 2 (write sprint contract, refresh
+        handoff-state, spawn coordinator in one response)."""
+        (self.plan_dir / "sprint-contract-batch-1.md").write_text("c1")
+        (self.plan_dir / "handoff-summary-1.md").write_text("h1")
+        # No batch-2 files yet.
+        self._seed_state(iteration=4)
+        self._write_transcript("Batch 1 done, starting batch 2...")
+
+        payload = self._run_loop()
+        reason = payload["reason"]
+        self.assertIn("Batch 2", reason)
+        self.assertIn("1 sprint contract", reason)
+        self.assertIn("1 handoff summary", reason)
+        # Phase 3 step 0-1-2 directive.
+        self.assertIn("sprint-contract-batch-2.md", reason)
+        self.assertIn("handoff-state.md", reason)
+        # The ATOMIC contract — steps 0-2 in one response with Agent last.
+        self.assertIn("one response", reason)
+
+    def test_all_batches_summarized_points_to_phase5(self) -> None:
+        """When every sprint contract has a matching handoff summary, all
+        batches are done — Phase 5 (git commit) + Phase 6 (promise) is the
+        next move, not another round of batch setup."""
+        for n in (1, 2, 3):
+            (self.plan_dir / f"sprint-contract-batch-{n}.md").write_text(f"c{n}")
+            (self.plan_dir / f"handoff-summary-{n}.md").write_text(f"h{n}")
+        self._seed_state(iteration=8)
+        self._write_transcript("All batches summarized.")
+
+        payload = self._run_loop()
+        reason = payload["reason"]
+        self.assertIn("3 sprint contracts", reason)
+        self.assertIn("3 handoff summaries", reason)
+        # Phase 5 directive — explicit by name so claude does not have to
+        # decide between "another batch?" and "commit now?".
+        self.assertIn("Phase 5", reason)
+        self.assertIn("TaskList", reason)
+        self.assertIn("EXECUTION_COMPLETE", reason)
+
+    def test_no_plan_dir_falls_back_gracefully(self) -> None:
+        """Plan path extracted from prompt points to a directory that
+        does not exist on disk (e.g., worktree pruned mid-loop). The
+        re-injection must NOT crash and must NOT inject empty/garbage
+        batch numbers — fall back to the bare Continue header so the
+        loop survives the missing artifact gracefully."""
+        ghost_path = "docs/plans/2026-05-15-ghost-plan"
+        self._seed_state(iteration=3, plan_path=ghost_path)
+        self._write_transcript("Trying to find the plan...")
+
+        payload = self._run_loop()
+        reason = payload["reason"]
+        # Bare Continue header still present.
+        self.assertIn("Continue superpowers:executing-plans", reason)
+        # No fabricated batch numbers — empty plan dir means no progress
+        # data, and we must not invent any.
+        self.assertNotIn("0 sprint contracts", reason)
+        self.assertNotIn("Batch 0", reason)
+        self.assertNotIn("Batch 1 is active", reason)
+
+    def test_non_executing_plans_skill_skips_batch_hint(self) -> None:
+        """Batch progress hints are executing-plans-specific — brainstorming
+        and writing-plans don't have sprint contracts / handoff summaries,
+        so they must not inherit this code path. A leak would inject
+        misleading 'Batch 0' messages into unrelated skills."""
+        # Even if files coincidentally exist in the plan dir, non-executing
+        # skills must not surface them.
+        (self.plan_dir / "sprint-contract-batch-1.md").write_text("c1")
+
+        for skill in ("brainstorming", "writing-plans", "retrospective"):
+            with self.subTest(skill=skill):
+                self._seed_state(iteration=3, skill=skill)
+                self._write_transcript("Doing something...")
+                payload = self._run_loop()
+                reason = payload["reason"]
+                self.assertNotIn("Batch ", reason)
+                self.assertNotIn("sprint contract", reason)
+                self.assertNotIn("handoff summary", reason)
+
+    def test_iter_1_skips_batch_hint(self) -> None:
+        """Iter 1 is the main agent's setup turn — it has not yet written
+        sprint-contract-batch-1.md, so a batch-progress hint at this point
+        would read 'Batch 1, 0 sprint contracts' which is misleading
+        feedback for setup-phase work. Skip the hint until iter >= 2
+        when meaningful filesystem state has accumulated."""
+        # next_iteration becomes 2 when iteration=1 — but the agent's
+        # iteration-1 response was before any batch artifacts existed.
+        self._seed_state(iteration=1)
+        self._write_transcript("Reading the plan...")
+
+        payload = self._run_loop()
+        reason = payload["reason"]
+        # No batch-progress section in iter 1.
+        self.assertNotIn("sprint contract", reason)
+        self.assertNotIn("handoff summary", reason)
+        # But the bare Continue header is still there.
+        self.assertIn("Continue superpowers:executing-plans", reason)
+
+    def test_stuck_branch_overrides_batch_hint(self) -> None:
+        """When the existing edits-stuck branch fires, its recovery message
+        takes precedence — the batch-progress hint is informational, the
+        STUCK message is corrective. Mixing both would dilute the recovery
+        directive and let claude continue acting on the soft hint."""
+        (self.plan_dir / "sprint-contract-batch-1.md").write_text("c1")
+        (self.plan_dir / "handoff-summary-1.md").write_text("h1")
+        # State that would trigger BOTH: edits-stuck (count > 5) AND batch hint.
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 4,
+            "max_iterations": 100,
+            "completion_promise": "EXECUTION_COMPLETE",
+            "prompt": f"Execute the plan at {self.plan_path}/.",
+            "skill_name": "executing-plans",
+            "edits_since_last_spawn": 9,
+        }))
+        self._write_transcript("Editing files inline...")
+
+        payload = self._run_loop()
+        reason = payload["reason"]
+        # STUCK recovery is dominant.
+        self.assertIn("**STUCK**", reason)
+        # Batch-progress hint is suppressed.
+        self.assertNotIn("Batch 2", reason)
+        self.assertNotIn("sprint contract", reason)
+
+
 class EditsSinceLastSpawnHookTests(unittest.TestCase):
     """Tests for the hook pair that drives stuck detection:
     track-changes.sh increments .edits_since_last_spawn on every
@@ -1754,6 +2111,31 @@ class EditsSinceLastSpawnHookTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertFalse(self.state_file.exists())
 
+    def test_track_spawns_also_resets_reads_counter(self) -> None:
+        """Agent tool PostToolUse zeroes BOTH edits_since_last_spawn AND
+        reads_since_last_spawn. Net semantic of both counters is "main-agent
+        operations since the last sub-agent returned" — reads accumulated
+        before the spawn (the agent reading task files to construct the
+        spawn prompt) are legitimate setup work, not stuck-read symptoms.
+        Discarding them at spawn time prevents false-positive stuck-read
+        flags on iter N+1 when the agent legitimately read 20 files in
+        iter N to set up the coordinator."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "edits_since_last_spawn": 4,
+            "reads_since_last_spawn": 22,  # high — was about to trigger
+        }))
+
+        result = self._run_hook(TRACK_SPAWNS, {
+            "session_id": self.session_id,
+            "tool_name": "Agent",
+            "tool_input": {"description": "Run batch 1"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["edits_since_last_spawn"], 0)
+        self.assertEqual(state["reads_since_last_spawn"], 0)
+
     def test_full_cycle_edits_then_spawn_then_edits(self) -> None:
         """End-to-end: 3 Edits → counter=3, then Agent → counter=0, then
         2 more Edits → counter=2. This mirrors the real flow during a
@@ -1785,6 +2167,173 @@ class EditsSinceLastSpawnHookTests(unittest.TestCase):
             })
         state = json.loads(self.state_file.read_text())
         self.assertEqual(state["edits_since_last_spawn"], 2)
+
+
+class TrackReadsHookTests(unittest.TestCase):
+    """Tests for track-reads.sh — the PostToolUse hook that bumps
+    state.reads_since_last_spawn on every Read / Glob / Grep / Bash call.
+
+    Companion to track-changes.sh (edits) and track-spawns.sh (reset).
+    Counts read-only operations so the loop can detect the "agent burns
+    iters on exploration without spawning a coordinator" pattern — the
+    empirical 42-tools-no-Agent symptom that motivated this hook."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.fake_home = Path(self.tmpdir.name) / "home"
+        self.fake_home.mkdir()
+        self.cwd = Path(self.tmpdir.name) / "project"
+        self.cwd.mkdir()
+        project_key = str(self.cwd).replace("/", "-")
+        self.state_dir = self.fake_home / ".claude" / "projects" / project_key
+        self.state_dir.mkdir(parents=True)
+        self.session_id = "test-reads-session"
+        self.state_file = self.state_dir / f"{self.session_id}.superpowers.json"
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _run_hook(self, hook_input: dict) -> subprocess.CompletedProcess:
+        env = {
+            **os.environ,
+            "HOME": str(self.fake_home),
+            "PWD": str(self.cwd),
+        }
+        return subprocess.run(
+            ["bash", str(TRACK_READS)],
+            input=json.dumps(hook_input),
+            text=True,
+            capture_output=True,
+            env=env,
+            cwd=str(self.cwd),
+        )
+
+    def test_creates_state_with_counter_at_one_on_first_read(self) -> None:
+        """First Read in a fresh session: hook creates the state stub with
+        reads_since_last_spawn=1. Mirrors track-changes.sh's "create stub
+        if missing" path — same race-against-task-start.sh consideration."""
+        result = self._run_hook({
+            "session_id": self.session_id,
+            "tool_name": "Read",
+            "tool_input": {"file_path": "/abs/path/foo.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(self.state_file.exists())
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["reads_since_last_spawn"], 1)
+
+    def test_increments_counter_on_each_call(self) -> None:
+        """Each Read / Glob / Grep / Bash invocation increments the counter
+        by 1. The counter measures tool-call count (= main-agent read
+        operations), not paths-touched count — one Grep across 100 files
+        is one operation, same as one Read of one file."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "reads_since_last_spawn": 4,
+        }))
+        result = self._run_hook({
+            "session_id": self.session_id,
+            "tool_name": "Read",
+            "tool_input": {"file_path": "/abs/bar.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["reads_since_last_spawn"], 5)
+
+    def test_handles_bash_grep_glob_tools(self) -> None:
+        """The matcher in plugin.json fires on Read|Glob|Grep|Bash —
+        ALL of these are "exploration" operations from a stuck-detection
+        perspective. Bash specifically: `ls`/`stat`/`find`/`cat` are the
+        empirical 7-shell-commands-in-iter-2 pattern. The hook bumps
+        regardless of which tool fired it."""
+        for tool in ("Read", "Glob", "Grep", "Bash"):
+            with self.subTest(tool=tool):
+                # Reset state for each iteration of subtest.
+                self.state_file.write_text(json.dumps({
+                    "session_id": self.session_id,
+                    "reads_since_last_spawn": 0,
+                }))
+                result = self._run_hook({
+                    "session_id": self.session_id,
+                    "tool_name": tool,
+                    "tool_input": {},
+                })
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                state = json.loads(self.state_file.read_text())
+                self.assertEqual(
+                    state["reads_since_last_spawn"], 1,
+                    msg=f"{tool} should bump reads_since_last_spawn",
+                )
+
+    def test_preserves_other_state_fields(self) -> None:
+        """Bump is targeted — modified_files, edits_since_last_spawn,
+        task, and other fields must survive untouched. A bug here would
+        clobber the cross-batch state that lib/loop.sh and the retro
+        pipeline rely on."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "task": "Execute the plan",
+            "modified_files": ["src/a.ts", "src/b.ts"],
+            "edits_since_last_spawn": 3,
+            "reads_since_last_spawn": 7,
+            "active": True,
+            "iteration": 4,
+        }))
+        result = self._run_hook({
+            "session_id": self.session_id,
+            "tool_name": "Read",
+            "tool_input": {"file_path": "/abs/c.ts"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["reads_since_last_spawn"], 8)
+        # Other fields preserved.
+        self.assertEqual(state["task"], "Execute the plan")
+        self.assertEqual(state["modified_files"], ["src/a.ts", "src/b.ts"])
+        self.assertEqual(state["edits_since_last_spawn"], 3)
+        self.assertEqual(state["active"], True)
+        self.assertEqual(state["iteration"], 4)
+
+    def test_full_cycle_reads_then_spawn_then_reads(self) -> None:
+        """End-to-end: 4 Reads → counter=4, Agent → counter=0, 2 more
+        Reads → counter=2. Mirrors the per-batch flow: agent reads task
+        files to construct the spawn prompt, spawns coordinator (reset),
+        then reads handoff / evaluation report after return (fresh count)."""
+        for _ in range(4):
+            self._run_hook({
+                "session_id": self.session_id,
+                "tool_name": "Read",
+                "tool_input": {"file_path": "/abs/task.md"},
+            })
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["reads_since_last_spawn"], 4)
+
+        # Spawn resets.
+        env = {
+            **os.environ,
+            "HOME": str(self.fake_home),
+            "PWD": str(self.cwd),
+        }
+        subprocess.run(
+            ["bash", str(TRACK_SPAWNS)],
+            input=json.dumps({"session_id": self.session_id, "tool_name": "Agent"}),
+            text=True,
+            capture_output=True,
+            env=env,
+            cwd=str(self.cwd),
+        )
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["reads_since_last_spawn"], 0)
+
+        # Post-spawn reads start fresh.
+        for _ in range(2):
+            self._run_hook({
+                "session_id": self.session_id,
+                "tool_name": "Read",
+                "tool_input": {"file_path": "/abs/eval.md"},
+            })
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state["reads_since_last_spawn"], 2)
 
 
 if __name__ == "__main__":

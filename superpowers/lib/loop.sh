@@ -144,8 +144,14 @@ _loop_emit_block() {
   local max_iterations="$3"
   local completion_promise="$4"
   local base_prompt="$5"
-  local is_stuck_arg="${6:-0}"
+  # stuck_kind: "none" | "edits" | "reads". "1" is accepted as legacy
+  # alias for "edits" — older test fixtures and callers may still pass
+  # the boolean form. Both map to the same recovery message.
+  local stuck_kind="${6:-none}"
   local edits_since_spawn="${7:-0}"
+  local reads_since_spawn="${8:-0}"
+  [[ "$stuck_kind" == "1" ]] && stuck_kind="edits"
+  [[ "$stuck_kind" == "0" ]] && stuck_kind="none"
 
   local next_iteration=$((iteration + 1))
   local now
@@ -159,8 +165,10 @@ _loop_emit_block() {
   local skill_name
   skill_name=$(state_read "$state_file" '.skill_name // ""')
 
+  # is_stuck retains the boolean shape downstream code expects, but it's
+  # now a derived flag from stuck_kind (any non-none value is stuck).
   local is_stuck=false
-  [[ "$is_stuck_arg" == "1" ]] && is_stuck=true
+  [[ "$stuck_kind" != "none" ]] && is_stuck=true
 
   local iter_tag
   if [[ $max_iterations -gt 0 ]]; then
@@ -170,10 +178,15 @@ _loop_emit_block() {
   fi
 
   # systemMessage — continuation phrasing softens the harness UI's
-  # "Stop hook error:" prefix on healthy progress.
+  # "Stop hook error:" prefix on healthy progress. The two stuck kinds
+  # name different operations (direct edits vs read-only thrash) so
+  # claude can recognize which contract was violated from the banner
+  # alone, before opening the reason body.
   local system_msg label="${skill_name:-loop}"
-  if [[ "$is_stuck" == "true" ]]; then
+  if [[ "$stuck_kind" == "edits" ]]; then
     system_msg="Superpower Loop ${iter_tag} | STUCK — ${edits_since_spawn} direct edits without a sub-agent spawn. Phase 3 step 2 violation."
+  elif [[ "$stuck_kind" == "reads" ]]; then
+    system_msg="Superpower Loop ${iter_tag} | STUCK (read-only thrash) — ${reads_since_spawn} reads / Glob / Grep / Bash calls without a sub-agent spawn."
   elif [[ -n "$completion_promise" && "$completion_promise" != "null" ]]; then
     system_msg="Superpower Loop ${iter_tag} | Continue ${label}. <promise>${completion_promise}</promise> when DONE (only when TRUE)."
   else
@@ -182,10 +195,23 @@ _loop_emit_block() {
 
   # Reason header.
   local injected
-  if [[ "$is_stuck" == "true" ]]; then
+  if [[ "$stuck_kind" == "edits" ]]; then
     injected="**STUCK** — ${edits_since_spawn} direct file edits without an Agent tool call. executing-plans Phase 3 step 2 forbids inline batch execution.
 
 Recovery: spawn the batch coordinator via the Agent tool, OR if all batch tasks are \`completed\` (run TaskList), proceed to Phase 5 → Phase 6. See \`./references/batch-execution-playbook.md\`."
+  elif [[ "$stuck_kind" == "reads" ]]; then
+    # Read-stuck names a different recovery: the agent isn't writing the
+    # wrong files (edits-stuck), it's reading too many files trying to
+    # rediscover state. The fix is to act — TaskList tells you what's
+    # pending, Agent spawns the coordinator. No more Reads / Bash ls.
+    injected="**STUCK** — ${reads_since_spawn} reads (Read / Glob / Grep / Bash) since the last Agent spawn, with no Agent tool call. You are re-exploring state instead of acting.
+
+Recovery (pick one — no more reads):
+- Run TaskList → identify the next pending task.
+- If batch N has \`sprint-contract-batch-N.md\` but no \`handoff-summary-N.md\`, spawn the Batch N coordinator via the Agent tool.
+- If all tasks completed, proceed to Phase 5 (git-agent commit) → Phase 6 (\`<promise>${completion_promise}</promise>\`).
+
+See \`./references/batch-execution-playbook.md\`."
   elif [[ -n "$skill_name" ]]; then
     # Generic phase-pointer hint (Fix A'). The bare "Continue X" header
     # dropped Claude's sense of which phase remained when SKILL.md fell
@@ -198,6 +224,74 @@ Recovery: spawn the batch coordinator via the Agent tool, OR if all batch tasks 
     injected="Continue superpowers:${skill_name} (${iter_tag}). Re-check SKILL.md for the current phase; do not restart from Phase 1 — resume from the next incomplete phase."
   else
     injected="$base_prompt"
+  fi
+
+  # executing-plans batch progress hint (precise, filesystem-derived).
+  # Empirical bug: post-iter-2 the generic "Re-check SKILL.md" header
+  # gave Claude no concrete next action — main agent burned iters
+  # re-exploring the plan dir via ls/stat/Read to reconstruct
+  # "where am I?". Counting `sprint-contract-batch-*.md` and
+  # `handoff-summary-*.md` on disk turns the re-injection into a single
+  # actionable directive. Skipped when:
+  #   - skill is not executing-plans (other skills have no batches)
+  #   - stuck branch is already firing (its recovery takes precedence)
+  #   - iteration < 2 (no batch artifacts exist in setup-only iter 1)
+  #   - plan path can't be extracted, or plan dir doesn't exist
+  if [[ "$skill_name" == "executing-plans" ]] \
+     && [[ "$is_stuck" != "true" ]] \
+     && [[ $iteration -ge 2 ]]; then
+    local _plan_path _plan_dir _root _contracts_count=0 _summaries_count=0
+    _plan_path=$(printf '%s' "$base_prompt" | grep -oE 'docs/plans/[A-Za-z0-9_/.-]+-plan/?' | head -1) || true
+    if [[ -n "$_plan_path" ]]; then
+      _plan_path="${_plan_path%/}"
+      _root="$(repo_root)"
+      _plan_dir="${_root}/${_plan_path}"
+      if [[ -d "$_plan_dir" ]]; then
+        local _f
+        for _f in "$_plan_dir"/sprint-contract-batch-*.md; do
+          [[ -e "$_f" ]] && _contracts_count=$((_contracts_count + 1))
+        done
+        for _f in "$_plan_dir"/handoff-summary-*.md; do
+          [[ -e "$_f" ]] && _summaries_count=$((_summaries_count + 1))
+        done
+
+        # Singular/plural noun matching — "1 sprint contract" reads as
+        # natural English; "1 sprint contracts" reads as a bug. The
+        # mismatched batch progress was a hint that the re-injection
+        # was machine-generated noise, not a real status line.
+        local _contract_word="sprint contracts"
+        local _summary_word="handoff summaries"
+        [[ $_contracts_count -eq 1 ]] && _contract_word="sprint contract"
+        [[ $_summaries_count -eq 1 ]] && _summary_word="handoff summary"
+
+        local _current_batch=$((_summaries_count + 1))
+        local _hint
+        _hint=$'\n\nPlan: '"${_plan_path}"$'\nProgress: '"${_contracts_count} ${_contract_word}, ${_summaries_count} ${_summary_word}."
+
+        if [[ $_contracts_count -gt 0 ]] && [[ $_contracts_count -eq $_summaries_count ]]; then
+          # All known contracts have matching summaries. Two indistinguishable
+          # cases from the filesystem alone: (a) plan is done, claude should
+          # commit; (b) batch N closed but batch N+1 not yet started. The
+          # hook can't read TaskList, so it offers both pathways with
+          # TaskList as the in-tool decision oracle — claude picks.
+          _hint="${_hint} Batch ${_contracts_count} closed (sprint contract and handoff summary match)."$'\n''Next action: Run TaskList.'$'\n''  - If all tasks completed → Phase 5 (git-agent commit) → emit <promise>'"${completion_promise}"'</promise>.'$'\n''  - Else → Phase 3 steps 0-1-2 in one response for Batch '"${_current_batch}"' — write sprint-contract-batch-'"${_current_batch}"'.md, refresh handoff-state.md, then Agent-spawn the coordinator. Steps 0-2 MUST go in one response with Agent last.'
+        elif [[ -f "$_plan_dir/sprint-contract-batch-${_current_batch}.md" ]]; then
+          # Sprint contract for current batch exists, no matching summary →
+          # the coordinator was spawned (or should have been) but the
+          # batch is not yet closed. The first tool call MUST be Agent,
+          # not another exploration round.
+          _hint="${_hint} Batch ${_current_batch} is active — sprint contract written, no handoff summary yet."$'\n''The coordinator has not returned (or was never spawned). Your first tool call MUST be the Agent tool to spawn / await the Batch '"${_current_batch}"' coordinator.'
+        else
+          # No contract for current batch → Phase 3 step 0 hasn't run yet.
+          # Steps 0-1-2 (sprint contract → handoff state → Agent spawn)
+          # MUST go in one response per the ATOMIC contract in
+          # batch-execution-playbook.md.
+          _hint="${_hint} Batch ${_current_batch} not yet started."$'\n''Next action: Phase 3 steps 0-1-2 in one response — write sprint-contract-batch-'"${_current_batch}"'.md, refresh handoff-state.md, then Agent-spawn the coordinator. Steps 0-2 MUST go in one response with Agent last.'
+        fi
+
+        injected="${injected}${_hint}"
+      fi
+    fi
   fi
 
   # Modified-files snapshot — first re-injection only (next_iteration <= 2).
@@ -372,22 +466,37 @@ loop_phase() {
     '.last_output_hash = $h | .stall_count = $sc' \
     || { echo "Warning: state_update failed mid-stall-track, continuing" >&2; }
 
-  # Stuck detection — scoped to executing-plans (the only skill where
-  # main-agent direct edits past iter 1 violate a contract). Signal is
-  # `edits_since_last_spawn`, fed by track-changes.sh (+1 per Edit) and
-  # reset by track-spawns.sh (PostToolUse Agent). Threshold 5 leaves
-  # headroom for the main-agent allow-list (handoff state, sprint
-  # contract, evaluation report, maybe PIVOT _index.md).
-  local skill_name edits_since_spawn is_stuck=0
+  # Stuck detection — both branches scoped to executing-plans (the only
+  # skill where main-agent direct work past iter 1 violates a contract).
+  # Signals come from PostToolUse hooks:
+  #   - edits_since_last_spawn — track-changes.sh (+1 per Edit/Write/MultiEdit)
+  #   - reads_since_last_spawn — track-reads.sh (+1 per Read/Glob/Grep/Bash)
+  # Both reset to 0 on Agent PostToolUse via track-spawns.sh.
+  #
+  # Thresholds (chosen for legitimate per-batch headroom):
+  #   - Edits: >5 (main-agent allow-list = handoff-state, sprint contract,
+  #     evaluation report, maybe PIVOT _index.md ≈ 4).
+  #   - Reads: >15 (handoff-state read + sprint contract read + evaluation
+  #     report read + task files referenced during PIVOT ≈ 8).
+  #
+  # Precedence: edits-stuck wins when both fire. Direct-edit violations
+  # are the more severe breach (Phase 3 step 2 forbids inline batch
+  # execution); read-stuck names a different recovery (Agent / TaskList,
+  # not the Direct-Edit Allow-List) and would dilute the dominant message.
+  local skill_name edits_since_spawn reads_since_spawn stuck_kind=none
   skill_name=$(state_read "$state_file" '.skill_name // ""')
   edits_since_spawn=$(state_read "$state_file" '.edits_since_last_spawn // 0')
+  reads_since_spawn=$(state_read "$state_file" '.reads_since_last_spawn // 0')
   [[ "$edits_since_spawn" =~ ^[0-9]+$ ]] || edits_since_spawn=0
+  [[ "$reads_since_spawn" =~ ^[0-9]+$ ]] || reads_since_spawn=0
 
-  if [[ "$skill_name" == "executing-plans" ]] \
-     && [[ $iteration -ge 2 ]] \
-     && [[ $edits_since_spawn -gt 5 ]]; then
-    is_stuck=1
+  if [[ "$skill_name" == "executing-plans" ]] && [[ $iteration -ge 2 ]]; then
+    if [[ $edits_since_spawn -gt 5 ]]; then
+      stuck_kind=edits
+    elif [[ $reads_since_spawn -gt 15 ]]; then
+      stuck_kind=reads
+    fi
   fi
 
-  _loop_emit_block "$state_file" "$iteration" "$max_iterations" "$completion_promise" "$prompt" "$is_stuck" "$edits_since_spawn"
+  _loop_emit_block "$state_file" "$iteration" "$max_iterations" "$completion_promise" "$prompt" "$stuck_kind" "$edits_since_spawn" "$reads_since_spawn"
 }
