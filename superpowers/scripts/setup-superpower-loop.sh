@@ -247,7 +247,7 @@ Superpower loop activated in this session!
 State file: $STATE_FILE
 Iteration: 1
 Max iterations: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "unlimited"; fi)
-Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "${COMPLETION_PROMISE} (ONLY output when TRUE - do not lie!)"; else echo "none (runs forever)"; fi)
+Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "${COMPLETION_PROMISE} (emit promptly once criteria are met)"; else echo "none (runs forever)"; fi)
 
 The stop hook is now active. When you try to exit, the SAME PROMPT will be
 fed back to you. You'll see your previous work in files, creating a
@@ -263,28 +263,38 @@ if [[ -n "$PROMPT" ]]; then
 fi
 
 # Display completion promise requirements if set
+#
+# Wording principle: encourage *prompt emission* the moment criteria are
+# met. Earlier versions of this banner ("Do NOT lie even if you think you
+# should exit", "Trust the process") biased the assistant toward caution —
+# empirical effect was 5+ wasted iterations after the work was genuinely
+# done because the assistant kept running extra review/polish passes. The
+# loop's safety nets (hash-identity stall + max_iterations) catch the
+# opposite failure, so the banner now leans the other way: emit promptly,
+# do not over-polish.
 if [[ "$COMPLETION_PROMISE" != "null" ]]; then
   echo ""
   echo "==============================================================="
-  echo "CRITICAL - Superpower Loop Completion Promise"
+  echo "Superpower Loop Completion Promise"
   echo "==============================================================="
   echo ""
-  echo "To complete this loop, output this EXACT text as the final standalone line:"
+  echo "To exit this loop, output this EXACT text as the final standalone line:"
   echo "  <promise>$COMPLETION_PROMISE</promise>"
   echo ""
-  echo "STRICT REQUIREMENTS (DO NOT VIOLATE):"
+  echo "When to emit:"
+  echo "  - The moment your skill's completion criteria are met"
+  echo "    (artifacts written + verified, evaluator PASS, commit made)."
+  echo "  - Immediately after the final phase's exit action succeeds."
+  echo "  - NO extra review / polish / verification pass after that point."
+  echo ""
+  echo "Format requirements:"
   echo "  - Use <promise> XML tags EXACTLY as shown above"
-  echo "  - The statement MUST be completely and unequivocally TRUE"
-  echo "  - Do NOT output false statements to exit the loop"
-  echo "  - Do NOT lie even if you think you should exit"
+  echo "  - Promise tag must be the LAST non-whitespace line — nothing after"
+  echo "  - Only emit when the statement is genuinely TRUE for your skill"
   echo ""
-  echo "IMPORTANT - Do not circumvent the loop:"
-  echo "  Even if you believe you're stuck, the task is impossible,"
-  echo "  or you've been running too long - you MUST NOT output a"
-  echo "  false promise statement. The loop is designed to continue"
-  echo "  until the promise is GENUINELY TRUE. Trust the process."
-  echo ""
-  echo "  If the loop should stop, the promise statement will become"
-  echo "  true naturally. Do not force it by lying."
+  echo "Cost of NOT emitting when ready:"
+  echo "  Each extra iteration costs user attention. The loop will fire"
+  echo "  another 'Continue X' injection every turn until you emit. If"
+  echo "  your work is done, emit now — the loop is not asking for more."
   echo "==============================================================="
 fi

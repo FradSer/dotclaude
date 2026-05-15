@@ -176,6 +176,62 @@ class SetupReentryGuardTests(unittest.TestCase):
         self.assertEqual(state.get("task"), "stale")
 
 
+class SetupBannerWordingTests(unittest.TestCase):
+    """The setup banner shown when --completion-promise is set steers the
+    assistant's decision about *when* to emit the promise. Earlier wording
+    ('Do NOT lie even if you think you should exit', 'Trust the process')
+    biased toward caution — empirical effect was 5+ wasted iterations after
+    the work was genuinely done. The new wording leans the opposite way:
+    emit promptly when criteria are met, do not over-polish. These tests
+    lock the new framing in so a future revert silently re-introducing
+    the cautious phrasing is caught immediately."""
+
+    def setUp(self) -> None:
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.state = Path(self.tmpdir.name) / "state.json"
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+    def _run_setup(self) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["bash", str(SETUP), "--state-file", str(self.state),
+             "--completion-promise", "DONE", "--max-iterations", "10",
+             "Test prompt"],
+            text=True,
+            capture_output=True,
+        )
+
+    def test_banner_encourages_prompt_emission(self) -> None:
+        """Banner must direct the assistant to emit the moment criteria are
+        met — the 'When to emit' block carries this signal."""
+        result = self._run_setup()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("When to emit:", result.stdout)
+        # Core signal: emit when criteria are met, no extra polish pass.
+        self.assertIn("The moment your skill's completion criteria are met", result.stdout)
+        self.assertIn("NO extra review / polish / verification pass", result.stdout)
+
+    def test_banner_warns_against_not_emitting_when_ready(self) -> None:
+        """Symmetric counter-pressure to the legacy 'don't lie' framing —
+        the banner must name the cost of *not* emitting (extra iterations
+        cost user attention)."""
+        result = self._run_setup()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("Cost of NOT emitting when ready:", result.stdout)
+        self.assertIn("Each extra iteration costs user attention", result.stdout)
+        self.assertIn("the loop is not asking for more", result.stdout)
+
+    def test_banner_drops_legacy_cautionary_phrases(self) -> None:
+        """Regression guard — the 'do not lie' / 'trust the process' phrases
+        biased the assistant toward delaying emission. They must not return
+        without a fresh design decision (and a fresh test removal)."""
+        result = self._run_setup()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertNotIn("Do NOT lie", result.stdout)
+        self.assertNotIn("Trust the process", result.stdout)
+        self.assertNotIn("Do not force it by lying", result.stdout)
+
 
 class StopHookCorruptedStateTests(unittest.TestCase):
     """The stop-hook corrupted-JSON guard (stop-hook.sh:43-52) acquires

@@ -75,7 +75,7 @@ The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes
 2. Read `CLAUDE.md` and `README.md` to understand project constraints
 3. Start the Superpower Loop (no size gate beyond bail-out):
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: <one-line-problem-statement>. Progress through phases: Phase 1 (Scope Alignment) -> Phase 1.5 (Read Harness Config — assumption test) -> Phase 2 (Design with QA + vocabulary reconciliation) -> Phase 3 (Wrap-up)." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: <one-line-problem-statement>. Progress through phases: Phase 1 (Scope Alignment) -> Phase 1.5 (Read Harness Config — assumption test) -> Phase 2 (Design with QA + vocabulary reconciliation) -> Phase 3 (Wrap-up). Emit <promise>BRAINSTORMING_COMPLETE</promise> as your final line immediately after the Phase 3 commit succeeds — do not run an extra review/polish pass." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
 ```
 
 ## Core Principles
@@ -180,10 +180,16 @@ Commit the design and transition to implementation planning.
 2. Run: `git-agent commit --no-stage --intent "add design for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 3. On auth error, retry with `--free` flag
 4. **Fallback**: If git-agent is unavailable, use `git commit` with conventional format
+5. **Transition line** (output to user): "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
+6. **Emit the promise immediately as the final line of this response — nothing after it**:
+
+   ```
+   <promise>BRAINSTORMING_COMPLETE</promise>
+   ```
+
+   Do NOT add a review/polish iteration after the commit. The four design files + evaluator PASS + commit are the complete exit conditions; emit the tag now.
 
 See `../../skills/references/git-commit.md` for detailed commit patterns.
-
-**Transition**: "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
 
 ## References
 

@@ -28,7 +28,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
    - If no plan folder is found, abort with a clear error message naming the expected path pattern
 2. **Start the loop** (no size gate — this skill's default user operates on large multi-batch plans):
    ```bash
-   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion)." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
+   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion). Emit <promise>EXECUTION_COMPLETE</promise> as your final line immediately after the Phase 5 commit succeeds — do not run an extra verification/polish pass." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
    ```
 3. Only after the loop is running, proceed with Initialization below
 

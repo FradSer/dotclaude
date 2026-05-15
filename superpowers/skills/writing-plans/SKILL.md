@@ -71,7 +71,7 @@ The gate is non-destructive: it surfaces the situation and lets the user choose.
    - If not found or user declines, ask the user for the design folder path
 2. **Start the loop** (no size gate — this skill's default user plans large multi-scenario work):
    ```bash
-   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition)." --completion-promise "PLAN_COMPLETE" --max-iterations 50
+   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition). Emit <promise>PLAN_COMPLETE</promise> as your final line immediately after the Phase 5 commit succeeds — do not run an extra validation/polish pass." --completion-promise "PLAN_COMPLETE" --max-iterations 50
    ```
 3. Only after the loop is running, proceed with Initialization below
 
