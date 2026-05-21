@@ -173,6 +173,40 @@ The downstream effect of either method: the next `executing-plans` Phase 1 step 
 
 Never edit or remove past entries. The log is the audit trail for all checklist evolution **and** the closure marker for the calibration loop.
 
+## Canonical Emit Invocations
+
+Both event families route through `lib/jsonl-emit.sh` with `<channel>=evolution-log`. The emitter auto-injects `$timestamp` and `$repo_root`; the caller composes every other field.
+
+**Proposal events** (`item_added` / `item_removed` / `item_modified` / `item_promoted`) — invoked from retrospective Phase 4 step 3 once per applied proposal:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" evolution-log \
+  '{timestamp: $timestamp, event: $event, mode: $mode, item_id: $item_id, description: $description, rationale: $rationale, driving_plans: ($driving_plans | split(",")), checklist_version: $checklist_version, retrospective_report: $retrospective_report}' \
+  --arg event "item_added" \
+  --arg mode "<design|plan|code>" --arg item_id "<ITEM-ID>" \
+  --arg description "<...>" --arg rationale "<...>" \
+  --arg driving_plans "<plan1,plan2>" \
+  --arg checklist_version "<{mode}-v{N+1}.md>" \
+  --arg retrospective_report "<docs/retros/retro-{date}-{topic}.md>"
+```
+
+Substitute `item_removed | item_modified | item_promoted` for the `event` arg as appropriate.
+
+**Retrospective-run event** — invoked from Phase 6 closure exactly once per retrospective:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" evolution-log \
+  '{event: $event, timestamp: $timestamp, plans_analyzed: ($plans | split(",")), report: $report, proposals_approved: $approved, proposals_rejected: $rejected, disable_test: (if $disable_test == "" then null else $disable_test end), self_value: {proposals_total: ($approved + $rejected), disable_test_set: ($disable_test != ""), consecutive_zero_change: $C}}' \
+  --arg event "retrospective_run" \
+  --arg plans "<plan1,plan2>" --arg report "<retro-md>" \
+  --argjson approved <N> --argjson rejected <M> \
+  --arg disable_test "<supported id or empty for null>" --argjson C <C>
+```
+
+`disable_test` MUST be either empty (rendered as `null`) or a supported `harness-config.json` identifier (`./harness-config.md`) — never free-text.
+
+`component_reinstated` events (Phase 5b post-plan-diff veto path) use the same channel — pass `--arg event "component_reinstated"` plus the fields listed in the `component_reinstated` schema above (`component`, `previously_disabled_in`, `reinstatement_method`, `evidence`, `rationale`, `follow_up`).
+
 ## Log Reader Protocol (Calibration Loop)
 
 The evolution log has two consumers:

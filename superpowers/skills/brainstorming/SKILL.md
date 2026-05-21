@@ -94,7 +94,7 @@ Explore codebase, lock the approach inline, proceed to Phase 1.5 in the same ite
    - "Open questions absorbed: [questions you answered yourself from codebase evidence; never punt these to the user]"
 3. **Lock and advance**: Treat the sprint contract as the locked scope and proceed to Phase 1.5. Do NOT pause to ask for approval — the evaluator at Phase 2 plus the user's post-commit review are the quality gates. If a question genuinely cannot be answered from the codebase, pick the safest default, document the assumption in the sprint contract, and surface it in Phase 2's design files so the evaluator can flag it.
 
-**Open-Ended Problems**: If the problem requires challenging assumptions or radical innovation, load `superpowers:build-like-iphone-team` skill in the sprint contract phase.
+**Open-Ended Problems**: When the problem requires challenging assumptions or radical innovation, apply first-principles reasoning inline in the sprint contract — name the assumption being challenged, the alternative framing, and why the new framing changes the chosen approach. The user's global CLAUDE.md "Challenge the premise before implementing" rule already covers this surface; no separate skill load is needed.
 
 **Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 1.5.
 

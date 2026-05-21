@@ -76,6 +76,7 @@ The evaluator will apply the following checklist items to this batch:
 - **Generator:** [agent identifier]
 - **Timestamp:** [ISO 8601 timestamp]
 - **Status:** READY
+- **Revision:** [0 for original, increments per scope-change rewrite]
 ```
 
 ### Field Definitions
@@ -86,7 +87,7 @@ The evaluator will apply the following checklist items to this batch:
 | Acceptance Criteria | Yes | Per-task checklist with testable, binary pass/fail items |
 | Red-Green Pairs | Yes | Omit rows if batch has no pairs; keep the section with "None" |
 | Evaluation Criteria Preview | Yes | Checklist items (ID + description) the evaluator will apply; derived from latest `code-v{N}.md` |
-| Sign-off | Yes | Contract generator identity and generation timestamp |
+| Sign-off | Yes | Contract generator identity, generation timestamp, and `Revision` count (0 for original; archived predecessors live at `sprint-contract-batch-{N}.v{M}.md`) |
 
 ## 2. Evaluation Report
 

@@ -116,7 +116,7 @@ Derive this table by reading the latest `docs/retros/checklists/code-v{N}.md` an
 
 ### Section 5: Sign-off
 
-Contract generator identity and readiness status.
+Contract generator identity, readiness status, and revision count. The `Revision` field is `0` for the original contract and increments by 1 every time the contract is rewritten due to scope change (see `SKILL.md` Phase 3 step 0). Each archived `sprint-contract-batch-{N}.v{M}.md` carries the value it had at the moment it was superseded; the canonical `sprint-contract-batch-{N}.md` always holds the latest revision number. Audits trace contract drift by reading `Revision` and counting the `.v*.md` archives in the plan directory.
 
 ```markdown
 ## Sign-off
@@ -124,6 +124,7 @@ Contract generator identity and readiness status.
 - **Generator:** executing-plans
 - **Timestamp:** 2026-04-02T10:30:00Z
 - **Status:** READY
+- **Revision:** 0
 ```
 
 ## Red-Green Pair Distinction

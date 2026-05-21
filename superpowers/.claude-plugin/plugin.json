@@ -25,8 +25,7 @@
     "./skills/systematic-debugging/"
   ],
   "skills": [
-    "./skills/behavior-driven-development/",
-    "./skills/build-like-iphone-team/"
+    "./skills/behavior-driven-development/"
   ],
   "hooks": {
     "UserPromptSubmit": [
@@ -36,6 +35,17 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/task-start.sh",
             "statusMessage": "Setting completion criteria..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-stuck.sh"
           }
         ]
       }

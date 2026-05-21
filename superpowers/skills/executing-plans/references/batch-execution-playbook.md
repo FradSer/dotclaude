@@ -74,13 +74,16 @@ For test+impl pairs sharing the same NNN prefix:
 
 For independent multi-task batches:
 
-1. **Launch**: Spawn one Task sub-agent per task via the Agent tool
+1. **Launch**: Spawn one Task sub-agent per task via the Agent tool, up to a **concurrency cap of 4 sub-agents per spawn round**
+   - If the batch has more than 4 independent tasks, split into back-to-back spawn rounds (4 → wait → next 4) rather than spawning all at once. The cap exists because (a) more parallel sub-agents inflate the per-iteration token bill linearly and (b) the main agent's wait turn cannot meaningfully attend to >4 concurrent transcripts when a sub-agent reports a blocker.
    - If sub-agents edit overlapping files, add `isolation: "worktree"` for isolation
 2. **Assign**: Give each sub-agent its task with full context and file boundaries
-3. **Wait**: Wait for all sub-agents to complete
-4. **Verify**: Run verification commands for all tasks
+3. **Wait**: Wait for all sub-agents in the current round to complete before launching the next round
+4. **Verify**: Run verification commands for all tasks (after the final round)
 5. **Evaluate**: Spawn superpowers-evaluator after all tasks pass verification
 6. **Complete**: Use `TaskUpdate` to mark tasks completed only after evaluator verdict is PASS
+
+The cap is advisory — the harness does not yet enforce it programmatically. The coordinator is the contract holder: exceed it only with an explicit one-line note in the spawn turn naming the reason (e.g., "5 trivial test-only tasks, sub-agent context per task <2k").
 
 #### Linear Mode (Last Resort)
 

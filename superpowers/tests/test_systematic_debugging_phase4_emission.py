@@ -35,24 +35,23 @@ SUPERPOWERS_DIR = Path(__file__).resolve().parents[1]
 LIB_DIR = SUPERPOWERS_DIR / "lib"
 SKILL_MD = SUPERPOWERS_DIR / "skills" / "systematic-debugging" / "SKILL.md"
 
-SKILL_EVENTS = LIB_DIR / "skill-events.sh"
-RETRO_EVENTS = LIB_DIR / "retro-events.sh"
+JSONL_EMIT = LIB_DIR / "jsonl-emit.sh"
 UTILS = LIB_DIR / "utils.sh"
 BAIL_LOG = LIB_DIR / "bail-log.sh"
 
 
 # ---------------------------------------------------------------------------
 # Harness composition — the bash blocks below imitate the SKILL.md emission
-# contract. They are intentionally close to the prose that 009-impl will add
-# to `systematic-debugging/SKILL.md`. Tests assert on the resulting jsonl
-# file plus exit code, not on shell-internal state.
+# contract via the unified jsonl-emit dispatcher. They mirror the prose
+# that ships in `systematic-debugging/SKILL.md` Phase 4 "On success" step.
+# Tests assert on the resulting jsonl file plus exit code, not on
+# shell-internal state.
 # ---------------------------------------------------------------------------
 
 HARNESS_PROLOGUE = f"""
 set -uo pipefail
 source {UTILS}
-source {RETRO_EVENTS}
-source {SKILL_EVENTS}
+source {JSONL_EMIT}
 """
 
 
@@ -64,11 +63,11 @@ def _harness_emit(
 ) -> str:
     """Compose the Phase 4 terminal-step emission body.
 
-    Mirrors what 009-impl is expected to add to SKILL.md. The block:
+    Mirrors what ships in SKILL.md Phase 4 "On success". The block:
       - reads skill_name via state_read (silent skip on empty/missing)
-      - computes args_hash via shasum/sha1sum (matches skill-events.sh §2.2)
+      - computes args_hash via the compute_args_hash primitive
       - dedup-checks the last 200 lines of skill-events.jsonl
-      - calls log_skill_event only on dedup miss
+      - invokes jsonl-emit.sh skill-events only on dedup miss
     """
     state_file_expr = (
         f'"{state_file}"' if state_file else '""'
@@ -87,16 +86,7 @@ ROOT_CAUSE={shell_quote(root_cause)}
 REGRESSION_TEST_PATH={shell_quote(regression_test_path)}
 PHASE_COUNT={phase_count}
 
-# args_hash mirrors skill-events.sh's own derivation: sha1[:12] of the
-# joined positional args after the payload filter.
-joined=$(printf '%s\\n' --arg rc "$ROOT_CAUSE" --arg rt "$REGRESSION_TEST_PATH" --argjson count "$PHASE_COUNT")
-if command -v shasum >/dev/null 2>&1; then
-  args_hash=$(printf '%s' "$joined" | shasum -a 1 2>/dev/null | awk '{{print $1}}' | cut -c1-12)
-elif command -v sha1sum >/dev/null 2>&1; then
-  args_hash=$(printf '%s' "$joined" | sha1sum 2>/dev/null | awk '{{print $1}}' | cut -c1-12)
-else
-  args_hash=""
-fi
+args_hash=$(compute_args_hash "$ROOT_CAUSE" "$REGRESSION_TEST_PATH" "$PHASE_COUNT")
 
 root=$(repo_root)
 log="$root/docs/retros/skill-events.jsonl"
@@ -105,8 +95,11 @@ if [[ -n "$args_hash" ]] && dedup_check "$log" "$needle"; then
   exit 0
 fi
 
-log_skill_event "$skill_name" fix_completed \\
-  '{{root_cause: $rc, regression_test_path: $rt, investigation_phase_count: $count}}' \\
+bash {JSONL_EMIT} skill-events \\
+  '{{event:$event, skill:$skill, timestamp:$timestamp, repo_root:$repo_root, args_hash:$args_hash, payload:{{root_cause:$rc, regression_test_path:$rt, investigation_phase_count:$count}}}}' \\
+  --arg event "fix_completed" \\
+  --arg skill "$skill_name" \\
+  --arg args_hash "$args_hash" \\
   --arg rc "$ROOT_CAUSE" \\
   --arg rt "$REGRESSION_TEST_PATH" \\
   --argjson count "$PHASE_COUNT"
@@ -537,52 +530,38 @@ class Phase4SkillMdContractTests(unittest.TestCase):
     `systematic-debugging/SKILL.md`. These tests Red until 009-impl wires
     the emission prose into the SKILL.md Phase 4 terminal step."""
 
-    def test_skill_md_phase_4_invokes_skill_events_helper(self) -> None:
+    def test_skill_md_phase_4_invokes_jsonl_emit(self) -> None:
         text = SKILL_MD.read_text()
         self.assertIn(
-            "lib/skill-events.sh",
+            "lib/jsonl-emit.sh",
             text,
             msg=(
-                "systematic-debugging SKILL.md must invoke lib/skill-events.sh "
-                "from Phase 4 (009-impl wires this in)"
+                "systematic-debugging SKILL.md must invoke lib/jsonl-emit.sh "
+                "from Phase 4 — the unified NDJSON emitter replaced the "
+                "per-channel skill-events.sh wrapper."
             ),
         )
 
     def test_skill_md_emission_does_not_hardcode_skill_name(self) -> None:
         """The emission must read skill_name from state, not pass the
-        literal string "systematic-debugging" as the helper's $1."""
+        literal string "systematic-debugging" as the skill arg."""
         text = SKILL_MD.read_text()
-        # Locate any line that invokes the helper and assert the $1 slot
-        # uses a variable, not a literal.
-        lines = text.splitlines()
-        helper_lines = [
-            (i, ln) for i, ln in enumerate(lines)
-            if "lib/skill-events.sh" in ln
-        ]
-        self.assertTrue(
-            helper_lines,
-            msg="no skill-events.sh invocation found in SKILL.md",
-        )
-        # Walk forward up to 5 lines to find the $1 argument (the line
-        # after a `\` continuation typically holds it).
-        joined = "\n".join(lines)
-        # A hardcoded literal "systematic-debugging" as the $1 of the
-        # helper is the architecture-prohibited form. Allow the string
-        # to appear in prose (frontmatter, headers) but reject the
-        # specific shell pattern that uses it as $1.
-        forbidden = 'lib/skill-events.sh" "systematic-debugging"'
-        forbidden_alt = 'lib/skill-events.sh" systematic-debugging'
-        self.assertNotIn(forbidden, joined)
-        self.assertNotIn(forbidden_alt, joined)
+        # Hardcoding `--arg skill "systematic-debugging"` in the emit
+        # invocation is the architecture-prohibited form: it defeats the
+        # cross-skill provenance that the state-read pattern enables.
+        forbidden = '--arg skill "systematic-debugging"'
+        self.assertNotIn(forbidden, text)
 
-    def test_skill_md_allowed_tools_lists_skill_events_helper(self) -> None:
+    def test_skill_md_allowed_tools_lists_jsonl_emit(self) -> None:
         text = SKILL_MD.read_text()
-        # frontmatter is at the top; assert the allowed-tools entry exists.
+        # Frontmatter at the top of the file declares the allow-list. The
+        # unified emitter is the only retro-channel writer now.
         self.assertIn(
-            'Bash(${CLAUDE_PLUGIN_ROOT}/lib/skill-events.sh:*)',
+            'Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)',
             text,
             msg=(
-                "allowed-tools must include skill-events.sh after 009-impl"
+                "allowed-tools must include lib/jsonl-emit.sh — the "
+                "consolidated NDJSON emitter"
             ),
         )
 
@@ -705,7 +684,7 @@ class Phase4SkillMdExecutionTests(unittest.TestCase):
         self.tmp_path = Path(self._tmp.name)
 
     def test_block_extraction_succeeds(self) -> None:
-        for idiom in ("state_read", "dedup_check", "lib/skill-events.sh", "fix_completed"):
+        for idiom in ("state_read", "dedup_check", "lib/jsonl-emit.sh", "fix_completed"):
             self.assertIn(idiom, self.block)
 
     def test_block_executes_and_emits_expected_row(self) -> None:

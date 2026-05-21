@@ -49,58 +49,59 @@ def run_bash(script: str, **kwargs) -> subprocess.CompletedProcess:
 
 
 
-class FindStateFileLegacyWarningTests(unittest.TestCase):
-    """find_state_file must warn to stderr when falling back to a legacy
-    file without a session_id — silent crosstalk between concurrent
-    sessions in the same cwd was the bug."""
+class FindStateFileStrictLookupTests(unittest.TestCase):
+    """find_state_file is a strict UUID-only lookup — the legacy
+    session_id="" fallback that previously existed (and warned about
+    crosstalk) was removed once scripts/cleanup-legacy-state.sh shipped.
+    A new session looking for a state file with no exact UUID match
+    must get an empty result, not a stale legacy file."""
 
     def setUp(self) -> None:
         self.tmpdir = tempfile.TemporaryDirectory()
-        # Override state_dir() by changing PWD so the function picks our tmp.
         self.fake_pwd = Path(self.tmpdir.name) / "fake-cwd"
         self.fake_pwd.mkdir()
         self.state_dir = Path.home() / ".claude" / "projects" / str(self.fake_pwd).replace("/", "-")
         self.state_dir.mkdir(parents=True, exist_ok=True)
-        self.legacy = self.state_dir / "legacy.superpowers.json"
-        self.legacy.write_text("{}")
 
     def tearDown(self) -> None:
-        # Clean up our injected files but leave the project dir alone — other
-        # tests might need it.
         for p in self.state_dir.glob("*.superpowers.json"):
             p.unlink()
-        self.state_dir.rmdir()
+        try:
+            self.state_dir.rmdir()
+        except OSError:
+            pass
         self.tmpdir.cleanup()
 
-    def test_legacy_fallback_warns_on_stderr(self) -> None:
+    def test_exact_uuid_match_returns_file(self) -> None:
+        match = self.state_dir / "wanted-session.superpowers.json"
+        match.write_text(json.dumps({"session_id": "wanted-session"}))
         result = subprocess.run(
             ["bash", "-c", f'cd {shlex.quote(str(self.fake_pwd))} && '
                            f'source {shlex.quote(str(UTILS))} && '
-                           f'find_state_file "wanted-session-id"'],
+                           f'find_state_file "wanted-session"'],
             text=True,
             capture_output=True,
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
-        # stdout returns the legacy path, stderr contains the warning.
-        self.assertIn("legacy.superpowers.json", result.stdout)
-        self.assertIn("legacy file without session_id", result.stderr)
+        self.assertIn("wanted-session.superpowers.json", result.stdout)
 
-    def test_exact_session_match_does_not_warn(self) -> None:
-        match = self.state_dir / "match.superpowers.json"
-        match.write_text(json.dumps({"session_id": "wanted"}))
-        try:
-            result = subprocess.run(
-                ["bash", "-c", f'cd {shlex.quote(str(self.fake_pwd))} && '
-                               f'source {shlex.quote(str(UTILS))} && '
-                               f'find_state_file "wanted"'],
-                text=True,
-                capture_output=True,
-            )
-            self.assertEqual(result.returncode, 0, msg=result.stderr)
-            self.assertIn("match.superpowers.json", result.stdout)
-            self.assertNotIn("legacy file without session_id", result.stderr)
-        finally:
-            match.unlink()
+    def test_missing_session_returns_empty(self) -> None:
+        # A file with a different session id must NOT be returned as a
+        # fallback. Empty stdout + zero exit code is the contract.
+        (self.state_dir / "other-uuid.superpowers.json").write_text(
+            json.dumps({"session_id": "other-uuid"})
+        )
+        result = subprocess.run(
+            ["bash", "-c", f'cd {shlex.quote(str(self.fake_pwd))} && '
+                           f'source {shlex.quote(str(UTILS))} && '
+                           f'find_state_file "different-session"'],
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(result.stdout.strip(), "")
+        # No warning either — strict lookup is silent on miss.
+        self.assertNotIn("legacy file", result.stderr)
 
 
 
@@ -288,49 +289,6 @@ class StopHookCorruptedStateTests(unittest.TestCase):
         self.assertFalse(self.state.exists(), msg="corrupted state file should be removed")
         # And the warning surfaced on stderr.
         self.assertIn("State file corrupted", result.stderr)
-
-
-class FindStateFileMultiLegacyTests(unittest.TestCase):
-    """Boundary case the first synthesis round missed: when MULTIPLE legacy
-    files exist without session_id, find_state_file deterministically picks
-    one and warns about which other files were ignored. Silent multi-file
-    selection was a known crosstalk vector."""
-
-    def setUp(self) -> None:
-        self.tmpdir = tempfile.TemporaryDirectory()
-        self.fake_pwd = Path(self.tmpdir.name) / "fake-cwd-multi"
-        self.fake_pwd.mkdir()
-        project_key = str(self.fake_pwd).replace("/", "-")
-        self.state_dir = Path.home() / ".claude" / "projects" / project_key
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-
-    def tearDown(self) -> None:
-        for p in self.state_dir.glob("*"):
-            p.unlink()
-        try:
-            self.state_dir.rmdir()
-        except OSError:
-            pass
-        self.tmpdir.cleanup()
-
-    def test_warns_when_multiple_legacy_files_exist(self) -> None:
-        (self.state_dir / "a.superpowers.json").write_text("{}")
-        (self.state_dir / "b.superpowers.json").write_text("{}")
-        (self.state_dir / "c.superpowers.json").write_text("{}")
-        result = subprocess.run(
-            ["bash", "-c", f'cd {shlex.quote(str(self.fake_pwd))} && '
-                           f'source {shlex.quote(str(UTILS))} && '
-                           f'find_state_file "wanted-session"'],
-            text=True,
-            capture_output=True,
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        # One file picked, warning surfaces both the chosen file and the count.
-        self.assertIn(".superpowers.json", result.stdout)
-        self.assertIn("legacy file without session_id", result.stderr)
-        # New invariant: warning must surface the multi-file case so the
-        # user is not silently routed to one of N candidates.
-        self.assertIn("3 legacy file", result.stderr)
 
 
 class HookDepsMissingBailSoftTests(unittest.TestCase):

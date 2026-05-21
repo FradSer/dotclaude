@@ -184,7 +184,6 @@ superpowers/
 │   ├── retrospective/           # Evolve checklists + audit harness health (user-invocable)
 │   ├── systematic-debugging/    # 4-phase root cause analysis (user-invocable, 2.4.0+)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
-│   ├── build-like-iphone-team/  # Project Purple design philosophy (internal)
 │   └── references/
 │       ├── git-commit.md        # Shared git commit patterns
 │       └── loop-patterns.md     # Shared Superpower Loop patterns

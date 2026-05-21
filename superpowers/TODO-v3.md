@@ -14,9 +14,9 @@ This file replaces the previous practice of restating "known issues" inline acro
 
 **Why accepted (v2.x)**: the manual-write path works; promoting it requires (a) writing a `lib/observations.sh` + `lib/evolution-log.sh` pair mirroring `bail-log.sh`, (b) refactoring the retrospective SKILL.md bash blocks to call them, (c) adding test coverage. Net add of ~400 LOC for no functional change. Wait until a third channel needs to be added so the pattern is reused at least 3×.
 
-**Fix-now bar**: a third manual-write channel is proposed (so the same boilerplate would otherwise be replicated four times). At that point promote all to lib helpers in one sweep.
+**Resolution (v2.9, 2026-05-21)**: superseded by `lib/jsonl-emit.sh`, a single dispatcher that took the place of four short-lived per-channel wrappers (`retro-events.sh` + `observations.sh` + `evolution-log.sh` + `skill-events.sh`). The four wrappers and their migration-parity test layer (`test_migration_parity.py` + the `legacy-*.sh` fixtures) were deleted in the same pass — no backward-compat seam survives. Retrospective and systematic-debugging callers now compose the envelope inline and route via `bash jsonl-emit.sh <channel> <jq_program>`.
 
-**Tracked by**: `docs/retros/2026-05-09-v3-considered-deferred.md` §5 (link target).
+**Tracked by**: `docs/retros/2026-05-09-v3-considered-deferred.md` §5 (historical link).
 
 ## Anti-add-bias guard
 

@@ -126,7 +126,8 @@ Verification failure handling lives inside the batch coordinator (see `./referen
    - Write `sprint-contract-batch-{N}.md` from `_index.md`, batch task files, BDD scenarios, latest `code-v{N}.md`
    - Acceptance criteria **auto-derived** from each task file's BDD Then-clauses — see `./references/sprint-contract-template.md` "Acceptance Criteria Derivation"; do NOT author new criteria
    - Conditional sections (per Phase 1 step 4 flags): omit "Recurring Failure Patterns" preamble when `recurring_failure_patterns` disabled; omit "Evaluation Criteria Preview" when `sprint_contract_preview` disabled
-   - Contract is never skipped. Rewrite on scope change.
+   - Contract is never skipped.
+   - **Rewrite on scope change → archive, do NOT overwrite.** Move the existing `sprint-contract-batch-{N}.md` to `sprint-contract-batch-{N}.v{M}.md` (next sequential M), then write the new contract to the canonical path with `Revision: {M+1}` in the sign-off block. See `./references/sprint-contract-template.md` "Sign-off". Silent overwrite hides the rewrite from the post-plan audit trail — non-negotiable.
 
 1. **Refresh Handoff State** (main agent):
    - Rewrite `handoff-state.md` in the plan directory with:

@@ -490,10 +490,10 @@ loop_phase() {
   [[ "$edits_since_spawn" =~ ^[0-9]+$ ]] || edits_since_spawn=0
   [[ "$reads_since_spawn" =~ ^[0-9]+$ ]] || reads_since_spawn=0
 
-  if [[ "$skill_name" == "executing-plans" ]] && [[ $iteration -ge 2 ]]; then
-    if [[ $edits_since_spawn -gt 5 ]]; then
+  if [[ "$skill_name" == "executing-plans" ]] && [[ $iteration -ge $SP_STUCK_MIN_ITER ]]; then
+    if [[ $edits_since_spawn -gt $SP_STUCK_EDIT_BUDGET ]]; then
       stuck_kind=edits
-    elif [[ $reads_since_spawn -gt 15 ]]; then
+    elif [[ $reads_since_spawn -gt $SP_STUCK_READ_BUDGET ]]; then
       stuck_kind=reads
     fi
   fi

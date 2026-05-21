@@ -3,7 +3,7 @@ name: systematic-debugging
 description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes.
 argument-hint: "<bug description or symptom>"
 user-invocable: true
-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/skill-events.sh:*)"]
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
 ---
 
 # Systematic Debugging
@@ -234,7 +234,7 @@ Each phase must be completed before proceeding to the next.
 
    ```bash
    source "${CLAUDE_PLUGIN_ROOT}/lib/utils.sh"
-   source "${CLAUDE_PLUGIN_ROOT}/lib/retro-events.sh"
+   source "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh"
 
    state_file=$(find_state_file "${CLAUDE_SESSION_ID:-}")
    skill_name=""
@@ -246,22 +246,17 @@ Each phase must be completed before proceeding to the next.
      REGRESSION_TEST_PATH="<tests/path::case>"
      PHASE_COUNT=4
 
-     joined=$(printf '%s\n' --arg rc "$ROOT_CAUSE" --arg rt "$REGRESSION_TEST_PATH" --argjson count "$PHASE_COUNT")
-     if command -v shasum >/dev/null 2>&1; then
-       args_hash=$(printf '%s' "$joined" | shasum -a 1 2>/dev/null | awk '{print $1}' | cut -c1-12)
-     elif command -v sha1sum >/dev/null 2>&1; then
-       args_hash=$(printf '%s' "$joined" | sha1sum 2>/dev/null | awk '{print $1}' | cut -c1-12)
-     else
-       args_hash=""
-     fi
+     args_hash=$(compute_args_hash "$ROOT_CAUSE" "$REGRESSION_TEST_PATH" "$PHASE_COUNT")
 
      log="$(repo_root)/docs/retros/skill-events.jsonl"
      if [[ -n "$args_hash" ]] && dedup_check "$log" "\"args_hash\":\"$args_hash\""; then
        :
      else
-       bash "${CLAUDE_PLUGIN_ROOT}/lib/skill-events.sh" \
-         "$skill_name" fix_completed \
-         '{root_cause: $rc, regression_test_path: $rt, investigation_phase_count: $count}' \
+       bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" skill-events \
+         '{event:$event, skill:$skill, timestamp:$timestamp, repo_root:$repo_root, args_hash:$args_hash, payload:{root_cause:$rc, regression_test_path:$rt, investigation_phase_count:$count}}' \
+         --arg event "fix_completed" \
+         --arg skill "$skill_name" \
+         --arg args_hash "$args_hash" \
          --arg rc "$ROOT_CAUSE" \
          --arg rt "$REGRESSION_TEST_PATH" \
          --argjson count "$PHASE_COUNT"

@@ -1,6 +1,17 @@
 #!/bin/bash
 # Shared utilities for superpowers hooks and scripts
 
+# Stuck-detection thresholds for the executing-plans loop, shared so the
+# Stop-hook detector (loop.sh) and the PreToolUse front-stop
+# (pre-tool-stuck.sh) never disagree on where the breach line sits.
+# Past iteration 1 the main agent's direct-edit allow-list is ~4 files
+# (handoff-state, sprint contract, evaluation report, PIVOT _index.md);
+# exceeding the budget means it is doing batch work inline instead of
+# spawning a coordinator.
+SP_STUCK_MIN_ITER=2
+SP_STUCK_EDIT_BUDGET=5
+SP_STUCK_READ_BUDGET=15
+
 # Runtime dependency check — keep one source of truth. Each hook sources
 # this file; if jq or perl are missing the hook should bail soft (exit 0)
 # rather than crash the user's session. Sets _SUPERPOWERS_DEPS_MISSING=1
@@ -74,48 +85,23 @@ state_dir() {
   echo "$HOME/.claude/projects/${project_key}"
 }
 
-# Find the state file owned by a given session ID.
-# Scans all *.superpowers.json files in the state dir, prefers an exact
-# session_id match, and falls back to a legacy file without a session_id.
-# Emits a stderr warning on legacy fallback so cross-session crosstalk is
-# never silent — multiple concurrent Claude sessions in the same cwd are a
-# known footgun and the warning is the only visible signal.
+# Resolve the state file path for a given session ID. Strict UUID-only
+# lookup — no legacy fallback to session_id="" files. Pre-v3 sessions wrote
+# session_id="default"; those orphans are now cleaned via
+# scripts/cleanup-legacy-state.sh, so the fallback path that existed here
+# previously is dead code and a source of cross-session crosstalk.
+# Returns empty string when no matching file exists.
 # Usage: FILE=$(find_state_file "$SESSION_ID")
 find_state_file() {
   local session_id="$1"
   local dir
   dir="$(state_dir)"
   [[ -d "$dir" ]] || return 0
-
-  # Collect matching files; handle zero matches gracefully
-  local files
-  files=$(find "$dir" -maxdepth 1 -name '*.superpowers.json' 2>/dev/null) || return 0
-  [[ -z "$files" ]] && return 0
-
-  local candidate
-  local legacy_match=""
-  local legacy_count=0
-  for candidate in $files; do
-    [[ -f "$candidate" ]] || continue
-    local candidate_session
-    candidate_session=$(jq -r '.session_id // ""' "$candidate" 2>/dev/null || echo "")
-    if [[ "$candidate_session" == "$session_id" ]]; then
-      echo "$candidate"
-      return
-    fi
-    if [[ -z "$candidate_session" ]]; then
-      legacy_count=$((legacy_count + 1))
-      [[ -z "$legacy_match" ]] && legacy_match="$candidate"
-    fi
-  done
-
-  if [[ -n "$legacy_match" ]]; then
-    # Surface the count: multiple legacy files mean filesystem-order roulette
-    # is picking one and silently ignoring the rest. The first-round fix only
-    # warned about the picked file — that hid the multi-file footgun.
-    echo "warning: find_state_file fell back to legacy file without session_id (session_id=${session_id}, file=${legacy_match}, ${legacy_count} legacy file(s) total). Cross-session crosstalk possible — consider removing stale state files." >&2
-    echo "$legacy_match"
+  local candidate="${dir}/${session_id}.superpowers.json"
+  if [[ -f "$candidate" ]]; then
+    echo "$candidate"
   fi
+  return 0
 }
 
 # Read a field from a JSON state file as a raw string (jq -r).
