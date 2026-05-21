@@ -1,5 +1,6 @@
 {
   "name": "code-context",
+  "displayName": "Code Context",
   "version": "0.2.1",
   "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
   "author": {

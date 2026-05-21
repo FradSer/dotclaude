@@ -1,5 +1,6 @@
 {
   "name": "frontend",
+  "displayName": "Frontend",
   "version": "0.3.1",
   "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills",
   "keywords": [

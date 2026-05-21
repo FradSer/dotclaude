@@ -1,5 +1,6 @@
 {
   "name": "office",
+  "displayName": "Office",
   "version": "0.4.3",
   "license": "MIT",
   "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, and Lark/Feishu CLI operations",

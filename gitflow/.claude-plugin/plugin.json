@@ -1,5 +1,6 @@
 {
   "name": "gitflow",
+  "displayName": "GitFlow",
   "version": "1.0.2",
   "description": "GitFlow workflow automation for feature, hotfix, and release branches",
   "author": {

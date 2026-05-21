@@ -1,5 +1,6 @@
 {
   "name": "utils",
+  "displayName": "Utils",
   "version": "0.2.0",
   "description": "General-purpose utility skills for documentation, writing, and project maintenance",
   "author": {

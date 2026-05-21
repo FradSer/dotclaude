@@ -1,5 +1,6 @@
 {
   "name": "acpx",
+  "displayName": "ACPX",
   "version": "0.1.2",
   "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
   "author": {

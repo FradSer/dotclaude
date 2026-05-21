@@ -1,5 +1,6 @@
 {
   "name": "github",
+  "displayName": "GitHub",
   "version": "0.2.2",
   "description": "GitHub project operations with quality gates.",
   "author": {

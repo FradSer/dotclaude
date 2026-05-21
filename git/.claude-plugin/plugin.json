@@ -1,5 +1,6 @@
 {
   "name": "git",
+  "displayName": "Git",
   "version": "0.4.6",
   "description": "Conventional Git automation and advanced repository management",
   "author": {
