@@ -10,6 +10,7 @@
   "plugins": [
     {
       "name": "git",
+      "displayName": "Git",
       "version": "0.4.6",
       "description": "Conventional Git automation and advanced repository management",
       "author": {
@@ -22,6 +23,7 @@
     },
     {
       "name": "gitflow",
+      "displayName": "GitFlow",
       "version": "1.0.2",
       "description": "GitFlow workflow automation for feature, hotfix, and release branches",
       "author": {
@@ -34,6 +36,7 @@
     },
     {
       "name": "claude-config",
+      "displayName": "Claude Config",
       "version": "1.4.1",
       "description": "Generate AI assistant configurations with environment detection, TDD options, local best-practices references, and multi-file sync",
       "author": {
@@ -46,6 +49,7 @@
     },
     {
       "name": "github",
+      "displayName": "GitHub",
       "version": "0.2.2",
       "description": "GitHub project operations with quality gates",
       "author": {
@@ -58,6 +62,7 @@
     },
     {
       "name": "swiftui",
+      "displayName": "SwiftUI",
       "version": "0.2.1",
       "description": "SwiftUI code review with modern API best practices",
       "author": {
@@ -70,6 +75,7 @@
     },
     {
       "name": "office",
+      "displayName": "Office",
       "version": "0.4.3",
       "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, and browser automation",
       "author": {
@@ -83,6 +89,7 @@
     },
     {
       "name": "refactor",
+      "displayName": "Refactor",
       "version": "1.5.4",
       "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
@@ -95,6 +102,7 @@
     },
     {
       "name": "superpowers",
+      "displayName": "Superpowers",
       "version": "2.8.5",
       "description": "Advanced development superpowers for orchestrating complex workflows with Superpower Loop and work verification",
       "author": {
@@ -107,6 +115,7 @@
     },
     {
       "name": "plugin-optimizer",
+      "displayName": "Plugin Optimizer",
       "version": "0.12.0",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
@@ -119,6 +128,7 @@
     },
     {
       "name": "frontend",
+      "displayName": "Frontend",
       "version": "0.3.1",
       "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills",
       "author": {
@@ -131,6 +141,7 @@
     },
     {
       "name": "acpx",
+      "displayName": "ACPX",
       "version": "0.1.2",
       "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
       "author": {
@@ -143,6 +154,7 @@
     },
     {
       "name": "code-context",
+      "displayName": "Code Context",
       "version": "0.2.1",
       "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
       "author": {
@@ -155,6 +167,7 @@
     },
     {
       "name": "utils",
+      "displayName": "Utils",
       "version": "0.2.0",
       "description": "General-purpose utility skills for documentation, writing, and project maintenance",
       "author": {
