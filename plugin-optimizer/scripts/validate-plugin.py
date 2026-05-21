@@ -55,7 +55,7 @@ SKILL_BODY_MAX = 5000      # Under 5k tokens hard limit (SKILL.md body)
 # Manifest schema (mirrors https://code.claude.com/docs/en/plugins-reference)
 KNOWN_MANIFEST_FIELDS = {
     "$schema",
-    "name", "version", "description", "author",
+    "name", "displayName", "version", "description", "author",
     "homepage", "repository", "license", "keywords",
     "skills", "commands", "agents", "hooks",
     "mcpServers", "outputStyles", "themes", "lspServers", "monitors",
