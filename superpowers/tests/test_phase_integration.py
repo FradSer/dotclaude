@@ -469,9 +469,10 @@ class LoopPhaseTests(unittest.TestCase):
         self.assertEqual(payload["decision"], "block")
         self.assertIn("Build the thing", payload["reason"])
         self.assertIn("DONE", payload["reason"])
-        # systemMessage uses the compact "iter N" tag (no max → no /M).
+        # Every block carries a calm one-line banner (no error wording).
         self.assertIn("iter 2", payload["systemMessage"])
-        self.assertIn("Superpower Loop", payload["systemMessage"])
+        self.assertIn("continuing", payload["systemMessage"])
+        self.assertNotIn("STUCK", payload["systemMessage"])
         # Iteration incremented in state.
         state = json.loads(self.state.read_text())
         self.assertEqual(state["iteration"], 2)
@@ -716,9 +717,10 @@ class LoopPhaseTests(unittest.TestCase):
         # base_prompt content must NOT leak into reason.
         self.assertNotIn("docs/plans/feat-plan", reason)
         self.assertNotIn("Continue progressing through phases", reason)
-        # systemMessage mirrors the continuation phrasing.
+        # systemMessage is the calm one-line continuation banner naming the
+        # fully-qualified skill the loop is driving.
         self.assertIn("Superpower Loop iter 2/100", payload["systemMessage"])
-        self.assertIn("Continue writing-plans", payload["systemMessage"])
+        self.assertIn("continuing (superpowers:writing-plans skill)", payload["systemMessage"])
 
     def test_post_first_iteration_omits_modified_files_section(self) -> None:
         """After the first re-injection (next_iteration > 2), the

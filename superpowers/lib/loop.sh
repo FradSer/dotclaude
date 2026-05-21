@@ -177,20 +177,27 @@ _loop_emit_block() {
     iter_tag="iter ${next_iteration}"
   fi
 
-  # systemMessage — continuation phrasing softens the harness UI's
-  # "Stop hook error:" prefix on healthy progress. The two stuck kinds
-  # name different operations (direct edits vs read-only thrash) so
-  # claude can recognize which contract was violated from the banner
-  # alone, before opening the reason body.
-  local system_msg label="${skill_name:-loop}"
+  # systemMessage — the user-facing banner, emitted on every block. A
+  # missing promise tag IS the continue signal; the calm "continuing"
+  # phrasing (not "error") keeps a healthy loop from reading as a failure
+  # while staying short enough that one line per iteration is not noise.
+  # The two stuck kinds keep an explicit STUCK label because they ARE
+  # actionable problems the user should notice.
+  # Qualify the skill so the banner names the exact skill the loop is
+  # driving (e.g. "superpowers:brainstorming skill"); fall back to a bare
+  # "loop" for ad-hoc loops with no skill_name.
+  local system_msg label
+  if [[ -n "$skill_name" ]]; then
+    label="superpowers:${skill_name} skill"
+  else
+    label="loop"
+  fi
   if [[ "$stuck_kind" == "edits" ]]; then
     system_msg="Superpower Loop ${iter_tag} | STUCK — ${edits_since_spawn} direct edits without a sub-agent spawn. Phase 3 step 2 violation."
   elif [[ "$stuck_kind" == "reads" ]]; then
     system_msg="Superpower Loop ${iter_tag} | STUCK (read-only thrash) — ${reads_since_spawn} reads / Glob / Grep / Bash calls without a sub-agent spawn."
-  elif [[ -n "$completion_promise" && "$completion_promise" != "null" ]]; then
-    system_msg="Superpower Loop ${iter_tag} | Continue ${label}. <promise>${completion_promise}</promise> when DONE (only when TRUE)."
   else
-    system_msg="Superpower Loop ${iter_tag} | Continue ${label}."
+    system_msg="Superpower Loop ${iter_tag} · continuing (${label})"
   fi
 
   # Reason header.
@@ -330,11 +337,7 @@ LOOP COMPLETION REQUIRED: When the above task is genuinely complete, output the 
   jq -n \
     --arg prompt "$injected" \
     --arg msg "$system_msg" \
-    '{
-      "decision": "block",
-      "reason": $prompt,
-      "systemMessage": $msg
-    }'
+    '{decision: "block", reason: $prompt, systemMessage: $msg}'
   exit 0
 }
 
