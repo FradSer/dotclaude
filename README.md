@@ -1,11 +1,11 @@
-# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-15-blue)
+# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-13-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 15 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 13 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -108,13 +108,13 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ---
 
-### [next-devtools](next-devtools/)
+### [frontend](frontend/)
 
-Next.js development tools integration via MCP server for routing, components, and API analysis.
+Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills.
 
 **Installation:**
 ```bash
-claude plugin install next-devtools@frad-dotclaude
+claude plugin install frontend@frad-dotclaude
 ```
 
 ---
@@ -126,17 +126,6 @@ Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication.
 **Installation:**
 ```bash
 claude plugin install acpx@frad-dotclaude
-```
-
----
-
-### [shadcn](shadcn/)
-
-Manages shadcn components - adding, searching, fixing, debugging, styling, and composing UI.
-
-**Installation:**
-```bash
-claude plugin install shadcn@frad-dotclaude
 ```
 
 ---

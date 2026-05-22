@@ -1,11 +1,11 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-15-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-13-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 [English](README.md) | **简体中文**
 
-精心打造的 15 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 13 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -108,13 +108,13 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ---
 
-### [next-devtools](next-devtools/)
+### [frontend](frontend/)
 
-Next.js 开发工具集成，通过 MCP 服务器支持路由、组件和 API 分析。
+Web 前端开发工具包 —— shadcn/ui、Next.js DevTools、React 最佳实践、Supabase、DESIGN.md 设计系统规范，以及无可挑剔的设计技能。
 
 **安装：**
 ```bash
-claude plugin install next-devtools@frad-dotclaude
+claude plugin install frontend@frad-dotclaude
 ```
 
 ---
@@ -126,17 +126,6 @@ acpx 知识库 - 用于 Agent 间通信的无头 ACP CLI。
 **安装：**
 ```bash
 claude plugin install acpx@frad-dotclaude
-```
-
----
-
-### [shadcn](shadcn/)
-
-管理 shadcn 组件 - 添加、搜索、修复、调试、样式化和组合 UI。
-
-**安装：**
-```bash
-claude plugin install shadcn@frad-dotclaude
 ```
 
 ---
