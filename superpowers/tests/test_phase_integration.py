@@ -15,7 +15,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from conftest import commit, make_git_repo
+from conftest import commit, make_git_repo, path_without_commands
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1598,6 +1598,37 @@ class LoopStallDetectionTests(unittest.TestCase):
         state = json.loads(self.state.read_text())
         self.assertNotIn("stall_count", state)
         self.assertNotIn("last_output_hash", state)
+
+    def test_no_hasher_disables_stall_detection(self) -> None:
+        """With neither shasum nor sha1sum on PATH the content hash is empty,
+        which would equal the empty default prior_hash every iteration and
+        force-clear a healthy loop after three turns. The detector must
+        instead disable itself: identical outputs keep emitting block, never
+        force-clear, and never persist a stall_count / last_output_hash."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 5,
+            "max_iterations": 50,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "writing-plans",
+        }))
+        self._write_transcript("Identical output every turn.")
+        shim = Path(self.tmpdir.name) / "shim-bin"
+        env = dict(os.environ)
+        env["PATH"] = path_without_commands(shim, {"shasum", "sha1sum"})
+        for _ in range(4):
+            r = run_bash(
+                f"loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n"
+                'echo "FELL_THROUGH"',
+                env=env,
+            )
+            self.assertEqual(r.returncode, 0, msg=r.stderr)
+            self.assertNotIn("FELL_THROUGH", r.stdout)
+            self.assertEqual(json.loads(r.stdout)["decision"], "block")
+            state = json.loads(self.state.read_text())
+            self.assertNotIn("stall_count", state)
+            self.assertNotIn("last_output_hash", state)
 
     def test_skill_name_branch_emits_phase_pointer_hint(self) -> None:
         """Fix A' — when skill_name is set the re-injection header carries a

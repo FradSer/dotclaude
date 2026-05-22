@@ -19,9 +19,10 @@ Contract pinned here:
    replace).
 4. Best-effort degradation: missing state file, missing session_id,
    malformed JSON, missing jq → silent allow (exit 0, no decision).
-5. Block decision emits a single-line JSON `{"decision":"block",
-   "reason":...}` with exit code 0 (Claude Code PreToolUse hook
-   protocol).
+5. Block emits a single-line JSON object with
+   hookSpecificOutput.permissionDecision="deny" and a
+   permissionDecisionReason, exit code 0 — the Claude Code PreToolUse
+   protocol ({"decision":"block"} only blocks Stop/SubagentStop).
 """
 from __future__ import annotations
 
@@ -82,11 +83,13 @@ def _assert_allow(testcase: unittest.TestCase, result: subprocess.CompletedProce
 def _assert_block(testcase: unittest.TestCase, result: subprocess.CompletedProcess[str]) -> dict:
     testcase.assertEqual(result.returncode, 0, msg=result.stderr)
     line = result.stdout.strip()
-    testcase.assertTrue(line, msg="expected block JSON, got empty stdout")
-    decision = json.loads(line)
-    testcase.assertEqual(decision["decision"], "block")
-    testcase.assertIn("reason", decision)
-    return decision
+    testcase.assertTrue(line, msg="expected deny JSON, got empty stdout")
+    payload = json.loads(line)
+    hso = payload["hookSpecificOutput"]
+    testcase.assertEqual(hso["hookEventName"], "PreToolUse")
+    testcase.assertEqual(hso["permissionDecision"], "deny")
+    testcase.assertIn("permissionDecisionReason", hso)
+    return hso
 
 
 class AllowPathTests(unittest.TestCase):
@@ -160,8 +163,8 @@ class AllowPathTests(unittest.TestCase):
 
 
 class BlockPathTests(unittest.TestCase):
-    """The hook MUST emit decision=block JSON when every precondition
-    fires simultaneously."""
+    """The hook MUST emit a permissionDecision=deny object when every
+    precondition fires simultaneously."""
 
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -177,8 +180,8 @@ class BlockPathTests(unittest.TestCase):
         )
         result = _invoke(project, env, {"session_id": "sid-block-edit", "tool_name": "Edit"})
         decision = _assert_block(self, result)
-        self.assertIn("executing-plans Phase 3 HARD RULE", decision["reason"])
-        self.assertIn("6 direct edits", decision["reason"])
+        self.assertIn("executing-plans Phase 3 HARD RULE", decision["permissionDecisionReason"])
+        self.assertIn("6 direct edits", decision["permissionDecisionReason"])
 
     def test_blocks_write_when_over_budget(self) -> None:
         project, env = _sandbox(
@@ -187,7 +190,7 @@ class BlockPathTests(unittest.TestCase):
         )
         result = _invoke(project, env, {"session_id": "sid-block-write", "tool_name": "Write"})
         decision = _assert_block(self, result)
-        self.assertIn("12 direct edits", decision["reason"])
+        self.assertIn("12 direct edits", decision["permissionDecisionReason"])
 
     def test_blocks_multiedit_when_over_budget(self) -> None:
         project, env = _sandbox(
@@ -207,8 +210,8 @@ class BlockPathTests(unittest.TestCase):
         )
         result = _invoke(project, env, {"session_id": "sid-block-recovery", "tool_name": "Edit"})
         decision = _assert_block(self, result)
-        self.assertIn("Agent tool", decision["reason"])
-        self.assertIn("sprint contract", decision["reason"])
+        self.assertIn("Agent tool", decision["permissionDecisionReason"])
+        self.assertIn("sprint contract", decision["permissionDecisionReason"])
 
 
 class DegradationTests(unittest.TestCase):

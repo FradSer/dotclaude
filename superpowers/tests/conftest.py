@@ -7,6 +7,7 @@ classification). `git init` is collapsed to a single subprocess via
 """
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -44,3 +45,30 @@ def commit(root: Path, msg: str, files: dict[str, str]) -> str:
         ["git", "rev-parse", "HEAD"],
         cwd=root, capture_output=True, text=True, check=True,
     ).stdout.strip()
+
+
+def path_without_commands(shim_dir: Path, exclude: set[str]) -> str:
+    """Build a one-entry PATH that mirrors the current environment minus
+    the named commands. Symlinks every executable on the current PATH into
+    shim_dir except those whose basename is in `exclude`, then returns
+    shim_dir as the PATH string. Lets a test exercise a command-absent
+    degradation path (e.g. no shasum/sha1sum) while keeping bash, jq, git,
+    awk, and friends resolvable."""
+    shim_dir.mkdir(parents=True, exist_ok=True)
+    for d in os.environ.get("PATH", "").split(os.pathsep):
+        if not d or not os.path.isdir(d):
+            continue
+        for name in os.listdir(d):
+            if name in exclude:
+                continue
+            link = shim_dir / name
+            if link.exists() or link.is_symlink():
+                continue
+            src = os.path.join(d, name)
+            if os.path.isdir(src) or not os.access(src, os.X_OK):
+                continue
+            try:
+                link.symlink_to(src)
+            except OSError:
+                pass
+    return str(shim_dir)

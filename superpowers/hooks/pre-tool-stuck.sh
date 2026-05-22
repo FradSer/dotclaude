@@ -18,8 +18,11 @@
 # stale counter.
 #
 # Output protocol (PreToolUse, Claude Code hooks API):
-#   - exit 0 with no JSON  → tool call proceeds (default allow)
-#   - exit 0 with decision=block JSON → tool call denied + reason shown
+#   - exit 0 with no JSON → tool call proceeds (default allow)
+#   - exit 0 with a hookSpecificOutput.permissionDecision="deny" object →
+#     tool call denied + permissionDecisionReason shown. The legacy
+#     {"decision":"block"} shape does NOT block PreToolUse (it only blocks
+#     Stop/SubagentStop) — verified against code.claude.com/docs hooks ref.
 #
 # Best-effort like every other superpowers hook: missing deps, missing
 # state file, non-integer counters, or any malformed input → silent
@@ -70,5 +73,6 @@ IFS=$'\037' read -r SKILL ITER EDITS < <(
 # mirrors the Stop-hook STUCK message so the recovery path is identical.
 REASON="executing-plans Phase 3 HARD RULE violated: main agent has performed ${EDITS} direct edits since the last Agent spawn (budget = ${SP_STUCK_EDIT_BUDGET}). Spawn a per-batch coordinator via the Agent tool with the sprint contract instead of editing source files directly. See skills/executing-plans/references/batch-execution-playbook.md \"Main Agent's Direct-Edit Allow-List\"."
 
-jq -nc --arg reason "$REASON" '{decision:"block", reason:$reason}'
+jq -nc --arg reason "$REASON" \
+  '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: $reason}}'
 exit 0

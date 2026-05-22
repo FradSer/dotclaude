@@ -26,6 +26,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from conftest import path_without_commands
+
 SUPERPOWERS_DIR = Path(__file__).resolve().parents[1]
 JSONL_EMIT = SUPERPOWERS_DIR / "lib" / "jsonl-emit.sh"
 UTILS = SUPERPOWERS_DIR / "lib" / "utils.sh"
@@ -292,6 +294,19 @@ class DegradationContractTests(unittest.TestCase):
             env=env,
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+    def test_compute_args_hash_empty_without_hasher(self) -> None:
+        """compute_args_hash returns the empty string — a valid degradation
+        where dedup simply won't suppress — when neither shasum nor sha1sum
+        is on PATH. This was the only path the deleted test_skill_events_sh.py
+        pinned; the four-helper consolidation left the args_hash fallback
+        branch otherwise uncovered."""
+        shim = self.cwd / "shim-bin"
+        env = dict(os.environ)
+        env["PATH"] = path_without_commands(shim, {"shasum", "sha1sum"})
+        result = run_sourced(self.cwd, "compute_args_hash a b c", env=env)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(result.stdout.strip(), "")
 
     def test_no_top_level_set_e(self) -> None:
         """Sourcing this file MUST NOT alter the caller's error-handling

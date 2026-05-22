@@ -29,6 +29,20 @@ source "${SCRIPT_DIR}/../lib/utils.sh"
 HOOK_INPUT=$(cat)
 
 SESSION_ID=$(echo "$HOOK_INPUT" | jq -r '.session_id // "default"')
+
+# Phase 5 git-agent commits are a legitimate, expected Bash use in
+# executing-plans; counting them as read-thrash inflates the STUCK signal
+# and can false-trip the read-loop recovery hint. Skip git / git-agent
+# invocations (the documented false positive); other Bash still counts.
+# `select` yields nothing for non-Bash tools, so _cmd stays empty there.
+# A leading `cd <dir> &&` wrapper is stripped so the real command is seen.
+_cmd=$(echo "$HOOK_INPUT" | jq -r 'select(.tool_name == "Bash") | .tool_input.command // ""' 2>/dev/null)
+if [[ -n "$_cmd" ]]; then
+  case "${_cmd#cd *&& }" in
+    git\ *|git-agent\ *) exit 0 ;;
+  esac
+fi
+
 STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 
 # Lock acquisition pattern mirrors track-changes.sh — register cleanup

@@ -439,35 +439,52 @@ loop_phase() {
   # productive: Agent spawns are single-turn (never cross Stop hook), and
   # AskUserQuestion blocks the harness UI before Stop fires, so neither
   # legitimate long-running path produces repeated identical outputs.
-  local new_hash prior_hash stall_count
-  new_hash=$(printf '%s' "$last_output" | shasum 2>/dev/null | awk '{print $1}')
+  # Hash the last output to detect identical re-emissions. shasum is the
+  # macOS default; sha1sum is the coreutils name present on minimal Linux
+  # images (Alpine / distroless / some CI) that ship no shasum. Mirror
+  # bail-log.sh's dual lookup so the detector does not silently break on
+  # sha1sum-only hosts.
+  local new_hash="" prior_hash stall_count
+  if command -v shasum >/dev/null 2>&1; then
+    new_hash=$(printf '%s' "$last_output" | shasum 2>/dev/null | awk '{print $1}')
+  elif command -v sha1sum >/dev/null 2>&1; then
+    new_hash=$(printf '%s' "$last_output" | sha1sum 2>/dev/null | awk '{print $1}')
+  fi
   prior_hash=$(state_read "$state_file" '.last_output_hash // ""')
   stall_count=$(state_read "$state_file" '.stall_count // 0')
   [[ "$stall_count" =~ ^[0-9]+$ ]] || stall_count=0
 
-  if [[ -z "$last_output" ]] || [[ "$new_hash" == "$prior_hash" ]]; then
-    stall_count=$((stall_count + 1))
-  else
-    stall_count=0
-  fi
+  # No hasher on PATH → new_hash is empty. Disable stall detection rather
+  # than false-firing: an empty new_hash equals the empty default prior_hash
+  # every iteration, which would force-clear a perfectly healthy loop after
+  # three turns. A disabled detector degrades gracefully; a misfiring one
+  # kills the loop it is meant to protect. last_output is already guaranteed
+  # non-empty by the extraction guard above, so the hash is the only signal.
+  if [[ -n "$new_hash" ]]; then
+    if [[ "$new_hash" == "$prior_hash" ]]; then
+      stall_count=$((stall_count + 1))
+    else
+      stall_count=0
+    fi
 
-  if [[ $stall_count -ge 3 ]]; then
-    echo "Superpower loop: Stalled ${stall_count} iterations (no output progress) — force-clearing state." >&2
-    _loop_clear_state "$state_file"
-    # Surface to the user so the cleared state is observable, not silent.
-    # `continue: true` lets the session exit cleanly (stop hook already
-    # returned 0 effectively); the message names the failure mode so
-    # follow-up debugging starts from the right hypothesis.
-    jq -n --arg msg "Superpower Loop force-cleared: stalled ${stall_count} iterations with no output progress. State reset; re-invoke the skill if this was unintentional." \
-      '{continue: true, systemMessage: $msg}'
-    exit 0
-  fi
+    if [[ $stall_count -ge 3 ]]; then
+      echo "Superpower loop: Stalled ${stall_count} iterations (no output progress) — force-clearing state." >&2
+      _loop_clear_state "$state_file"
+      # Surface to the user so the cleared state is observable, not silent.
+      # `continue: true` lets the session exit cleanly (stop hook already
+      # returned 0 effectively); the message names the failure mode so
+      # follow-up debugging starts from the right hypothesis.
+      jq -n --arg msg "Superpower Loop force-cleared: stalled ${stall_count} iterations with no output progress. State reset; re-invoke the skill if this was unintentional." \
+        '{continue: true, systemMessage: $msg}'
+      exit 0
+    fi
 
-  state_update "$state_file" \
-    --arg h "$new_hash" \
-    --argjson sc "$stall_count" \
-    '.last_output_hash = $h | .stall_count = $sc' \
-    || { echo "Warning: state_update failed mid-stall-track, continuing" >&2; }
+    state_update "$state_file" \
+      --arg h "$new_hash" \
+      --argjson sc "$stall_count" \
+      '.last_output_hash = $h | .stall_count = $sc' \
+      || { echo "Warning: state_update failed mid-stall-track, continuing" >&2; }
+  fi
 
   # Stuck detection — both branches scoped to executing-plans (the only
   # skill where main-agent direct work past iter 1 violates a contract).

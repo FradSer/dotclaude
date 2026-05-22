@@ -118,10 +118,6 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 
 Loaded when implementing features or bugfixes during execution. Enforces the Red-Green-Refactor cycle driven by BDD scenarios in Gherkin format (Given-When-Then).
 
-### Build Like iPhone Team
-
-Loaded when the user wants to challenge industry conventions or approach open-ended problems requiring disruptive thinking. Applies Apple's Project Purple design philosophy for radical innovation, including first-principles thinking, internal competition, and breakthrough research techniques. The `superpowers:brainstorming` skill loads this automatically for problems that benefit from unconventional approaches.
-
 (The `systematic-debugging` skill was promoted to user-invocable in 2.4.0 — see `/superpowers:systematic-debugging` above.)
 
 ## End-to-End Workflow
