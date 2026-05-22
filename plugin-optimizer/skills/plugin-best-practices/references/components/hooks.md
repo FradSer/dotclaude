@@ -90,7 +90,7 @@ Plugins provide event handlers that respond to Claude Code events automatically.
 
 - **Plain Text Output**: Claude expects a JSON object with a `systemMessage` field; always output JSON even if the *content* is plain text/Markdown.
 - **Dead Code**: Remove unused variables and unreachable code paths
-- **Legacy Fields**: Avoid using the deprecated `hookSpecificOutput` schema (including `permissionDecision` and `additionalContext`). Use `systemMessage` instead.
+- **Wrong block channel**: To deny a `PreToolUse` tool call, emit `hookSpecificOutput.permissionDecision: "deny"` with exit 0 — not the top-level `{"decision":"block"}` shape, which only blocks `Stop`/`SubagentStop`.
 - **Warning Output Without Action**: If exit 0, output is ignored; either enforce or remove the check
 - **Blocking Errors for Non-Critical Issues**: Reserve exit 2 for security/correctness, not style
 - **bash 4+ builtins**: `mapfile`/`readarray` are bash 4+ and silently crash on macOS, causing fail-open
@@ -112,11 +112,11 @@ AI-native hooks MUST return structured JSON containing a `systemMessage` field w
 | Field | Events | Purpose |
 |-------|--------|---------|
 | `systemMessage` | All | **Primary field**. Rich Markdown message presented to Claude as if from a user. |
-| `hookSpecificOutput` | All | *Deprecated*. Legacy complex nested object. |
-| `permissionDecision` | PreToolUse | *Deprecated*. Legacy explicit control. |
-| `permissionDecisionReason` | All | *Deprecated*. Legacy explanation field. |
-| `additionalContext` | All | *Deprecated*. Legacy structured context. |
-| `updatedInput` | PreToolUse | *Deprecated*. Legacy mutation field. |
+| `hookSpecificOutput` | All | Current. Per-event control object — wraps `permissionDecision`, `additionalContext`, etc. |
+| `permissionDecision` | PreToolUse | Current. `allow` / `deny` / `ask` — the PreToolUse block control. |
+| `permissionDecisionReason` | PreToolUse | Current. Reason shown when denying or asking. |
+| `additionalContext` | UserPromptSubmit, PostToolUse | Current. Injects extra context for Claude. |
+| `updatedInput` | PreToolUse | Current. Rewrites tool input before the call runs. |
 
 ### Output Destination
 
@@ -134,11 +134,18 @@ exit 0
 ### PreToolUse: Deny with Guidance
 
 ```bash
-jq -n --arg msg "# Operation Blocked\n\nDangerous command blocked.\n\n## Remediation\nUse 'git clean -fd' instead of 'rm -rf'." '{
-  systemMessage: $msg
-}' >&2
-exit 2
+jq -n --arg reason "Dangerous command blocked. Use 'git clean -fd' instead of 'rm -rf'." '{
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "deny",
+    permissionDecisionReason: $reason
+  }
+}'
+exit 0
 ```
+
+(`exit 2` with the reason on `stderr` still blocks as a fallback, but the
+`permissionDecision` object above is the documented PreToolUse channel.)
 
 ### PreToolUse: Ask User
 
@@ -314,7 +321,7 @@ These are fundamentally different outcomes:
 
 | Situation | Claude Code Shows | Operation |
 |-----------|------------------|-----------|
-| Script outputs `{"decision":"block"}` | Block reason to user | **Blocked** |
+| Script outputs `hookSpecificOutput.permissionDecision: "deny"` (PreToolUse) | Deny reason to user | **Blocked** |
 | Script crashes (no JSON output) | `PreToolUse:Bash hook error` | **Allowed** (fail-open) |
 
 `set -euo pipefail` makes any failing command kill the script before it can output the block JSON. Test hooks directly before deploying:
