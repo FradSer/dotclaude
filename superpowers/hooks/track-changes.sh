@@ -43,6 +43,16 @@ done <<< "$FILE_PATHS_RAW"
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 
+# Track only inside an active Superpower Loop. modified_files and
+# edits_since_last_spawn are consumed solely by lib/loop.sh — the first
+# re-injection snapshot and executing-plans stuck detection — both of which
+# require active=true. Outside a loop this hook used to fire on every
+# Edit/Write/MultiEdit in every session (any repo, loop or not), accumulating
+# state nothing reads. One jq read here replaces an unconditional lock +
+# tmp+mv on the synchronous-equivalent hot path.
+[[ -f "$STATE_FILE" ]] || exit 0
+[[ "$(state_read "$STATE_FILE" '.active // false')" == "true" ]] || exit 0
+
 # Register cleanup BEFORE acquire — release_state_lock is PID-aware so a
 # failed acquire (and the resulting EXIT) won't clobber another process's
 # lock. INT/TERM chain through EXIT to release on signal kills.
@@ -58,26 +68,14 @@ if ! acquire_state_lock "$STATE_FILE"; then
   exit 0
 fi
 
-if [[ -f "$STATE_FILE" ]]; then
-  # Append all paths to existing session state (dedup via unique). Bump
-  # .edits_since_last_spawn by 1 — this is one tool call regardless of how
-  # many files MultiEdit touched, because the counter measures
-  # "main-agent edit operations since the last Agent tool returned" and
-  # one tool invocation is one operation. track-spawns.sh resets it back
-  # to 0 on PostToolUse Agent.
-  TEMP="${STATE_FILE}.tmp.$$"
-  jq '.modified_files = ((.modified_files // []) + $ARGS.positional | unique)
-      | .edits_since_last_spawn = ((.edits_since_last_spawn // 0) + 1)' \
-    "$STATE_FILE" --args "${FILE_PATHS[@]}" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
-else
-  # State file not yet created (e.g. first prompt had @mention with null user_prompt).
-  # Create a minimal stub so modified files are not lost — task-start.sh will
-  # populate the task field on the next prompt with real content.
-  NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  jq -n --arg sid "$SESSION_ID" --arg ts "$NOW" \
-    '{session_id: $sid, task: "", created_at: $ts, updated_at: $ts, modified_files: $ARGS.positional, edits_since_last_spawn: 1}' \
-    --args -- "${FILE_PATHS[@]}" \
-    > "$STATE_FILE"
-fi
+# Append all paths to the active-loop session state (dedup via unique). Bump
+# .edits_since_last_spawn by 1 — one tool call regardless of how many files
+# MultiEdit touched, because the counter measures "main-agent edit operations
+# since the last Agent tool returned" and one tool invocation is one
+# operation. track-spawns.sh resets it back to 0 on PostToolUse Agent.
+TEMP="${STATE_FILE}.tmp.$$"
+jq '.modified_files = ((.modified_files // []) + $ARGS.positional | unique)
+    | .edits_since_last_spawn = ((.edits_since_last_spawn // 0) + 1)' \
+  "$STATE_FILE" --args "${FILE_PATHS[@]}" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
 
 exit 0

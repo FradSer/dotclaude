@@ -45,6 +45,15 @@ fi
 
 STATE_FILE="$(state_dir)/${SESSION_ID}.superpowers.json"
 
+# Track only inside an active Superpower Loop. reads_since_last_spawn is
+# consumed solely by lib/loop.sh's executing-plans stuck detection, which
+# requires active=true. Outside a loop this hook used to fire on every
+# Read/Glob/Grep/Bash in every session — accumulating a counter nothing
+# reads. One jq read here replaces an unconditional lock + tmp+mv on the
+# highest-frequency tool path in the plugin.
+[[ -f "$STATE_FILE" ]] || exit 0
+[[ "$(state_read "$STATE_FILE" '.active // false')" == "true" ]] || exit 0
+
 # Lock acquisition pattern mirrors track-changes.sh — register cleanup
 # BEFORE acquire so a failed acquire (and its EXIT) won't release
 # someone else's lock.
@@ -56,18 +65,8 @@ if ! acquire_state_lock "$STATE_FILE"; then
   exit 0
 fi
 
-if [[ -f "$STATE_FILE" ]]; then
-  TEMP="${STATE_FILE}.tmp.$$"
-  jq '.reads_since_last_spawn = ((.reads_since_last_spawn // 0) + 1)' \
-    "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
-else
-  # No state file yet — create a minimal stub so the read counter is
-  # not lost. task-start.sh populates the task field on the next prompt
-  # with real content. Mirrors track-changes.sh's stub-creation path.
-  NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  jq -n --arg sid "$SESSION_ID" --arg ts "$NOW" \
-    '{session_id: $sid, task: "", created_at: $ts, updated_at: $ts, reads_since_last_spawn: 1}' \
-    > "$STATE_FILE"
-fi
+TEMP="${STATE_FILE}.tmp.$$"
+jq '.reads_since_last_spawn = ((.reads_since_last_spawn // 0) + 1)' \
+  "$STATE_FILE" > "$TEMP" && mv "$TEMP" "$STATE_FILE"
 
 exit 0

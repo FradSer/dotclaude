@@ -236,7 +236,7 @@ Each phase must be completed before proceeding to the next.
    source "${CLAUDE_PLUGIN_ROOT}/lib/utils.sh"
    source "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh"
 
-   state_file=$(find_state_file "${CLAUDE_SESSION_ID:-}")
+   state_file=$(find_state_file "${CLAUDE_CODE_SESSION_ID:-}")
    skill_name=""
    if [[ -n "$state_file" && -f "$state_file" ]]; then
      skill_name=$(state_read "$state_file" '.skill_name // ""')

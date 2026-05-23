@@ -642,7 +642,11 @@ def _build_sandbox(
     env["HOME"] = str(fake_home)
     env["CLAUDE_PROJECT_DIR"] = str(project)
     env["CLAUDE_PLUGIN_ROOT"] = str(SUPERPOWERS_DIR)
-    env["CLAUDE_SESSION_ID"] = session_id
+    # CLAUDE_CODE_SESSION_ID is the real var Claude Code exports to Bash-tool
+    # subprocesses (since v2.1.132). CLAUDE_SESSION_ID does not exist — the
+    # SKILL.md block and this fixture both used it previously, which masked
+    # that the fix_completed emission never fired under real Claude Code.
+    env["CLAUDE_CODE_SESSION_ID"] = session_id
 
     log = project / "docs" / "retros" / "skill-events.jsonl"
     return project, env, log

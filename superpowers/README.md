@@ -2,7 +2,7 @@
 
 Advanced development superpowers for orchestrating complex workflows from idea to execution.
 
-**Version**: 2.8.2
+**Version**: 2.8.7
 
 ## Installation
 
@@ -49,9 +49,9 @@ For harness components that start feeling like pure overhead on a project (e.g. 
 
 ### `/superpowers:brainstorming`
 
-Turn rough ideas into implementation-ready designs through structured collaborative dialogue.
+Turn rough ideas into implementation-ready designs through autonomous, codebase-grounded research. Runs to completion inside the Superpower Loop without pausing for mid-design questions; you review the committed design after.
 
-- Clarifies ambiguous requirements through focused questioning
+- Resolves ambiguous requirements from codebase evidence (no mid-design questions — assumptions are documented in the design for review)
 - Explores design alternatives grounded in codebase reality
 - Produces design documents with BDD specifications (Given-When-Then)
 - Prepares the project for planning and implementation
@@ -166,11 +166,18 @@ superpowers/
 │   └── superpowers-evaluator.md # Independent read-only evaluator (design / code modes)
 ├── hooks/
 │   ├── task-start.sh            # UserPromptSubmit — persists state + detects slash commands
-│   ├── track-changes.sh         # PostToolUse (Edit/Write/MultiEdit) — tracks modified files
-│   └── stop-hook.sh             # Stop — delegates to loop.sh for loop iteration
+│   ├── pre-tool-stuck.sh        # PreToolUse (Edit/Write/MultiEdit) — blocks over-budget main-agent edits mid-loop
+│   ├── track-changes.sh         # PostToolUse (Edit/Write/MultiEdit, async) — modified files + edit counter (active loop only)
+│   ├── track-reads.sh           # PostToolUse (Read/Glob/Grep/Bash, async) — read counter for stuck detection (active loop only)
+│   ├── track-spawns.sh          # PostToolUse (Agent, async) — resets edit/read counters on sub-agent spawn
+│   └── stop-hook.sh             # Stop — delegates to loop.sh for Superpower Loop iteration
 ├── lib/
-│   ├── utils.sh                 # Shared helpers (state I/O, Haiku merge, tag extraction)
-│   └── loop.sh                  # Stop hook — Superpower Loop iteration
+│   ├── utils.sh                 # Shared helpers (state I/O, mkdir locking, promise/transcript extraction)
+│   ├── loop.sh                  # Superpower Loop iteration (sourced by stop-hook.sh)
+│   ├── bail-log.sh              # Appends bail-out / force-override events to bail-out-events.jsonl
+│   ├── seed-checklists.sh       # Seeds design/plan/code v1 checklists on demand
+│   ├── post-plan-diff.sh        # Classifies post-plan commits (feedback vs evolution) for retrospective
+│   └── jsonl-emit.sh            # Shared JSONL channel emitter (evolution-log / harness-observations / skill-events)
 ├── scripts/
 │   └── setup-superpower-loop.sh # Entry point skills call to enter the loop
 ├── skills/
@@ -192,10 +199,13 @@ superpowers/
 - **Skill Tool:** Load skills dynamically during workflows
 - **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / code modes — plan-mode review is handled inline by `writing-plans` Phase 4)
 - **Task Management:** Create and track tasks during execution
-- **Hook Pipeline:** Three coordinated hooks share a per-session state file at `~/.claude/projects/<project-key>/<session_id>.superpowers.json`
+- **Hook Pipeline:** Six hook registrations across four events share a per-session state file at `~/.claude/projects/<project-key>/<session_id>.superpowers.json`
   - `UserPromptSubmit` → `hooks/task-start.sh` persists task + detects slash commands
-  - `PostToolUse` (Edit/Write/MultiEdit) → `hooks/track-changes.sh` accumulates modified files
-  - `Stop` → `hooks/stop-hook.sh` dispatches to Superpower Loop iteration (Phase 1) and work verification (Phase 2)
+  - `PreToolUse` (Edit/Write/MultiEdit) → `hooks/pre-tool-stuck.sh` blocks over-budget main-agent edits mid-loop
+  - `PostToolUse` (Edit/Write/MultiEdit) → `hooks/track-changes.sh` accumulates modified files + edit counter (active loop only)
+  - `PostToolUse` (Read/Glob/Grep/Bash) → `hooks/track-reads.sh` read counter for stuck detection (active loop only)
+  - `PostToolUse` (Agent) → `hooks/track-spawns.sh` resets edit/read counters on sub-agent spawn
+  - `Stop` → `hooks/stop-hook.sh` dispatches to Superpower Loop iteration
 - **Git Integration:** Automatic commit messages via `git-agent` with fallback to conventional-format `git commit`
 
 ## Harness Calibration

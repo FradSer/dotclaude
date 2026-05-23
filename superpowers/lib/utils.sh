@@ -229,8 +229,15 @@ extract_last_assistant_text() {
   local max_lines="${2:-100}"
   [[ -f "$transcript_path" ]] || return 0
 
+  # Match either discriminator: real Claude Code transcripts tag assistant
+  # lines with top-level "type":"assistant" (and carry "role":"assistant"
+  # nested under .message); older / test-fixture shapes use a top-level
+  # "role":"assistant". Accepting both survives the most likely schema drift
+  # (the nested role field being dropped) without depending on which field is
+  # canonical. The JSONL schema is an undocumented internal — see the canary
+  # in lib/loop.sh that surfaces a parse failure if it changes further.
   local last_lines
-  last_lines=$(grep '"role":"assistant"' "$transcript_path" | tail -n "$max_lines")
+  last_lines=$(grep -E '"(role|type)":"assistant"' "$transcript_path" | tail -n "$max_lines")
   [[ -z "$last_lines" ]] && return 0
 
   set +e

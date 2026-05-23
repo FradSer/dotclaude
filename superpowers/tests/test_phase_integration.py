@@ -477,6 +477,71 @@ class LoopPhaseTests(unittest.TestCase):
         state = json.loads(self.state.read_text())
         self.assertEqual(state["iteration"], 2)
 
+    def test_malformed_promise_emits_correction_nudge(self) -> None:
+        """Completion phrase present in the output but not as a valid
+        standalone <promise> tag (trailing prose after it): the loop keeps
+        going but injects a targeted correction instead of silently burning
+        iterations until the stall detector trips three turns later."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "",
+        }))
+        # Tag is mid-line with prose after it → extract_promise_text finds no
+        # valid standalone tag, so loop_complete stays false.
+        self._write_transcript(
+            "All finished! <promise>DONE</promise> Let me know if you need more."
+        )
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertNotIn("FELL_THROUGH", result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["decision"], "block")
+        self.assertIn("NEARLY DONE", payload["reason"])
+        # Loop is NOT cleared — the work might genuinely be incomplete.
+        state = json.loads(self.state.read_text())
+        self.assertEqual(state["active"], True)
+
+    def test_unparseable_transcript_surfaces_canary_and_clears(self) -> None:
+        """Assistant lines exist but no text extracts (the signature of an
+        undocumented transcript-schema change): the loop emits a user-visible
+        systemMessage instead of going dark silently, and clears so the
+        session can exit. Guards the P9 fragility — a future Claude Code
+        format change must be observable, not silent."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build the thing",
+            "skill_name": "",
+        }))
+        # Assistant line matches the discriminator grep but carries only a
+        # tool_use block — no .message.content[] text to extract.
+        line = {
+            "role": "assistant",
+            "message": {"content": [{"type": "tool_use", "name": "Bash"}]},
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}\n'
+            'echo "FELL_THROUGH"'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertNotIn("FELL_THROUGH", result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload.get("continue"))
+        self.assertIn("transcript format may have changed", payload["systemMessage"])
+        # Loop cleared so the user is never wedged by a parse failure.
+        state = json.loads(self.state.read_text())
+        self.assertNotIn("active", state)
+
     def test_active_loop_with_promise_match_clears_state(self) -> None:
         """Active loop + matching promise: clear loop fields, allow session exit."""
         self.state.write_text(json.dumps({
@@ -1691,6 +1756,24 @@ class ExtractLastAssistantTextTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("hello world", result.stdout)
 
+    def test_returns_text_for_real_transcript_schema(self) -> None:
+        """Real Claude Code transcripts mark assistant lines with a top-level
+        "type":"assistant" and nest "role":"assistant" + content under
+        .message — not the simplified top-level "role" the other fixtures use.
+        The extractor must handle this shape (verified against a live
+        transcript) so the broadened (role|type) matcher is load-bearing."""
+        line = {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "real-shape text"}],
+            },
+        }
+        self.transcript.write_text(json.dumps(line, separators=(",", ":")) + "\n")
+        result = self._run_extract()
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("real-shape text", result.stdout)
+
     def test_returns_last_text_when_multiple_assistant_messages(self) -> None:
         lines = [
             {"role": "assistant",
@@ -2001,17 +2084,47 @@ class EditsSinceLastSpawnHookTests(unittest.TestCase):
             cwd=str(self.cwd),
         )
 
-    def test_track_changes_creates_state_with_counter_at_one(self) -> None:
-        """First Edit/Write in a fresh session: hook creates the state stub
-        with edits_since_last_spawn=1. This is the path that runs when
-        track-changes.sh fires before task-start.sh has had a chance to
-        seed the file (e.g. an @mention that suppressed the user_prompt)."""
+    def test_track_changes_skips_when_no_state_file(self) -> None:
+        """Outside an active loop there is no state file; the hook must NOT
+        create a stub. modified_files / edits_since_last_spawn are consumed
+        only by lib/loop.sh when active=true, so a stub here would be state
+        nothing reads — and would resurrect the per-tool-call write that
+        fired in every unrelated session."""
         result = self._run_hook(TRACK_CHANGES, {
             "session_id": self.session_id,
             "tool_input": {"file_path": "/abs/path/foo.py"},
         })
         self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(self.state_file.exists())
+        self.assertFalse(self.state_file.exists())
+
+    def test_track_changes_skips_when_inactive(self) -> None:
+        """State file exists (task-start.sh seeded it) but no loop is active:
+        the hook leaves modified_files / edits_since_last_spawn untouched."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "task": "ad-hoc edit, no loop",
+        }))
+        result = self._run_hook(TRACK_CHANGES, {
+            "session_id": self.session_id,
+            "tool_input": {"file_path": "/abs/path/foo.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertNotIn("modified_files", state)
+        self.assertNotIn("edits_since_last_spawn", state)
+
+    def test_track_changes_records_first_edit_when_active(self) -> None:
+        """Inside an active loop the first Edit/Write records the path and
+        sets edits_since_last_spawn=1."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "active": True,
+        }))
+        result = self._run_hook(TRACK_CHANGES, {
+            "session_id": self.session_id,
+            "tool_input": {"file_path": "/abs/path/foo.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
         state = json.loads(self.state_file.read_text())
         self.assertEqual(state["edits_since_last_spawn"], 1)
         self.assertIn("/abs/path/foo.py", state["modified_files"])
@@ -2024,8 +2137,10 @@ class EditsSinceLastSpawnHookTests(unittest.TestCase):
         edit calls without ever calling Agent" — one MultiEdit touching
         five files is one operation, not five."""
         # Seed state with counter=2 so we can observe a clean increment.
+        # active=true: track-changes only mutates state inside a live loop.
         self.state_file.write_text(json.dumps({
             "session_id": self.session_id,
+            "active": True,
             "modified_files": ["a.py", "b.py"],
             "edits_since_last_spawn": 2,
         }))
@@ -2133,6 +2248,12 @@ class EditsSinceLastSpawnHookTests(unittest.TestCase):
         well-behaved batch (main agent writes contract + handoff state,
         spawns coordinator, then on next batch starts with contract +
         handoff state again from a clean counter)."""
+        # A live loop is the precondition for tracking. track-spawns leaves
+        # active untouched, so it persists across the reset below.
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "active": True,
+        }))
         # Three pre-spawn edits.
         for path in ("/abs/contract.md", "/abs/handoff.md", "/abs/_index.md"):
             self._run_hook(TRACK_CHANGES, {
@@ -2199,17 +2320,48 @@ class TrackReadsHookTests(unittest.TestCase):
             cwd=str(self.cwd),
         )
 
-    def test_creates_state_with_counter_at_one_on_first_read(self) -> None:
-        """First Read in a fresh session: hook creates the state stub with
-        reads_since_last_spawn=1. Mirrors track-changes.sh's "create stub
-        if missing" path — same race-against-task-start.sh consideration."""
+    def test_skips_when_no_state_file(self) -> None:
+        """Outside an active loop there is no state file; the hook must NOT
+        create a stub. reads_since_last_spawn is consumed only by lib/loop.sh
+        stuck detection when active=true, so a stub here is unread state and
+        resurrects the per-tool-call write on the highest-frequency tool
+        path in the plugin."""
         result = self._run_hook({
             "session_id": self.session_id,
             "tool_name": "Read",
             "tool_input": {"file_path": "/abs/path/foo.py"},
         })
         self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(self.state_file.exists())
+        self.assertFalse(self.state_file.exists())
+
+    def test_skips_when_inactive(self) -> None:
+        """State file exists but no loop is active: reads_since_last_spawn
+        is left untouched."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "task": "ad-hoc read, no loop",
+        }))
+        result = self._run_hook({
+            "session_id": self.session_id,
+            "tool_name": "Read",
+            "tool_input": {"file_path": "/abs/path/foo.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        state = json.loads(self.state_file.read_text())
+        self.assertNotIn("reads_since_last_spawn", state)
+
+    def test_records_first_read_when_active(self) -> None:
+        """Inside an active loop the first Read sets reads_since_last_spawn=1."""
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "active": True,
+        }))
+        result = self._run_hook({
+            "session_id": self.session_id,
+            "tool_name": "Read",
+            "tool_input": {"file_path": "/abs/path/foo.py"},
+        })
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
         state = json.loads(self.state_file.read_text())
         self.assertEqual(state["reads_since_last_spawn"], 1)
 
@@ -2220,6 +2372,7 @@ class TrackReadsHookTests(unittest.TestCase):
         is one operation, same as one Read of one file."""
         self.state_file.write_text(json.dumps({
             "session_id": self.session_id,
+            "active": True,
             "reads_since_last_spawn": 4,
         }))
         result = self._run_hook({
@@ -2239,9 +2392,10 @@ class TrackReadsHookTests(unittest.TestCase):
         regardless of which tool fired it."""
         for tool in ("Read", "Glob", "Grep", "Bash"):
             with self.subTest(tool=tool):
-                # Reset state for each iteration of subtest.
+                # Reset state for each iteration of subtest (active loop).
                 self.state_file.write_text(json.dumps({
                     "session_id": self.session_id,
+                    "active": True,
                     "reads_since_last_spawn": 0,
                 }))
                 result = self._run_hook({
@@ -2290,6 +2444,12 @@ class TrackReadsHookTests(unittest.TestCase):
         Reads → counter=2. Mirrors the per-batch flow: agent reads task
         files to construct the spawn prompt, spawns coordinator (reset),
         then reads handoff / evaluation report after return (fresh count)."""
+        # A live loop is the precondition for tracking; track-spawns leaves
+        # active untouched, so it persists across the reset below.
+        self.state_file.write_text(json.dumps({
+            "session_id": self.session_id,
+            "active": True,
+        }))
         for _ in range(4):
             self._run_hook({
                 "session_id": self.session_id,

@@ -150,6 +150,11 @@ _loop_emit_block() {
   local stuck_kind="${6:-none}"
   local edits_since_spawn="${7:-0}"
   local reads_since_spawn="${8:-0}"
+  # promise_malformed: caller detected the completion phrase as plain text in
+  # the last output but extract_promise_text found no valid standalone tag
+  # (the documented "model said it's done but trailing prose broke the tag"
+  # failure that otherwise burns iterations until the stall detector trips).
+  local promise_malformed="${9:-false}"
   [[ "$stuck_kind" == "1" ]] && stuck_kind="edits"
   [[ "$stuck_kind" == "0" ]] && stuck_kind="none"
 
@@ -326,6 +331,18 @@ ${files_md%$'\n'}"
     fi
   fi
 
+  # Malformed-promise correction — surface BEFORE the completion footer so
+  # the model reads "you nearly exited, fix the tag" right above the exact
+  # tag it must emit. Only fires when a promise is configured and the caller
+  # flagged the phrase-present-but-no-valid-tag case.
+  if [[ "$promise_malformed" == "true" ]] \
+     && [[ -n "$completion_promise" && "$completion_promise" != "null" ]]; then
+    injected="${injected}
+
+---
+NEARLY DONE: your last response contained \"${completion_promise}\" but not as a valid standalone <promise> tag on its own final line, so the loop did not exit. If the work is genuinely complete, emit the tag below EXACTLY — nothing after it."
+  fi
+
   if [[ -n "$completion_promise" && "$completion_promise" != "null" ]]; then
     injected="${injected}
 
@@ -385,7 +402,12 @@ loop_phase() {
     return 0
   fi
 
-  if ! grep -q '"role":"assistant"' "$transcript_path"; then
+  # Assistant-line discriminator — accept both top-level "type":"assistant"
+  # (real Claude Code transcript) and "role":"assistant" (test fixtures /
+  # nested field), mirroring extract_last_assistant_text. The transcript
+  # JSONL schema is undocumented; broadening the match here is the cheap half
+  # of guarding against drift, the canary below is the loud half.
+  if ! grep -qE '"(role|type)":"assistant"' "$transcript_path"; then
     echo "Warning: Superpower loop: No assistant messages found in transcript" >&2
     echo "   Superpower loop is stopping." >&2
     _loop_clear_state "$state_file"
@@ -395,10 +417,16 @@ loop_phase() {
   local last_output
   last_output=$(extract_last_assistant_text "$transcript_path" 100)
   if [[ -z "$last_output" ]]; then
-    echo "Warning: Superpower loop: Failed to extract assistant message" >&2
-    echo "   Superpower loop is stopping." >&2
+    # Assistant lines exist (the grep above matched) but no text could be
+    # pulled from .message.content[]. At Stop time a completed response
+    # should carry text, so an empty extract here is the signature of the
+    # undocumented transcript schema having changed under us — the exact way
+    # the Superpower Loop would otherwise go dark silently. Surface it as a
+    # user-visible systemMessage instead of only a stderr line nobody reads.
+    echo "Warning: Superpower loop: assistant lines present but no text extracted — transcript format may have changed" >&2
     _loop_clear_state "$state_file"
-    return 0
+    jq -n '{continue: true, systemMessage: "superpowers: could not read your last message from the transcript (Claude Code transcript format may have changed) — Superpower Loop disabled this turn. If loops broke after a Claude Code update, please file an issue."}'
+    exit 0
   fi
 
   # Check for completion promise.
@@ -518,5 +546,18 @@ loop_phase() {
     fi
   fi
 
-  _loop_emit_block "$state_file" "$iteration" "$max_iterations" "$completion_promise" "$prompt" "$stuck_kind" "$edits_since_spawn" "$reads_since_spawn"
+  # Malformed-promise detection — the completion phrase appears in the last
+  # output as plain text but extract_promise_text (above) found no valid
+  # standalone tag, so loop_complete stayed false. A literal substring test
+  # is enough: completion promises are distinctive sentinels
+  # (EXECUTION_COMPLETE, PLAN_COMPLETE, …) unlikely to occur except when the
+  # model means it. Feeds the targeted nudge in _loop_emit_block instead of
+  # silently burning iterations to the stall detector.
+  local promise_malformed=false
+  if [[ -n "$completion_promise" ]] && [[ "$completion_promise" != "null" ]] \
+     && printf '%s' "$last_output" | grep -qF "$completion_promise"; then
+    promise_malformed=true
+  fi
+
+  _loop_emit_block "$state_file" "$iteration" "$max_iterations" "$completion_promise" "$prompt" "$stuck_kind" "$edits_since_spawn" "$reads_since_spawn" "$promise_malformed"
 }
