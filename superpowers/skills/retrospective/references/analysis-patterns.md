@@ -87,7 +87,7 @@ Evaluate each harness component against recent data:
 
 | Component | Health signal | Recommendation if triggered |
 |-----------|--------------|---------------------------|
-| Evaluator | All tasks PASS on first round in 3+ consecutive plans | Flag the evaluator as a removal candidate in the one-at-a-time disable protocol |
+| Evaluator | All tasks PASS on first round in 3+ consecutive plans | Note the evaluator as a REMOVE/MODIFY candidate for a future Phase 3 proposal (report note only — never auto-disabled) |
 | Sprint contracts | No "Recurring Failure Patterns" injection in 5+ batches | Sprint contracts still valuable for acceptance criteria; keep |
 | Intra-plan learning | Recurring patterns injected but same items still FAIL | Review injection mechanism -- may need stronger generator guidance |
 | Checklist mode X | Only regression items, all passing in 3+ plans | Propose REMOVE for those items via standard checklist evolution |

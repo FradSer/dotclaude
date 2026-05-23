@@ -60,8 +60,8 @@ emit_deps_missing_systemmessage() {
 #   3. ${PWD} — last-resort fallback when not in a git repo and the env var
 #      is absent; preserves the pre-T-001 PWD-anchored behavior.
 #
-# Single source of truth — bail-log.sh, loop.sh, and any future writer in
-# this lib must call this helper rather than re-implementing the resolution.
+# Single source of truth — loop.sh, post-plan-diff.sh, and any future writer
+# in this lib must call this helper rather than re-implementing the resolution.
 # Usage: ROOT=$(repo_root)
 repo_root() {
   if [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then

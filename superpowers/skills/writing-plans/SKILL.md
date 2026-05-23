@@ -3,7 +3,7 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Writing Plans
@@ -25,14 +25,6 @@ The OR-gate (was AND prior to v2.8.0) catches the common "2 BDD + many setup tas
 
 Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no plan evaluator) and exit. The `--force` token (literal in `$ARGUMENTS`, case-sensitive, matched as a whole token — not a substring of other words) bypasses this check.
 
-**Log the bail outcome** before exiting (and on `--force` override) so retrospective Phase 5a can spot frequent overrides:
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans <event> "<short reason>" "$ARGUMENTS"
-```
-
-Where `<event>` is `bail_out` when the gate fires or `force_override` when `--force` bypasses it.
-
 ## CRITICAL: Justification Check (run after bail-out, before loop start)
 
 **Read `_index.md` from the resolved design folder. Bail out — do NOT start the loop, do NOT decompose tasks — when grep matches any of:**
@@ -46,21 +38,11 @@ This catches designs the maintainer or a prior brainstorming sub-agent has expli
 **On match, refuse deterministically (the marker is dispositive — do not interpret it away)**:
 
 1. Output a one-line note explaining the matched line + path: `Refusing: <design-path>/_index.md:{N} is marked NOT-JUSTIFIED — '{matched text}'. Re-invoke /superpowers:brainstorming to revise the design, or pass --justify-override to bypass this gate.`
-2. Log via `bail-log.sh` with reason `design_not_justified`:
-   ```bash
-   bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans bail_out "design_not_justified: <matched marker>" "$ARGUMENTS"
-   ```
-3. Exit without starting the loop.
+2. Exit without starting the loop.
 
-**Override**: Pass `--justify-override` (literal token in `$ARGUMENTS`, case-sensitive, whole-token match) to bypass this refusal. When the override token is present, log a `force_override` event instead of `bail_out` and continue to First Action:
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" writing-plans force_override "design_not_justified: <matched marker>" "$ARGUMENTS"
-```
+**Override**: Pass `--justify-override` (literal token in `$ARGUMENTS`, case-sensitive, whole-token match) to bypass this refusal. When the override token is present, continue to First Action.
 
 **PROHIBITED**: Do NOT conflate `--force` (which bypasses the bail-out size gate above) with `--justify-override` (which bypasses this justification gate). They are independent failure modes and need independent overrides — a user passing `--force` for a thin design should still be refused if the design is also NOT-JUSTIFIED.
-
-The gate is non-destructive: refusal logs to `bail-out-events.jsonl`, override logs to the same file with `force_override` event. Retrospective Phase 5a reads both to spot designs that were advanced despite NOT-JUSTIFIED status.
 
 ## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
 
@@ -69,7 +51,7 @@ The gate is non-destructive: refusal logs to `bail-out-events.jsonl`, override l
 1. Resolve the design path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/` and use it directly (do NOT pause to confirm)
-   - If no `*-design/` folder exists in `docs/plans/`, refuse with: `Refusing: no design folder found under docs/plans/. Run /superpowers:brainstorming first, or pass the design folder path explicitly.` Log via `bail-log.sh writing-plans bail_out "no_design_folder" "$ARGUMENTS"` and exit.
+   - If no `*-design/` folder exists in `docs/plans/`, refuse with: `Refusing: no design folder found under docs/plans/. Run /superpowers:brainstorming first, or pass the design folder path explicitly.` Then exit.
 2. **Start the loop** (no size gate — this skill's default user plans large multi-scenario work):
    ```bash
    "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition). Emit <promise>PLAN_COMPLETE</promise> as your final line immediately after the Phase 5 commit succeeds — do not run an extra validation/polish pass." --completion-promise "PLAN_COMPLETE" --max-iterations 50

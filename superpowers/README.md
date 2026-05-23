@@ -2,7 +2,7 @@
 
 Advanced development superpowers for orchestrating complex workflows from idea to execution.
 
-**Version**: 2.8.7
+**Version**: 2.9.0
 
 ## Installation
 
@@ -43,7 +43,7 @@ Examples that ALWAYS bail out:
 
 If a task turns out to be larger than it first appeared, start superpowers at the level that matches — e.g. jump directly to `/superpowers:writing-plans` when you already have a clear design in your head, or `/superpowers:executing-plans` when a plan folder already exists from a prior session. You do not have to run every upstream skill.
 
-For harness components that start feeling like pure overhead on a project (e.g. per-batch evaluator never raises issues), `/superpowers:retrospective` Phase 5 writes `docs/retros/harness-config.json` to disable one component at a time for the next plan run — use it instead of hand-editing skills.
+For harness components that start feeling like pure overhead on a project (e.g. per-batch evaluator never raises issues), `/superpowers:retrospective` Phase 5 surfaces them as REMOVE/MODIFY candidates — component changes go through ordinary checklist proposals with human review of the post-commit diff, not an automated disable switch.
 
 ## User-Invocable Skills
 
@@ -56,7 +56,7 @@ Turn rough ideas into implementation-ready designs through autonomous, codebase-
 - Produces design documents with BDD specifications (Given-When-Then)
 - Prepares the project for planning and implementation
 
-**Workflow:** Phase 1 (Scope Alignment) → Phase 1.5 (Harness Config Check) → Phase 2 (Design with QA) → Phase 3 (Wrap-up)
+**Workflow:** Phase 1 (Scope Alignment) → Phase 2 (Design with QA) → Phase 3 (Wrap-up)
 
 **Output:** Design folder with `_index.md` and `bdd-specs.md` ready for planning
 
@@ -80,7 +80,7 @@ Execute written implementation plans in predictable batches.
 - Validates plans before execution begins
 - Spawns a fresh sub-agent coordinator per batch (context-reset architecture)
 - Tracks task completion and captures evidence
-- Runs a per-batch evaluator against the sprint contract by default (overridable only via retrospective-approved `docs/retros/harness-config.json` — see `/superpowers:retrospective` Phase 5)
+- Runs a per-batch evaluator against the sprint contract
 
 **Prerequisites:** Output from `superpowers:writing-plans` skill (plan folder with `_index.md`)
 
@@ -92,12 +92,12 @@ Analyze evaluation patterns across completed plans and evolve checklists.
 
 - Aggregates evaluation reports across plans to find failure patterns, plateau tasks, and never-failing items
 - Proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE) via `AskUserQuestion`
-- Audits harness health (Phase 5): writes `docs/retros/harness-config.json` to disable one component at a time for the next plan run as a live assumption test
+- Audits harness health (Phase 5, advisory): mines post-plan correction commits into ADD proposals and surfaces never-firing items as REMOVE candidates
 - Closes the calibration loop by appending to `docs/retros/evolution-log.jsonl`
 
 **Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory (or no arguments — auto-scopes via `docs/retros/plans-completed.jsonl`)
 
-**Output:** Retrospective report, updated `{mode}-v{N+1}.md` checklists (if any proposals approved), and optionally an updated `harness-config.json`
+**Output:** Retrospective report and updated `{mode}-v{N+1}.md` checklists (if any proposals approved)
 
 ### `/superpowers:systematic-debugging "<bug description>"`
 
@@ -135,8 +135,7 @@ Loaded when implementing features or bugfixes during execution. Enforces the Red
    ↓
 4. /superpowers:executing-plans [plan-folder]
    Execute tasks using behavior-driven development
-   - Per-batch: fresh sub-agent coordinator + evaluator (default on,
-     overridable via docs/retros/harness-config.json)
+   - Per-batch: fresh sub-agent coordinator + evaluator
    Output: Implemented, tested, verified code
    ↓
 5. Code is merged and shipped
@@ -174,10 +173,9 @@ superpowers/
 ├── lib/
 │   ├── utils.sh                 # Shared helpers (state I/O, mkdir locking, promise/transcript extraction)
 │   ├── loop.sh                  # Superpower Loop iteration (sourced by stop-hook.sh)
-│   ├── bail-log.sh              # Appends bail-out / force-override events to bail-out-events.jsonl
 │   ├── seed-checklists.sh       # Seeds design/plan/code v1 checklists on demand
 │   ├── post-plan-diff.sh        # Classifies post-plan commits (feedback vs evolution) for retrospective
-│   └── jsonl-emit.sh            # Shared JSONL channel emitter (evolution-log / harness-observations / skill-events)
+│   └── jsonl-emit.sh            # Shared JSONL emitter for the evolution-log channel
 ├── scripts/
 │   └── setup-superpower-loop.sh # Entry point skills call to enter the loop
 ├── skills/
@@ -210,21 +208,13 @@ superpowers/
 
 ## Harness Calibration
 
-The plugin exposes a feedback loop so harness components earn their cost as models improve:
+The plugin exposes a lightweight feedback loop so checklists improve as models improve:
 
-- Every plan completion appends to `docs/retros/plans-completed.jsonl`
-- At 3+ plans since the last retrospective, `executing-plans` emits a `RETROSPECTIVE DUE` reminder
-- `/superpowers:retrospective` Phase 5 can write `docs/retros/harness-config.json` to disable one component for the next plan run as a live assumption test. Supported identifiers (each with a real consumer-side check):
-  - `evaluator_per_batch` — `executing-plans` skips per-batch evaluator
-  - `design_evaluator` — `brainstorming` skips design-mode evaluator
-  - `sprint_contract_preview` — `executing-plans` omits Evaluation Criteria Preview from sprint contracts
-  - `recurring_failure_patterns` — `executing-plans` skips pattern-scan injection
-- Disabled runs append to `docs/retros/harness-observations.jsonl`; the next retrospective reads those observations and decides promote / reinstate / extend
-- Retrospective Phase 5c **refuses** these removed/deferred identifiers (logs `component_unsupported`, rewrites the file with an empty `disabled_components[]`):
-  - `context_reset_coordinator` — deferred in 2.4.0; the "main agent runs batches directly" alt-path was too large to land safely
-  - `plan_evaluator` — permanently removed in 2.6.0; `writing-plans` Phase 4 sub-agent reflection covers the same checks
+- Every plan completion appends to `docs/retros/plans-completed.jsonl` (its `completion_commit` feeds the post-plan-diff loop).
+- `/superpowers:retrospective` reads each plan's evaluation reports plus the post-plan commits (`refactor:`/`fix:`/`style:`/`perf:` on plan-modified files) and proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE), applied to `{mode}-v{N+1}.md` and logged to `docs/retros/evolution-log.jsonl`.
+- Phase 5 is **advisory only** — it mines post-plan corrections into ADD proposals and flags never-firing items as REMOVE candidates. Component changes go through ordinary proposals with human review of the post-commit diff.
 
-See `skills/retrospective/references/harness-config.md` for schema and lifecycle.
+> **Removed in v2.9.0.** The automated assumption-test layer — `harness-config.json` one-at-a-time component disabling, the `harness-observations.jsonl` / `bail-out-events.jsonl` / `skill-events.jsonl` telemetry channels, and the `RETROSPECTIVE DUE` auto-reminder — was deleted. An audit of 6 real projects showed those channels stayed empty everywhere and the single disable test that ever ran had to be reverted by hand; the value came entirely from the evaluator + manually-invoked retrospective + post-plan-diff. The REMOVE threshold was also lowered (10+ → 3+ reports/item) so the loop can shrink checklists, not only grow them.
 
 ## Author
 

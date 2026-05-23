@@ -3,7 +3,7 @@ name: systematic-debugging
 description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes.
 argument-hint: "<bug description or symptom>"
 user-invocable: true
-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)"]
 ---
 
 # Systematic Debugging
@@ -41,14 +41,6 @@ Examples that DO NOT bail out (proceed to Phase 1):
 > Detected named root cause and named fix. Skipping the 4-phase pipeline (calibrated for unknown root causes). Applying the fix and writing a regression test directly. To force the full pipeline, re-invoke as `/superpowers:systematic-debugging --force "<symptom>"`.
 
 When the user passes `--force` (literal token in `$ARGUMENTS`), skip this bail-out and proceed to Phase 1 unconditionally.
-
-**Calibration log** (regardless of branch — bail or `--force`):
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" systematic-debugging <event> "<short reason>" "$ARGUMENTS"
-```
-
-`<event>` is `bail_out` when the named-root-cause+named-fix gate fires (and the direct-edit-plus-regression-test path is taken), or `force_override` when `--force` bypasses the gate into Phase 1. The log feeds retrospective Phase 5a — repeated `force_override` on inputs that look bail-eligible suggests the third gate condition (single-file-or-string-substitution) is too restrictive.
 
 **Iron Law remains** for non-bail-out paths: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST. The bail-out only fires when the user has *already done* the root cause work and is handing the conclusion to Claude.
 
@@ -229,40 +221,6 @@ Each phase must be completed before proceeding to the next.
    - Test now passes?
    - No other tests broken?
    - Issue actually resolved?
-
-   On success — and ONLY on success, never on the bail-out branch (§4.2) or the architecture-questioning branch (§4.4) — emit one `fix_completed` event. Read `skill_name` from the session state file via `state_read` (same pattern as `loop.sh::_loop_log_plan_completion_if_executing`); do NOT hardcode `"systematic-debugging"` as the helper's $1. Silently skip when the state file is missing or `skill_name` is empty. Dedup-check the last 200 lines of `skill-events.jsonl` for the matching `args_hash` before emitting. Payload carries `root_cause`, `regression_test_path`, `investigation_phase_count` — and NEVER `test_stdout`, `test_stderr`, or `fix_diff` (per `best-practices.md` "No transcript content").
-
-   ```bash
-   source "${CLAUDE_PLUGIN_ROOT}/lib/utils.sh"
-   source "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh"
-
-   state_file=$(find_state_file "${CLAUDE_CODE_SESSION_ID:-}")
-   skill_name=""
-   if [[ -n "$state_file" && -f "$state_file" ]]; then
-     skill_name=$(state_read "$state_file" '.skill_name // ""')
-   fi
-   if [[ -n "$skill_name" ]]; then
-     ROOT_CAUSE="<one-line root cause>"
-     REGRESSION_TEST_PATH="<tests/path::case>"
-     PHASE_COUNT=4
-
-     args_hash=$(compute_args_hash "$ROOT_CAUSE" "$REGRESSION_TEST_PATH" "$PHASE_COUNT")
-
-     log="$(repo_root)/docs/retros/skill-events.jsonl"
-     if [[ -n "$args_hash" ]] && dedup_check "$log" "\"args_hash\":\"$args_hash\""; then
-       :
-     else
-       bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" skill-events \
-         '{event:$event, skill:$skill, timestamp:$timestamp, repo_root:$repo_root, args_hash:$args_hash, payload:{root_cause:$rc, regression_test_path:$rt, investigation_phase_count:$count}}' \
-         --arg event "fix_completed" \
-         --arg skill "$skill_name" \
-         --arg args_hash "$args_hash" \
-         --arg rc "$ROOT_CAUSE" \
-         --arg rt "$REGRESSION_TEST_PATH" \
-         --argjson count "$PHASE_COUNT"
-     fi
-   fi
-   ```
 
 4. **If Fix Doesn't Work**
    - Stop

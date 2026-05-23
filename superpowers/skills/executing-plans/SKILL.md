@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Executing Plans
@@ -70,7 +70,6 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 1. **Read Plan**: Read `_index.md` to understand scope, architecture decisions, and extract inline YAML task metadata from the "Execution Plan" section.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
-4. **Read Harness Config** (assumption test): If `docs/retros/harness-config.json` exists with non-empty `disabled_components[]`, store each `component` identifier as a disabled flag honored in Phase 3 / Phase 4 and emit one log line per entry: `Harness disable active: <component> (from <retrospective_id>)`. See `../retrospective/references/harness-config.md`. Otherwise skip silently.
 
 ## Phase 2: Task Creation (MANDATORY)
 
@@ -125,7 +124,6 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 0. **Sprint Contract** (main agent, before spawning coordinator):
    - Write `sprint-contract-batch-{N}.md` from `_index.md`, batch task files, BDD scenarios, latest `code-v{N}.md`
    - Acceptance criteria **auto-derived** from each task file's BDD Then-clauses — see `./references/sprint-contract-template.md` "Acceptance Criteria Derivation"; do NOT author new criteria
-   - Conditional sections (per Phase 1 step 4 flags): omit "Recurring Failure Patterns" preamble when `recurring_failure_patterns` disabled; omit "Evaluation Criteria Preview" when `sprint_contract_preview` disabled
    - Contract is never skipped.
    - **Rewrite on scope change → archive, do NOT overwrite.** Move the existing `sprint-contract-batch-{N}.md` to `sprint-contract-batch-{N}.v{M}.md` (next sequential M), then write the new contract to the canonical path with `Revision: {M+1}` in the sign-off block. See `./references/sprint-contract-template.md` "Sign-off". Silent overwrite hides the rewrite from the post-plan audit trail — non-negotiable.
 
@@ -151,10 +149,8 @@ Verification failure handling lives inside the batch coordinator (see `./referen
      5. The full task ID list for this batch, with Red-Green pair annotations where applicable
      6. The batch's execution mode (Red-Green Pair / Parallel / Linear — see decision tree in `./references/batch-execution-playbook.md`)
      7. The full Agent Prompt Template (Quality Requirements + Verification blocks) from `./references/batch-execution-playbook.md`
-     8. **Evaluator instruction (conditional on Phase 1 step 4):**
-        - Default: "Spawn `superpowers:superpowers-evaluator` for batch evaluation after all tasks pass their Verification Gate"
-        - When `evaluator_per_batch` is disabled: "Do NOT spawn the evaluator. After all tasks pass the Verification Gate, return verdict PASS directly. The main agent will log a `harness_observation` entry."
-     9. Max 2 evaluation-rework rounds before the coordinator escalates per `./references/blocker-and-escalation.md` (skipped when evaluator is disabled)
+     8. **Evaluator instruction:** "Spawn `superpowers:superpowers-evaluator` for batch evaluation after all tasks pass their Verification Gate"
+     9. Max 2 evaluation-rework rounds before the coordinator escalates per `./references/blocker-and-escalation.md`
      10. Required structured return format (see step 3 below)
 
 3. **Process Coordinator Result** (main agent):
@@ -172,7 +168,7 @@ Verification failure handling lives inside the batch coordinator (see `./referen
    - On **PIVOT**: log the recommendation to the evaluation report, apply the recommended plan modifications to `_index.md` and remaining task files, then continue with the revised plan (do NOT ask the user)
    - On **REWORK_ESCALATED**: the coordinator exhausted 2 rework rounds. Escalate per `./references/blocker-and-escalation.md` — log HARD BLOCKER, abort batch, do NOT retry in the main agent's own context
 
-4. **Batch Completion** (main agent): Append a batch handoff block to the conversation, update `handoff-state.md` with the new modified files + patterns, proceed to next batch. See Phase 4 for handoff format. When a harness component was disabled for this run (Phase 1 step 4), append one `harness_observation` row per batch to `docs/retros/harness-observations.jsonl` (format: `./references/intra-plan-learning.md`).
+4. **Batch Completion** (main agent): Append a batch handoff block to the conversation, update `handoff-state.md` with the new modified files + patterns, proceed to next batch. See Phase 4 for handoff format.
 
 See `./references/batch-execution-playbook.md` for the coordinator's internal execution patterns (Red-Green pair, Parallel mode, Linear mode, verification gate, rework loop, evaluator invocation).
 
@@ -189,7 +185,7 @@ Close the loop with structured evidence and intra-plan learning. All of Phase 4 
    ```
    Evidence is drawn from the coordinator's return payload — do NOT re-run verification in the main context.
 
-2. **Pattern Scan**: Read evaluation reports from the plan directory; identify checklist items that FAILed in 2+ distinct batches. Inject "Recurring Failure Patterns" into the next sprint contract preamble UNLESS `recurring_failure_patterns` is disabled (Phase 1 step 4) — in that case, skip injection and append one `harness_observation` row per affected batch. See `./references/intra-plan-learning.md`.
+2. **Pattern Scan**: Read evaluation reports from the plan directory; identify checklist items that FAILed in 2+ distinct batches. Inject "Recurring Failure Patterns" into the next sprint contract preamble. See `./references/intra-plan-learning.md`.
 
 3. **Persistent Patterns**: If a checklist item FAILed in 3+ batches, emit a `PERSISTENT PATTERN` warning in the batch handoff. Continue execution autonomously.
 
@@ -219,17 +215,9 @@ See `../../skills/references/git-commit.md` for patterns, templates, and require
 Verify all tasks are complete, log plan completion, then output the promise as the absolute last line.
 
 1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
-2. **Log Plan Completion** (handled automatically by Stop hook): When you emit `<promise>EXECUTION_COMPLETE</promise>`, the loop hook (`lib/loop.sh:_loop_log_plan_completion_if_executing`) appends a `plan_completed` event to `docs/retros/plans-completed.jsonl` with fields `{plan, repo_root, task_count, batch_count, completion_commit, completion_modified_files, timestamp}` — see `../retrospective/references/evolution-protocol.md` §Plan Completion Log Schema for v2.8.2 semantics (repo-relative `plan`, plan-level dedup, `completion_commit` for post-plan diff loop). No manual write needed; the hook is the canonical writer. Re-running executing-plans on a finished plan is safe — dedup skips the second write and does NOT inflate RETROSPECTIVE DUE counts.
-3. **Retrospective-Due Reminder**: Count `plan_completed` entries in `plans-completed.jsonl` whose timestamp is later than the most recent `retrospective_run` timestamp in `docs/retros/evolution-log.jsonl`. If the count is `>= 3`, check the most recent `retrospective_run.self_value.consecutive_zero_change` (default to 0 if the field is missing — pre-v2.8.0 logs):
-
-   - If `consecutive_zero_change < 2`, emit:
-     > **RETROSPECTIVE DUE**: {count} plans completed since the last retrospective. Run `/superpowers:retrospective --across-all` to evolve checklists before the next plan.
-   - If `consecutive_zero_change >= 2`, emit instead (the calibration loop is in low-yield state — keep the user informed without nagging):
-     > **RETROSPECTIVE LOW-YIELD** ({count} plans since last run, last {consecutive_zero_change} retrospectives produced zero changes). Consider letting more plans accumulate before the next `/superpowers:retrospective` run.
-
-   If the count is `< 3`, skip the reminder silently. If `evolution-log.jsonl` does not exist, treat "since last retrospective" as "since forever" and emit the standard RETROSPECTIVE DUE reminder.
-4. Summary message: "Plan execution complete. All [N] tasks verified and committed." (append the retrospective-due reminder from step 3 if applicable).
-5. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
+2. **Log Plan Completion** (handled automatically by Stop hook): When you emit `<promise>EXECUTION_COMPLETE</promise>`, the loop hook (`lib/loop.sh:_loop_log_plan_completion_if_executing`) appends a `plan_completed` event to `docs/retros/plans-completed.jsonl` with fields `{plan, repo_root, task_count, batch_count, completion_commit, completion_modified_files, timestamp}`. The `completion_commit` is what `/superpowers:retrospective` Pre-Check A and Phase 1 feed to `post-plan-diff.sh` (the post-plan correction loop). No manual write needed; the hook is the canonical writer, and plan-level dedup makes re-running on a finished plan safe.
+3. Summary message: "Plan execution complete. All [N] tasks verified and committed."
+4. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
 
 **PROHIBITED**: Do NOT output the promise tag if TaskList shows any non-completed tasks. Do NOT output any text after the promise tag.
 

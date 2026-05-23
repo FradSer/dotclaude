@@ -2,7 +2,7 @@
 name: brainstorming
 description: Turns rough ideas into implementation-ready designs via autonomous codebase research and BDD specs, then commits the design for your review (it runs to completion without pausing for mid-design questions). This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -39,14 +39,6 @@ For Bucket A, output the bail-out response below and stop. For Bucket B (includi
 
 > Detected trivial-scope work. Skipping the brainstorming pipeline (calibrated for open-ended multi-component problems). To force the full pipeline, re-invoke as `/superpowers:brainstorming --force "<task>"`.
 
-**Calibration log** (run regardless of which branch fired — Bucket A bail, `--force` override, or Bucket C user-chose-skip):
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/bail-log.sh" brainstorming <event> "<short reason>" "$ARGUMENTS"
-```
-
-Where `<event>` is `bail_out` for a Bucket A skip, or `force_override` for the `--force` branch entering Initialization. The legacy `user_chose_skip` event is no longer emitted (Bucket C now auto-routes to Bucket B). The log feeds retrospective Phase 5a — frequent `force_override` against trivial-shaped inputs surfaces the bail-out threshold being too aggressive.
-
 ## Pre-loop Resolution (run before Initialization step 1)
 
 The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes it** (`lib/loop.sh` re-reads `prompt` at line 254 but never mutates it; only `_loop_clear_state` at line 122-124 deletes it on completion). Resolve `$ARGUMENTS` to its anchored form **before** invoking the script.
@@ -69,7 +61,7 @@ The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes
 2. Read `CLAUDE.md` and `README.md` to understand project constraints
 3. Start the Superpower Loop (no size gate beyond bail-out):
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: <one-line-problem-statement>. Progress through phases: Phase 1 (Scope Alignment) -> Phase 1.5 (Read Harness Config — assumption test) -> Phase 2 (Design with QA + vocabulary reconciliation) -> Phase 3 (Wrap-up). Emit <promise>BRAINSTORMING_COMPLETE</promise> as your final line immediately after the Phase 3 commit succeeds — do not run an extra review/polish pass." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: <one-line-problem-statement>. Progress through phases: Phase 1 (Scope Alignment) -> Phase 2 (Design with QA + vocabulary reconciliation) -> Phase 3 (Wrap-up). Emit <promise>BRAINSTORMING_COMPLETE</promise> as your final line immediately after the Phase 3 commit succeeds — do not run an extra review/polish pass." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
 ```
 
 ## Core Principles
@@ -82,7 +74,7 @@ The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes
 
 ## Phase 1: Scope Alignment
 
-Explore codebase, lock the approach inline, proceed to Phase 1.5 in the same iteration.
+Explore codebase, lock the approach inline, proceed to Phase 2 in the same iteration.
 
 **Actions**:
 
@@ -92,11 +84,11 @@ Explore codebase, lock the approach inline, proceed to Phase 1.5 in the same ite
    - "I recommend [approach] because [rationale]"
    - "Alternatives considered: [brief list with trade-offs]"
    - "Open questions absorbed: [questions you answered yourself from codebase evidence; never punt these to the user]"
-3. **Lock and advance**: Treat the sprint contract as the locked scope and proceed to Phase 1.5. Do NOT pause to ask for approval — the evaluator at Phase 2 plus the user's post-commit review are the quality gates. If a question genuinely cannot be answered from the codebase, pick the safest default, document the assumption in the sprint contract, and surface it in Phase 2's design files so the evaluator can flag it.
+3. **Lock and advance**: Treat the sprint contract as the locked scope and proceed to Phase 2. Do NOT pause to ask for approval — the evaluator at Phase 2 plus the user's post-commit review are the quality gates. If a question genuinely cannot be answered from the codebase, pick the safest default, document the assumption in the sprint contract, and surface it in Phase 2's design files so the evaluator can flag it.
 
 **Open-Ended Problems**: When the problem requires challenging assumptions or radical innovation, apply first-principles reasoning inline in the sprint contract — name the assumption being challenged, the alternative framing, and why the new framing changes the chosen approach. The user's global CLAUDE.md "Challenge the premise before implementing" rule already covers this surface; no separate skill load is needed.
 
-**Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 1.5.
+**Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 2.
 
 **Mid-stream pivots** (user injects "actually this is about X" or "wrong direction" in a later turn):
 - The loop's `state.prompt` is immutable after setup; the Stop hook re-injects the same anchored prompt every iteration. Absorb the new framing in working context by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint. Do NOT attempt to rewrite `state.prompt` — there is no API for that, and the iter-2+ re-injection uses the `Continue superpowers:brainstorming` short header (skill_name branch in `lib/loop.sh:_loop_emit_block`), so the original anchor only matters for iteration 1.
@@ -104,10 +96,6 @@ Explore codebase, lock the approach inline, proceed to Phase 1.5 in the same ite
 - If the user says "abort" or "cancel", emit `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line cancellation note. Do not write design files.
 
 See `./references/scope-alignment.md` for exploration patterns, question guidelines, and trade-off templates.
-
-## Phase 1.5: Read Harness Config (assumption test)
-
-**CRITICAL**: Before Phase 2, if `docs/retros/harness-config.json` exists and lists `design_evaluator` in `disabled_components[]`, set a local flag `_DESIGN_EVALUATOR_DISABLED=true`. Honor that flag in Phase 2 Step 2 (skip evaluator spawn) AND append one row to `docs/retros/harness-observations.jsonl` after Phase 2 completes (schema: `../executing-plans/references/intra-plan-learning.md`). Skip silently when the file does not exist or `disabled_components[]` is empty. See `../retrospective/references/harness-config.md` for supported identifiers.
 
 ## Phase 2: Design with QA + Vocabulary Reconciliation
 
@@ -147,9 +135,7 @@ Create design documents with integrated quality assurance, then reconcile cross-
 
 **Integration**: After reconciliation, the main agent integrates returned results, resolves remaining conflicts favoring codebase patterns, and writes the 4 design files.
 
-**Step 2: Integrated QA (default: on, overridable only via `harness-config.json`)**
-
-**CRITICAL**: When `_DESIGN_EVALUATOR_DISABLED=true` (set in Phase 1.5), skip the evaluator spawn entirely, treat verdict as PASS, proceed to Phase 3 wrap-up, and append one `harness_observation` row to `docs/retros/harness-observations.jsonl`. Otherwise, run the evaluator pass below.
+**Step 2: Integrated QA**
 
 Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. The evaluator outputs report content as text; write it to the design folder as `evaluation-design-round-{N}.md`. Then read the report verdict:
 

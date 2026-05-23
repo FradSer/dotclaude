@@ -2,7 +2,7 @@
 
 ## Goal
 
-Understand what's being built by exploring the codebase, then record a sprint contract inline that locks the chosen approach for Phase 1.5+. No approval gate — the evaluator at Phase 2 and the post-commit `git show` diff are the quality surface.
+Understand what's being built by exploring the codebase, then record a sprint contract inline that locks the chosen approach for Phase 2+. No approval gate — the evaluator at Phase 2 and the post-commit `git show` diff are the quality surface.
 
 ## Explore Codebase First
 

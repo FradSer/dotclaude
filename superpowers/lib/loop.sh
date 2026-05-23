@@ -20,10 +20,10 @@
 # when the loop completes for the executing-plans workflow skill. Empirical
 # audit (agentbook real project, 2 completed plans) showed this file never
 # existed despite the SKILL.md instructing Claude to write it in Phase 6
-# step 2 — the manual instruction was being silently dropped, so the entire
-# downstream feedback loop (retrospective `--across-all` auto-scope, the
-# RETROSPECTIVE DUE reminder threshold, Phase 5c assumption tests) decayed
-# to a no-op. This helper makes the write mechanical: hook-driven on
+# step 2 — the manual instruction was being silently dropped, so the
+# downstream consumer (retrospective `--across-all` auto-scope and the
+# post-plan-diff correction loop, which reads `completion_commit` from this
+# log) decayed to a no-op. This helper makes the write mechanical: hook-driven on
 # promise detection, not Claude-instructed. Best-effort throughout — any
 # step failing silently returns 0; promise completion must never be
 # blocked by a missed log entry.
@@ -63,7 +63,7 @@ _loop_log_plan_completion_if_executing() {
 
   # plans-completed.jsonl is "first completion per plan" — multiple promise
   # fires (re-entry, amendment, partial rerun) on the same plan must not
-  # inflate RETROSPECTIVE DUE counts. Empirical evidence: user-simulation
+  # double-log (retrospective auto-scope dedups on it). Empirical evidence: user-simulation
   # 2026-05-08 logged the same plan twice (slash + no-slash variants, 7.5h
   # apart). Tail-bounded grep is fast even on long-lived logs and survives
   # corrupt prior lines; anchored on the canonical `,"plan":"<path>",` form
@@ -469,9 +469,8 @@ loop_phase() {
   # legitimate long-running path produces repeated identical outputs.
   # Hash the last output to detect identical re-emissions. shasum is the
   # macOS default; sha1sum is the coreutils name present on minimal Linux
-  # images (Alpine / distroless / some CI) that ship no shasum. Mirror
-  # bail-log.sh's dual lookup so the detector does not silently break on
-  # sha1sum-only hosts.
+  # images (Alpine / distroless / some CI) that ship no shasum. The dual
+  # lookup keeps the detector working on sha1sum-only hosts.
   local new_hash="" prior_hash stall_count
   if command -v shasum >/dev/null 2>&1; then
     new_hash=$(printf '%s' "$last_output" | shasum 2>/dev/null | awk '{print $1}')
