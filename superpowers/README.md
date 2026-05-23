@@ -31,6 +31,8 @@ Using the full pipeline for smaller work is **net negative** — the overhead (s
 
 **For incident response and root-cause work, use `/superpowers:systematic-debugging` directly** — the design pipeline is the wrong shape for unknown-root-cause bugs.
 
+**For a plain "keep working until condition X holds" loop, use Claude Code's built-in `/goal` (v2.1.139+) directly** — it wraps a session-scoped prompt-based Stop hook and has a fresh model check your condition after each turn. The Superpower Loop is for multi-phase pipeline work (brainstorm → plan → execute → retro), not single-condition loops.
+
 Examples that ALWAYS bail out:
 
 | Signal | Example | Recommended path |

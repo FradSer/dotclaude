@@ -16,7 +16,7 @@ Skip Bail-Out, First Action, Phase 1/2. Run `TaskList` → resume from the next 
 
 ## CRITICAL: Bail-Out Check (run first)
 
-Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip loop, coordinator, sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template.
+Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip loop, coordinator, sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template. If that inline work needs a plain "keep going until condition X holds" loop, use Claude Code's built-in `/goal` (v2.1.139+) — not the Superpower Loop.
 
 ## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop
 
