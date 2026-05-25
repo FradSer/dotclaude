@@ -311,10 +311,16 @@ See \`./references/batch-execution-playbook.md\`."
   # re-pasting the same list every turn is the pollution this plugin
   # claims to prevent. Capped at 20 with an overflow pointer.
   if [[ "$is_stuck" != "true" ]] && [[ $next_iteration -le 2 ]]; then
+    # `if type=="array"` guards a malformed state file whose .modified_files is
+    # a scalar/object instead of an array: bare `.[]` errors (jq exit 5) on a
+    # non-array, and 2>/dev/null + the sort pipe under `set -euo pipefail`
+    # turned that into a silent non-zero abort of the whole Stop hook (the
+    # "Failed with non-blocking status code: No stderr output" failure). The
+    # guard degrades to "no files" instead of killing the iteration.
     local files_total files_lines files_md
-    files_total=$(jq -r '.modified_files // [] | length' "$state_file" 2>/dev/null)
+    files_total=$(jq -r '(.modified_files // []) | if type=="array" then length else 0 end' "$state_file" 2>/dev/null)
     [[ "$files_total" =~ ^[0-9]+$ ]] || files_total=0
-    files_lines=$(jq -r '.modified_files // [] | .[]' "$state_file" 2>/dev/null | sort -u | head -20)
+    files_lines=$(jq -r '(.modified_files // []) | if type=="array" then .[] else empty end' "$state_file" 2>/dev/null | sort -u | head -20)
     files_md=""
     if [[ -n "$files_lines" ]]; then
       while IFS= read -r f; do

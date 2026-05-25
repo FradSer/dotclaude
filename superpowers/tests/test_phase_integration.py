@@ -751,6 +751,34 @@ class LoopPhaseTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertNotIn("Already produced this session", payload["reason"])
 
+    def test_non_array_modified_files_does_not_crash_the_hook(self) -> None:
+        """Defensive: a state file whose `.modified_files` is a scalar (not an
+        array) must not abort the Stop hook. The snapshot block's
+        `jq '.modified_files // [] | .[]'` errors (exit 5) on a non-array, and
+        with `2>/dev/null | sort` under `set -euo pipefail` that aborted the
+        whole hook with a non-zero status and no stderr — the "Stop hook error:
+        Failed with non-blocking status code: No stderr output" failure. The
+        snapshot must degrade to "no files" instead of killing the iteration."""
+        self.state.write_text(json.dumps({
+            "active": True,
+            "iteration": 1,
+            "max_iterations": 0,
+            "completion_promise": "DONE",
+            "prompt": "Build it",
+            "skill_name": "",
+            "modified_files": "oops-a-string-not-an-array",
+        }))
+        self._write_transcript("Working...")
+        result = run_bash(
+            f'loop_phase {shlex.quote(str(self.state))} {shlex.quote(str(self.transcript))}'
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["decision"], "block")
+        # A non-array shape carries no enumerable entries, so the snapshot
+        # section is omitted rather than rendered from a malformed value.
+        self.assertNotIn("Already produced this session", payload["reason"])
+
     def test_skill_name_emits_continue_header_without_base_prompt(self) -> None:
         """When skill_name is set, the re-injection header is the bare
         continuation phrase "Continue superpowers:X (iter N/M)." — no
