@@ -2,7 +2,7 @@
 
 Advanced development superpowers for orchestrating complex workflows from idea to execution.
 
-**Version**: 2.9.0
+**Version**: 2.9.2
 
 ## Installation
 
@@ -167,7 +167,6 @@ superpowers/
 │   └── superpowers-evaluator.md # Independent read-only evaluator (design / code modes)
 ├── hooks/
 │   ├── task-start.sh            # UserPromptSubmit — persists state + detects slash commands
-│   ├── pre-tool-stuck.sh        # PreToolUse (Edit/Write/MultiEdit) — blocks over-budget main-agent edits mid-loop
 │   ├── track-changes.sh         # PostToolUse (Edit/Write/MultiEdit, async) — modified files + edit counter (active loop only)
 │   ├── track-reads.sh           # PostToolUse (Read/Glob/Grep/Bash, async) — read counter for stuck detection (active loop only)
 │   ├── track-spawns.sh          # PostToolUse (Agent, async) — resets edit/read counters on sub-agent spawn
@@ -199,9 +198,8 @@ superpowers/
 - **Skill Tool:** Load skills dynamically during workflows
 - **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / code modes — plan-mode review is handled inline by `writing-plans` Phase 4)
 - **Task Management:** Create and track tasks during execution
-- **Hook Pipeline:** Six hook registrations across four events share a per-session state file at `~/.claude/projects/<project-key>/<session_id>.superpowers.json`
+- **Hook Pipeline:** Five hook registrations across three events share a per-session state file at `~/.claude/projects/<project-key>/<session_id>.superpowers.json`
   - `UserPromptSubmit` → `hooks/task-start.sh` persists task + detects slash commands
-  - `PreToolUse` (Edit/Write/MultiEdit) → `hooks/pre-tool-stuck.sh` blocks over-budget main-agent edits mid-loop
   - `PostToolUse` (Edit/Write/MultiEdit) → `hooks/track-changes.sh` accumulates modified files + edit counter (active loop only)
   - `PostToolUse` (Read/Glob/Grep/Bash) → `hooks/track-reads.sh` read counter for stuck detection (active loop only)
   - `PostToolUse` (Agent) → `hooks/track-spawns.sh` resets edit/read counters on sub-agent spawn

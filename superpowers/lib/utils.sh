@@ -1,9 +1,8 @@
 #!/bin/bash
 # Shared utilities for superpowers hooks and scripts
 
-# Stuck-detection thresholds for the executing-plans loop, shared so the
-# Stop-hook detector (loop.sh) and the PreToolUse front-stop
-# (pre-tool-stuck.sh) never disagree on where the breach line sits.
+# Stuck-detection thresholds for the executing-plans loop, read by the
+# Stop-hook detector (loop.sh) to decide where the breach line sits.
 # Past iteration 1 the main agent's direct-edit allow-list is ~4 files
 # (handoff-state, sprint contract, evaluation report, PIVOT _index.md);
 # exceeding the budget means it is doing batch work inline instead of
