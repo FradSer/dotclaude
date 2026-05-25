@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 UPSTREAM_REPO="https://github.com/larksuite/cli.git"
 UPSTREAM_BRANCH="main"
 UPSTREAM_PATH="skills"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TARGET_DIR="$SCRIPT_DIR/../skills/lark"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/lark-cli-sync-$$"
@@ -65,6 +65,16 @@ log_warning() {
 
 log_error() {
     printf "${RED}[ERROR]${NC} %s\n" "$1"
+}
+
+# 原地更新 SYNC.md 中 **Key**: value 形式的字段
+update_sync_md_field() {
+    local file="$1" key="$2" value="$3"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s|^\*\*$key\*\*: .*|**$key**: $value|" "$file"
+    else
+        sed -i "s|^\*\*$key\*\*: .*|**$key**: $value|" "$file"
+    fi
 }
 
 # 检查必要工具
@@ -254,15 +264,18 @@ sync_files() {
 
     log_success "同步完成: 已同步 $count 个 skill 目录"
 
-    # 更新 SYNC.md 中的同步时间
+    # 更新 SYNC.md 元数据：同步日期 / 已装 lark-cli 版本 / 同步到的 commit
     local sync_md="$TARGET_DIR/SYNC.md"
     if [ -f "$sync_md" ]; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/\*\*Last sync\*\*: .*/\*\*Last sync\*\*: $(date +%Y-%m-%d)/" "$sync_md"
-        else
-            sed -i "s/\*\*Last sync\*\*: .*/\*\*Last sync\*\*: $(date +%Y-%m-%d)/" "$sync_md"
-        fi
-        log_info "已更新 SYNC.md 中的同步时间"
+        local lark_ver synced_commit today
+        today=$(date +%Y-%m-%d)
+        lark_ver=$(lark-cli --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        [ -z "$lark_ver" ] && lark_ver="unknown"
+        synced_commit=$(git -C "$TEMP_DIR/repo" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+        update_sync_md_field "$sync_md" "Last sync" "$today"
+        update_sync_md_field "$sync_md" "lark-cli version" "$lark_ver"
+        update_sync_md_field "$sync_md" "Synced commit" "$synced_commit"
+        log_info "已更新 SYNC.md (date=$today, lark-cli=$lark_ver, commit=$synced_commit)"
     fi
 }
 

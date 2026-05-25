@@ -35,6 +35,9 @@ lark-cli im +messages-search --query "reminder" --exclude-sender-type bot
 # Only messages that @me
 lark-cli im +messages-search --query "announcement" --is-at-me
 
+# Only messages that @mention specific users (results also include messages that @all)
+lark-cli im +messages-search --query "release" --at-chatter-ids ou_xxx,ou_yyy
+
 # Combined filters + time range
 lark-cli im +messages-search --query "meeting" --sender ou_xxx --chat-type group --start "2026-03-13T00:00:00+08:00" --end "2026-03-20T23:59:59+08:00"
 
@@ -71,6 +74,7 @@ lark-cli im +messages-search --query "test" --dry-run
 | `--sender-type <type>` | No | Sender type: `user` / `bot` |
 | `--exclude-sender-type <type>` | No | Exclude messages from `user` or `bot` senders |
 | `--is-at-me` | No | Only return messages that mention `@me` |
+| `--at-chatter-ids <ids>` | No | Filter by @mentioned user open_ids, comma-separated (`ou_xxx,ou_yyy`). Matched results also include messages that `@all` |
 | `--start <time>` | No | Start time with local timezone offset required (e.g. `2026-03-24T00:00:00+08:00`) |
 | `--end <time>` | No | End time with local timezone offset required (e.g. `2026-03-25T23:59:59+08:00`) |
 | `--page-size <n>` | No | Page size (default 20, range 1-50) |
@@ -152,6 +156,21 @@ Use `im +messages-resources-download` if you need to fetch the underlying image 
 
 ## AI Usage Guidance
 
+### Query boundary for activity review
+
+Use `--query` only for real message keywords. If the user asks for activity review such as "最近一周我和哪些 Bot 有过交互" or "整理我和某人的聊天记录", and the useful constraints are sender type, chat, person, or time range, keep `--query ""` and rely on those filters. Do not put generic instruction words such as "看看", "总结", "交互内容", or "聊天记录" into `--query`; those words often over-constrain message search and hide the relevant messages.
+
+This guidance applies only when using user identity. `im +messages-search` is user-only; if the user explicitly asks for application/bot identity, do not try `--as bot`. For bot identity with a named group and history/listing intent, resolve the group with `im +chat-search --as bot`, then list messages with `im +chat-messages-list --as bot --chat-id <chat_id>`.
+
+```bash
+# Review recent bot interactions without forcing a keyword
+lark-cli im +messages-search --query "" --sender-type bot --start "<YYYY-MM-DDT00:00:00+08:00>" --end "<YYYY-MM-DDT23:59:59+08:00>" --page-all --format json
+```
+
+Replace the time placeholders at execution time. For example, "最近一周" means computing the start date and end date from the current day before running the command; do not copy date literals from this reference into answers for relative requests.
+
+For activity summaries, validate evidence by message IDs and chat context. The final answer should cite or retain the `message_id`, sender, chat, and create time for each important item. If the row's source data contains concrete `om_...` message IDs or `ou_...` user IDs, treat those IDs as strong recall targets during verification; do not rely only on a high-level keyword match.
+
 ### Resolving chat_id from a chat name
 
 When the user refers to a chat by name and you need its `chat_id` for the `--chat-id` filter, use [`+chat-search`](lark-im-chat-search.md) first:
@@ -164,7 +183,7 @@ lark-cli im +chat-search --query "<chat name keyword>" --format json
 lark-cli im +messages-search --query "keyword" --chat-id <chat_id>
 ```
 
-**Do not use `im chats search` or `im chats list` — always use the `+chat-search` shortcut.**
+**Do not use `im chats search` or `+chat-list` — always use the `+chat-search` shortcut.**
 
 ## Work Summary / Report Generation
 

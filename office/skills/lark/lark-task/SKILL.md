@@ -1,7 +1,7 @@
 ---
 name: lark-task
 version: 1.0.0
-description: "飞书任务：管理任务和清单。创建待办任务、查看和更新任务状态、拆分子任务、组织任务清单、分配协作成员。当用户需要创建待办事项、查看任务列表、跟踪任务进度、管理项目清单或给他人分配任务时使用。"
+description: "飞书任务：管理任务、清单和任务智能体。创建待办任务、查看和更新任务状态、拆分子任务、组织任务清单、分配协作成员、上传任务附件、注册或注销任务智能体、更新任务智能体的主页数据、写入智能体任务记录。当用户需要创建待办事项、查看任务列表、跟踪任务进度、管理项目清单或给他人分配任务、为任务上传附件文件、注册注销任务智能体、更新智能体主页数据、写入任务记录时使用。"
 metadata:
   requires:
     bins: ["lark-cli"]
@@ -33,25 +33,26 @@ metadata:
 > Task OpenAPI 中用于更新/操作任务的 `guid` 是任务的全局唯一标识（GUID），不是客户端展示的任务编号（例如 `t104121` / `suite_entity_num`）。
 > 对于 Feishu 的任务 applink（例如 `.../client/todo/task?guid=...`），必须使用 URL query 里的 `guid` 参数作为 task guid。
 
-## Shortcuts
-
-- [`+create`](./references/lark-task-create.md) — Create a task
-- [`+update`](./references/lark-task-update.md) — Update a task
-- [`+comment`](./references/lark-task-comment.md) — Add a comment to a task
-- [`+complete`](./references/lark-task-complete.md) — Complete a task
-- [`+reopen`](./references/lark-task-reopen.md) — Reopen a task
-- [`+assign`](./references/lark-task-assign.md) — Assign or remove members from a task
-- [`+followers`](./references/lark-task-followers.md) — Manage task followers
-- [`+reminder`](./references/lark-task-reminder.md) — Manage task reminders
-- [`+get-my-tasks`](./references/lark-task-get-my-tasks.md) — List tasks assigned to me
-- [`+get-related-tasks`](./references/lark-task-get-related-tasks.md) — List tasks related to me
-- [`+search`](./references/lark-task-search.md) — Search tasks
-- [`+subscribe-event`](./references/lark-task-subscribe-event.md) — Subscribe to task events
-- [`+set-ancestor`](./references/lark-task-set-ancestor.md) — Set or clear a task ancestor
-- [`+tasklist-create`](./references/lark-task-tasklist-create.md) — Create a tasklist and batch add tasks
-- [`+tasklist-search`](./references/lark-task-tasklist-search.md) — Search tasklists
-- [`+tasklist-task-add`](./references/lark-task-tasklist-task-add.md) — Add existing tasks to a tasklist
-- [`+tasklist-members`](./references/lark-task-tasklist-members.md) — Manage tasklist members
+| Shortcut | 说明 |
+|----------|------|
+| [`+create`](references/lark-task-create.md) | create a task |
+| [`+update`](references/lark-task-update.md) | update task attributes |
+| [`+set-ancestor`](references/lark-task-set-ancestor.md) | set or clear a task ancestor |
+| [`+comment`](references/lark-task-comment.md) | add a comment to a task |
+| [`+complete`](references/lark-task-complete.md) | mark a task as complete |
+| [`+reopen`](references/lark-task-reopen.md) | reopen a completed task |
+| [`+assign`](references/lark-task-assign.md) | assign or remove task members |
+| [`+followers`](references/lark-task-followers.md) | manage task followers |
+| [`+reminder`](references/lark-task-reminder.md) | manage task reminders |
+| [`+get-my-tasks`](references/lark-task-get-my-tasks.md) | List tasks assigned to me |
+| [`+get-related-tasks`](references/lark-task-get-related-tasks.md) | list tasks related to me |
+| [`+search`](references/lark-task-search.md) | search tasks |
+| [`+subscribe-event`](references/lark-task-subscribe-event.md) | subscribe to task events |
+| [`+upload-attachment`](references/lark-task-upload-attachment.md) | upload a local file as an attachment to a task |
+| [`+tasklist-create`](references/lark-task-tasklist-create.md) | create a tasklist and optionally add tasks |
+| [`+tasklist-search`](references/lark-task-tasklist-search.md) | search tasklists |
+| [`+tasklist-task-add`](references/lark-task-tasklist-task-add.md) | add tasks to a tasklist |
+| [`+tasklist-members`](references/lark-task-tasklist-members.md) | manage tasklist members |
 
 ## API Resources
 
@@ -100,6 +101,29 @@ lark-cli task <resource> <method> [flags] # 调用 API
   - `patch` — 更新自定义分组
   - `tasks` — 获取自定义分组任务列表
 
+### custom_fields
+
+  - `create` — 创建自定义字段
+  - `get` — 获取自定义字段详情
+  - `patch` — 更新自定义字段
+  - `list` — 获取自定义字段列表
+  - `add` — 将自定义字段加入资源
+  - `remove` — 将自定义字段移出资源
+
+### custom_field_options
+
+  - `create` — 创建自定义字段选项
+  - `patch` — 更新自定义字段选项
+
+### agent
+
+  - `update_agent_profile` — 更新任务代理的主页内容数据。
+  - `register_agent` — 注册AI 智能体
+
+### agent_task_step_info
+
+  - `append_task_steps` — 写入任务记录。
+
 ## 权限表
 
 | 方法 | 所需 scope |
@@ -127,3 +151,14 @@ lark-cli task <resource> <method> [flags] # 调用 API
 | `sections.list` | `task:section:read` |
 | `sections.patch` | `task:section:write` |
 | `sections.tasks` | `task:section:read` |
+| `custom_fields.create` | `task:custom_field:write` |
+| `custom_fields.get` | `task:custom_field:read` |
+| `custom_fields.patch` | `task:custom_field:write` |
+| `custom_fields.list` | `task:custom_field:read` |
+| `custom_fields.add` | `task:custom_field:write` |
+| `custom_fields.remove` | `task:custom_field:write` |
+| `custom_field_options.create` | `task:custom_field:write` |
+| `custom_field_options.patch` | `task:custom_field:write` |
+| `agent.update_agent_profile` | `task:task:write` |
+| `agent.register_agent` | `task:task:write` |
+| `agent_task_step_info.append_task_steps` | `task:task:write` |

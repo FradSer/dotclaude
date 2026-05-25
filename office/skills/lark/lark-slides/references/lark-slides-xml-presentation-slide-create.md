@@ -141,8 +141,12 @@ lark-cli slides xml_presentation.slide create --as user \
 
 ```json
 {
-  "slide_id": "slide_example_id",
-  "revision_id": 100
+  "code": 0,
+  "data": {
+    "slide_id": "slide_example_id",
+    "revision_id": 100
+  },
+  "msg": "success"
 }
 ```
 
@@ -150,8 +154,8 @@ lark-cli slides xml_presentation.slide create --as user \
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `slide_id` | string | 新幻灯片的唯一标识 |
-| `revision_id` | integer | 演示文稿最新版本号 |
+| `data.slide_id` | string | 新幻灯片的唯一标识 |
+| `data.revision_id` | integer | 演示文稿最新版本号 |
 
 ## slide 元素可用子元素
 
@@ -174,6 +178,7 @@ lark-cli slides xml_presentation.slide create --as user \
 | 400 | XML 格式错误 | 检查 `slide.content` 是否是完整 `<slide>` 元素 |
 | 400 | 请求体结构错误 | 检查是否按 `slide.content` 和 `before_slide_id` 包装 |
 | 403 | 权限不足 | 检查是否拥有 `slides:presentation:update` 或 `slides:presentation:write_only` scope |
+| 3350001 | XML 非 well-formed 或服务端参数校验失败 | 优先检查未转义字符：文本 `Q&A -> Q&amp;A`，文本 `<` / `>` 写成 `&lt;` / `&gt;`，属性 URL `a=1&b=2 -> a=1&amp;b=2` |
 
 ## 注意事项
 
