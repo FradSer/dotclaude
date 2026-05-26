@@ -1,7 +1,7 @@
 {
   "name": "superpowers",
   "displayName": "Superpowers",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
   "author": {
     "name": "Frad LEE",
@@ -24,8 +24,7 @@
     "./skills/writing-plans/",
     "./skills/executing-plans/",
     "./skills/retrospective/",
-    "./skills/systematic-debugging/",
-    "./skills/writing-skills/"
+    "./skills/systematic-debugging/"
   ],
   "skills": [
     "./skills/behavior-driven-development/",

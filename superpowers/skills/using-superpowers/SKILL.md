@@ -1,6 +1,6 @@
 ---
 name: using-superpowers
-description: This skill should be used whenever any superpowers skill might apply. The 1% Rule — if there is even a 1% chance one of the user-invocable superpowers skills (brainstorming, writing-plans, executing-plans, retrospective, systematic-debugging, writing-skills) is the right tool for the current request, invoke it explicitly via the Skill tool rather than improvising. Loaded automatically as internal context.
+description: This skill should be used whenever any superpowers skill might apply. The 1% Rule — if there is even a 1% chance one of the user-invocable superpowers skills (brainstorming, writing-plans, executing-plans, retrospective, systematic-debugging) is the right tool for the current request, invoke it explicitly via the Skill tool rather than improvising. Loaded automatically as internal context.
 user-invocable: false
 ---
 
@@ -25,7 +25,6 @@ When in doubt, invoke. The bail-out checks built into each skill (brainstorming 
 | "execute the plan", "run the plan", "implement", a completed plan folder under `docs/plans/*-plan/` exists | `superpowers:executing-plans` |
 | Bug report, "fix this error", test failure, unexpected behavior, "why does X happen" | `superpowers:systematic-debugging` |
 | After a completed plan: "let's retro", "what should we learn", "update checklists" | `superpowers:retrospective` |
-| User just learned something general that should outlive this conversation — "we should remember that…", "from now on…" — or a pattern of advice the user has had to give more than once | `superpowers:writing-skills` |
 | Several independent work streams to run in parallel | `superpowers:agent-team-driven-development` (advisory) |
 | Need to challenge industry convention, radical-innovation framing required | `superpowers:build-like-iphone-team` (advisory) |
 
@@ -33,7 +32,7 @@ When in doubt, invoke. The bail-out checks built into each skill (brainstorming 
 
 The 1% Rule comes from the original `obra/superpowers` plugin's `using-superpowers` skill — see <https://blog.fsck.com/2025/10/05/how-im-using-coding-agents-in-october-2025/> for the full reasoning. The short version: skills are only valuable if they fire. A library of well-written skills that the dispatcher routinely improvises past is worth zero. This dispatcher is the keystone that makes the rest of the library actually load-bearing.
 
-This skill was reintroduced in v3.0.0 after the maintainer's fork inadvertently dropped it during an earlier refactor. The companion compounding mechanism — `superpowers:writing-skills` — is the other half of the keystone: it turns one-off discoveries into reusable skills, so the library grows from real work rather than from speculation.
+This skill was reintroduced in v3.0.0 after the maintainer's fork inadvertently dropped it during an earlier refactor.
 
 ## What this skill is NOT
 

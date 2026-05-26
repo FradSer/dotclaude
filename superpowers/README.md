@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.0.0
+**Version**: 3.0.1
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 
 ## Installation
@@ -124,19 +124,6 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 
 **Output**: root cause one-liner + fix diff summary + regression test path
 
-### `/superpowers:writing-skills`
-
-Capture what just generalized. After a task completes — or after you have had to give the same correction twice — turn the pattern into a reusable skill or extend an existing one. The compounding mechanism: each discovery becomes load-bearing for future work instead of decaying with the session transcript.
-
-- Identifies the generalizable pattern from conversation context
-- Decides: new skill, extend existing skill, or CLAUDE.md addition
-- Drafts the SKILL.md and surfaces it via `AskUserQuestion` for approval before any file write
-- Reintroduced in v3.0.0 — the original `obra/superpowers` plugin shipped this as its second compounding mechanism (paired with `using-superpowers`); this fork inadvertently dropped it in an earlier refactor
-
-**When to use**: "we should remember that…", "from now on…", same advice given twice, non-obvious root cause from a debug session, successful pattern from a brainstorm or plan execution.
-
-**Output**: a new `skills/<name>/SKILL.md` or a patch to an existing skill, surfaced for approval before commit.
-
 ## Internal Skills (Loaded Automatically)
 
 ### Using Superpowers (the 1% Rule dispatcher)
@@ -172,10 +159,6 @@ Loaded when implementing features or bugfixes during execution. Enforces the Red
 6. /superpowers:retrospective (every 3+ completed plans)
    Aggregate evaluation patterns, evolve checklists, audit harness health
    Output: retro-{date}-{topic}.md report + versioned checklists
-   ↓
-7. /superpowers:writing-skills (when a pattern emerges from steps 1-6)
-   Capture the generalized lesson as a reusable skill
-   Output: new SKILL.md or patch to existing skill
 ```
 
 ## Core Principles
@@ -210,7 +193,6 @@ superpowers/
 │   │       └── batch-progress.sh # Filesystem-derived batch state (Step 1 of every turn)
 │   ├── retrospective/           # Evolve checklists + audit harness health (user-invocable)
 │   ├── systematic-debugging/    # 4-phase root cause analysis (user-invocable, 2.4.0+)
-│   ├── writing-skills/          # Capture generalized patterns as skills (user-invocable, 3.0.0+)
 │   ├── using-superpowers/       # 1% Rule dispatcher (internal, 3.0.0+)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
 │   └── references/
@@ -235,7 +217,7 @@ The plugin exposes a lightweight feedback loop so checklists improve as models i
 - `/superpowers:retrospective` reads each plan's evaluation reports plus the post-plan commits (`refactor:`/`fix:`/`style:`/`perf:` on plan-modified files) and proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE), applied to `{mode}-v{N+1}.md` and logged to `docs/retros/evolution-log.jsonl`.
 - Phase 5 is **advisory only** — it mines post-plan corrections into ADD proposals and flags never-firing items as REMOVE candidates. Component changes go through ordinary proposals with human review of the post-commit diff.
 
-> **Removed in v3.0.0.** The hand-rolled continuation runtime was torn out in favor of Claude Code's native `/goal`. Deleted: the Stop-hook continuation loop (formerly `lib/loop.sh`), the `UserPromptSubmit` / `PostToolUse` / `Stop` hook registrations and their scripts, `scripts/setup-superpower-loop.sh`, and the per-session JSON state file. Autonomous multi-turn continuation now uses native `/goal`; per-batch context reset still uses the native Agent/Task tools. The completion log is now optional rather than hook-written, and `lib/utils.sh` is slimmed to the `repo_root` helper. The batch-progress mechanism that earlier code documented as a bug-fix retrofit was preserved and relocated to `skills/executing-plans/scripts/batch-progress.sh`. Two compounding-mechanism skills from the original `obra/superpowers` were reintroduced: `using-superpowers` (the 1% Rule dispatcher) and `writing-skills` (the discovery-to-skill capture loop).
+> **Removed in v3.0.0.** The hand-rolled continuation runtime was torn out in favor of Claude Code's native `/goal`. Deleted: the Stop-hook continuation loop (formerly `lib/loop.sh`), the `UserPromptSubmit` / `PostToolUse` / `Stop` hook registrations and their scripts, `scripts/setup-superpower-loop.sh`, and the per-session JSON state file. Autonomous multi-turn continuation now uses native `/goal`; per-batch context reset still uses the native Agent/Task tools. The completion log is now optional rather than hook-written, and `lib/utils.sh` is slimmed to the `repo_root` helper. The batch-progress mechanism that earlier code documented as a bug-fix retrofit was preserved and relocated to `skills/executing-plans/scripts/batch-progress.sh`. The 1% Rule dispatcher `using-superpowers` from the original `obra/superpowers` was reintroduced.
 
 > **Removed in v2.9.0.** The automated assumption-test layer — `harness-config.json` one-at-a-time component disabling, the `harness-observations.jsonl` / `bail-out-events.jsonl` / `skill-events.jsonl` telemetry channels, and the `RETROSPECTIVE DUE` auto-reminder — was deleted. An audit of 6 real projects showed those channels stayed empty everywhere and the single disable test that ever ran had to be reverted by hand; the value came entirely from the evaluator + manually-invoked retrospective + post-plan-diff. The REMOVE threshold was also lowered (10+ → 3+ reports/item) so the loop can shrink checklists, not only grow them.
 
