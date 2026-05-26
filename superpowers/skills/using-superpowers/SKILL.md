@@ -14,7 +14,7 @@ This is the keystone that makes the superpowers skill library actually fire. Wit
 
 The cost of trying the right skill and finding it's a poor fit is one extra Skill invocation. The cost of improvising past the right skill is re-deriving structure the skill already encodes, missing the BDD discipline / per-batch evaluator / checklist evolution that the skill ships, and producing a worse outcome.
 
-When in doubt, invoke. The bail-out checks built into each skill (brainstorming line 12, writing-plans line 15, executing-plans line 19) will exit cheaply if the work is genuinely trivial — you have not been over-invoking, you have been letting the skill self-select scope.
+When in doubt, invoke. The `## CRITICAL: Bail-Out Check` section in each skill (brainstorming, writing-plans, executing-plans, systematic-debugging) will exit cheaply if the work is genuinely trivial — you have not been over-invoking, you have been letting the skill self-select scope.
 
 ## When to invoke which skill
 
@@ -25,8 +25,6 @@ When in doubt, invoke. The bail-out checks built into each skill (brainstorming 
 | "execute the plan", "run the plan", "implement", a completed plan folder under `docs/plans/*-plan/` exists | `superpowers:executing-plans` |
 | Bug report, "fix this error", test failure, unexpected behavior, "why does X happen" | `superpowers:systematic-debugging` |
 | After a completed plan: "let's retro", "what should we learn", "update checklists" | `superpowers:retrospective` |
-| Several independent work streams to run in parallel | `superpowers:agent-team-driven-development` (advisory) |
-| Need to challenge industry convention, radical-innovation framing required | `superpowers:build-like-iphone-team` (advisory) |
 
 ## Lineage and rationale
 

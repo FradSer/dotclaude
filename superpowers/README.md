@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.0.1
+**Version**: 3.0.2
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 
 ## Installation
@@ -37,10 +37,10 @@ Using the full pipeline for smaller work is **net negative** — the overhead (s
 **For unattended multi-turn pipeline work**, wrap the skill invocation in Claude Code's native `/goal` (v2.1.139+). Example:
 
 ```
-/goal "design committed AND evaluator PASS" /superpowers:brainstorming "<problem>"
+/goal "Claude has narrated a successful design commit (with commit hash) and the evaluator's verdict is PASS" /superpowers:brainstorming "<problem>"
 ```
 
-`/goal` provides session-scoped Stop-hook-based continuation with a fresh model evaluating your condition after each turn — same role the plugin's removed v2.x runtime used to play, but from the platform rather than from hand-rolled bash.
+`/goal` provides session-scoped Stop-hook-based continuation with a fresh model evaluating your condition after each turn — same role the plugin's removed v2.x runtime used to play, but from the platform rather than from hand-rolled bash. **Phrase conditions against transcript content** (commit-hash narration, literal evaluator verdict lines, explicit "Phase N complete" statements) — the evaluator does NOT read files or run commands ([upstream docs](https://code.claude.com/docs/en/goal)), so filesystem-state conditions like `_index.md exists` or `git commit clean` are unverifiable and will time out.
 
 Examples that ALWAYS bail out:
 

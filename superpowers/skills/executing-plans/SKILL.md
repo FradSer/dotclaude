@@ -15,10 +15,10 @@ Execute written implementation plans through phase-based orchestration: Plan Rev
 Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
 
 ```
-/goal "all tasks in <plan>/_index.md status=completed AND each batch has an evaluator PASS report AND git commit clean" /superpowers:executing-plans <plan>
+/goal "Claude has narrated all batches completed — each with a per-batch evaluator PASS verdict reported inline and a per-batch commit hash — and has emitted the Phase 6 completion message" /superpowers:executing-plans <plan>
 ```
 
-`/goal` provides the multi-turn continuation that the plugin's v2.x runtime used to provide (Removed in v3.0.0) — a fresh fast model checks the condition after each turn and re-prompts until satisfied. The skill body itself is single-turn-driven and orients via `scripts/batch-progress.sh` at the top of every turn (see Step 1 below).
+`/goal` provides the multi-turn continuation that the plugin's v2.x runtime used to provide (Removed in v3.0.0) — a fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (per-batch evaluator verdict line, per-batch commit-hash narration from `git-agent commit`, the Phase 6 explicit completion statement). Conditions written against filesystem state (`_index.md status=completed`, `evaluator PASS report` files, `git commit clean`) are unverifiable from the transcript and will time out — the skill body MUST narrate these signals each batch for `/goal` to detect completion. The skill body itself is single-turn-driven and orients via `scripts/batch-progress.sh` at the top of every turn (see Step 1 below).
 
 ## Step 1 of every iteration — orient via batch-progress.sh
 

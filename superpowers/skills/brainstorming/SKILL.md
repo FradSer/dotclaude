@@ -14,10 +14,10 @@ Turn rough ideas into implementation-ready designs through structured codebase-g
 Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
 
 ```
-/goal "docs/plans/YYYY-MM-DD-<topic>-design/_index.md exists AND evaluator report verdict is PASS AND git commit clean" /superpowers:brainstorming "<problem>"
+/goal "Claude has narrated a successful design commit (with commit hash) and the evaluator's verdict is PASS" /superpowers:brainstorming "<problem>"
 ```
 
-`/goal` provides multi-turn continuation — a fresh fast model checks the condition after each turn and re-prompts until satisfied. For most reasonable-sized brainstorms (a few minutes of work), `/goal` is unnecessary; the skill runs to completion in one turn.
+`/goal` provides multi-turn continuation — a fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal verdict line from the evaluator agent, an explicit "Phase 3 wrap-up complete" statement). Conditions written against filesystem state (`_index.md exists`, `git commit clean`) are unverifiable and will time out. For most reasonable-sized brainstorms (a few minutes of work), `/goal` is unnecessary; the skill runs to completion in one turn.
 
 ## CRITICAL: Bail-Out Check (run before Initialization)
 
@@ -81,7 +81,7 @@ Explore codebase, lock the approach inline, proceed to Phase 2 in the same itera
 
 **Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 2.
 
-**Mid-stream pivots** (user injects "actually this is about X" or "wrong direction" in a later turn):
+**Mid-stream pivots** (only possible when wrapped in `/goal`; on a re-prompt turn the user injects "actually this is about X" or "wrong direction"):
 - Absorb the new framing by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint.
 - If the override is fundamental (the user wants a completely unrelated brainstorm), stop the current brainstorm with a one-line note and have the user re-invoke `/superpowers:brainstorming` with the new framing.
 - If the user says "abort" or "cancel", stop with a one-line cancellation note. Do not write design files.

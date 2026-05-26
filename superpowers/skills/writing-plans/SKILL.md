@@ -15,10 +15,10 @@ Create executable implementation plans that reduce ambiguity for whoever execute
 Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
 
 ```
-/goal "docs/plans/YYYY-MM-DD-<topic>-plan/_index.md exists AND has Execution Plan YAML AND Phase 4 reflection summary recorded AND git commit clean" /superpowers:writing-plans <design-path>
+/goal "Claude has narrated a successful plan commit (with commit hash) and reported the Phase 4 reflection sub-agent verdicts inline" /superpowers:writing-plans <design-path>
 ```
 
-`/goal` provides multi-turn continuation — a fresh fast model checks the condition after each turn and re-prompts until satisfied. For most reasonable-sized plans, `/goal` is unnecessary; the skill runs to completion in one turn.
+`/goal` provides multi-turn continuation — a fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal Phase 4 reflection summary, an explicit completion statement). Conditions written against filesystem state (`_index.md exists`, `Execution Plan YAML present`, `git commit clean`) are unverifiable and will time out. For most reasonable-sized plans, `/goal` is unnecessary; the skill runs to completion in one turn.
 
 ## CRITICAL: Bail-Out Check (run first)
 
@@ -188,7 +188,7 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 
 **Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, reflection summary recorded inline, ready for Phase 5 commit.
 
-**Mid-stream cancellation** (user injects "abort", "cancel", "start over" in a later turn):
+**Mid-stream cancellation** (only possible when wrapped in `/goal`; on a re-prompt turn the user injects "abort", "cancel", "start over"):
 - Stop with a one-line cancellation note. Do not commit; do not advance to Phase 5. The user re-invokes the skill with the new framing if they want to retry.
 
 **Multi-turn resumption** (only applicable when wrapped in `/goal` and the prior turn was interrupted): on re-entry, **do not restart from Phase 1**. The filesystem already records prior progress:
