@@ -29,16 +29,16 @@ Files the main agent may write directly during Phase 3:
 
 Anything else (source, tests, configs, `__init__.py`, `pyproject.toml`, etc.) MUST go through the spawned coordinator.
 
-Stuck-detection signals (both scoped to executing-plans, iter >= 2):
+**Self-discipline reminders** (no longer hook-enforced — the main agent owns these):
 
-- **Edits-stuck**: `track-changes.sh` bumps `state.edits_since_last_spawn` on every `Edit`/`Write`/`MultiEdit`; `track-spawns.sh` resets it on Agent PostToolUse. >5 edits without a spawn → STUCK pointing back here.
-- **Read-stuck**: `track-reads.sh` bumps `state.reads_since_last_spawn` on every `Read`/`Glob`/`Grep`/`Bash`; same reset. >15 reads without a spawn → STUCK with a recovery message naming TaskList + Agent as the legitimate next actions (not "more exploration").
+- If you find yourself editing source/test/config files inline rather than spawning a coordinator, stop: that is a direct-edit contract breach. Spawn the coordinator instead.
+- If you find yourself doing extended exploration (many reads/greps) without spawning a coordinator, stop: the legitimate next actions are TaskList review and an Agent spawn, not "more exploration".
 
-Edits-stuck takes precedence when both fire — direct-edit violations are the more severe contract breach. Both counters reset together on each Agent spawn so post-spawn state starts fresh.
+Direct-edit discipline matters most — it is the more severe contract breach. The per-batch evaluator (Phase 4) will catch any inline-edit violation in code review.
 
 ## ATOMIC: Phase 3 Steps 0-2 in One Response
 
-Steps 0 (sprint contract) → 1 (handoff state) → 2 (Agent spawn) MUST execute in a single main-agent response, with the Agent tool call as the response's terminal action. Splitting across Stops re-fires the loop hook mid-setup and empirically lets the agent drift into inline batch execution between steps.
+Steps 0 (sprint contract) → 1 (handoff state) → 2 (Agent spawn) SHOULD execute in a single main-agent response, with the Agent tool call as the response's terminal action. Splitting setup across responses empirically lets the agent drift into inline batch execution between steps.
 
 ## The Coordinator Process
 

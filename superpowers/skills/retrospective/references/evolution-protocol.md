@@ -165,7 +165,7 @@ Scan for `item_*` events to build an item-history table. In Phase 3, **suppress 
 
 ## Plan Completion Log Schema
 
-Append to `docs/retros/plans-completed.jsonl` (one JSON object per line, append-only). Written mechanically by `lib/loop.sh:_loop_log_plan_completion_if_executing` when an `executing-plans` promise fires:
+Optional log at `docs/retros/plans-completed.jsonl` (one JSON object per line, append-only). No longer written automatically; when present, each entry follows this shape:
 
 ```json
 {
@@ -202,7 +202,7 @@ This log drives:
 2. retrospective Phase 1 step 6 post-plan-diff loop
 3. retrospective Pre-Check INSUFFICIENT-POST-PLAN gate
 
-It is append-only and never edited by the harness. Manual edits are user-territory; the hook's dedup logic survives most mishaps but trusts whatever ends up on disk.
+It is append-only. Manual edits are user-territory; readers trust whatever ends up on disk.
 
 ## Retrospective Report Template
 

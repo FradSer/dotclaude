@@ -12,9 +12,9 @@ allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)",
 
 Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by other skills (BDD, brainstorming) when bug-fix language is detected.
 
-**When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement, then start at Phase 1 (Root Cause Investigation) immediately. Do NOT spawn the Superpower Loop — debugging is iterative within a single session, not phase-driven. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
+**When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement, then start at Phase 1 (Root Cause Investigation) immediately. Debugging is iterative within a single session, not phase-driven. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
 
-**Output discipline**: Report findings inline as you complete each phase. End with: (a) root cause one-liner, (b) fix diff summary, (c) regression test path. No `<promise>` tag (no loop to exit).
+**Output discipline**: Report findings inline as you complete each phase. End with: (a) root cause one-liner, (b) fix diff summary, (c) regression test path.
 
 ## CRITICAL: Bail-Out Check (run before Phase 1)
 

@@ -44,7 +44,7 @@ claude plugin install github@frad-dotclaude
 
 ### [superpowers](superpowers/)
 
-Advanced development workflow orchestration with BDD support and Agent Team execution for complex projects.
+Advanced development workflow orchestration with BDD support and self-improving skills.
 
 **Installation:**
 ```bash

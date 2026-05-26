@@ -18,9 +18,9 @@ Total task count from `_index.md` "Execution Plan" YAML is `< 5` AND would resol
    - Run the verification command from the task file
    - Mark verification status inline in your response (no TaskUpdate ceremony)
 3. After the last task, run a single git commit covering all changes (see `../../skills/references/git-commit.md`)
-4. Output a one-line completion summary — no `<promise>` tag (no loop to exit)
+4. Output a plain one-line completion summary
 
-Skip: sprint contract, handoff-state.md, sprint-contract-batch-N.md, evaluation-round-N-batch-M.md, plans-completed.jsonl append. None apply when the loop is not running.
+Skip: sprint contract, handoff-state.md, sprint-contract-batch-N.md, evaluation-round-N-batch-M.md, plans-completed.jsonl append. None apply to inline execution.
 
 ## Override
 

@@ -44,7 +44,7 @@ claude plugin install github@frad-dotclaude
 
 ### [superpowers](superpowers/)
 
-高级开发工作流编排，支持 BDD 和 Agent Team 执行，适用于复杂项目。
+高级开发工作流编排，支持 BDD 与可自我改进的 skill 库。
 
 **安装：**
 ```bash

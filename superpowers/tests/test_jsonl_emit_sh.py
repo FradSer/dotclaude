@@ -101,25 +101,6 @@ class ExecutedModeTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.tmp.cleanup()
 
-    def test_harness_observations_terse_row(self) -> None:
-        """The retrospective Phase 5c terse-row envelope still composes
-        cleanly under the unified dispatcher."""
-        result = run_executed(
-            self.cwd,
-            "harness-observations",
-            '{event:$event, component:$component, reason:$reason, repo_root:$repo_root, timestamp:$timestamp}',
-            "--arg", "event", "component_unsupported",
-            "--arg", "component", "design_evaluator",
-            "--arg", "reason", "refused: retro-2026-05-21.md",
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        row = _read_one(self, self.cwd, "harness-observations")
-        self.assertEqual(row["event"], "component_unsupported")
-        self.assertEqual(row["component"], "design_evaluator")
-        self.assertEqual(row["reason"], "refused: retro-2026-05-21.md")
-        self.assertEqual(row["repo_root"], _realpath(self.cwd))
-        self.assertRegex(row["timestamp"], ISO_UTC_REGEX)
-
     def test_evolution_log_merged_row(self) -> None:
         """Retrospective Phase 4 evolution rows: flat top-level keys, no
         nested payload. Caller provides every field."""
@@ -138,25 +119,6 @@ class ExecutedModeTests(unittest.TestCase):
         self.assertEqual(row["item_id"], "TEST-001")
         self.assertNotIn("payload", row)
 
-    def test_skill_events_nested_envelope(self) -> None:
-        """systematic-debugging Phase 4 emits a nested payload + args_hash.
-        The caller now composes the full envelope explicitly."""
-        result = run_executed(
-            self.cwd,
-            "skill-events",
-            '{event:$event, skill:$skill, timestamp:$timestamp, repo_root:$repo_root, args_hash:$args_hash, payload:{root_cause:$rc}}',
-            "--arg", "event", "fix_completed",
-            "--arg", "skill", "systematic-debugging",
-            "--arg", "args_hash", "abc123def456",
-            "--arg", "rc", "off-by-one in pagination",
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        row = _read_one(self, self.cwd, "skill-events")
-        self.assertEqual(row["event"], "fix_completed")
-        self.assertEqual(row["skill"], "systematic-debugging")
-        self.assertEqual(row["args_hash"], "abc123def456")
-        self.assertEqual(row["payload"], {"root_cause": "off-by-one in pagination"})
-
     def test_missing_channel_or_program_skips_silently(self) -> None:
         """Empty channel or jq_program → exit 0, no file, no error."""
         result = run_executed(self.cwd)
@@ -167,7 +129,7 @@ class ExecutedModeTests(unittest.TestCase):
         """jq parse failure is swallowed; rc stays 0 (best-effort contract)."""
         result = run_executed(
             self.cwd,
-            "harness-observations",
+            "evolution-log",
             "this is not jq syntax {{",
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -182,7 +144,7 @@ class ExecutedModeTests(unittest.TestCase):
         try:
             result = run_executed(
                 self.cwd,
-                "harness-observations",
+                "evolution-log",
                 '{event:$event, repo_root:$repo_root, timestamp:$timestamp}',
                 "--arg", "event", "test",
             )
@@ -288,7 +250,7 @@ class DegradationContractTests(unittest.TestCase):
         env["PATH"] = "/nonexistent"
         result = run_executed(
             self.cwd,
-            "harness-observations",
+            "evolution-log",
             '{event:$event}',
             "--arg", "event", "test",
             env=env,

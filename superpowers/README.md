@@ -1,8 +1,9 @@
 # Superpowers Plugin
 
-Advanced development superpowers for orchestrating complex workflows from idea to execution.
+Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 2.9.2
+**Version**: 3.0.0
+**Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 
 ## Installation
 
@@ -13,6 +14,8 @@ claude plugin install superpowers@frad-dotclaude
 ## Overview
 
 The superpowers plugin provides a comprehensive framework for collaborative software development, enabling teams to move from rough ideas through structured planning to coordinated execution. It combines strategic planning tools with behavior-driven development practices.
+
+Each skill is a plain phase-based pipeline that runs to completion within a turn. For autonomous multi-turn continuation ("keep working until condition X holds"), wrap the skill invocation in Claude Code's native `/goal` — the plugin no longer ships its own continuation loop.
 
 ## When NOT to use superpowers
 
@@ -25,13 +28,19 @@ Using the full pipeline for smaller work is **net negative** — the overhead (s
 | Skill | Bail-out trigger | Override |
 |---|---|---|
 | `/superpowers:brainstorming` | Trivial-scope signals in `$ARGUMENTS` (single-file change, mechanical refactor, named root cause, one-shot script, "just patch") | `/superpowers:brainstorming --force "<task>"` |
-| `/superpowers:writing-plans` | `bdd-specs.md` has < 3 scenarios AND < 5 estimated tasks | `/superpowers:writing-plans --force <design-path>` |
+| `/superpowers:writing-plans` | `bdd-specs.md` has < 3 scenarios OR < 5 estimated tasks | `/superpowers:writing-plans --force <design-path>` |
 | `/superpowers:executing-plans` | `_index.md` lists < 5 tasks in a single batch | `/superpowers:executing-plans --force <plan-path>` |
 | `/superpowers:systematic-debugging` | Named root cause + named fix in `$ARGUMENTS` (apply fix + write regression test directly, skip the 4-phase pipeline) | `/superpowers:systematic-debugging --force "<symptom>"` |
 
 **For incident response and root-cause work, use `/superpowers:systematic-debugging` directly** — the design pipeline is the wrong shape for unknown-root-cause bugs.
 
-**For a plain "keep working until condition X holds" loop, use Claude Code's built-in `/goal` (v2.1.139+) directly** — it wraps a session-scoped prompt-based Stop hook and has a fresh model check your condition after each turn. The Superpower Loop is for multi-phase pipeline work (brainstorm → plan → execute → retro), not single-condition loops.
+**For unattended multi-turn pipeline work**, wrap the skill invocation in Claude Code's native `/goal` (v2.1.139+). Example:
+
+```
+/goal "design committed AND evaluator PASS" /superpowers:brainstorming "<problem>"
+```
+
+`/goal` provides session-scoped Stop-hook-based continuation with a fresh model evaluating your condition after each turn — same role the plugin's removed v2.x runtime used to play, but from the platform rather than from hand-rolled bash.
 
 Examples that ALWAYS bail out:
 
@@ -51,7 +60,7 @@ For harness components that start feeling like pure overhead on a project (e.g. 
 
 ### `/superpowers:brainstorming`
 
-Turn rough ideas into implementation-ready designs through autonomous, codebase-grounded research. Runs to completion inside the Superpower Loop without pausing for mid-design questions; you review the committed design after.
+Turn rough ideas into implementation-ready designs through autonomous, codebase-grounded research. Runs to completion without pausing for mid-design questions; you review the committed design after.
 
 - Resolves ambiguous requirements from codebase evidence (no mid-design questions — assumptions are documented in the design for review)
 - Explores design alternatives grounded in codebase reality
@@ -83,6 +92,7 @@ Execute written implementation plans in predictable batches.
 - Spawns a fresh sub-agent coordinator per batch (context-reset architecture)
 - Tracks task completion and captures evidence
 - Runs a per-batch evaluator against the sprint contract
+- Orients each turn via `scripts/batch-progress.sh` (filesystem-derived batch state, formerly part of the v2.x continuation runtime — Removed in v3.0.0 as a plugin-level hook, kept as a skill-local helper)
 
 **Prerequisites:** Output from `superpowers:writing-plans` skill (plan folder with `_index.md`)
 
@@ -97,13 +107,13 @@ Analyze evaluation patterns across completed plans and evolve checklists.
 - Audits harness health (Phase 5, advisory): mines post-plan correction commits into ADD proposals and surfaces never-firing items as REMOVE candidates
 - Closes the calibration loop by appending to `docs/retros/evolution-log.jsonl`
 
-**Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory (or no arguments — auto-scopes via `docs/retros/plans-completed.jsonl`)
+**Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory. Invoke with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). The `docs/retros/plans-completed.jsonl` completion log is **optional** — it is no longer auto-written, so the retrospective auto-scope and post-plan-diff pre-check are skipped silently when it is absent.
 
 **Output:** Retrospective report and updated `{mode}-v{N+1}.md` checklists (if any proposals approved)
 
 ### `/superpowers:systematic-debugging "<bug description>"`
 
-Root-cause analysis for bugs, test failures, and incidents — no design pipeline, no Superpower Loop.
+Root-cause analysis for bugs, test failures, and incidents — no design pipeline.
 
 - 4-phase process: Root Cause Investigation → Pattern Analysis → Hypothesis & Testing → Implementation
 - Captures `$ARGUMENTS` as the symptom statement and starts at Phase 1 immediately
@@ -114,7 +124,24 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 
 **Output**: root cause one-liner + fix diff summary + regression test path
 
+### `/superpowers:writing-skills`
+
+Capture what just generalized. After a task completes — or after you have had to give the same correction twice — turn the pattern into a reusable skill or extend an existing one. The compounding mechanism: each discovery becomes load-bearing for future work instead of decaying with the session transcript.
+
+- Identifies the generalizable pattern from conversation context
+- Decides: new skill, extend existing skill, or CLAUDE.md addition
+- Drafts the SKILL.md and surfaces it via `AskUserQuestion` for approval before any file write
+- Reintroduced in v3.0.0 — the original `obra/superpowers` plugin shipped this as its second compounding mechanism (paired with `using-superpowers`); this fork inadvertently dropped it in an earlier refactor
+
+**When to use**: "we should remember that…", "from now on…", same advice given twice, non-obvious root cause from a debug session, successful pattern from a brainstorm or plan execution.
+
+**Output**: a new `skills/<name>/SKILL.md` or a patch to an existing skill, surfaced for approval before commit.
+
 ## Internal Skills (Loaded Automatically)
+
+### Using Superpowers (the 1% Rule dispatcher)
+
+Reintroduced in v3.0.0. The keystone that makes the rest of the library actually fire. If there is even a 1% chance one of the user-invocable skills is the right tool, this dispatcher routes you to it explicitly via the Skill tool rather than letting you improvise past it. Loaded automatically as internal context — `user-invocable: false`.
 
 ### Behavior-Driven Development
 
@@ -145,6 +172,10 @@ Loaded when implementing features or bugfixes during execution. Enforces the Red
 6. /superpowers:retrospective (every 3+ completed plans)
    Aggregate evaluation patterns, evolve checklists, audit harness health
    Output: retro-{date}-{topic}.md report + versioned checklists
+   ↓
+7. /superpowers:writing-skills (when a pattern emerges from steps 1-6)
+   Capture the generalized lesson as a reusable skill
+   Output: new SKILL.md or patch to existing skill
 ```
 
 ## Core Principles
@@ -156,39 +187,34 @@ Loaded when implementing features or bugfixes during execution. Enforces the Red
 - **Verification-Driven:** Every task includes verification steps
 - **BDD-Centric:** All specifications use Given-When-Then format
 - **Context-Reset:** Each batch runs in a fresh sub-agent, keeping the main agent's context compact as task count scales
+- **Methodology, not machinery:** Continuation is the platform's job (`/goal`); the plugin's value is the methodology (BDD + Red-Green + checklist evolution + independent evaluator)
 
 ## File Structure
 
 ```
 superpowers/
 ├── .claude-plugin/
-│   └── plugin.json              # Plugin manifest with skill and hook registration
+│   └── plugin.json              # Plugin manifest with skill registration
 ├── agents/
 │   └── superpowers-evaluator.md # Independent read-only evaluator (design / code modes)
-├── hooks/
-│   ├── task-start.sh            # UserPromptSubmit — persists state + detects slash commands
-│   ├── track-changes.sh         # PostToolUse (Edit/Write/MultiEdit, async) — modified files + edit counter (active loop only)
-│   ├── track-reads.sh           # PostToolUse (Read/Glob/Grep/Bash, async) — read counter for stuck detection (active loop only)
-│   ├── track-spawns.sh          # PostToolUse (Agent, async) — resets edit/read counters on sub-agent spawn
-│   └── stop-hook.sh             # Stop — delegates to loop.sh for Superpower Loop iteration
 ├── lib/
-│   ├── utils.sh                 # Shared helpers (state I/O, mkdir locking, promise/transcript extraction)
-│   ├── loop.sh                  # Superpower Loop iteration (sourced by stop-hook.sh)
+│   ├── utils.sh                 # repo_root helper (single source of truth, ~35 lines)
 │   ├── seed-checklists.sh       # Seeds design/plan/code v1 checklists on demand
 │   ├── post-plan-diff.sh        # Classifies post-plan commits (feedback vs evolution) for retrospective
 │   └── jsonl-emit.sh            # Shared JSONL emitter for the evolution-log channel
-├── scripts/
-│   └── setup-superpower-loop.sh # Entry point skills call to enter the loop
 ├── skills/
 │   ├── brainstorming/           # Idea → design with BDD specs (user-invocable)
 │   ├── writing-plans/           # Design → task files (user-invocable)
 │   ├── executing-plans/         # Plan → verified code via per-batch coordinator (user-invocable)
+│   │   └── scripts/
+│   │       └── batch-progress.sh # Filesystem-derived batch state (Step 1 of every turn)
 │   ├── retrospective/           # Evolve checklists + audit harness health (user-invocable)
 │   ├── systematic-debugging/    # 4-phase root cause analysis (user-invocable, 2.4.0+)
+│   ├── writing-skills/          # Capture generalized patterns as skills (user-invocable, 3.0.0+)
+│   ├── using-superpowers/       # 1% Rule dispatcher (internal, 3.0.0+)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
 │   └── references/
-│       ├── git-commit.md        # Shared git commit patterns
-│       └── loop-patterns.md     # Shared Superpower Loop patterns
+│       └── git-commit.md        # Shared git commit patterns
 ├── LICENSE
 └── README.md
 ```
@@ -198,21 +224,18 @@ superpowers/
 - **Skill Tool:** Load skills dynamically during workflows
 - **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / code modes — plan-mode review is handled inline by `writing-plans` Phase 4)
 - **Task Management:** Create and track tasks during execution
-- **Hook Pipeline:** Five hook registrations across three events share a per-session state file at `~/.claude/projects/<project-key>/<session_id>.superpowers.json`
-  - `UserPromptSubmit` → `hooks/task-start.sh` persists task + detects slash commands
-  - `PostToolUse` (Edit/Write/MultiEdit) → `hooks/track-changes.sh` accumulates modified files + edit counter (active loop only)
-  - `PostToolUse` (Read/Glob/Grep/Bash) → `hooks/track-reads.sh` read counter for stuck detection (active loop only)
-  - `PostToolUse` (Agent) → `hooks/track-spawns.sh` resets edit/read counters on sub-agent spawn
-  - `Stop` → `hooks/stop-hook.sh` dispatches to Superpower Loop iteration
+- **Native `/goal` Continuation:** For unattended multi-turn runs, wrap a skill invocation in Claude Code's built-in `/goal` (v2.1.139+) — the plugin ships no continuation hooks of its own
 - **Git Integration:** Automatic commit messages via `git-agent` with fallback to conventional-format `git commit`
 
 ## Harness Calibration
 
 The plugin exposes a lightweight feedback loop so checklists improve as models improve:
 
-- Every plan completion appends to `docs/retros/plans-completed.jsonl` (its `completion_commit` feeds the post-plan-diff loop).
+- Run `/superpowers:retrospective` with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). The `docs/retros/plans-completed.jsonl` completion log is **optional** — it is no longer auto-written, so the retrospective auto-scope and post-plan-diff pre-check are skipped silently when it is absent.
 - `/superpowers:retrospective` reads each plan's evaluation reports plus the post-plan commits (`refactor:`/`fix:`/`style:`/`perf:` on plan-modified files) and proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE), applied to `{mode}-v{N+1}.md` and logged to `docs/retros/evolution-log.jsonl`.
 - Phase 5 is **advisory only** — it mines post-plan corrections into ADD proposals and flags never-firing items as REMOVE candidates. Component changes go through ordinary proposals with human review of the post-commit diff.
+
+> **Removed in v3.0.0.** The hand-rolled continuation runtime was torn out in favor of Claude Code's native `/goal`. Deleted: the Stop-hook continuation loop (formerly `lib/loop.sh`), the `UserPromptSubmit` / `PostToolUse` / `Stop` hook registrations and their scripts, `scripts/setup-superpower-loop.sh`, and the per-session JSON state file. Autonomous multi-turn continuation now uses native `/goal`; per-batch context reset still uses the native Agent/Task tools. The completion log is now optional rather than hook-written, and `lib/utils.sh` is slimmed to the `repo_root` helper. The batch-progress mechanism that earlier code documented as a bug-fix retrofit was preserved and relocated to `skills/executing-plans/scripts/batch-progress.sh`. Two compounding-mechanism skills from the original `obra/superpowers` were reintroduced: `using-superpowers` (the 1% Rule dispatcher) and `writing-skills` (the discovery-to-skill capture loop).
 
 > **Removed in v2.9.0.** The automated assumption-test layer — `harness-config.json` one-at-a-time component disabling, the `harness-observations.jsonl` / `bail-out-events.jsonl` / `skill-events.jsonl` telemetry channels, and the `RETROSPECTIVE DUE` auto-reminder — was deleted. An audit of 6 real projects showed those channels stayed empty everywhere and the single disable test that ever ran had to be reverted by hand; the value came entirely from the evaluator + manually-invoked retrospective + post-plan-diff. The REMOVE threshold was also lowered (10+ → 3+ reports/item) so the loop can shrink checklists, not only grow them.
 

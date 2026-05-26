@@ -1,4 +1,3 @@
-import shlex
 import subprocess
 import tempfile
 import unittest
@@ -7,18 +6,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SUPERPOWERS = ROOT / "superpowers"
-
-
-def call_bash_function(function_name: str, argument: str) -> str:
-    utils = SUPERPOWERS / "lib" / "utils.sh"
-    command = f"source {shlex.quote(str(utils))}; {function_name} {shlex.quote(argument)}"
-    result = subprocess.run(
-        ["bash", "-lc", command],
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-    return result.stdout.strip()
 
 
 def extract_executable_check(markdown: str, heading: str) -> str:
@@ -90,28 +77,6 @@ class SuperpowersRegressionTests(unittest.TestCase):
 
         self.assertNotIn("grep -P", checklist)
 
-    def test_promise_text_requires_final_standalone_tag(self) -> None:
-        self.assertEqual(
-            "PLAN_COMPLETE",
-            call_bash_function(
-                "extract_promise_text",
-                "Plan complete.\n<promise>PLAN_COMPLETE</promise>",
-            ),
-        )
-        self.assertEqual(
-            "",
-            call_bash_function(
-                "extract_promise_text",
-                "<promise>PLAN_COMPLETE</promise>\nExtra text after the tag.",
-            ),
-        )
-        self.assertEqual(
-            "",
-            call_bash_function(
-                "extract_promise_text",
-                "Mentioning <promise>PLAN_COMPLETE</promise> inline is not completion.",
-            ),
-        )
 
 if __name__ == "__main__":
     unittest.main()

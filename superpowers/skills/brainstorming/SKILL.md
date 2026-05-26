@@ -2,18 +2,28 @@
 name: brainstorming
 description: Turns rough ideas into implementation-ready designs via autonomous codebase research and BDD specs, then commits the design for your review (it runs to completion without pausing for mid-design questions). This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
 
-Turn rough ideas into implementation-ready designs through structured collaborative dialogue. The full pipeline (Superpower Loop + parallel research sub-agents + evaluator) is calibrated for **open-ended multi-component problems**. Trivial work bypasses via the bail-out check below.
+Turn rough ideas into implementation-ready designs through structured codebase-grounded research. The full pipeline (parallel research sub-agents + evaluator) is calibrated for **open-ended multi-component problems**. Trivial work bypasses via the bail-out check below. The skill runs phase-by-phase in a single turn for normal-sized work; for unattended long runs, wrap in `/goal` (see below).
+
+## For unattended multi-turn runs
+
+Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
+
+```
+/goal "docs/plans/YYYY-MM-DD-<topic>-design/_index.md exists AND evaluator report verdict is PASS AND git commit clean" /superpowers:brainstorming "<problem>"
+```
+
+`/goal` provides multi-turn continuation — a fresh fast model checks the condition after each turn and re-prompts until satisfied. For most reasonable-sized brainstorms (a few minutes of work), `/goal` is unnecessary; the skill runs to completion in one turn.
 
 ## CRITICAL: Bail-Out Check (run before Initialization)
 
-**Classify `$ARGUMENTS` into one of three buckets. Do NOT default to "proceed when in doubt" — that biases the harness single-direction toward over-engineering.**
+**Classify `$ARGUMENTS` into one of three buckets. Do NOT default to "proceed when in doubt" — that biases the agent single-direction toward over-engineering.**
 
-**Bucket A — Strong trivial-scope signals (bail out: do NOT start the loop, do NOT write design files, do NOT spawn evaluator):**
+**Bucket A — Strong trivial-scope signals (bail out: do NOT write design files, do NOT spawn evaluator):**
 
 - Names a single file or single-line change ("change X to Y", "rename foo to bar", "log level to DEBUG")
 - Mechanical refactor ("extract helper", "reorder imports", "update deprecated API call")
@@ -33,36 +43,17 @@ Turn rough ideas into implementation-ready designs through structured collaborat
 - Mixes trivial signals with open-ended language
 - Names an outcome but not a scope (e.g., "improve performance", "make it faster")
 
-For Bucket A, output the bail-out response below and stop. For Bucket B (including all Bucket C cases), proceed to Initialization. The `--force` token (literal in `$ARGUMENTS`) is preserved for backward compatibility; it now no-ops since the loop always proceeds on non-Bucket-A inputs. If the user later signals the scope is wrong, the Phase 1 rejection-handling block at the bottom of this section absorbs the pivot.
+For Bucket A, output the bail-out response below and stop. For Bucket B (including all Bucket C cases), proceed to Initialization. The `--force` token (literal in `$ARGUMENTS`) is preserved for backward compatibility; it now no-ops since the bail-out is per-invocation. If the user later signals the scope is wrong, the Phase 1 rejection-handling block at the bottom of this section absorbs the pivot.
 
 **Bail-out response (Bucket A, output verbatim, then proceed with direct edit OR hand off):**
 
 > Detected trivial-scope work. Skipping the brainstorming pipeline (calibrated for open-ended multi-component problems). To force the full pipeline, re-invoke as `/superpowers:brainstorming --force "<task>"`.
 
-## Pre-loop Resolution (run before Initialization step 1)
-
-The loop's `state.prompt` is **immutable after `setup-superpower-loop.sh` writes it** (`lib/loop.sh` re-reads `prompt` at line 254 but never mutates it; only `_loop_clear_state` at line 122-124 deletes it on completion). Resolve `$ARGUMENTS` to its anchored form **before** invoking the script.
-
-1. **Strip the `--force` token** from `$ARGUMENTS` if present (already consumed by the bail-out check above). Preserve every other token verbatim.
-2. **Reduce the remainder to a single declarative sentence** under ~150 chars: the problem to brainstorm, in the user's own framing. Do NOT paraphrase, summarize away constraints, or introduce vocabulary the user did not use. If `$ARGUMENTS` is already a one-line problem statement, pass it through.
-3. **Substitute** the resolved string for `<one-line-problem-statement>` in the bash invocation in Initialization step 3.
-
-**Examples (pattern → resolution)**:
-- `$ARGUMENTS = "<full one-line problem statement>"` → pass through unchanged (already a one-liner)
-- `$ARGUMENTS = "--force <task>"` → `<task>` (strip `--force`, already consumed by bail-out)
-- `$ARGUMENTS = "<single vague word or short phrase with no scope cues>"` → use the working-context problem statement the user just established in conversation; do NOT substitute the literal vague string
-- `$ARGUMENTS = ""` (empty) → use `the open problem the user just described in conversation`
-
-**Why this is documented explicitly**: The anchored prompt is what the harness re-injects as the iteration-1 base prompt and the fallback when `skill_name` is missing from state (see `lib/loop.sh:_loop_emit_block` lines 190-193). A vague raw `$ARGUMENTS` (a single bare verb-phrase like "redesign it" or a referent-less noun like "the system") produces a useless anchor. Sibling skills (writing-plans line 67-71, executing-plans line 25-28) do this resolution implicitly via path resolution; brainstorming's input is free-form so the resolution step must be explicit.
-
 ## Initialization
 
-1. Capture the **resolved** `$ARGUMENTS` (per Pre-loop Resolution above) as the initial prompt
-2. Read `CLAUDE.md` and `README.md` to understand project constraints
-3. Start the Superpower Loop (no size gate beyond bail-out):
-```bash
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Brainstorm: <one-line-problem-statement>. Progress through phases: Phase 1 (Scope Alignment) -> Phase 2 (Design with QA + vocabulary reconciliation) -> Phase 3 (Wrap-up). Emit <promise>BRAINSTORMING_COMPLETE</promise> as your final line immediately after the Phase 3 commit succeeds — do not run an extra review/polish pass." --completion-promise "BRAINSTORMING_COMPLETE" --max-iterations 30
-```
+1. **Capture the problem statement**: Reduce `$ARGUMENTS` to a single declarative sentence under ~150 chars — the problem to brainstorm, in the user's own framing. Do NOT paraphrase, summarize away constraints, or introduce vocabulary the user did not use. Strip a leading `--force` token if present (already consumed by the bail-out check). If `$ARGUMENTS` is empty, use the open problem the user just described in conversation.
+2. **Read project context**: Read `CLAUDE.md` and `README.md` to understand project constraints.
+3. **Proceed to Phase 1** in the same turn.
 
 ## Core Principles
 
@@ -91,9 +82,9 @@ Explore codebase, lock the approach inline, proceed to Phase 2 in the same itera
 **Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 2.
 
 **Mid-stream pivots** (user injects "actually this is about X" or "wrong direction" in a later turn):
-- The loop's `state.prompt` is immutable after setup; the Stop hook re-injects the same anchored prompt every iteration. Absorb the new framing in working context by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint. Do NOT attempt to rewrite `state.prompt` — there is no API for that, and the iter-2+ re-injection uses the `Continue superpowers:brainstorming` short header (skill_name branch in `lib/loop.sh:_loop_emit_block`), so the original anchor only matters for iteration 1.
-- If the override is fundamental (the user wants a completely unrelated brainstorm), output `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line note explaining the pivot, and have the user re-invoke `/superpowers:brainstorming` with the new framing.
-- If the user says "abort" or "cancel", emit `<promise>BRAINSTORMING_COMPLETE</promise>` after a one-line cancellation note. Do not write design files.
+- Absorb the new framing by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint.
+- If the override is fundamental (the user wants a completely unrelated brainstorm), stop the current brainstorm with a one-line note and have the user re-invoke `/superpowers:brainstorming` with the new framing.
+- If the user says "abort" or "cancel", stop with a one-line cancellation note. Do not write design files.
 
 See `./references/scope-alignment.md` for exploration patterns, question guidelines, and trade-off templates.
 
@@ -160,13 +151,8 @@ Commit the design and transition to implementation planning.
 3. On auth error, retry with `--free` flag
 4. **Fallback**: If git-agent is unavailable, use `git commit` with conventional format
 5. **Transition line** (output to user): "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
-6. **Emit the promise immediately as the final line of this response — nothing after it**:
 
-   ```
-   <promise>BRAINSTORMING_COMPLETE</promise>
-   ```
-
-   Do NOT add a review/polish iteration after the commit. The four design files + evaluator PASS + commit are the complete exit conditions; emit the tag now.
+Do NOT add a review/polish iteration after the commit. The four design files + evaluator PASS + commit are the complete exit conditions.
 
 See `../../skills/references/git-commit.md` for detailed commit patterns.
 
@@ -176,4 +162,3 @@ See `../../skills/references/git-commit.md` for detailed commit patterns.
 - `./references/design-and-qa.md` -- Output structures, sub-agent patterns, QA procedures
 - `./references/evaluation-checklist-reference.md` -- Design evaluation checklist reference for evaluator
 - `../../skills/references/git-commit.md` -- Git commit patterns (shared)
-- `../../skills/references/loop-patterns.md` -- Completion promise patterns (shared)

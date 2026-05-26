@@ -1,9 +1,9 @@
 """Shared pytest fixtures for superpowers test suite.
 
 Currently exposes git-repo factories used by tests that need a real repo
-to exercise hook behavior (`completion_commit` capture, post-plan diff
-classification). `git init` is collapsed to a single subprocess via
-`-c key=value` flags so each fixture call is one fork instead of four.
+to exercise post-plan diff classification. `git init` is collapsed to a
+single subprocess via `-c key=value` flags so each fixture call is one
+fork instead of four.
 """
 from __future__ import annotations
 

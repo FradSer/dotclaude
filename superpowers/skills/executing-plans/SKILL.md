@@ -3,43 +3,53 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Executing Plans
 
-Execute written implementation plans efficiently using Superpower Loop for continuous iteration through all phases.
+Execute written implementation plans through phase-based orchestration: Plan Review → Task Creation → per-batch coordinator dispatch + verification → Git Commit → Completion. Each batch runs in a fresh sub-agent (Agent tool) so the main agent's context never accumulates batch execution transcripts.
 
-## Resumed loop (iter >= 2)
+## For unattended multi-batch runs
 
-Skip Bail-Out, First Action, Phase 1/2. Run `TaskList` → resume from the next incomplete task. **If the active batch has no spawned coordinator, your first tool call MUST be the Agent tool.**
+Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
 
-## CRITICAL: Bail-Out Check (run first)
+```
+/goal "all tasks in <plan>/_index.md status=completed AND each batch has an evaluator PASS report AND git commit clean" /superpowers:executing-plans <plan>
+```
 
-Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip loop, coordinator, sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template. If that inline work needs a plain "keep going until condition X holds" loop, use Claude Code's built-in `/goal` (v2.1.139+) — not the Superpower Loop.
+`/goal` provides the multi-turn continuation that the plugin's v2.x runtime used to provide (Removed in v3.0.0) — a fresh fast model checks the condition after each turn and re-prompts until satisfied. The skill body itself is single-turn-driven and orients via `scripts/batch-progress.sh` at the top of every turn (see Step 1 below).
 
-## CRITICAL: First Action - Resolve Plan Path and Start Superpower Loop
+## Step 1 of every iteration — orient via batch-progress.sh
 
-**Resolve the plan path, then unconditionally start the loop — do NOT read task files or explore the codebase first.**
+**Before doing anything else, run:**
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh" <plan-path>
+```
+
+The script reads the plan dir, counts `sprint-contract-batch-*.md` and `handoff-summary-*.md` files, and emits a precise next-action directive ("Batch 3 active — Agent next" / "Batch 2 closed — TaskList then commit-or-next-batch" / "Batch 4 not yet started — Phase 3 steps 0-1-2"). Read the output as your authoritative "where am I" signal and follow the directive. This replaces the old loop's per-iteration filesystem scan + injection — same data, scoped to this skill.
+
+Skip this step on the very first invocation (no plan-path resolved yet) — fall through to "First Action" below.
+
+## CRITICAL: Bail-Out Check (run first, on first invocation only)
+
+Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, bail out: skip coordinator + sprint contract; execute tasks inline and commit. `--force` token in `$ARGUMENTS` bypasses. See `./references/bail-out.md` for the response template. If that inline work needs a plain "keep going until condition X holds" loop, use `/goal` directly.
+
+## First Action — Resolve Plan Path
+
+**Resolve the plan path, then orient.**
 
 1. Resolve the plan path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/` and use it directly (no confirmation)
    - If no plan folder is found, abort with a clear error message naming the expected path pattern
-2. **Start the loop** (no size gate — this skill's default user operates on large multi-batch plans):
-   ```bash
-   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Execute the plan at <resolved-plan-path>. Continue progressing through the superpowers:executing-plans skill phases: Phase 1 (Plan Review) → Phase 2 (Task Creation) → Phase 3-4 loop (Batch Execution + Verification, repeat per batch) → Phase 5 (Git Commit) → Phase 6 (Completion). Emit <promise>EXECUTION_COMPLETE</promise> as your final line immediately after the Phase 5 commit succeeds — do not run an extra verification/polish pass." --completion-promise "EXECUTION_COMPLETE" --max-iterations 100
-   ```
-3. Only after the loop is running, proceed with Initialization below
+2. Run `scripts/batch-progress.sh <plan-path>` to print the current batch state. If batches already exist, follow the script's directive directly (skip Phase 1/2 — they ran on a prior turn). Otherwise proceed with Initialization.
 
-## Initialization
-
-(The Superpower Loop and plan path were resolved in the first action above — do NOT start the loop again)
+## Initialization (first turn only)
 
 1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
-
-The loop will continue through all phases until `<promise>EXECUTION_COMPLETE</promise>` is output.
 
 ## Background Knowledge
 
@@ -138,7 +148,7 @@ Verification failure handling lives inside the batch coordinator (see `./referen
 
 2. **Spawn Batch Coordinator** (main agent → fresh sub-agent via Agent tool):
 
-   **HARD RULE**: Main agent MUST spawn a sub-agent for batch tasks. Direct `Edit`/`Write`/`MultiEdit` of source files violates the contract and trips stuck-detection. Allow-list: `./references/batch-execution-playbook.md`.
+   **HARD RULE**: Main agent MUST spawn a sub-agent for batch tasks. Direct `Edit`/`Write`/`MultiEdit` of source files violates the contract — the evaluator (Phase 4) will flag inline-edit violations on review. Allow-list: `./references/batch-execution-playbook.md`.
 
    - Use the Agent tool with `subagent_type: "general-purpose"` and `description: "Execute batch {N} of {plan-name}"`
    - The coordinator prompt MUST be fully self-contained (the coordinator has no memory of this conversation). Include:
@@ -195,7 +205,7 @@ Close the loop with structured evidence and intra-plan learning. All of Phase 4 
 
 6. **Proceed**: Output the evidence summary, then move immediately to the next batch — no user confirmation.
 
-7. **Loop**: Repeat Phase 3-4 until all batches complete.
+7. **Loop**: Repeat Phase 3-4 until all batches complete. When wrapped in `/goal`, the harness re-invokes the skill each turn; Step 1 (batch-progress.sh) tells you which batch to resume.
 
 8. **Checklist Evolution Candidates** (on plan completion): Scan for checklist items that FAILed in 3+ batches or required 3+ rework rounds. Emit evolution candidates and variety gap notes in the plan completion summary. See `./references/intra-plan-learning.md` for format.
 
@@ -212,26 +222,23 @@ See `../../skills/references/git-commit.md` for patterns, templates, and require
 
 ## Phase 6: Completion
 
-Verify all tasks are complete, log plan completion, then output the promise as the absolute last line.
+Verify all tasks are complete, then output the completion summary.
 
 1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
-2. **Log Plan Completion** (handled automatically by Stop hook): When you emit `<promise>EXECUTION_COMPLETE</promise>`, the loop hook (`lib/loop.sh:_loop_log_plan_completion_if_executing`) appends a `plan_completed` event to `docs/retros/plans-completed.jsonl` with fields `{plan, repo_root, task_count, batch_count, completion_commit, completion_modified_files, timestamp}`. The `completion_commit` is what `/superpowers:retrospective` Pre-Check A and Phase 1 feed to `post-plan-diff.sh` (the post-plan correction loop). No manual write needed; the hook is the canonical writer, and plan-level dedup makes re-running on a finished plan safe.
-3. Summary message: "Plan execution complete. All [N] tasks verified and committed."
-4. `<promise>EXECUTION_COMPLETE</promise>` — nothing after this
-
-**PROHIBITED**: Do NOT output the promise tag if TaskList shows any non-completed tasks. Do NOT output any text after the promise tag.
+2. **Plan Completion Log (optional)**: If `docs/retros/plans-completed.jsonl` is in use for this repo, manually append a `plan_completed` event with fields `{plan, repo_root, task_count, batch_count, completion_commit, completion_modified_files, timestamp}` — `completion_commit` is `git rev-parse HEAD` after Phase 5. This log is no longer auto-written (the Stop hook that used to write it was removed in v3.0.0); `/superpowers:retrospective` gracefully degrades to explicit plan-path mode when the log is absent or stale.
+3. **Summary message**: "Plan execution complete. All [N] tasks verified and committed."
 
 ## Exit Criteria
 
-All tasks executed and verified, evidence captured, no blockers, final verification passes, git commit completed. This skill runs fully autonomously — no user approval step exists.
+All tasks executed and verified, evidence captured, no blockers, final verification passes, git commit completed. This skill runs fully autonomously — no user approval step exists. For unattended multi-turn continuation, wrap in `/goal` (see top of file).
 
 ## References
 
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
-- `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets
 - `./references/evaluation-file-formats.md` - Evaluation file format definitions (sprint contract, evaluation report, handoff summary)
 - `./references/sprint-contract-template.md` - Sprint contract template and negotiation protocol
 - `./references/handoff-template.md` - Handoff summary template for long plans
 - `./references/intra-plan-learning.md` - Pattern scan, batch handoff, and checklist evolution formats
+- `./scripts/batch-progress.sh` - Filesystem-derived batch progress orientation (run as Step 1 of every iteration)

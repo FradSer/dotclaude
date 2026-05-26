@@ -32,7 +32,7 @@ Emitted to conversation context after each batch completes (not written to a fil
 **Next batch**: tasks {IDs} -- {brief scope}
 ```
 
-The batch handoff serves as a compressed checkpoint that the Superpower Loop's prompt injection can reference, reducing the need to retain full details of prior batches.
+The batch handoff serves as a compressed checkpoint that the next batch coordinator can reference, reducing the need to retain full details of prior batches.
 
 ## Checklist Evolution Candidates Format
 

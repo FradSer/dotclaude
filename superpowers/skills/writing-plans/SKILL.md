@@ -3,16 +3,26 @@ name: writing-plans
 description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
-allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
 ---
 
 # Writing Plans
 
-Create executable implementation plans that reduce ambiguity for whoever executes them using Superpower Loop for continuous iteration.
+Create executable implementation plans that reduce ambiguity for whoever executes them. The skill walks Phase 1 → Phase 6 in a single turn for normal-sized plans; for unattended long runs, wrap in `/goal` (see below).
+
+## For unattended multi-turn runs
+
+Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
+
+```
+/goal "docs/plans/YYYY-MM-DD-<topic>-plan/_index.md exists AND has Execution Plan YAML AND Phase 4 reflection summary recorded AND git commit clean" /superpowers:writing-plans <design-path>
+```
+
+`/goal` provides multi-turn continuation — a fresh fast model checks the condition after each turn and re-prompts until satisfied. For most reasonable-sized plans, `/goal` is unnecessary; the skill runs to completion in one turn.
 
 ## CRITICAL: Bail-Out Check (run first)
 
-**Read `bdd-specs.md` from the resolved design folder. Count `Scenario:` occurrences. Bail out — do NOT start the loop, do NOT decompose tasks — when EITHER:**
+**Read `bdd-specs.md` from the resolved design folder. Count `Scenario:` occurrences. Bail out — do NOT decompose tasks — when EITHER:**
 
 - BDD scenarios in `bdd-specs.md` < 3, **OR**
 - Total estimated task count < 5 (use `2× BDD scenarios + 1 setup task` as a rough estimate; if the design `_index.md` carries an explicit "Task Estimate" hint, prefer that)
@@ -25,9 +35,9 @@ The OR-gate (was AND prior to v2.8.0) catches the common "2 BDD + many setup tas
 
 Then write a single `_index.md` (no per-task files, no Phase 4 reflection, no plan evaluator) and exit. The `--force` token (literal in `$ARGUMENTS`, case-sensitive, matched as a whole token — not a substring of other words) bypasses this check.
 
-## CRITICAL: Justification Check (run after bail-out, before loop start)
+## CRITICAL: Justification Check (run after bail-out)
 
-**Read `_index.md` from the resolved design folder. Bail out — do NOT start the loop, do NOT decompose tasks — when grep matches any of:**
+**Read `_index.md` from the resolved design folder. Bail out — do NOT decompose tasks — when grep matches any of:**
 
 ```bash
 grep -nE "STATUS:.*NOT.JUSTIFIED|DESIGN-NOT-YET-JUSTIFIED|DESIGN-CONSIDERED-DEFERRED|DO NOT IMPLEMENT" "<resolved-design-folder>/_index.md"
@@ -38,34 +48,24 @@ This catches designs the maintainer or a prior brainstorming sub-agent has expli
 **On match, refuse deterministically (the marker is dispositive — do not interpret it away)**:
 
 1. Output a one-line note explaining the matched line + path: `Refusing: <design-path>/_index.md:{N} is marked NOT-JUSTIFIED — '{matched text}'. Re-invoke /superpowers:brainstorming to revise the design, or pass --justify-override to bypass this gate.`
-2. Exit without starting the loop.
+2. Exit without proceeding.
 
 **Override**: Pass `--justify-override` (literal token in `$ARGUMENTS`, case-sensitive, whole-token match) to bypass this refusal. When the override token is present, continue to First Action.
 
 **PROHIBITED**: Do NOT conflate `--force` (which bypasses the bail-out size gate above) with `--justify-override` (which bypasses this justification gate). They are independent failure modes and need independent overrides — a user passing `--force` for a thin design should still be refused if the design is also NOT-JUSTIFIED.
 
-## CRITICAL: First Action - Resolve Design Path and Start Superpower Loop
-
-**Resolve the design path, then unconditionally start the loop — do NOT read design files fully or explore the codebase first.**
+## First Action — Resolve Design Path
 
 1. Resolve the design path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
    - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/` and use it directly (do NOT pause to confirm)
    - If no `*-design/` folder exists in `docs/plans/`, refuse with: `Refusing: no design folder found under docs/plans/. Run /superpowers:brainstorming first, or pass the design folder path explicitly.` Then exit.
-2. **Start the loop** (no size gate — this skill's default user plans large multi-scenario work):
-   ```bash
-   "${CLAUDE_PLUGIN_ROOT}/scripts/setup-superpower-loop.sh" "Write an implementation plan for: <resolved-design-path>. Continue progressing through the superpowers:writing-plans skill phases: Phase 1 (Plan Structure) → Phase 2 (Task Decomposition) → Phase 3 (Validation) → Phase 4 (Plan Reflection) → Phase 5 (Git Commit) → Phase 6 (Transition). Emit <promise>PLAN_COMPLETE</promise> as your final line immediately after the Phase 5 commit succeeds — do not run an extra validation/polish pass." --completion-promise "PLAN_COMPLETE" --max-iterations 50
-   ```
-3. Only after the loop is running, proceed with Initialization below
+2. Proceed to Initialization in the same turn.
 
 ## Initialization
 
-(The Superpower Loop and design path were resolved in the first action above — do NOT start the loop again)
-
 1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`.
 2. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
-
-The loop will continue through all phases until `<promise>PLAN_COMPLETE</promise>` is output.
 
 ## Background Knowledge
 
@@ -189,19 +189,16 @@ Launch these three sub-agents in parallel using the Agent tool with `subagent_ty
 **Output**: Updated plan with issues resolved, dependency graph included in `_index.md`, reflection summary recorded inline, ready for Phase 5 commit.
 
 **Mid-stream cancellation** (user injects "abort", "cancel", "start over" in a later turn):
-- Emit `<promise>PLAN_COMPLETE</promise>` after a one-line cancellation note. Do not commit; do not advance to Phase 5.
-- The Stop hook will re-inject the original prompt; if the user wants a revised plan, they re-invoke the skill with the new framing.
+- Stop with a one-line cancellation note. Do not commit; do not advance to Phase 5. The user re-invokes the skill with the new framing if they want to retry.
 
-**Loop stall recovery**: when a re-injection arrives with no fresh artifact list and just the `Continue superpowers:writing-plans (iter X/Y). Re-check SKILL.md...` header, **do not restart from Phase 1**. The state file's `modified_files` and the actual filesystem already record prior progress:
+**Multi-turn resumption** (only applicable when wrapped in `/goal` and the prior turn was interrupted): on re-entry, **do not restart from Phase 1**. The filesystem already records prior progress:
 
 1. `Glob "docs/plans/*-plan/_index.md"` to find the in-progress plan folder.
 2. Read `_index.md` and list the task files alongside — that's the current Phase 2 output.
 3. Decide the next phase from observed state:
    - Task files exist but `_index.md` lacks the YAML `tasks:` block or "Task File References" / "BDD Coverage" sections → Phase 3 (Validation), then proceed to Phase 4.
    - `_index.md` complete but no "Dependency Chain" graph → Phase 4 (reflection sub-agents).
-   - Plan complete, no commit → Phase 5. Already committed → Phase 6 transition + `<promise>PLAN_COMPLETE</promise>`.
-
-If the Stop hook **force-clears** the loop with a `Superpower Loop force-cleared: stalled N iterations...` systemMessage, treat that as a hard reset signal — the loop will not auto-restart. Either re-invoke `/superpowers:writing-plans <path>` explicitly, or finish the remaining phases inline without the loop.
+   - Plan complete, no commit → Phase 5. Already committed → Phase 6 transition.
 
 See `./references/reflection.md` for sub-agent prompts and integration workflow.
 
@@ -225,13 +222,11 @@ See `../../skills/references/git-commit.md` for detailed patterns.
 
 ## Phase 6: Transition to Execution
 
-Prompt the user to use `superpowers:executing-plans`, then output the promise as the absolute last line.
+Output the transition message:
 
-Output in this exact order:
-1. Transition message: "Plan complete. To execute this plan, use `/superpowers:executing-plans`."
-2. `<promise>PLAN_COMPLETE</promise>` — nothing after this
+> Plan complete. To execute this plan, use `/superpowers:executing-plans`.
 
-**PROHIBITED**: Do NOT offer to start implementation directly. Do NOT output any text after the promise tag.
+**PROHIBITED**: Do NOT offer to start implementation directly.
 
 ## Exit Criteria
 
@@ -243,4 +238,3 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
 - `./references/reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
-- `../../skills/references/loop-patterns.md` - Completion promise design, prompt patterns, and safety nets

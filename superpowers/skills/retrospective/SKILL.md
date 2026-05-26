@@ -97,7 +97,6 @@ This is the load-bearing input — it produced the most valuable checklist evolu
 
 - If all tasks pass first round (no REWORK) across 3+ plans, note that per-batch evaluation may be reducible — a candidate for a future Phase 3 MODIFY/REMOVE, not an automatic change.
 - If a mode's checklist has only regression items all passing across 3+ plans, recommend a spot-check cadence in the report.
-- If the Superpower Loop iterated ≤2 times across analyzed plans, note the retry budget is unused.
 
 These are report notes. Never disable a component from this phase. Never-failing items are handled by Phase 3 REMOVE proposals (3+ reports threshold) — do not duplicate.
 
