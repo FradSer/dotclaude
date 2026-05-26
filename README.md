@@ -88,7 +88,7 @@ claude plugin install claude-config@frad-dotclaude
 
 ### [office](office/)
 
-Patent application generation, Feishu document creation, and Product Requirements Documents.
+Patent application generation, Feishu document creation, Product Requirements Documents, agent-based browser automation, Lark/Feishu CLI operations, and AI writing trope detection.
 
 **Installation:**
 ```bash

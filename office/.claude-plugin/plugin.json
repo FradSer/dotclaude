@@ -1,9 +1,9 @@
 {
   "name": "office",
   "displayName": "Office",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "license": "MIT",
-  "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, and Lark/Feishu CLI operations",
+  "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
   "keywords": [
     "patent",
     "prd",
@@ -11,6 +11,7 @@
     "lark",
     "lark-cli",
     "browser-automation",
+    "writing",
     "productivity"
   ],
   "author": {
@@ -19,7 +20,8 @@
   },
   "skills": [
     "./skills/agent-browser/",
-    "./skills/lark/"
+    "./skills/lark/",
+    "./skills/tropes/"
   ],
   "commands": [
     "./skills/patent-architect/",
