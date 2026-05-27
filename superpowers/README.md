@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.0.2
+**Version**: 3.0.3
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 
 ## Installation
