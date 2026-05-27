@@ -2,7 +2,7 @@
 
 A comprehensive Claude Code plugin to generate personalized AI assistant configurations with intelligent environment detection and advanced customization options.
 
-**Version**: 1.4.0
+**Version**: 1.4.1
 
 ## Installation
 
