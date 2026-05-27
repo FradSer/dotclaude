@@ -189,11 +189,11 @@ Report the actual command output. Do not report completion until all verificatio
 
 Omitting any section is a protocol violation.
 
-## When to Stop
+## When to Abort a Batch
 
-**STOP immediately when:**
+**Abort the current batch (HARD BLOCKER, do NOT prompt the user) when:**
 - Blocker mid-batch (missing dependency, repeated test failure, unclear instruction)
 - Plan has critical gaps
-- Verification fails repeatedly
+- Verification fails repeatedly (past the 2-retry cap)
 
-**Ask for clarification rather than guessing.**
+Log a HARD BLOCKER entry per `blocker-and-escalation.md`, mark affected tasks `blocked` via TaskUpdate, and continue with unblocked batches. This skill is fully autonomous — never pause for user clarification. For ambiguous task wording, apply the Autonomous Resolution Protocol in `sprint-contract-template.md` (pick the most concrete interpretation, mark `[AUTO-RESOLVED]`, log the applied interpretation).
