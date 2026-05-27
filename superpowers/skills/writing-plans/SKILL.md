@@ -58,7 +58,7 @@ This catches designs the maintainer or a prior brainstorming sub-agent has expli
 
 1. Resolve the design path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-design/`), use it
-   - Otherwise, search `docs/plans/` for the most recent `*-design/` folder matching `YYYY-MM-DD-*-design/` and use it directly (do NOT pause to confirm)
+   - Otherwise, pick the `*-design/` folder whose basename sorts last under `YYYY-MM-DD-*-design/` — i.e., the highest date prefix in the name, not filesystem mtime. Use `ls -1d docs/plans/*-design/ 2>/dev/null | sort | tail -1` (do NOT use `ls -t` / `ls -1dt` — directory mtimes get bumped when an older folder's files are edited, which makes it rank above a freshly-created folder). Use the result directly; do NOT pause to confirm.
    - If no `*-design/` folder exists in `docs/plans/`, refuse with: `Refusing: no design folder found under docs/plans/. Run /superpowers:brainstorming first, or pass the design folder path explicitly.` Then exit.
 2. Proceed to Initialization in the same turn.
 

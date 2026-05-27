@@ -42,7 +42,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
 
 1. Resolve the plan path:
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
-   - Otherwise, search `docs/plans/` for the most recent `*-plan/` folder matching `YYYY-MM-DD-*-plan/` and use it directly (no confirmation)
+   - Otherwise, pick the `*-plan/` folder whose basename sorts last under `YYYY-MM-DD-*-plan/` — i.e., the highest date prefix in the name, not filesystem mtime. Use `ls -1d docs/plans/*-plan/ 2>/dev/null | sort | tail -1` (do NOT use `ls -t` / `ls -1dt` — directory mtimes get bumped when an older folder's files are edited, which makes it rank above a freshly-created folder). Use the result directly (no confirmation).
    - If no plan folder is found, abort with a clear error message naming the expected path pattern
 2. Run `scripts/batch-progress.sh <plan-path>` to print the current batch state. If batches already exist, follow the script's directive directly (skip Phase 1/2 — they ran on a prior turn). Otherwise proceed with Initialization.
 
