@@ -1,4 +1,6 @@
-# frontend
+# Frontend Plugin
+
+**Version**: 0.3.1
 
 Web frontend development toolkit combining component management, framework tools, best practices, and design skills.
 
