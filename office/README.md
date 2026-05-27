@@ -1,8 +1,9 @@
 # Office Plugin
 
-Specialized Claude Skill for patent application generation and intellectual property workflows.
+Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection.
 
-**Version**: 0.4.2
+**Version**: 0.4.4
+**Display Name**: Office
 
 ## Installation
 
@@ -59,25 +60,6 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Patent terminology compliance
 - Multiple embodiment generation (3+)
 
-### `/office:create-feishu-doc` (Command)
-
-Automate the process of creating new documents in Feishu (Lark) workspace using browser automation.
-
-**Usage:**
-```bash
-/office:create-feishu-doc
-```
-
-**Features:**
-- Browser automation for Feishu UI navigation
-- Auto-creation of blank documents
-- Title and content entry
-- Supports multiple Feishu workspaces
-
-**Prerequisites:**
-- Access to Feishu workspace
-- Browser automation capability via agent-browser
-
 ### `/office:create-prd` (Command)
 
 Generate comprehensive Chinese Product Requirements Documents (PRD) following 2026 best practices.
@@ -107,6 +89,30 @@ Browser automation command reference for agents and workflows.
 
 **Sync**: Use `./scripts/sync-agent-browser.sh` to update from upstream
 
+### `lark` (Internal Skill)
+
+Lark/Feishu CLI skills for operating Lark workspace resources via `lark-cli`. Covers docs, markdown, sheets, base, calendar, IM, mail, tasks, OKR, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, VC, minutes, and events.
+
+**Source**: Synced from [larksuite/cli](https://github.com/larksuite/cli) skills/
+
+**Sub-skills**: 27 specialized sub-skills covering the full Lark/Feishu API surface. See `skills/lark/SKILL.md` for the complete index.
+
+**Sync**: Use `./scripts/sync-lark.sh` to update from upstream. `SYNC.md` tracks the current `lark-cli` version.
+
+### `tropes` (Internal Skill)
+
+AI writing trope detection — scans generated text for common AI patterns that make content sound artificial or formulaic.
+
+**Source**: [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is)
+
+**References:**
+- `references/professional-balance.md` — balancing formal and casual tone
+- `references/sentence-structure.md` — avoiding repetitive sentence patterns
+- `references/tone.md` — maintaining natural, varied tone
+- `references/word-choice.md` — eliminating formulaic word patterns
+
+**Usage**: Automatically loaded when generating text content, documentation, code comments, or reviewing writing style.
+
 ## Scripts
 
 ### `scripts/sync-agent-browser.sh`
@@ -134,6 +140,10 @@ Browser automation command reference for agents and workflows.
 - `-f, --force` - 强制同步,跳过备份
 - `--no-backup` - 同步时不创建备份
 
+### `scripts/sync-lark.sh`
+
+同步上游 larksuite/cli skills 的脚本。
+
 ### `scripts/search-patents.sh`
 
 Helper script for patent search with argument parsing.
@@ -160,7 +170,7 @@ Helper script for patent search with argument parsing.
 ```
 office/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin metadata
+│   └── plugin.json          # Plugin metadata (displayName: Office)
 ├── hooks/
 │   ├── hooks.json           # Hook configuration
 │   └── scripts/
@@ -169,15 +179,38 @@ office/
 │   └── utils.sh             # Shared utilities
 ├── scripts/
 │   ├── search-patents.sh      # Patent search helper
-│   └── sync-agent-browser.sh  # Agent-browser skill sync
+│   ├── sync-agent-browser.sh  # Agent-browser skill sync
+│   └── sync-lark.sh           # Lark CLI skills sync
 └── skills/
-    ├── patent-architect/      # Patent application generation skill
-    │   ├── SKILL.md           # Skill definition
-    │   ├── template.md        # Output template
-    │   ├── reference.md       # API reference
-    │   └── examples.md        # Usage examples
-    └── agent-browser/         # Browser automation skill
-        └── SKILL.md           # Skill definition
+    ├── patent-architect/      # Patent application generation (command)
+    │   ├── SKILL.md
+    │   ├── template.md
+    │   ├── reference.md
+    │   └── examples.md
+    ├── create-prd/            # PRD generation (command)
+    │   └── SKILL.md
+    ├── agent-browser/         # Browser automation (internal)
+    │   └── SKILL.md
+    ├── lark/                  # Lark/Feishu CLI operations (internal)
+    │   ├── SKILL.md           # Router for 27 sub-skills
+    │   ├── lark-shared/       # Auth, identity, permissions
+    │   ├── lark-doc/          # Documents
+    │   ├── lark-sheets/       # Spreadsheets
+    │   ├── lark-base/         # Multidimensional tables
+    │   ├── lark-calendar/     # Calendar & meetings
+    │   ├── lark-im/           # Instant messaging
+    │   ├── lark-mail/         # Email
+    │   ├── lark-task/         # Tasks & reminders
+    │   ├── lark-okr/          # OKR management
+    │   ├── lark-drive/        # File management
+    │   └── ...                # 16 more sub-skills
+    └── tropes/                # AI writing trope detection (internal)
+        ├── SKILL.md
+        └── references/
+            ├── professional-balance.md
+            ├── sentence-structure.md
+            ├── tone.md
+            └── word-choice.md
 ```
 
 ## Troubleshooting

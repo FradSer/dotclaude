@@ -2,7 +2,7 @@
 
 Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
-**Version:** 1.5.3
+**Version:** 1.5.4
 
 ## Installation
 

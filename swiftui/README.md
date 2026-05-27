@@ -2,7 +2,7 @@
 
 SwiftUI code review with modern API best practices.
 
-**Version**: 0.2.0
+**Version**: 0.2.1
 
 **Original Source**: [SwiftUI Agent Skill](https://github.com/twostraws/SwiftUI-Agent-Skill) by Paul Hudson
 
@@ -101,9 +101,9 @@ The plugin includes detailed reference guides:
 
 ## Requirements
 
-- SwiftUI project (iOS 17+)
-- Swift 5.9+
-- Xcode 15+
+- SwiftUI project (iOS 26+)
+- Swift 6.2+
+- Xcode 26+
 
 ## References
 

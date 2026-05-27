@@ -187,16 +187,47 @@ superpowers/
 │   └── jsonl-emit.sh            # Shared JSONL emitter for the evolution-log channel
 ├── skills/
 │   ├── brainstorming/           # Idea → design with BDD specs (user-invocable)
+│   │   └── references/
+│   │       ├── design-and-qa.md
+│   │       ├── evaluation-checklist-reference.md
+│   │       └── scope-alignment.md
 │   ├── writing-plans/           # Design → task files (user-invocable)
+│   │   └── references/
+│   │       ├── reflection.md
+│   │       ├── structure-template.md
+│   │       └── task-granularity-and-verification.md
 │   ├── executing-plans/         # Plan → verified code via per-batch coordinator (user-invocable)
+│   │   ├── references/
+│   │   │   ├── bail-out.md
+│   │   │   ├── batch-execution-playbook.md
+│   │   │   ├── blocker-and-escalation.md
+│   │   │   ├── evaluation-file-formats.md
+│   │   │   ├── handoff-template.md
+│   │   │   ├── intra-plan-learning.md
+│   │   │   └── sprint-contract-template.md
 │   │   └── scripts/
 │   │       └── batch-progress.sh # Filesystem-derived batch state (Step 1 of every turn)
 │   ├── retrospective/           # Evolve checklists + audit harness health (user-invocable)
+│   │   └── references/
+│   │       ├── analysis-patterns.md
+│   │       ├── evolution-protocol.md
+│   │       └── post-plan-diff.md
 │   ├── systematic-debugging/    # 4-phase root cause analysis (user-invocable, 2.4.0+)
+│   │   ├── find-polluter.sh     # Test pollution detection helper
+│   │   └── references/
+│   │       ├── condition-based-waiting.md
+│   │       ├── condition-based-waiting-example.ts
+│   │       ├── defense-in-depth.md
+│   │       └── root-cause-tracing.md
 │   ├── using-superpowers/       # 1% Rule dispatcher (internal, 3.0.0+)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
 │   └── references/
 │       └── git-commit.md        # Shared git commit patterns
+├── tests/
+│   ├── conftest.py              # Shared test fixtures
+│   ├── test_jsonl_emit_sh.py    # jsonl-emit.sh unit tests
+│   ├── test_post_plan_diff_sh.py # post-plan-diff.sh unit tests
+│   └── test_superpowers_regressions.py # Regression tests
 ├── LICENSE
 └── README.md
 ```

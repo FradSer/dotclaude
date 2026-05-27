@@ -2,7 +2,7 @@
 
 GitHub project operations with quality gates, TDD workflows, and comprehensive issue management.
 
-**Version**: 0.2.1
+**Version**: 0.2.2
 
 ## Installation
 

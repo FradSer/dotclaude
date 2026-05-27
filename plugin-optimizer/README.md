@@ -1,5 +1,6 @@
 # Plugin Optimizer
 
+**displayName:** Plugin Optimizer
 **Version:** 0.12.0
 
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
@@ -98,8 +99,8 @@ Autonomous analysis agent launched by the optimize-plugin workflow. Validates pl
 
 A unified Python validator (`scripts/validate-plugin.py`) runs five checks automatically:
 
-- **Structure**: File patterns, naming conventions, directory layout (incl. `monitors/`, `themes/`, `output-styles/`, `bin/`)
-- **Manifest**: plugin.json schema, required fields, and unknown-field warnings (typo detection). Validates `monitors`, `themes`, `outputStyles`, `lspServers`, `mcpServers`, `userConfig`, `dependencies` paths and shapes
+- **Structure**: File patterns, naming conventions, directory layout (incl. `monitors/`, `themes/`, `output-styles/`, `bin/`, `lsp-servers/`)
+- **Manifest**: plugin.json schema, required fields, `displayName` field, and unknown-field warnings (typo detection). Validates `monitors`, `themes`, `outputStyles`, `lspServers`, `mcpServers`, `userConfig`, `dependencies` paths and shapes
 - **Frontmatter**: YAML frontmatter in components. For agents, enforces the upstream-forbidden fields (`hooks`, `mcpServers`, `permissionMode`) and `isolation: "worktree"` constraint
 - **Tool invocations**: Anti-pattern detection in tool usage
 - **Token budgets**: Progressive disclosure compliance
@@ -147,9 +148,20 @@ plugin-optimizer/
 │   │   └── SKILL.md            # Multi-phase optimization workflow
 │   └── plugin-best-practices/   # Knowledge-type skill (agent-only)
 │       ├── SKILL.md            # Core validation rules
-│       └── references/          # Detailed documentation (17 files)
-│           ├── components/      # Component-specific guides (6 files)
+│       └── references/          # Detailed documentation (22 files)
+│           ├── components/      # Component-specific guides (9 files)
+│           │   ├── agents.md
+│           │   ├── commands.md
+│           │   ├── hooks.md
+│           │   ├── lsp-servers.md
+│           │   ├── mcp-servers.md
+│           │   ├── monitors.md
+│           │   ├── output-styles.md
+│           │   ├── skills.md
+│           │   └── themes.md
 │           ├── component-model.md
+│           ├── directory-structure.md
+│           ├── manifest-schema.md
 │           ├── validation-checklist.md
 │           └── parallel-execution.md
 └── README.md
