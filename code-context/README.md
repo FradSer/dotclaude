@@ -1,6 +1,6 @@
 # Code Context Plugin
 
-**Version:** 0.2.0
+**Version:** 0.2.1
 
 5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch.
 
