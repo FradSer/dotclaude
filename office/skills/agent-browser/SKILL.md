@@ -12,7 +12,7 @@ Install: `npm i -g agent-browser && agent-browser install`
 
 ## Loading Skills
 
-**You must run `agent-browser skills get <name>` before running any agent-browser commands.**
+**Run `agent-browser skills get <name>` before any agent-browser commands.**
 This file does not contain command syntax, flags, or workflows. That content is served
 by the CLI and changes between versions. Guessing at commands without loading the skill
 will produce incorrect or outdated invocations.

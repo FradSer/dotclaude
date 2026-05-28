@@ -1,7 +1,7 @@
 ---
 name: lark
 version: 1.0.0
-description: "Lark/Feishu CLI skills: lark-cli operations for docs, markdown, sheets, base, calendar, im, mail, task, okr, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, vc, minutes, event. When user needs to operate Lark/Feishu resources via lark-cli, send messages, manage documents, spreadsheets, calendars, tasks, OKRs, deploy web pages, or any Feishu/Lark workspace operations."
+description: "Lark/Feishu CLI skills: lark-cli operations for docs, markdown, sheets, base, calendar, im, mail, task, okr, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, vc, minutes, event. Use when the user needs to operate Lark/Feishu resources via lark-cli, send messages, manage documents, spreadsheets, calendars, tasks, OKRs, deploy web pages, or any Feishu/Lark workspace operations."
 metadata:
   requires:
     bins: ["lark-cli"]

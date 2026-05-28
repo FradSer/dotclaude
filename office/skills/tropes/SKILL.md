@@ -1,6 +1,6 @@
 ---
 name: tropes
-description: This skill should be used when generating any text content, writing documentation, creating code comments, or reviewing writing style. Provides guidance on avoiding common AI writing patterns and tropes that make text sound artificial or formulaic. Supports two-tier preference overrides (global ~/.claude/office.local.md + project .claude/office.local.md).
+description: Detects and eliminates AI writing tropes that make text sound artificial or formulaic. Use when generating text content, writing documentation, creating code comments, or reviewing writing style. Supports two-tier preference overrides (global ~/.claude/office.local.md + project .claude/office.local.md).
 ---
 
 # AI Writing Tropes Detection
