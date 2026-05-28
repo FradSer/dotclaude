@@ -12,9 +12,23 @@ Analyze evaluation patterns across completed plans, identify recurring failures,
 
 **Chain position**: This skill is the downstream consumer of executing-plans Phase 4 "Checklist Evolution Candidates". It aggregates signals across plans and produces versioned checklist updates.
 
-## Pre-Check: INSUFFICIENT-POST-PLAN advisory (informational, run first)
+## Pre-Check (run first, in order)
+
+### A. INSUFFICIENT-POST-PLAN advisory (informational)
 
 Read the most recent `plan_completed` event from `docs/retros/plans-completed.jsonl`. If `hours_since_completion < 24h` AND `bash "${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh" summary <completion_commit> <files...>` returns `total == 0`, output the INSUFFICIENT-POST-PLAN reminder verbatim (see `./references/post-plan-diff.md` §Pre-Check A) and proceed to Phase 0 — do NOT pause. Skip silently when `completion_commit` is missing.
+
+### B. Recall persistent memory (calibration priors)
+
+**CRITICAL — do this before Phase 0, do NOT skip it because it feels like setup.** A retrospective calibrates checklist evolution against prior decisions, and persistent memory holds the human judgments the evolution-log cannot capture (rejected directions, debt/gate trackers, harness-design stance, working-style feedback). Recall is a SECONDARY calibration signal — `docs/retros/evolution-log.jsonl` (Phase 1 step 5) stays authoritative; when memory and the log disagree, the log wins.
+
+Claude Code injected the `MEMORY.md` index at session start, so its one-line hooks are ALREADY in your context — there is nothing to read from disk. Scan those hooks now as prior-decision evidence and select the ones bearing on this run:
+
+- **Prior evolution / rejection decisions and debt trackers** — anti-add-bias / "rejected" / "gate" / "pending" notes. A memory-recorded rejection is the same evidence type as a Phase 1 step 5 `item_removed` log row.
+- **Harness-design principles** — e.g. simplify-don't-add stance.
+- **Working-style feedback** — e.g. "auto-produce, never pause", "L2 must carry CRITICAL".
+
+Carry these forward as priors into Phase 1 step 5 (calibration history), Phase 3 (REMOVE-is-load-bearing suppression of weakly-justified ADDs), and Phase 4 (self-reject a proposal that contradicts a recalled prior, citing the memory entry). If no calibration-relevant hook exists, log `Pre-Check B: no calibration-relevant memory` and proceed. Never resolve a memory path, never read a topic file, never block, never ask, never read "to make sure" — the index hooks carry the signal on their own.
 
 ## Phase 0: Bootstrap (run only when no checklists exist)
 
@@ -75,7 +89,7 @@ Each proposal includes: type, target checklist, item ID, description, rationale 
 
 ## Phase 4: Auto-Apply Proposals
 
-Apply every Phase 3 proposal (ordered by priority: regression breaks first, then by frequency). No per-proposal approval gate — EVO-6 (max 3/mode/run) + Phase 3 thresholds + post-commit `git show docs/retros/checklists/` are the quality surface. `proposals_rejected` is reserved for self-rejection at apply time: when a proposal duplicates a recent removal (Phase 1 step 5 history) without materially new evidence, log to the report under "Self-Rejected Proposals" with the cited historical entry, increment `proposals_rejected`, and skip the checklist row. All other proposals advance.
+Apply every Phase 3 proposal (ordered by priority: regression breaks first, then by frequency). No per-proposal approval gate — EVO-6 (max 3/mode/run) + Phase 3 thresholds + post-commit `git show docs/retros/checklists/` are the quality surface. `proposals_rejected` is reserved for self-rejection at apply time: when a proposal duplicates a recent removal (Phase 1 step 5 history) or contradicts a recalled memory prior (Pre-Check B) without materially new evidence, log to the report under "Self-Rejected Proposals" with the cited historical or memory entry, increment `proposals_rejected`, and skip the checklist row. All other proposals advance.
 
 Apply steps:
 
