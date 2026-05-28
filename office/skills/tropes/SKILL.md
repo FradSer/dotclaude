@@ -1,6 +1,6 @@
 ---
 name: tropes
-description: This skill should be used when generating any text content, writing documentation, creating code comments, or reviewing writing style. Provides guidance on avoiding common AI writing patterns and tropes that make text sound artificial or formulaic.
+description: This skill should be used when generating any text content, writing documentation, creating code comments, or reviewing writing style. Provides guidance on avoiding common AI writing patterns and tropes that make text sound artificial or formulaic. Supports two-tier preference overrides (global ~/.claude/office.local.md + project .claude/office.local.md).
 ---
 
 # AI Writing Tropes Detection
@@ -24,6 +24,22 @@ Scan for tropes when:
 - Responding to user questions or creating explanations
 
 ## Detection Workflow
+
+### 0. Load User Preferences
+
+Check for preference files in order (project overrides global):
+1. `.claude/office.local.md` (project-level, in the current working directory)
+2. `~/.claude/office.local.md` (user-level, global)
+
+If either exists:
+- Parse YAML frontmatter for structured settings (sensitivity, tone, banned words, skip categories)
+- Read markdown body for freeform rules
+- Merge: project-level settings override global settings field-by-field
+- Apply merged preferences as overrides to the default detection behavior below
+
+If neither exists, offer to create the global file with default values after the detection run completes.
+
+See `references/preferences-schema.md` for the full field reference and precedence rules.
 
 ### 1. Pattern Scan
 
@@ -57,6 +73,15 @@ After revision:
 - Ensure specificity (concrete details vs vague attributions)
 - Confirm the tone is professional yet accessible ("Expert Clarity")
 
+### 5. Preference Sync (Optional)
+
+After the detection run, offer to save preferences to either `~/.claude/office.local.md` (global) or `.claude/office.local.md` (project):
+- Newly flagged words the user wants to permanently ban → add to `banned_words`
+- Repeated correction patterns → add to `preferred_terms`
+- Sensitivity adjustments based on false positives → update `sensitivity`
+
+Default target is the global file unless the user specifies project-level. Do not auto-write preferences. Present the proposed changes and let the user confirm.
+
 ## Pattern Categories
 
 The complete trope catalog is organized into seven categories. Load specific references as needed:
@@ -81,3 +106,6 @@ The complete trope catalog is organized into seven categories. Load specific ref
 
 7. **Professional Balance** - `references/professional-balance.md`
    Avoiding both overly colloquial "humanisms" and obscure AI-isms.
+
+8. **User Preferences** - `references/preferences-schema.md`
+   Two-tier overrides: global `~/.claude/office.local.md` + project `.claude/office.local.md`. Custom banned words, sensitivity, tone, skip categories.
