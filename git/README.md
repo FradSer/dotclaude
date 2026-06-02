@@ -2,7 +2,7 @@
 
 Conventional Git automation and advanced repository management.
 
-**Version**: 0.4.6
+**Version**: 0.5.0
 
 ## Installation
 
@@ -22,7 +22,7 @@ This plugin uses **git-agent** as the primary commit tool, with automatic fallba
 
 ## Skills
 
-This plugin provides 4 user-invocable skills:
+This plugin provides 3 user-invocable skills:
 
 ### `/commit`
 Creates atomic conventional commits using git-agent.
@@ -35,28 +35,21 @@ Creates atomic commits using git-agent and pushes to remote repository.
 - All `/commit` features
 - Automatic upstream branch configuration
 
-### `/config-git`
-Interactive configuration setup for project-specific Git conventions.
-- Analyzes project structure to suggest scopes
-- Generates `.claude/git.local.md` configuration
-- Validates user identity (name/email)
-
-### `/update-gitignore`
-Creates or updates `.gitignore` using git-agent AI generation.
-- AI-powered .gitignore generation via `git-agent init --gitignore`
-- Preserves custom rules when updating
+### `/setup`
+Initializes git-agent for the repository — generates commit scopes from git history and `.gitignore` via AI.
+- Verifies git user identity (name/email)
+- Preserves custom `.gitignore` rules when regenerating
+- Supports selective mode: `/setup scope` or `/setup gitignore`
 
 ## Configuration
 
 ### Auto-Configuration
 
-Configuration is auto-generated on first use or manually via the `/config-git` command.
+Run `/setup` to auto-generate scopes and `.gitignore` via git-agent. Configuration is stored in `.git-agent/config.yml` and read directly by `git-agent commit`.
 
 ### Manual Configuration
 
-You can also manually create or edit `.claude/git.local.md` in your project root.
-
-See [examples/git.local.md](examples/git.local.md) for configuration template.
+Edit `.git-agent/config.yml` directly to customize scopes, hooks, or other settings. Use `git-agent config set <key> <value>` for individual fields.
 
 ## Best Practices
 
