@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.0.3
+**Version**: 3.1.0
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 
 ## Installation
@@ -128,7 +128,7 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 
 ### Using Superpowers (the 1% Rule dispatcher)
 
-Reintroduced in v3.0.0. The keystone that makes the rest of the library actually fire. If there is even a 1% chance one of the user-invocable skills is the right tool, this dispatcher routes you to it explicitly via the Skill tool rather than letting you improvise past it. Loaded automatically as internal context — `user-invocable: false`.
+Reintroduced in v3.0.0. The keystone that makes the rest of the library actually fire. If there is even a 1% chance one of the user-invocable skills is the right tool, this dispatcher routes you to it explicitly via the Skill tool rather than letting you improvise past it. Its concrete trigger phrases ride in the always-resident description; `user-invocable: false` hides it from the `/` menu while the full routing table loads with the skill body.
 
 ### Behavior-Driven Development
 
@@ -237,7 +237,7 @@ superpowers/
 - **Skill Tool:** Load skills dynamically during workflows
 - **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / code modes — plan-mode review is handled inline by `writing-plans` Phase 4)
 - **Task Management:** Create and track tasks during execution
-- **Native `/goal` Continuation:** For unattended multi-turn runs, wrap a skill invocation in Claude Code's built-in `/goal` (v2.1.139+) — the plugin ships no continuation hooks of its own
+- **Native `/goal` Continuation:** For unattended multi-turn runs, wrap a skill invocation in Claude Code's built-in `/goal` (v2.1.139+) — the plugin ships no *continuation* hooks of its own (its single `Stop` hook only logs plan completion; see below)
 - **Git Integration:** Automatic commit messages via `git-agent` with fallback to conventional-format `git commit`
 
 ## Harness Calibration
@@ -248,7 +248,9 @@ The plugin exposes a lightweight feedback loop so checklists improve as models i
 - `/superpowers:retrospective` reads each plan's evaluation reports plus the post-plan commits (`refactor:`/`fix:`/`style:`/`perf:` on plan-modified files) and proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE), applied to `{mode}-v{N+1}.md` and logged to `docs/retros/evolution-log.jsonl`.
 - Phase 5 is **advisory only** — it mines post-plan corrections into ADD proposals and flags never-firing items as REMOVE candidates. Component changes go through ordinary proposals with human review of the post-commit diff.
 
-> **Removed in v3.0.0.** The hand-rolled continuation runtime was torn out in favor of Claude Code's native `/goal`. Deleted: the Stop-hook continuation loop (formerly `lib/loop.sh`), the `UserPromptSubmit` / `PostToolUse` / `Stop` hook registrations and their scripts, `scripts/setup-superpower-loop.sh`, and the per-session JSON state file. Autonomous multi-turn continuation now uses native `/goal`; per-batch context reset still uses the native Agent/Task tools. The completion log is now optional rather than hook-written, and `lib/utils.sh` is slimmed to the `repo_root` helper. The batch-progress mechanism that earlier code documented as a bug-fix retrofit was preserved and relocated to `skills/executing-plans/scripts/batch-progress.sh`. The 1% Rule dispatcher `using-superpowers` from the original `obra/superpowers` was reintroduced.
+> **Removed in v3.0.0.** The hand-rolled continuation runtime was torn out in favor of Claude Code's native `/goal`. Deleted: the Stop-hook continuation loop (formerly `lib/loop.sh`), the `UserPromptSubmit` / `PostToolUse` / `Stop` hook registrations and their scripts, `scripts/setup-superpower-loop.sh`, and the per-session JSON state file. Autonomous multi-turn continuation now uses native `/goal`; per-batch context reset still uses the native Agent/Task tools, and `lib/utils.sh` is slimmed to the `repo_root` helper.
+>
+> **Partially revised in v3.1.0.** Demoting the `plan_completed` write to a Claude-instructed Phase 6 step (rather than hook-written) was a mistake: empirical audit showed the manual write is silently dropped, starving the retrospective Phase 5a signal that reads `completion_commit` from it. v3.1.0 reintroduces a single minimal `Stop` hook (`hooks/plan-completed.sh`) whose ONLY job is that mechanical write. Detection is **state-based** — it fires when a plan's durable artifacts show completion (every batch handed off plus a git commit touching the modified-files set), not off any sentence the model emits, so it survives a paraphrased or skipped completion summary (the `/goal` philosophy: evaluate a condition each turn, don't trust a one-shot utterance). A `find -newer` gate keeps unrelated Stops near-free. It carries none of the deleted continuation/stall/telemetry runtime — the continuation loop stays gone. The batch-progress mechanism that earlier code documented as a bug-fix retrofit was preserved and relocated to `skills/executing-plans/scripts/batch-progress.sh`. The 1% Rule dispatcher `using-superpowers` from the original `obra/superpowers` was reintroduced.
 
 > **Removed in v2.9.0.** The automated assumption-test layer — `harness-config.json` one-at-a-time component disabling, the `harness-observations.jsonl` / `bail-out-events.jsonl` / `skill-events.jsonl` telemetry channels, and the `RETROSPECTIVE DUE` auto-reminder — was deleted. An audit of 6 real projects showed those channels stayed empty everywhere and the single disable test that ever ran had to be reverted by hand; the value came entirely from the evaluator + manually-invoked retrospective + post-plan-diff. The REMOVE threshold was also lowered (10+ → 3+ reports/item) so the loop can shrink checklists, not only grow them.
 
