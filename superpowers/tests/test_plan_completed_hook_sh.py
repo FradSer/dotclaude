@@ -146,6 +146,30 @@ class PlanCompletedHookTests(unittest.TestCase):
         rows = self._log()
         self.assertEqual([row["plan"] for row in rows], ["docs/plans/2026-06-01-done-plan"])
 
+    def test_already_analyzed_plan_not_backfilled(self) -> None:
+        # A complete+committed plan that a prior retrospective already analyzed
+        # (it appears in evolution-log.jsonl) must NOT be back-filled — doing so
+        # with a fresh timestamp would make a future retro re-scope/re-analyze it.
+        name = "2026-05-01-old-plan"
+        files = ["src/old.py"]
+        self._make_plan(name, batches=1, summaries=1, files=files, tasks=["001"])
+        commit(self.root, "feat: old done", {files[0]: "x"})
+        evo = self.root / "docs" / "retros" / "evolution-log.jsonl"
+        evo.parent.mkdir(parents=True, exist_ok=True)
+        evo.write_text(
+            json.dumps(
+                {
+                    "event": "retrospective_run",
+                    "plans_analyzed": [f"docs/plans/{name}/"],
+                    "report": "docs/retros/retro-old.md",
+                }
+            )
+            + "\n"
+        )
+        r = self._run()
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+        self.assertEqual(self._log(), [])
+
     def test_no_plans_dir_exits_clean(self) -> None:
         r = self._run()
         self.assertEqual(r.returncode, 0, msg=r.stderr)

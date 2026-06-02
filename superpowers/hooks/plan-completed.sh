@@ -79,6 +79,19 @@ for HS in "$PLANS_DIR"/*-plan/handoff-state.md; do
     continue
   fi
 
+  # C4b: skip plans a retrospective has already analyzed. evolution-log.jsonl
+  # records analyzed plans in retrospective_run.plans_analyzed (and item_added
+  # driving_plans); either appearance means the plan is already in the loop.
+  # Without this, the hook back-fills an old, already-processed plan with a
+  # fresh timestamp — which would make a future retrospective's auto-scope
+  # ("plans completed after the last retrospective_run") re-scope and
+  # re-analyze it. The grep matches the repo-relative path with or without a
+  # trailing slash (evolution-log stores the slashed form).
+  EVO_LOG="${ROOT%/}/docs/retros/evolution-log.jsonl"
+  if [[ -f "$EVO_LOG" ]] && grep -Fq "$PLAN_REL" "$EVO_LOG" 2>/dev/null; then
+    continue
+  fi
+
   # Modified-files set (backtick items under "## Modified Files (cumulative)").
   # bash 3.2-compatible read loop (no mapfile).
   FILES=()
