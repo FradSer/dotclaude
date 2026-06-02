@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.12.2] - 2026-06-03
+
+### Added
+
+- **superpowers 3.x** — Plan-completion and stop hooks, retrospective memory recall, unified retro event helpers, stall detection with phase recovery, stricter batch execution in executing-plans, design/code evaluation checklists (v2/v3), and read-only `superpowers-evaluator` for design folders and sprint contracts
+- **frontend plugin** — New marketplace plugin with DESIGN.md design-system spec, React 19 best-practice rules, `design-md` skill, impeccable review skills, and frontend expert / anti-patterns agents (replaces standalone next-devtools/shadcn packaging)
+- **office** — Lark workspace skill with management scripts; **tropes** skill for AI-writing-pattern detection with preference overrides
+- **code-context** — Code checklist v3 for evaluator-driven reviews
+- **claude-config** — Code checklist v2 with isolation rules and shared retrospective helpers
+- **plugin-optimizer** — `displayName` on marketplace entries, severity-classified validation output, and JSON reporting mode
+- **git** — Co-author injection contract and consolidated setup skills (v0.5.0)
+- **utils** — `update-changelog` skill for Keep a Changelog–aligned releases
+- **acpx** — User-invocable `use-acpx` skill
+- **CI** — GitHub Actions workflow for superpowers shell tests and manifest validation on `superpowers/**` changes
+
+### Changed
+
+- **superpowers** — Refactored plan hooks and evaluation protocol; removed automated harness/calibration layers and the need-vet gate; executing-plans now tracks read loops, enforces format contracts, and logs plan completion with tighter stuck detection
+- **plugin-optimizer** — Validation script reports severity levels; version bumped to 0.12.0
+- **gitflow / github / refactor / swiftui / claude-config / office** — Version and manifest sync across the marketplace; gitflow skills aligned with git-agent workflows
+- **frontend** — Upstream sync scripts and local mod-replay detection; plugin at 0.3.1
+
+### Removed
+
+- **meeseeks-vetted** and **need-vet** plugins and verification hooks
+- Standalone **next-devtools** plugin (capabilities moved under **frontend**)
+- Legacy superpowers skills and interactive approval gates superseded by hook-driven flow
+
+### Fixed
+
+- Superpowers stop hook crash on invalid `modified_files`; state-lock and missing-state-dir handling in setup and hooks
+- Executing-plans `/goal` condition (single commit vs per-batch) and using-superpowers dispatcher regressions
+- Utils vet `set -e` regression and evaluator documentation gaps
+
+### Documentation
+
+- Superpowers README and phase references for executing-plans, retrospectives, and evaluation formats
+- Plugin-optimizer argument-hint standards; git and gitflow skill workflow docs
+- Frontend README and agent reference naming
+
 ## [v1.12.1] - 2026-03-30
 
 ### Added
@@ -422,7 +462,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix build and release scripts for version detection and TOML prompts
 - Improve sync script compatibility and error handling
 
-[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.12.1...HEAD
+[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.12.2...HEAD
+[v1.12.2]: https://github.com/FradSer/dotclaude/compare/v1.12.1...v1.12.2
 [v1.12.1]: https://github.com/FradSer/dotclaude/compare/v1.12.0...v1.12.1
 [v1.12.0]: https://github.com/FradSer/dotclaude/compare/v1.11.0...v1.12.0
 [v1.11.0]: https://github.com/FradSer/dotclaude/compare/v1.10.0...v1.11.0
