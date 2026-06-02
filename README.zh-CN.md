@@ -77,7 +77,7 @@ claude plugin install swiftui@frad-dotclaude
 
 ### [claude-config](claude-config/)
 
-生成全面的 CLAUDE.md 配置文件，支持环境检测和交互式工作流。
+通过交互式工作流生成 CLAUDE.md 配置，支持环境检测、BDD/TDD 测试选项和本地最佳实践引用。
 
 **安装：**
 ```bash
