@@ -160,7 +160,7 @@ Then pass `env=env` to the subprocess call."
 ```bash
 grep -rnE '@(pytest\.mark\.)?(skip|xfail)|@unittest\.(skip|expectedFailure)|@Disabled|@Ignore|\b(xit|xdescribe)\b|\b(it|test|describe)\.(skip|only)\b|\bt\.Skip\(|#\[ignore\]' <produced-test-files>
 ```
-Run only against test files in the batch's produced/modified set. The grep narrows candidates; for each hit, judge whether it disables verification of behavior THIS batch claims to implement (FAIL) or is a justified guard with a stated reason — platform/env conditional (`skipif`, `skipUnless`) or a tracked known-bug `xfail` referencing an issue (allowed). An unconditional `skip` / `.only` / empty-body test covering in-scope behavior is always FAIL.
+Run only against test files in the batch's produced/modified set. The grep narrows candidates; for each hit, judge whether it disables verification of behavior THIS batch claims to implement (FAIL) or is a justified guard with a stated reason — platform/env conditional (`skipif`, `skipUnless`) with a stated condition and reason, or a tracked known-bug `xfail` referencing an issue (allowed). A grep hit on `skip` inside `@pytest.mark.skipif` is expected — read the full line; PASS when the guard is conditional and documented, FAIL only for vacuous unconditional skips. An unconditional `skip` / `.only` / empty-body test covering in-scope behavior is always FAIL. Empty test bodies remain primarily CODE-QUAL-02.
 
 **Evidence format:** `{file}:{line} -- {marker} -- {disabled behavior}`
 
