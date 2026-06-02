@@ -25,6 +25,11 @@ SUPERPOWERS_DIR = Path(__file__).resolve().parents[1]
 HOOK = SUPERPOWERS_DIR / "hooks" / "plan-completed.sh"
 
 
+def _jsonl_line(obj: dict) -> str:
+    """Compact one-line JSON matching jq -nc / jsonl-emit (required for dedup anchors)."""
+    return json.dumps(obj, separators=(",", ":")) + "\n"
+
+
 def _handoff(task_ids: list[str], files: list[str]) -> str:
     tasks = "\n".join(f"- {t}" for t in task_ids)
     mods = "\n".join(f"- `{f}`" for f in files)
@@ -74,8 +79,6 @@ class PlanCompletedHookTests(unittest.TestCase):
             return []
         return [json.loads(ln) for ln in f.read_text().splitlines() if ln.strip()]
 
-    # --- behavior ---------------------------------------------------------
-
     def test_complete_committed_plan_is_logged(self) -> None:
         files = ["src/auth.py", "tests/test_auth.py"]
         self._make_plan(
@@ -101,7 +104,6 @@ class PlanCompletedHookTests(unittest.TestCase):
         self.assertIn("timestamp", row)
 
     def test_incomplete_plan_not_logged(self) -> None:
-        # 2 batches but only 1 handoff summary -> C2 fails.
         files = ["src/a.py"]
         self._make_plan("2026-06-02-wip-plan", batches=2, summaries=1, files=files, tasks=["001"])
         commit(self.root, "feat: partial", {files[0]: "x"})
@@ -110,8 +112,6 @@ class PlanCompletedHookTests(unittest.TestCase):
         self.assertEqual(self._log(), [])
 
     def test_uncommitted_plan_not_logged(self) -> None:
-        # All batches handed off, but the modified files were never committed
-        # -> C3 (a commit touching them) fails.
         self._make_plan(
             "2026-06-02-uncommitted-plan",
             batches=1,
@@ -124,15 +124,11 @@ class PlanCompletedHookTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, msg=r.stderr)
         self.assertEqual(self._log(), [])
 
-    def test_idempotent_grep_guard_blocks_duplicate(self) -> None:
+    def test_idempotent_dedup_blocks_duplicate(self) -> None:
         files = ["src/a.py"]
-        plan = self._make_plan("2026-06-02-dup-plan", batches=1, summaries=1, files=files, tasks=["001"])
+        self._make_plan("2026-06-02-dup-plan", batches=1, summaries=1, files=files, tasks=["001"])
         commit(self.root, "feat: done", {files[0]: "x"})
         self._run()
-        # Force the cheap mtime gate to pass on the second run so the C4 grep
-        # guard (not just the gate) is what prevents the duplicate.
-        time.sleep(0.01)
-        plan.joinpath("handoff-state.md").write_text(plan.joinpath("handoff-state.md").read_text())
         self._run()
         self.assertEqual(len(self._log()), 1)
 
@@ -146,10 +142,39 @@ class PlanCompletedHookTests(unittest.TestCase):
         rows = self._log()
         self.assertEqual([row["plan"] for row in rows], ["docs/plans/2026-06-01-done-plan"])
 
+    def test_stale_handoff_still_logs_when_log_newer_than_handoff(self) -> None:
+        """Plan B complete but unlogged while plans-completed.jsonl is newer than B's handoff — B must still log."""
+        files_b = ["src/b.py"]
+        files_a = ["src/a.py"]
+        # Directory names must end with `-plan` (hook glob: docs/plans/*-plan/handoff-state.md).
+        plan_b = self._make_plan("2026-06-02-stale-handoff-plan", batches=1, summaries=1, files=files_b, tasks=["001"])
+        commit(self.root, "feat: b done", {files_b[0]: "x"})
+        self._make_plan("2026-06-01-already-logged-plan", batches=1, summaries=1, files=files_a, tasks=["001"])
+        sha_a = commit(self.root, "feat: a done", {files_a[0]: "x"})
+        log_file = self.root / "docs" / "retros" / "plans-completed.jsonl"
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        log_file.write_text(
+            _jsonl_line(
+                {
+                    "event": "plan_completed",
+                    "plan": "docs/plans/2026-06-01-already-logged-plan",
+                    "repo_root": str(self.root),
+                    "task_count": 1,
+                    "batch_count": 1,
+                    "completion_commit": sha_a[:7],
+                    "completion_modified_files": files_a,
+                    "timestamp": "2026-06-01T00:00:00Z",
+                }
+            )
+        )
+        time.sleep(0.02)
+        r = self._run()
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+        plans = [row["plan"] for row in self._log()]
+        self.assertIn("docs/plans/2026-06-02-stale-handoff-plan", plans)
+        self.assertEqual(plans.count("docs/plans/2026-06-01-already-logged-plan"), 1)
+
     def test_already_analyzed_plan_not_backfilled(self) -> None:
-        # A complete+committed plan that a prior retrospective already analyzed
-        # (it appears in evolution-log.jsonl) must NOT be back-filled — doing so
-        # with a fresh timestamp would make a future retro re-scope/re-analyze it.
         name = "2026-05-01-old-plan"
         files = ["src/old.py"]
         self._make_plan(name, batches=1, summaries=1, files=files, tasks=["001"])
@@ -157,18 +182,49 @@ class PlanCompletedHookTests(unittest.TestCase):
         evo = self.root / "docs" / "retros" / "evolution-log.jsonl"
         evo.parent.mkdir(parents=True, exist_ok=True)
         evo.write_text(
-            json.dumps(
+            _jsonl_line(
                 {
                     "event": "retrospective_run",
                     "plans_analyzed": [f"docs/plans/{name}/"],
                     "report": "docs/retros/retro-old.md",
                 }
             )
-            + "\n"
         )
         r = self._run()
         self.assertEqual(r.returncode, 0, msg=r.stderr)
         self.assertEqual(self._log(), [])
+
+    def test_c4b_does_not_skip_unrelated_plan_with_similar_prefix(self) -> None:
+        """docs/plans/foo-plan must not be blocked by retro on docs/plans/foo-plan-extra."""
+        short = "2026-05-01-foo-plan"
+        long = "2026-05-01-foo-plan-extra"
+        files_short = ["src/short.py"]
+        self._make_plan(short, batches=1, summaries=1, files=files_short, tasks=["001"])
+        self._make_plan(long, batches=1, summaries=1, files=["src/long.py"], tasks=["001"])
+        commit(self.root, "feat: short", {files_short[0]: "x"})
+        evo = self.root / "docs" / "retros" / "evolution-log.jsonl"
+        evo.parent.mkdir(parents=True, exist_ok=True)
+        evo.write_text(
+            _jsonl_line(
+                {
+                    "event": "retrospective_run",
+                    "plans_analyzed": [f"docs/plans/{long}/"],
+                    "report": "docs/retros/retro-long.md",
+                }
+            )
+        )
+        r = self._run()
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+        self.assertEqual([row["plan"] for row in self._log()], [f"docs/plans/{short}"])
+
+    def test_archived_sprint_contract_not_counted_in_batch_total(self) -> None:
+        files = ["src/x.py"]
+        plan = self._make_plan("2026-06-02-archive-plan", batches=1, summaries=1, files=files, tasks=["001"])
+        plan.joinpath("sprint-contract-batch-1.v1.md").write_text("archived")
+        commit(self.root, "feat: done", {files[0]: "x"})
+        r = self._run()
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+        self.assertEqual(self._log()[0]["batch_count"], 1)
 
     def test_no_plans_dir_exits_clean(self) -> None:
         r = self._run()
