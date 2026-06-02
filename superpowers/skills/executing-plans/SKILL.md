@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
 ---
 
 # Executing Plans
@@ -225,8 +225,9 @@ See `../../skills/references/git-commit.md` for patterns, templates, and require
 Verify all tasks are complete, then output the completion summary.
 
 1. **Final Task Audit**: Use TaskList to confirm every task has status `completed`. If any task is `in_progress` or `pending`, do NOT proceed — return to Phase 3 to finish remaining tasks.
-2. **Plan Completion Log (optional)**: If `docs/retros/plans-completed.jsonl` is in use for this repo, manually append a `plan_completed` event with fields `{plan, repo_root, task_count, batch_count, completion_commit, completion_modified_files, timestamp}` — `completion_commit` is `git rev-parse HEAD` after Phase 5. This log is no longer auto-written (the Stop hook that used to write it was removed in v3.0.0); `/superpowers:retrospective` gracefully degrades to explicit plan-path mode when the log is absent or stale.
-3. **Summary message**: "Plan execution complete. All [N] tasks verified and committed."
+2. **Summary message**: "Plan execution complete. All [N] tasks verified and committed." (human-facing; not a machine trigger — see note below).
+
+> **Completion log is automatic.** You do NOT write `docs/retros/plans-completed.jsonl` yourself. The plugin's `Stop` hook (`hooks/plan-completed.sh`) detects plan completion from durable on-disk state — every batch handed off (`handoff-summary-*` count ≥ batch count) plus a git commit touching the `handoff-state.md` modified-files set — and appends the `plan_completed` event mechanically, first-completion-only. Detection is state-based, not keyed off any sentence you emit, so it survives paraphrasing or a skipped summary. That log is what `/superpowers:retrospective` Phase 5a reads `completion_commit` from. See `../retrospective/references/evolution-protocol.md` §Plan Completion Log Schema for the row shape.
 
 ## Exit Criteria
 

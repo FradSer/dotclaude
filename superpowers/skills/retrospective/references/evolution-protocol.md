@@ -165,7 +165,7 @@ Scan for `item_*` events to build an item-history table. In Phase 3, **suppress 
 
 ## Plan Completion Log Schema
 
-Optional log at `docs/retros/plans-completed.jsonl` (one JSON object per line, append-only). No longer written automatically; when present, each entry follows this shape:
+Log at `docs/retros/plans-completed.jsonl` (one JSON object per line, append-only). Written deterministically by the `Stop` hook `hooks/plan-completed.sh`, which detects completion from durable plan artifacts — every batch handed off (`handoff-summary-*` count ≥ `sprint-contract-batch-*` count) plus a git commit touching the `handoff-state.md` modified-files set — and appends one row per plan on first completion. Detection is state-based, not keyed off any model utterance, so it is immune to a paraphrased or skipped completion summary. (The v3.0.0 teardown removed the old continuation-loop Stop hook and briefly demoted this write to a Claude-instructed Phase 6 step, which empirical audit showed was silently dropped; the minimal single-purpose hook restores the mechanical write without the loop runtime.) May be absent for plans completed outside `executing-plans` or on a host without `jq`/`git`. Each entry follows this shape:
 
 ```json
 {
@@ -182,6 +182,19 @@ Optional log at `docs/retros/plans-completed.jsonl` (one JSON object per line, a
   "timestamp": "2026-04-07T09:12:00Z"
 }
 ```
+
+**Canonical emit (`hooks/plan-completed.sh`, first completion only):** the hook composes the row below and writes it via `lib/jsonl-emit.sh` executed mode:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" plans-completed \
+  '{event:"plan_completed",plan:$plan,repo_root:$repo_root,task_count:($tc|tonumber),batch_count:($bc|tonumber),completion_commit:$cc,completion_modified_files:$files,timestamp:$timestamp}' \
+  --arg plan "docs/plans/<name>-plan" \
+  --arg tc <task count> --arg bc <batch count> \
+  --arg cc "$(git log -1 --format=%h -- <modified files>)" \
+  --argjson files '["src/a.py","tests/test_a.py"]'
+```
+
+The emitter auto-injects `$timestamp` and `$repo_root`. The hook derives `$files` (backtick items under `## Modified Files (cumulative)`) first, then `$cc` as the most recent commit touching that set (`git log -1 --format=%h -- <files>`) — this both confirms Phase 5 committed and yields the real completion commit rather than a HEAD guess. `$plan` is the repo-relative plan path, `$tc` the bullets under `## Completed Task IDs`, `$bc` the `sprint-contract-batch-*.md` count. A `grep -Fq '"plan":"<path>"'` guard makes it first-completion-only, so re-completing a plan does not double-log.
 
 **Field semantics (v2.8.2):**
 

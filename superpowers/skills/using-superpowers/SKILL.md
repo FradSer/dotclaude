@@ -1,6 +1,6 @@
 ---
 name: using-superpowers
-description: This skill should be used whenever any superpowers skill might apply. The 1% Rule — if there is even a 1% chance one of the user-invocable superpowers skills (brainstorming, writing-plans, executing-plans, retrospective, systematic-debugging) is the right tool for the current request, invoke it explicitly via the Skill tool rather than improvising. Loaded automatically as internal context.
+description: This skill should be used whenever any superpowers skill might apply. Trigger phrases — "brainstorm"/"design"/a new feature idea route to brainstorming; "write a plan"/"decompose into tasks" route to writing-plans; "execute the plan"/"implement" route to executing-plans; a bug/error/test failure/"why does X happen" routes to systematic-debugging; "run a retrospective"/"evolve checklists" routes to retrospective. The 1% Rule — if there is even a 1% chance one of these user-invocable superpowers skills is the right tool for the current request, invoke it explicitly via the Skill tool rather than improvising. Surfaced via these description trigger phrases; the full routing table loads with the skill body.
 user-invocable: false
 ---
 
@@ -36,4 +36,4 @@ This skill was reintroduced in v3.0.0 after the maintainer's fork inadvertently 
 
 - Not a permission gate. You don't need to ask the user before invoking a superpowers skill — the skill's own bail-out check handles "this is too small" deterministically.
 - Not a dispatcher that requires reading both this skill's body and the target skill's body before invoking. The triggers above are sufficient — invoke first, let the skill decide its own scope.
-- Not a meta-skill that should be invoked itself. It is loaded automatically as internal context (`user-invocable: false`) so the trigger table is always available; you never type `/superpowers:using-superpowers`.
+- Not a meta-skill that should be invoked itself. `user-invocable: false` hides it from the `/` menu; its concrete trigger phrases ride in the always-resident description, and this full routing table loads with the body when the skill is pulled in. You never type `/superpowers:using-superpowers`.
