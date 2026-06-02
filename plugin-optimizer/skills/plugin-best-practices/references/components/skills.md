@@ -66,7 +66,7 @@ description: A skill for plugin validation
 | Field                    | Required    | Description                                                                                                                              |
 | ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | name                     | No          | Display name for the skill. If omitted, uses the directory name. Lowercase letters, numbers, and hyphens only (max 64 characters).      |
-| argument-hint | No  | Hint shown during autocomplete to indicate expected arguments. Example: `[issue-number]` or `[filename] [format]`. MUST be empty or omitted if skill takes no arguments (do not use placeholder text like `(no arguments - provides reference guidance)`). |
+| argument-hint | No  | Hint shown during autocomplete to indicate expected arguments. Use `<>` for required (e.g., `<feature-name>`) and `[]` for optional (e.g., `[issue-number]`). MUST be empty or omitted if skill takes no arguments (do not use placeholder text like `(no arguments - provides reference guidance)`). |
 | description              | Recommended | **Critical for skill discovery**. What the skill does and when to use it. MUST use third-person voice with specific trigger phrases. Max 1024 chars. See **Description Best Practices** below. |
 | disable-model-invocation | No          | Set to `true` to prevent Claude from automatically loading this skill. Use for workflows triggered manually. Default: `false`. |
 | user-invocable           | No          | Set to `false` to hide from the / menu. Use for background knowledge users shouldn't invoke directly. Default: `true`.                  |
