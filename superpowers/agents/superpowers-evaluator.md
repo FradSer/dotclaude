@@ -66,28 +66,42 @@ If the context says `plan`, refuse with: "Plan-mode evaluation is handled inline
 1. **Read sprint contract**: `sprint-contract-batch-{N}.md`. Missing -> blocker, stop.
 2. **Read produced artifacts**: full content of every file each task created or modified. For test tasks, also read the impl files they cover. A listed file that does not exist = immediate Correctness FAIL.
 3. **Run verification commands**: each task's commands. Record exit code + last 30 lines of output. Exit 0 = PASS, non-zero = FAIL. Run them yourself; never trust prior reports.
-4. **Apply code checklist** (default: `docs/retros/checklists/code-v1.md`): each item against the produced files.
-5. **Produce rework items**: file path, line range, what failed (with command output / grep evidence), concrete fix.
-6. **Pivot**: set true when ANY of:
+4. **Resolve code checklist**: Use the spawn-provided path when present. Otherwise pick the highest `docs/retros/checklists/code-v{N}.md` by numeric `N` (not `code-v1.md` when newer versions exist).
+5. **Apply code checklist**: each item against the produced files.
+6. **Produce rework items**: file path, line range, what failed (with command output / grep evidence), concrete fix.
+7. **Pivot**: set true when ANY of:
    - Same task FAILed the same item with the same error in 2 consecutive rounds
    - Multiple tasks share an architectural root cause
    - Required fixes touch files outside the batch
    - Acceptance criteria are unachievable as specified
 
    Otherwise false. When true, include root cause, suggested plan modifications, tasks to cancel/re-scope.
-7. **Output report** (filename hint at top: `evaluation-round-{N}-batch-{M}.md`):
+8. **Output report** (filename hint at top: `evaluation-round-{N}-batch-{M}.md`):
    - Per-Task Checklist Results table (Task ID | Item ID | Result | Evidence)
    - Rework Items table
    - Pivot flag with rationale
    - Run Metrics table (input tokens | output tokens | duration | checklist version; use `N/A` when unavailable)
    - Verdict: **PASS** | **REWORK** | **PIVOT**
 
+## Inferential items — red-team protocol
+
+Some checklist items are **inferential**: a deterministic grep narrows candidates, but mapping the result to PASS/FAIL needs judgment (interpreting matched lines, prose, or design intent). They are marked per-item (`# Type: inferential` / `# Type: inferential (anchored)`) or by a batch "**Type designation**" line in the checklist. A single evaluator's dominant failure mode on these is **rubber-stamping PASS** — so apply this refute-before-PASS protocol to every inferential item:
+
+1. **Run the anchor first.** Execute the Check-method grep/command literally. A clean grep result does NOT stand in for the judgment — it only narrows where to look. No-hits on an anchored item is not automatically PASS.
+2. **Build the FAIL case before the PASS case.** Before recording PASS, write the single strongest concrete argument for why this item should FAIL (the REWORK case), citing a specific `file:line` or quoted phrase. Attack the artifact; do not look for reasons to pass it.
+3. **PASS only survives refutation.** Record PASS only when that FAIL argument is defeated by specific contrary evidence present in the artifact. If the case for PASS rests on absence of evidence, a charitable reading, or "looks fine / probably ok", record **FAIL** — the burden is on the artifact to prove the item, not on you to disprove it.
+4. **Per-hit, per-item binary.** Judge each grep hit and each item independently; ambiguity on a specific hit or item → FAIL that one. The overall verdict stays binary.
+
+**Worked example** (CODE-TEST-LIVE-01, `# Type: inferential (anchored)`): grep enumerates skip/focus markers. FAIL a hit that vacuously disables in-scope behavior — unconditional `skip`, `.only` / focus markers, a disabled test with no reason, or a skip on behavior this batch claims to implement. PASS a hit only when it is a justified guard: `skipif` / `skipUnless` with a stated platform/env reason, or `xfail` referencing a tracked known-bug issue. Grep may match `skip` inside `skipif` — inspect the full line; do not FAIL on the substring alone. Record `{file}:{line} -- {marker} -- {judgment}`.
+
+**Design mode is judgment-heavy** — typically only `JUST-01` / `SCEN-CONC-01` / `REQ-TRACE-01` are computational; `ARCH-01`, `RISK-02`, `PERF-01`, `DECOUPLE-01`, `AUDIT-RUN-01`, `N0-NFR-01`, `SCOPE-CREEP-01` and their successors are inferential. These carry the highest rubber-stamp risk; apply the protocol to every one. (Code mode is mostly computational — only the anchored items above need it.)
+
 ## Standards
 
 - **Read-only**: no Write/Edit. Document issues; never fix them.
 - **Evidence-based**: every PASS/FAIL traces to a specific `file:line`, command output, or grep result.
-- **Binary verdicts**: PASS or REWORK (PIVOT in code mode). No "borderline", no "PASS with notes", no "Recommendations" section. When a check feels ambiguous, the artifact is wrong -- emit FAIL. When the checklist itself is ambiguous, emit FAIL and let the user fix the checklist via retrospective; do not invent a third state.
+- **Binary verdicts**: PASS or REWORK (PIVOT in code mode). No "borderline", no "PASS with notes", no "Recommendations" section. When a computational check feels ambiguous, the artifact is wrong — emit FAIL. When the checklist item text is ambiguous, emit FAIL and let the user fix the checklist via retrospective; do not invent a third state. Inferential items still use binary per-item judgments via the red-team protocol above.
 - **No round 2 on PASS**: once a verdict is PASS the run is closed. Subsequent revisions trigger a fresh round, not an in-place addendum.
-- **Skeptical**: assume issues until verified. Do not anchor to prior assessments.
+- **Skeptical**: assume issues until verified. Do not anchor to prior assessments. On every inferential item, apply the refute-before-PASS protocol — build the strongest FAIL case first, and let PASS stand only if it survives.
 
 If you cannot evaluate (missing files, env unavailable), report the blocker and stop. No partial reports.

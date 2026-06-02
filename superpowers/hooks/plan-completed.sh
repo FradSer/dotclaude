@@ -26,9 +26,8 @@
 #   C4  it is not already in plans-completed.jsonl       (first completion only)
 # When C1..C4 hold the row is written. The model can stay completely silent.
 #
-# Fires on EVERY Stop across all sessions/projects. Hot-path gate: a single
-# `find -newer` — if no plan's handoff-state.md is newer than the log, exit 0
-# at once, so unrelated Stops cost one find and nothing else. Best-effort
+# Fires on EVERY Stop across all sessions/projects. Per-plan C4/C4b dedup is
+# cheap (anchored substring on tail-200 via jsonl-emit dedup_check). Best-effort
 # throughout (missing jq/git, unparseable state all exit 0); never blocks
 # session exit and never writes more than one row per plan.
 
@@ -45,51 +44,51 @@ command -v git >/dev/null 2>&1 || exit 0
 
 # shellcheck source=../lib/utils.sh
 source "${SCRIPT_DIR}/../lib/utils.sh" 2>/dev/null || exit 0
+# shellcheck source=../lib/jsonl-emit.sh
+source "${SCRIPT_DIR}/../lib/jsonl-emit.sh" 2>/dev/null || exit 0
 ROOT="$(repo_root)"
 [[ -n "$ROOT" ]] || exit 0
 PLANS_DIR="${ROOT%/}/docs/plans"
 [[ -d "$PLANS_DIR" ]] || exit 0
 LOG_FILE="${ROOT%/}/docs/retros/plans-completed.jsonl"
 
-# --- Hot-path gate: any plan activity newer than the log? ----------------
-if [[ -f "$LOG_FILE" ]]; then
-  newer=$(find "$PLANS_DIR" -maxdepth 2 -name handoff-state.md -newer "$LOG_FILE" 2>/dev/null | head -1)
-  [[ -n "$newer" ]] || exit 0
-fi
-
 EMIT="${SCRIPT_DIR}/../lib/jsonl-emit.sh"
+DEDUP_ANCHOR=','  # prefix for dedup_check substring below
 
 # --- Evaluate the completion condition for each plan ---------------------
 for HS in "$PLANS_DIR"/*-plan/handoff-state.md; do
   [[ -f "$HS" ]] || continue
   PLAN_DIR="$(dirname "$HS")"
 
-  # C1: batches were planned.
-  B=$(find "$PLAN_DIR" -maxdepth 1 -name 'sprint-contract-batch-*.md' 2>/dev/null | wc -l | tr -d ' ')
+  # C1: batches were planned (active contracts only; exclude archived .vN).
+  B=$(find "$PLAN_DIR" -maxdepth 1 -name 'sprint-contract-batch-*.md' \
+    ! -name 'sprint-contract-batch-*.v*.md' 2>/dev/null | wc -l | tr -d ' ')
   [[ "$B" =~ ^[0-9]+$ && "$B" -ge 1 ]] || continue
 
   # C2: every batch handed off.
   H=$(find "$PLAN_DIR" -maxdepth 1 -name 'handoff-summary-*.md' 2>/dev/null | wc -l | tr -d ' ')
   [[ "$H" =~ ^[0-9]+$ && "$H" -ge "$B" ]] || continue
 
-  # C4 (cheap, do before git): already logged?
+  # repo-relative plan path, no trailing slash — the dedup key.
   PLAN_REL="${PLAN_DIR#"${ROOT%/}/"}"
   PLAN_REL="${PLAN_REL%/}"
-  if [[ -f "$LOG_FILE" ]] && grep -Fq "\"plan\":\"${PLAN_REL}\"" "$LOG_FILE" 2>/dev/null; then
+  PLAN_DEDUP="${DEDUP_ANCHOR}\"plan\":\"${PLAN_REL}\""
+
+  # C4 (cheap, do before git): already logged?
+  if dedup_check "$LOG_FILE" "$PLAN_DEDUP"; then
     continue
   fi
 
-  # C4b: skip plans a retrospective has already analyzed. evolution-log.jsonl
-  # records analyzed plans in retrospective_run.plans_analyzed (and item_added
-  # driving_plans); either appearance means the plan is already in the loop.
-  # Without this, the hook back-fills an old, already-processed plan with a
-  # fresh timestamp — which would make a future retrospective's auto-scope
-  # ("plans completed after the last retrospective_run") re-scope and
-  # re-analyze it. The grep matches the repo-relative path with or without a
-  # trailing slash (evolution-log stores the slashed form).
+  # C4b: skip plans a retrospective has already analyzed (evolution-log.jsonl).
+  # Anchored ,"plan":"<path>" for item_* rows; quoted "<path>/" for plans_analyzed.
   EVO_LOG="${ROOT%/}/docs/retros/evolution-log.jsonl"
-  if [[ -f "$EVO_LOG" ]] && grep -Fq "$PLAN_REL" "$EVO_LOG" 2>/dev/null; then
-    continue
+  if [[ -f "$EVO_LOG" ]]; then
+    if grep -Fq "$PLAN_DEDUP" "$EVO_LOG" 2>/dev/null; then
+      continue
+    fi
+    if grep -Fq "\"${PLAN_REL}/\"" "$EVO_LOG" 2>/dev/null; then
+      continue
+    fi
   fi
 
   # Modified-files set (backtick items under "## Modified Files (cumulative)").

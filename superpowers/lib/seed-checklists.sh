@@ -304,7 +304,7 @@ EOF
 
 ## Purpose
 
-Binary PASS/FAIL checklist for evaluating produced code artifacts at the end of a sprint batch. Each item produces a deterministic result: re-running the check against the same files yields the same outcome.
+Binary PASS/FAIL checklist for evaluating produced code artifacts at the end of a sprint batch. Computational items are deterministic; inferential (anchored) items use a deterministic narrow step plus per-hit judgment (see each item's `# Type:` line).
 
 ## Artifacts Under Evaluation
 

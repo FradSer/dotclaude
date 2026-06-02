@@ -2,8 +2,9 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.1.0
+**Version**: 3.1.1
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
+**Runtime** (plan completion hook): `git` and `jq` on `PATH` — without them the Stop hook exits silently and `docs/retros/plans-completed.jsonl` is not written
 
 ## Installation
 
@@ -103,11 +104,11 @@ Execute written implementation plans in predictable batches.
 Analyze evaluation patterns across completed plans and evolve checklists.
 
 - Aggregates evaluation reports across plans to find failure patterns, plateau tasks, and never-failing items
-- Proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE) via `AskUserQuestion`
+- Proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE); Phase 4 auto-applies approved proposals (review post-commit via `git show docs/retros/checklists/`)
 - Audits harness health (Phase 5, advisory): mines post-plan correction commits into ADD proposals and surfaces never-firing items as REMOVE candidates
 - Closes the calibration loop by appending to `docs/retros/evolution-log.jsonl`
 
-**Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory. Invoke with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). The `docs/retros/plans-completed.jsonl` completion log is **optional** — it is no longer auto-written, so the retrospective auto-scope and post-plan-diff pre-check are skipped silently when it is absent.
+**Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory. Invoke with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). When the plugin Stop hook (`hooks/plan-completed.sh`) can run (`git` + `jq` present, plan artifacts complete), `docs/retros/plans-completed.jsonl` is **appended automatically** on first completion and drives auto-scope plus post-plan-diff pre-check. The log may be absent for plans finished outside `executing-plans`, bail-out inline runs, or hosts missing `jq`/`git` — retrospective still works with explicit plan paths but skips auto-scope.
 
 **Output:** Retrospective report and updated `{mode}-v{N+1}.md` checklists (if any proposals approved)
 
@@ -178,6 +179,8 @@ Loaded when implementing features or bugfixes during execution. Enforces the Red
 superpowers/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest with skill registration
+├── hooks/
+│   └── plan-completed.sh        # Stop hook: state-based plans-completed.jsonl writer (v3.1+)
 ├── agents/
 │   └── superpowers-evaluator.md # Independent read-only evaluator (design / code modes)
 ├── lib/
@@ -227,7 +230,8 @@ superpowers/
 │   ├── conftest.py              # Shared test fixtures
 │   ├── test_jsonl_emit_sh.py    # jsonl-emit.sh unit tests
 │   ├── test_post_plan_diff_sh.py # post-plan-diff.sh unit tests
-│   └── test_superpowers_regressions.py # Regression tests
+│   ├── test_superpowers_regressions.py # Regression tests
+│   └── test_plan_completed_hook_sh.py  # plan-completed Stop hook contract
 ├── LICENSE
 └── README.md
 ```
@@ -244,13 +248,20 @@ superpowers/
 
 The plugin exposes a lightweight feedback loop so checklists improve as models improve:
 
-- Run `/superpowers:retrospective` with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). The `docs/retros/plans-completed.jsonl` completion log is **optional** — it is no longer auto-written, so the retrospective auto-scope and post-plan-diff pre-check are skipped silently when it is absent.
-- `/superpowers:retrospective` reads each plan's evaluation reports plus the post-plan commits (`refactor:`/`fix:`/`style:`/`perf:` on plan-modified files) and proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE), applied to `{mode}-v{N+1}.md` and logged to `docs/retros/evolution-log.jsonl`.
-- Phase 5 is **advisory only** — it mines post-plan corrections into ADD proposals and flags never-firing items as REMOVE candidates. Component changes go through ordinary proposals with human review of the post-commit diff.
+| Mechanism | What it verifies | Ground truth |
+|-----------|------------------|--------------|
+| `/goal` (optional) | Multi-turn continuation stop rule | Transcript only — phrase conditions as narrated commit hash + Phase 6 summary |
+| `superpowers-evaluator` (per batch) | Artifacts, commands, checklists | Filesystem + shell |
+| `hooks/plan-completed.sh` (Stop) | `plan_completed` row for retrospective Phase 5a | Plan artifacts + git (`handoff-state.md`, batches, handoffs) |
+| `/superpowers:retrospective` | Cross-plan patterns → checklist versions | Evaluation reports + post-plan-diff + evolution-log |
+
+- Run `/superpowers:retrospective` with explicit plan paths (or `--across-all`). When `plans-completed.jsonl` exists, auto-scope and post-plan-diff pre-check use `completion_commit` from that log.
+- `/superpowers:retrospective` reads evaluation reports plus post-plan commits (`refactor:`/`fix:`/`style:`/`perf:` on plan-modified files) and applies versioned checklist changes to `{mode}-v{N+1}.md`, logged in `docs/retros/evolution-log.jsonl`.
+- Phase 5 is **advisory only** — it mines post-plan corrections into ADD proposals and flags never-firing items as REMOVE candidates.
 
 > **Removed in v3.0.0.** The hand-rolled continuation runtime was torn out in favor of Claude Code's native `/goal`. Deleted: the Stop-hook continuation loop (formerly `lib/loop.sh`), the `UserPromptSubmit` / `PostToolUse` / `Stop` hook registrations and their scripts, `scripts/setup-superpower-loop.sh`, and the per-session JSON state file. Autonomous multi-turn continuation now uses native `/goal`; per-batch context reset still uses the native Agent/Task tools, and `lib/utils.sh` is slimmed to the `repo_root` helper.
 >
-> **Partially revised in v3.1.0.** Demoting the `plan_completed` write to a Claude-instructed Phase 6 step (rather than hook-written) was a mistake: empirical audit showed the manual write is silently dropped, starving the retrospective Phase 5a signal that reads `completion_commit` from it. v3.1.0 reintroduces a single minimal `Stop` hook (`hooks/plan-completed.sh`) whose ONLY job is that mechanical write. Detection is **state-based** — it fires when a plan's durable artifacts show completion (every batch handed off plus a git commit touching the modified-files set), not off any sentence the model emits, so it survives a paraphrased or skipped completion summary (the `/goal` philosophy: evaluate a condition each turn, don't trust a one-shot utterance). A `find -newer` gate keeps unrelated Stops near-free. It carries none of the deleted continuation/stall/telemetry runtime — the continuation loop stays gone. The batch-progress mechanism that earlier code documented as a bug-fix retrofit was preserved and relocated to `skills/executing-plans/scripts/batch-progress.sh`. The 1% Rule dispatcher `using-superpowers` from the original `obra/superpowers` was reintroduced.
+> **Partially revised in v3.1.x.** Demoting the `plan_completed` write to a Claude-instructed Phase 6 step (rather than hook-written) was a mistake: empirical audit showed the manual write is silently dropped, starving the retrospective Phase 5a signal that reads `completion_commit` from it. v3.1 reintroduces a single minimal `Stop` hook (`hooks/plan-completed.sh`) whose ONLY job is that mechanical write. Detection is **state-based** — every batch handed off plus a git commit touching the `handoff-state.md` modified-files set — not keyed off any sentence the model emits. Per-plan dedup is cheap (anchored substring checks); the hook still runs on every Stop but exits quickly when C1–C4 fail. It carries none of the deleted continuation/stall/telemetry runtime. **v3.1.1** removes the `find -newer` global gate that could skip backlog plans in multi-plan repos, tightens evolution-log guards, and aligns docs/evaluator defaults with `code-v{N}` checklists.
 
 > **Removed in v2.9.0.** The automated assumption-test layer — `harness-config.json` one-at-a-time component disabling, the `harness-observations.jsonl` / `bail-out-events.jsonl` / `skill-events.jsonl` telemetry channels, and the `RETROSPECTIVE DUE` auto-reminder — was deleted. An audit of 6 real projects showed those channels stayed empty everywhere and the single disable test that ever ran had to be reverted by hand; the value came entirely from the evaluator + manually-invoked retrospective + post-plan-diff. The REMOVE threshold was also lowered (10+ → 3+ reports/item) so the loop can shrink checklists, not only grow them.
 
@@ -260,4 +271,4 @@ Frad LEE (fradser@gmail.com)
 
 ## License
 
-MIT
+MIT. Based on [obra/superpowers](https://github.com/obra/superpowers) by Jesse Vincent (MIT, Copyright (c) 2025). See `LICENSE` for full notices.

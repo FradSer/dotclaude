@@ -87,6 +87,7 @@ Append to `docs/retros/evolution-log.jsonl` (one JSON object per line, append-on
 {
   "timestamp": "2026-04-07T14:30:00Z",
   "event": "item_added|item_removed|item_modified|item_promoted",
+  "provenance": "retrospective",
   "mode": "design|plan|code",
   "item_id": "SCEN-CONC-03",
   "description": "Error scenarios must name specific HTTP status codes",
@@ -147,6 +148,8 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" evolution-log \
 
 Substitute `item_removed | item_modified | item_promoted` for the `event` arg as appropriate.
 
+**Provenance** (optional, recommended): `"retrospective"` (Phase 4 ADD with driving_plans), `"phase_5a_override"` (single-plan post-plan-diff ADD), or `"maintainer_baseline"` (seed promotion with empty `driving_plans`). Phase 1 readers use this to avoid treating maintainer baselines as retrospective-backed evidence.
+
 **Retrospective-run event** — invoked from Phase 6 closure exactly once per retrospective:
 
 ```bash
@@ -194,18 +197,20 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" plans-completed \
   --argjson files '["src/a.py","tests/test_a.py"]'
 ```
 
-The emitter auto-injects `$timestamp` and `$repo_root`. The hook derives `$files` (backtick items under `## Modified Files (cumulative)`) first, then `$cc` as the most recent commit touching that set (`git log -1 --format=%h -- <files>`) — this both confirms Phase 5 committed and yields the real completion commit rather than a HEAD guess. `$plan` is the repo-relative plan path, `$tc` the bullets under `## Completed Task IDs`, `$bc` the `sprint-contract-batch-*.md` count. A `grep -Fq '"plan":"<path>"'` guard makes it first-completion-only, so re-completing a plan does not double-log.
+The emitter auto-injects `$timestamp` and `$repo_root`. The hook derives `$files` (backtick items under `## Modified Files (cumulative)`) first, then `$cc` as the most recent commit touching that set (`git log -1 --format=%h -- <files>`) — this both confirms Phase 5 committed and yields the completion anchor rather than a bare `HEAD` guess. `$plan` is the repo-relative plan path, `$tc` the bullets under `## Completed Task IDs`, `$bc` the active `sprint-contract-batch-*.md` count (archived `*.vN.md` excluded). First-completion-only dedup uses `lib/jsonl-emit.sh` `dedup_check` with anchored substring `,"plan":"<path>"` on the log tail (same spirit as the deleted `loop.sh` writer).
 
-**Field semantics (v2.8.2):**
+**Field semantics (v3.1):**
 
 - `plan` — **repo-relative** path with NO trailing slash. Cross-worktree (macOS `/var` ↔ `/private/var`), cross-clone, and cross-machine stable. Used as the dedup key — entries with identical `plan` collapse to the first occurrence.
 - `repo_root` — absolute path to the git toplevel resolved via `git rev-parse --show-toplevel`, fallback to `$PWD` when not in a git repo. Audit/debug only; not a dedup key.
-- `task_count` / `batch_count` — best-effort enrichment from `_index.md` YAML and `sprint-contract-batch-*.md` file count (v2.8.0). Default 0 when source files missing.
-- `completion_commit` — short SHA of `HEAD` at plan completion (v2.8.1). Empty string when not in a git repo. Drives retrospective Phase 1 step 8 post-plan-diff loop.
-- `completion_modified_files` — repo-relative paths every executing-plans batch touched (v2.8.1, sourced from state's `modified_files` accumulator). Defaults to `[]`. Restricts post-plan-diff scope to plan-related files.
-- `timestamp` — UTC ISO 8601 first-completion time.
+- `task_count` / `batch_count` — enrichment from `handoff-state.md` (`## Completed Task IDs` bullets) and active `sprint-contract-batch-*.md` count. Default 0 when unparseable.
+- `completion_commit` — short SHA of the **most recent commit touching `completion_modified_files`** at first log time (`git log -1 --format=%h -- <files>`). Not necessarily current `HEAD` if later work touches the same paths. Drives retrospective Phase 1 step 6 post-plan-diff loop. Empty when C3 cannot resolve a commit.
+- `completion_modified_files` — repo-relative paths from `handoff-state.md` `` `backtick` `` items under `## Modified Files (cumulative)`. Defaults to `[]`. Restricts post-plan-diff scope to plan-related files.
+- `timestamp` — UTC ISO 8601 first-completion time (auto-injected by `jsonl-emit.sh`).
 
-**Dedup semantics (v2.8.2):** plans-completed.jsonl is "first completion per plan". Multiple promise fires on the same plan (re-entry, amendment, partial rerun) skip the write — re-running `superpowers:executing-plans` on a finished plan does NOT double-log nor re-trigger retrospective auto-scope. The dedup gate uses jq with `try/catch` so a single corrupt prior line does not disable the gate. To force a fresh entry (e.g., after wiping the log to retroactively migrate pre-v2.8.2 absolute-path entries), the user removes the matching line manually — there is no `--force-relog` flag by design (relogging same-plan plays badly with calibration loop assumptions).
+**Dedup semantics (v3.1):** plans-completed.jsonl is "first completion per plan". Re-running `superpowers:executing-plans` on a finished plan does NOT double-log nor re-trigger retrospective auto-scope. The hook skips when `dedup_check` finds anchored `,"plan":"<path>"` in the log tail-200, or when the same anchor appears in `evolution-log.jsonl` (plan already analyzed). To force a fresh entry, remove the matching line manually — there is no `--force-relog` flag by design.
+
+**`/goal` vs hook:** `/goal` success (transcript condition met) does **not** imply a `plan_completed` row exists. The hook requires filesystem C1–C4; missing `jq`/`git` or incomplete handoff artifacts → silent no-op while `/goal` may still stop.
 
 **Backward compatibility:** pre-v2.8.2 entries have `plan` written as absolute path and lack `repo_root` / `completion_commit` / `completion_modified_files`. They coexist with new entries — dedup matches on the new repo-relative form, so stale absolute-path entries naturally age out without explicit migration. Retrospective Phase 1 step 8 silently skips entries lacking `completion_commit`.
 
