@@ -14,10 +14,13 @@ if [[ ! -f "$STATE_FILE" ]]; then
   exit 0
 fi
 
-# Parse YAML frontmatter (between --- delimiters)
-FRONTMATTER=$(sed -n '/^---$/,/^---$/{ /^---$/d; p; }' "$STATE_FILE")
+# Parse YAML frontmatter — strictly the first --- ... --- block, so a later
+# `---` inside the prompt body (e.g. the output-format reference) can't leak in.
+FRONTMATTER=$(awk '/^---$/{n++; next} n==1{print} n>=2{exit}' "$STATE_FILE")
 ITERATION=$(echo "$FRONTMATTER" | grep '^iteration:' | sed 's/iteration: *//')
 MAX_ITERATIONS=$(echo "$FRONTMATTER" | grep '^max_iterations:' | sed 's/max_iterations: *//')
+MAX_SECONDS=$(echo "$FRONTMATTER" | grep '^max_seconds:' | sed 's/max_seconds: *//')
+STARTED_AT_EPOCH=$(echo "$FRONTMATTER" | grep '^started_at_epoch:' | sed 's/started_at_epoch: *//')
 COMPLETION_PROMISE=$(echo "$FRONTMATTER" | grep '^completion_promise:' | sed 's/completion_promise: *//' | sed 's/^"\(.*\)"$/\1/')
 
 # Session isolation: only respond to the session that started the loop
@@ -49,60 +52,62 @@ if [[ $MAX_ITERATIONS -gt 0 ]] && [[ $ITERATION -ge $MAX_ITERATIONS ]]; then
   exit 0
 fi
 
-# Get transcript path from hook input
-TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path')
-
-if [[ ! -f "$TRANSCRIPT_PATH" ]]; then
-  echo "Autoresearch: Transcript file not found: $TRANSCRIPT_PATH" >&2
-  echo "Stopping loop." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
-
-# Check for assistant messages in transcript
-if ! grep -q '"role":"assistant"' "$TRANSCRIPT_PATH"; then
-  echo "Autoresearch: No assistant messages found in transcript. Stopping." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
-
-# Extract the most recent assistant text block (capped at last 100 lines)
-LAST_LINES=$(grep '"role":"assistant"' "$TRANSCRIPT_PATH" | tail -n 100)
-if [[ -z "$LAST_LINES" ]]; then
-  echo "Autoresearch: Failed to extract assistant messages. Stopping." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
-
-set +e
-LAST_OUTPUT=$(echo "$LAST_LINES" | jq -rs '
-  map(.message.content[]? | select(.type == "text") | .text) | last // ""
-' 2>&1)
-JQ_EXIT=$?
-set -e
-
-if [[ $JQ_EXIT -ne 0 ]]; then
-  echo "Autoresearch: Failed to parse assistant message JSON: $LAST_OUTPUT" >&2
-  echo "Stopping loop." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
-
-# Check for completion promise
-if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
-  PROMISE_TEXT=$(echo "$LAST_OUTPUT" | perl -0777 -pe 's/.*?<promise>(.*?)<\/promise>.*/$1/s; s/^\s+|\s+$//g; s/\s+/ /g' 2>/dev/null || echo "")
-  if [[ -n "$PROMISE_TEXT" ]] && [[ "$PROMISE_TEXT" = "$COMPLETION_PROMISE" ]]; then
-    echo "Autoresearch loop: Detected <promise>$COMPLETION_PROMISE</promise> — research complete."
+# Check wall-clock budget (independent of iteration count, so a stuck or
+# fast-spinning agent still terminates). Only enforced when both fields are
+# valid integers; a missing/corrupt epoch must not silently disable the bound.
+if [[ "${MAX_SECONDS:-0}" =~ ^[0-9]+$ ]] && [[ $MAX_SECONDS -gt 0 ]]; then
+  if [[ ! "${STARTED_AT_EPOCH:-}" =~ ^[0-9]+$ ]]; then
+    echo "Autoresearch: State file corrupted — 'started_at_epoch' is not a number (got: '${STARTED_AT_EPOCH:-}')" >&2
+    echo "Removing state file. Run /autoresearch:start to start fresh." >&2
     rm "$STATE_FILE"
     exit 0
+  fi
+  NOW_EPOCH=$(date +%s)
+  ELAPSED=$((NOW_EPOCH - STARTED_AT_EPOCH))
+  if [[ $ELAPSED -ge $MAX_SECONDS ]]; then
+    echo "Autoresearch loop: Wall-clock budget (${MAX_SECONDS}s) reached after ${ELAPSED}s."
+    rm "$STATE_FILE"
+    exit 0
+  fi
+fi
+
+# Completion-promise detection (only when a promise is configured). The
+# transcript is read solely for this check, so any failure to read or parse it
+# is treated as transient: warn and keep looping — never delete state or stop
+# the run over a momentarily-unreadable transcript.
+if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
+  TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path // ""')
+
+  LAST_OUTPUT=""
+  if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
+    # Parse each line independently with `fromjson?` so a single truncated or
+    # malformed line (e.g. one still being flushed) cannot abort the whole
+    # extraction. Take the most recent assistant text block.
+    LAST_OUTPUT=$(grep '"role":"assistant"' "$TRANSCRIPT_PATH" 2>/dev/null | tail -n 100 \
+      | jq -R -r 'fromjson? | .message.content[]? | select(.type == "text") | .text' 2>/dev/null \
+      | tail -n 1 || true)
+  else
+    echo "Autoresearch: Transcript unreadable this round — skipping promise check, continuing loop." >&2
+  fi
+
+  if [[ -n "$LAST_OUTPUT" ]]; then
+    # Extract only the <promise>...</promise> content; prints nothing when the
+    # tag is absent (so a single-token phrase can't match the whole message).
+    PROMISE_TEXT=$(echo "$LAST_OUTPUT" | perl -0777 -ne 'if (m{<promise>(.*?)</promise>}s) { my $p=$1; $p =~ s/^\s+|\s+$//g; $p =~ s/\s+/ /g; print $p }' 2>/dev/null || echo "")
+    if [[ -n "$PROMISE_TEXT" ]] && [[ "$PROMISE_TEXT" = "$COMPLETION_PROMISE" ]]; then
+      echo "Autoresearch loop: Detected <promise>$COMPLETION_PROMISE</promise> — research complete."
+      rm "$STATE_FILE"
+      exit 0
+    fi
   fi
 fi
 
 # Continue loop — increment iteration and feed prompt back
 NEXT_ITERATION=$((ITERATION + 1))
 
-# Extract prompt (everything after the closing ---)
-PROMPT_TEXT=$(awk '/^---$/{i++; next} i>=2' "$STATE_FILE")
+# Extract prompt — everything after the 2nd `---`, preserving any later `---`
+# lines in the body (e.g. the output-format reference block).
+PROMPT_TEXT=$(awk 'seen>=2{print; next} /^---$/{seen++}' "$STATE_FILE")
 
 if [[ -z "$PROMPT_TEXT" ]]; then
   echo "Autoresearch: State file missing prompt text. Stopping." >&2
@@ -110,26 +115,39 @@ if [[ -z "$PROMPT_TEXT" ]]; then
   exit 0
 fi
 
-# Atomically update iteration counter
+# Atomically update iteration counter — anchored to the first frontmatter
+# block so a stray `iteration:`-like line in the prompt body is never touched.
 TEMP_FILE="${STATE_FILE}.tmp.$$"
-sed "s/^iteration: .*/iteration: $NEXT_ITERATION/" "$STATE_FILE" > "$TEMP_FILE"
+awk -v n="$NEXT_ITERATION" '
+  /^---$/ { blk++; print; next }
+  blk == 1 && /^iteration:/ { print "iteration: " n; next }
+  { print }
+' "$STATE_FILE" > "$TEMP_FILE"
 mv "$TEMP_FILE" "$STATE_FILE"
 
 # Build system message
 if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
   SYSTEM_MSG="Autoresearch experiment $NEXT_ITERATION | To stop: output <promise>$COMPLETION_PROMISE</promise> (ONLY when genuinely true)"
 else
-  SYSTEM_MSG="Autoresearch experiment $NEXT_ITERATION | Loop runs indefinitely — use /autoresearch:cancel to stop manually"
+  SYSTEM_MSG="Autoresearch experiment $NEXT_ITERATION | Runs until the configured bound — /autoresearch:cancel to stop early"
 fi
 
-# Block exit and inject research prompt
+# Block exit and inject the research prompt. The prompt MUST go in
+# hookSpecificOutput.additionalContext — that is the only field added to
+# Claude's context. `reason` is user-facing only and is NOT seen by Claude,
+# so it carries a short note, not the prompt. `systemMessage` shows the user
+# the experiment counter / how to stop.
 jq -n \
   --arg prompt "$PROMPT_TEXT" \
   --arg msg "$SYSTEM_MSG" \
   '{
     "decision": "block",
-    "reason": $prompt,
-    "systemMessage": $msg
+    "reason": "Autoresearch loop active — continuing the experiment loop.",
+    "systemMessage": $msg,
+    "hookSpecificOutput": {
+      "hookEventName": "Stop",
+      "additionalContext": $prompt
+    }
   }'
 
 exit 0

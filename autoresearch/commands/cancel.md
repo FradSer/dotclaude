@@ -1,10 +1,12 @@
 ---
 description: "Cancel active autoresearch loop"
 allowed-tools: ["Bash(test -f .claude/autoresearch.local.md:*)", "Bash(rm .claude/autoresearch.local.md)", "Read(.claude/autoresearch.local.md)"]
-hide-from-slash-command-tool: "true"
+disable-model-invocation: true
 ---
 
 # Cancel Autoresearch
+
+Run this from a **separate** Claude Code session in the same project directory — the looping session is busy being re-prompted by the stop hook and cannot run this itself. Removing the state file makes the loop's next stop-hook fire find no state and exit cleanly.
 
 To cancel the autoresearch loop:
 

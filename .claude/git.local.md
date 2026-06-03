@@ -13,6 +13,7 @@ scopes:
   - cc          # Claude config
   - codec       # Code context
   - sp          # Superpowers
+  - as          # Autoresearch plugin
   - nd          # Next devtools
   - docs        # Documentation
   - ci          # CI/CD
