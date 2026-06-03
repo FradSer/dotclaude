@@ -119,6 +119,17 @@ claude plugin install frontend@frad-dotclaude
 
 ---
 
+### [autoresearch](autoresearch/)
+
+受 karpathy/autoresearch 启发的自主 ML 研究循环 —— 在 train.py 上运行有边界的实验，将结果记录到 results.tsv，并通过 stop hook 持续迭代。
+
+**安装：**
+```bash
+claude plugin install autoresearch@frad-dotclaude
+```
+
+---
+
 ### [acpx](acpx/)
 
 acpx 知识库 - 用于 Agent 间通信的无头 ACP CLI。

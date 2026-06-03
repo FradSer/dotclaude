@@ -119,6 +119,17 @@ claude plugin install frontend@frad-dotclaude
 
 ---
 
+### [autoresearch](autoresearch/)
+
+Autonomous ML research loop inspired by karpathy/autoresearch — runs bounded experiments on train.py, logs results to results.tsv, and iterates via a stop hook.
+
+**Installation:**
+```bash
+claude plugin install autoresearch@frad-dotclaude
+```
+
+---
+
 ### [acpx](acpx/)
 
 Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication.
