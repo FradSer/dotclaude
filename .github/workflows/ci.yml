@@ -67,3 +67,14 @@ jobs:
           else
             echo "No tests found for ${{ matrix.plugin }}, skipping"
           fi
+
+  ci-success:
+    if: always()
+    needs: [discover-plugins, validate, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs succeeded
+        run: |
+          [ "${{ needs.discover-plugins.result }}" = "success" ] \
+            && [ "${{ needs.validate.result }}" = "success" ] \
+            && [ "${{ needs.test.result }}" = "success" ] || exit 1
