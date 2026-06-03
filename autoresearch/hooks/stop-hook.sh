@@ -33,6 +33,8 @@ fm_get() {
 }
 
 # Strip optional YAML double quotes from a scalar value.
+# Inverse of the yaml_escape() in setup-autoresearch.sh — if you change one,
+# update the other to preserve round-trip fidelity.
 fm_unquote() {
   local v="$1"
   if [[ "$v" =~ ^\"(.*)\"$ ]]; then
@@ -43,62 +45,60 @@ fm_unquote() {
   printf '%s' "$v"
 }
 
+# Abort: print message, remove state file, exit cleanly.
+abort_cleanup() {
+  echo "Autoresearch: $*" >&2
+  rm -f "$STATE_FILE"
+  exit 0
+}
+
+# Validate a field is a non-negative integer; abort with a specific message if not.
+require_uint() {
+  local name="$1" val="$2"
+  if [[ ! "$val" =~ ^[0-9]+$ ]]; then
+    abort_cleanup "State file corrupted — '$name' is not a number (got: '$val'). Removing state file. Run /autoresearch:start to start fresh."
+  fi
+}
+
 ITERATION=$(fm_get iteration)
 MAX_ITERATIONS=$(fm_get max_iterations)
 MAX_SECONDS=$(fm_get max_seconds)
 STARTED_AT_EPOCH=$(fm_get started_at_epoch)
 COMPLETION_PROMISE=$(fm_unquote "$(fm_get completion_promise)")
+HAS_PROMISE=false
+if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
+  HAS_PROMISE=true
+fi
 
 # Session isolation: only respond to the session that started the loop.
+# Extract both fields from hook input in one jq call.
+read -r HOOK_SESSION TRANSCRIPT_PATH < <(
+  echo "$HOOK_INPUT" | jq -r '[.session_id // "", .transcript_path // ""] | @tsv' 2>/dev/null || echo ""
+)
 STATE_SESSION=$(fm_unquote "$(fm_get session_id)")
-HOOK_SESSION=$(echo "$HOOK_INPUT" | jq -r '.session_id // ""' 2>/dev/null || echo "")
 
 if [[ -z "$STATE_SESSION" ]]; then
-  echo "Autoresearch: State file missing session_id — removing stale state." >&2
-  rm "$STATE_FILE"
-  exit 0
+  abort_cleanup "State file missing session_id — removing stale state."
 fi
 
 if [[ "$STATE_SESSION" != "$HOOK_SESSION" ]]; then
-  echo "Autoresearch: Session mismatch (state vs hook) — removing stale state." >&2
-  echo "  If another session started this loop, use that session or /autoresearch:cancel." >&2
-  rm "$STATE_FILE"
-  exit 0
+  abort_cleanup "Session mismatch (state vs hook) — removing stale state. If another session started this loop, use that session or /autoresearch:cancel."
 fi
 
 # Validate numeric fields
-if [[ ! "$ITERATION" =~ ^[0-9]+$ ]]; then
-  echo "Autoresearch: State file corrupted — 'iteration' is not a number (got: '$ITERATION')" >&2
-  echo "Removing state file. Run /autoresearch:start to start fresh." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
-
-if [[ ! "$MAX_ITERATIONS" =~ ^[0-9]+$ ]]; then
-  echo "Autoresearch: State file corrupted — 'max_iterations' is not a number (got: '$MAX_ITERATIONS')" >&2
-  echo "Removing state file. Run /autoresearch:start to start fresh." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
-
-if [[ ! "$MAX_SECONDS" =~ ^[0-9]+$ ]]; then
-  echo "Autoresearch: State file corrupted — 'max_seconds' is not a number (got: '$MAX_SECONDS')" >&2
-  echo "Removing state file. Run /autoresearch:start to start fresh." >&2
-  rm "$STATE_FILE"
-  exit 0
-fi
+require_uint iteration "$ITERATION"
+require_uint max_iterations "$MAX_ITERATIONS"
+require_uint max_seconds "$MAX_SECONDS"
 
 # Reject unbounded state (setup enforces bounds at creation; tampering must not disable them).
 if [[ $MAX_ITERATIONS -eq 0 ]] && [[ $MAX_SECONDS -eq 0 ]]; then
-  echo "Autoresearch: State file has no stopping bounds — removing stale state." >&2
-  rm "$STATE_FILE"
-  exit 0
+  abort_cleanup "State file has no stopping bounds — removing stale state."
 fi
 
 # Check max iterations
 if [[ $MAX_ITERATIONS -gt 0 ]] && [[ $ITERATION -ge $MAX_ITERATIONS ]]; then
   echo "Autoresearch loop: Max experiments ($MAX_ITERATIONS) reached."
-  rm "$STATE_FILE"
+  rm -f "$STATE_FILE"
   exit 0
 fi
 
@@ -106,12 +106,7 @@ fi
 # fast-spinning agent still terminates). Only enforced when both fields are
 # valid integers; a missing/corrupt epoch must not silently disable the bound.
 if [[ $MAX_SECONDS -gt 0 ]]; then
-  if [[ ! "${STARTED_AT_EPOCH:-}" =~ ^[0-9]+$ ]]; then
-    echo "Autoresearch: State file corrupted — 'started_at_epoch' is not a number (got: '${STARTED_AT_EPOCH:-}')" >&2
-    echo "Removing state file. Run /autoresearch:start to start fresh." >&2
-    rm "$STATE_FILE"
-    exit 0
-  fi
+  require_uint started_at_epoch "${STARTED_AT_EPOCH:-}"
   NOW_EPOCH=$(date +%s)
   ELAPSED=$((NOW_EPOCH - STARTED_AT_EPOCH))
   if [[ $ELAPSED -lt 0 ]]; then
@@ -119,7 +114,7 @@ if [[ $MAX_SECONDS -gt 0 ]]; then
   fi
   if [[ $ELAPSED -ge $MAX_SECONDS ]]; then
     echo "Autoresearch loop: Wall-clock budget (${MAX_SECONDS}s) reached after ${ELAPSED}s."
-    rm "$STATE_FILE"
+    rm -f "$STATE_FILE"
     exit 0
   fi
 fi
@@ -128,8 +123,7 @@ fi
 # transcript is read solely for this check, so any failure to read or parse it
 # is treated as transient: warn and keep looping — never delete state or stop
 # the run over a momentarily-unreadable transcript.
-if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
-  TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path // ""' 2>/dev/null || echo "")
+if [[ "$HAS_PROMISE" == true ]]; then
 
   LAST_OUTPUT=""
   if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
@@ -151,7 +145,7 @@ if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
     PROMISE_TEXT=$(echo "$LAST_OUTPUT" | perl -0777 -ne 'if (m{<promise>(.*?)</promise>}s) { my $p=$1; $p =~ s/^\s+|\s+$//g; $p =~ s/\s+/ /g; print $p }' 2>/dev/null || echo "")
     if [[ -n "$PROMISE_TEXT" ]] && [[ "$PROMISE_TEXT" = "$COMPLETION_PROMISE" ]]; then
       echo "Autoresearch loop: Detected <promise>$COMPLETION_PROMISE</promise> — research complete."
-      rm "$STATE_FILE"
+      rm -f "$STATE_FILE"
       exit 0
     fi
   fi
@@ -165,9 +159,7 @@ NEXT_ITERATION=$((ITERATION + 1))
 PROMPT_TEXT=$(awk 'seen>=2{print; next} /^---$/{seen++}' "$STATE_FILE")
 
 if [[ -z "$PROMPT_TEXT" ]]; then
-  echo "Autoresearch: State file missing prompt text. Stopping." >&2
-  rm "$STATE_FILE"
-  exit 0
+  abort_cleanup "State file missing prompt text. Stopping."
 fi
 
 # Atomically update iteration counter — anchored to the first frontmatter
@@ -181,7 +173,7 @@ awk -v n="$NEXT_ITERATION" '
 mv "$TEMP_FILE" "$STATE_FILE"
 
 # Build system message
-if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
+if [[ "$HAS_PROMISE" == true ]]; then
   SYSTEM_MSG="Autoresearch experiment $NEXT_ITERATION | To stop: output <promise>$COMPLETION_PROMISE</promise> (ONLY when genuinely true)"
 else
   SYSTEM_MSG="Autoresearch experiment $NEXT_ITERATION | Runs until the configured bound — /autoresearch:cancel to stop early"

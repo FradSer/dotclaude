@@ -28,30 +28,17 @@ PRECHECKS=()
 
 STATE_FILE=".claude/autoresearch.local.md"
 
-# Wall-clock durations: plain numbers are hours (8 = 8h). Suffix h/m/s supported.
-parse_wall_clock_duration() {
-  local v="$1"
+# Parse a duration with optional h/m/s suffix. Bare numbers use $2 as default unit.
+# Usage: parse_duration "$value" h   # bare "8" → 28800
+#        parse_duration "$value" s   # bare "600" → 600
+parse_duration() {
+  local v="$1" default_unit="$2"
   if [[ "$v" =~ ^([0-9]+)([hms]?)$ ]]; then
-    local num="${BASH_REMATCH[1]}" unit="${BASH_REMATCH[2]}"
+    local num="${BASH_REMATCH[1]}" unit="${BASH_REMATCH[2]:-$default_unit}"
     case "$unit" in
-      h|"") echo $((num * 3600)) ;;
-      m)    echo $((num * 60)) ;;
-      s)    echo "$num" ;;
-    esac
-    return 0
-  fi
-  return 1
-}
-
-# Per-trial timeout: plain numbers are seconds (600 = 600s). Suffix h/m/s supported.
-parse_trial_timeout_duration() {
-  local v="$1"
-  if [[ "$v" =~ ^([0-9]+)([hms]?)$ ]]; then
-    local num="${BASH_REMATCH[1]}" unit="${BASH_REMATCH[2]}"
-    case "$unit" in
-      s|"") echo "$num" ;;
-      m)    echo $((num * 60)) ;;
-      h)    echo $((num * 3600)) ;;
+      h) echo $((num * 3600)) ;;
+      m) echo $((num * 60)) ;;
+      s) echo "$num" ;;
     esac
     return 0
   fi
@@ -179,7 +166,7 @@ HELP_EOF
       shift 2
       ;;
     --max-wall-clock)
-      if [[ -z "${2:-}" ]] || ! MAX_SECONDS=$(parse_wall_clock_duration "$2"); then
+      if [[ -z "${2:-}" ]] || ! MAX_SECONDS=$(parse_duration "$2" h); then
         echo "Error: --max-wall-clock requires a duration like 8h, 480m, or 30s (got: '${2:-}')" >&2
         exit 1
       fi
@@ -203,7 +190,7 @@ HELP_EOF
       fi
       DIRECTION="$2"; shift 2 ;;
     --trial-timeout)
-      if [[ -z "${2:-}" ]] || ! TRIAL_TIMEOUT=$(parse_trial_timeout_duration "$2"); then
+      if [[ -z "${2:-}" ]] || ! TRIAL_TIMEOUT=$(parse_duration "$2" s); then
         echo "Error: --trial-timeout requires a duration like 600, 600s, 10m, or 1h (got: '${2:-}')" >&2
         exit 1
       fi
@@ -322,11 +309,9 @@ if [[ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]]; then
   echo "Switched to experiment branch: $TARGET_BRANCH"
 fi
 
-# Quote completion promise for YAML if needed. Escape any embedded double
-# quotes so a phrase like `SAY "DONE"` can't break out of the YAML string and
-# corrupt the frontmatter.
+# Quote completion promise for YAML if needed.
 if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
-  COMPLETION_PROMISE_YAML="\"${COMPLETION_PROMISE//\"/\\\"}\""
+  COMPLETION_PROMISE_YAML=$(yaml_escape "$COMPLETION_PROMISE")
 else
   COMPLETION_PROMISE_YAML="null"
 fi
@@ -349,11 +334,8 @@ else
 fi
 
 # The keep/discard rule, generated from the optimization direction.
-if [[ "$DIRECTION" == "min" ]]; then
-  DECISION_RULE="If SCORE is LOWER (better) than the best score recorded so far in results.tsv: keep the commit — it advances the branch. Otherwise: discard it with git reset --hard HEAD~1."
-else
-  DECISION_RULE="If SCORE is HIGHER (better) than the best score recorded so far in results.tsv: keep the commit — it advances the branch. Otherwise: discard it with git reset --hard HEAD~1."
-fi
+_DIR_WORD=$( [[ "$DIRECTION" == "min" ]] && echo LOWER || echo HIGHER )
+DECISION_RULE="If SCORE is $_DIR_WORD (better) than the best score recorded so far in results.tsv: keep the commit — it advances the branch. Otherwise: discard it with git reset --hard HEAD~1."
 
 # Pre-escape frontmatter values (the hook never reads these, but keep the block
 # well-formed and impossible to break out of).
