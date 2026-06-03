@@ -15,6 +15,7 @@ MAX_ITERATIONS=0
 MAX_SECONDS=0
 COMPLETION_PROMISE="null"
 SESSION_ID=""
+FORCE_START=false
 
 PROMPT=""
 OBJECTIVE=""
@@ -25,8 +26,10 @@ TRIAL_TIMEOUT=600
 READONLY_LIST=()
 PRECHECKS=()
 
-# Convert a duration like "8h", "480m", "30s", or plain "8" (hours) to seconds.
-parse_duration() {
+STATE_FILE=".claude/autoresearch.local.md"
+
+# Wall-clock durations: plain numbers are hours (8 = 8h). Suffix h/m/s supported.
+parse_wall_clock_duration() {
   local v="$1"
   if [[ "$v" =~ ^([0-9]+)([hms]?)$ ]]; then
     local num="${BASH_REMATCH[1]}" unit="${BASH_REMATCH[2]}"
@@ -38,6 +41,40 @@ parse_duration() {
     return 0
   fi
   return 1
+}
+
+# Per-trial timeout: plain numbers are seconds (600 = 600s). Suffix h/m/s supported.
+parse_trial_timeout_duration() {
+  local v="$1"
+  if [[ "$v" =~ ^([0-9]+)([hms]?)$ ]]; then
+    local num="${BASH_REMATCH[1]}" unit="${BASH_REMATCH[2]}"
+    case "$unit" in
+      s|"") echo "$num" ;;
+      m)    echo $((num * 60)) ;;
+      h)    echo $((num * 3600)) ;;
+    esac
+    return 0
+  fi
+  return 1
+}
+
+# Escape a string for embedding inside single-quoted sh -c '...'.
+sh_single_quote_escape() {
+  printf "%s" "$1" | sed "s/'/'\\\\''/g"
+}
+
+# Git ref segment for autoresearch/<tag> — reject pathological branch names.
+validate_run_tag() {
+  local tag="$1"
+  if [[ ! "$tag" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]; then
+    echo "Error: run tag '$tag' is not a valid git branch name segment." >&2
+    echo "Use letters, digits, dots, underscores, or hyphens; must not start with '.' or '-'." >&2
+    exit 1
+  fi
+  if [[ "$tag" == *".."* ]] || [[ "$tag" == *"//"* ]]; then
+    echo "Error: run tag '$tag' contains invalid '..' or '//' sequences." >&2
+    exit 1
+  fi
 }
 
 # Escape a value into a YAML double-quoted scalar for the state-file frontmatter.
@@ -84,9 +121,10 @@ OPTIONS:
   --max-experiments <n>          Stop after N experiments
   --max-wall-clock <duration>    Stop after a wall-clock budget (e.g. 8h, 480m, 30s)
   --readonly <path>              Protect a path from edits (repeatable)
-  --trial-timeout <duration>     Hard time limit per scorer run (default 600s)
+  --trial-timeout <duration>     Hard time limit per scorer run (default 600s; plain numbers are seconds)
   --precheck '<shell>'           Precondition that must exit 0 (repeatable)
   --completion-promise '<text>'  Phrase the agent outputs to signal completion
+  --force                        Replace an existing active loop state file
   -h, --help                     Show this help message
 
 DESCRIPTION:
@@ -141,7 +179,7 @@ HELP_EOF
       shift 2
       ;;
     --max-wall-clock)
-      if [[ -z "${2:-}" ]] || ! MAX_SECONDS=$(parse_duration "$2"); then
+      if [[ -z "${2:-}" ]] || ! MAX_SECONDS=$(parse_wall_clock_duration "$2"); then
         echo "Error: --max-wall-clock requires a duration like 8h, 480m, or 30s (got: '${2:-}')" >&2
         exit 1
       fi
@@ -165,10 +203,12 @@ HELP_EOF
       fi
       DIRECTION="$2"; shift 2 ;;
     --trial-timeout)
-      if [[ -z "${2:-}" ]] || ! TRIAL_TIMEOUT=$(parse_duration "$2"); then
-        echo "Error: --trial-timeout requires a duration like 600, 10m, or 1h (got: '${2:-}')" >&2; exit 1
+      if [[ -z "${2:-}" ]] || ! TRIAL_TIMEOUT=$(parse_trial_timeout_duration "$2"); then
+        echo "Error: --trial-timeout requires a duration like 600, 600s, 10m, or 1h (got: '${2:-}')" >&2
+        exit 1
       fi
-      shift 2 ;;
+      shift 2
+      ;;
     --readonly)
       if [[ -z "${2:-}" ]]; then echo "Error: --readonly requires a path" >&2; exit 1; fi
       READONLY_LIST+=("$2"); shift 2 ;;
@@ -184,8 +224,16 @@ HELP_EOF
       shift 2
       ;;
     --session-id)
-      SESSION_ID="${2:-}"
+      if [[ -z "${2:-}" ]]; then
+        echo "Error: --session-id requires a value" >&2
+        exit 1
+      fi
+      SESSION_ID="$2"
       shift 2
+      ;;
+    --force)
+      FORCE_START=true
+      shift
       ;;
     -*)
       echo "Error: Unknown option: $1" >&2
@@ -207,6 +255,7 @@ done
 if [[ -z "$RUN_TAG" ]]; then
   RUN_TAG=$(LC_ALL=C date +%b%d | tr '[:upper:]' '[:lower:]')
 fi
+validate_run_tag "$RUN_TAG"
 
 # Require at least one stopping bound — never start an unbounded overnight loop.
 if [[ "$MAX_ITERATIONS" -eq 0 ]] && [[ "$MAX_SECONDS" -eq 0 ]]; then
@@ -254,16 +303,17 @@ if ! git rev-parse --git-dir >/dev/null 2>&1; then
   exit 1
 fi
 
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Error: working tree has uncommitted changes." >&2
+  echo "Autoresearch auto-discards experiments with 'git reset --hard', which would destroy them." >&2
+  echo "Commit or stash your changes, then re-run /autoresearch:start." >&2
+  exit 1
+fi
+
 TARGET_BRANCH="autoresearch/$RUN_TAG"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 if [[ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]]; then
-  if [[ -n "$(git status --porcelain)" ]]; then
-    echo "Error: working tree has uncommitted changes." >&2
-    echo "Autoresearch auto-discards experiments with 'git reset --hard', which would destroy them." >&2
-    echo "Commit or stash your changes, then re-run /autoresearch:start." >&2
-    exit 1
-  fi
   if git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
     git checkout "$TARGET_BRANCH"
   else
@@ -281,16 +331,12 @@ else
   COMPLETION_PROMISE_YAML="null"
 fi
 
-# Session isolation: the stop hook only continues the loop for the session
-# whose id matches this one. If the id couldn't be resolved (empty, or the
-# ${CLAUDE_SESSION_ID} token wasn't substituted), warn loudly rather than
-# silently recording an empty id — an empty id disables isolation, letting any
-# session in this directory get pulled into the loop.
+# Session isolation: refuse to start without a resolved session id.
 if [[ -z "$SESSION_ID" ]] || [[ "$SESSION_ID" == *'${'* ]]; then
-  echo "WARNING: could not resolve this session's id — session isolation is DISABLED." >&2
-  echo "         Any Claude session run in this directory may be drawn into the loop." >&2
-  echo "         Use /autoresearch:cancel to stop, and avoid other sessions here meanwhile." >&2
-  SESSION_ID=""
+  echo "Error: could not resolve this session's id (CLAUDE_SESSION_ID)." >&2
+  echo "Autoresearch requires session isolation so other sessions are not pulled into the loop." >&2
+  echo "Re-run /autoresearch:start from a normal Claude Code session." >&2
+  exit 1
 fi
 
 # Human-readable and machine-readable read-only lists.
@@ -315,21 +361,31 @@ EDIT_YAML=$(yaml_escape "$EDIT")
 SCORE_CMD_YAML=$(yaml_escape "$SCORE_CMD")
 OBJECTIVE_YAML=$(yaml_escape "$OBJECTIVE")
 READONLY_YAML=$(yaml_escape "$READONLY_CSV")
+RUN_TAG_YAML=$(yaml_escape "$RUN_TAG")
+SESSION_ID_YAML=$(yaml_escape "$SESSION_ID")
+SCORE_CMD_SH=$(sh_single_quote_escape "$SCORE_CMD")
 
-# Create state file. NOTE: this is an unquoted heredoc, so $VAR references are
-# substituted — but the SUBSTITUTED VALUE is inserted literally and is NOT
-# re-scanned, so a $(...) or backtick inside e.g. $SCORE_CMD does not execute.
 mkdir -p .claude
 
-cat > .claude/autoresearch.local.md << EOF
+if [[ -f "$STATE_FILE" ]] && [[ "$FORCE_START" != true ]]; then
+  ACTIVE=$(awk '/^---$/{n++; next} n==1 && /^active:/{sub(/^active:[[:space:]]*/, ""); print; exit}' "$STATE_FILE" 2>/dev/null || true)
+  if [[ "$ACTIVE" == "true" ]]; then
+    echo "Error: an autoresearch loop is already active in this directory." >&2
+    echo "Run /autoresearch:cancel to stop it, or pass --force to replace the state file." >&2
+    exit 1
+  fi
+fi
+
+# Unquoted heredoc: substituted values are literal (not re-scanned by the shell).
+cat > "$STATE_FILE" << AUTORESEARCH_STATE_EOF
 ---
 active: true
 iteration: 1
-session_id: $SESSION_ID
+session_id: $SESSION_ID_YAML
 max_iterations: $MAX_ITERATIONS
 max_seconds: $MAX_SECONDS
 completion_promise: $COMPLETION_PROMISE_YAML
-run_tag: $RUN_TAG
+run_tag: $RUN_TAG_YAML
 edit_target: $EDIT_YAML
 readonly_list: $READONLY_YAML
 score_cmd: $SCORE_CMD_YAML
@@ -372,7 +428,7 @@ LOOP until the configured bound is reached:
 2. Choose one concrete experimental change to $EDIT aimed at the objective.
 3. Commit the change: git add $EDIT && git commit -m "experiment: <short description>"
 4. Run the scorer (hard time-limited):
-   timeout $TRIAL_TIMEOUT sh -c '$SCORE_CMD'
+   timeout $TRIAL_TIMEOUT sh -c '$SCORE_CMD_SH'
    - The LAST line of the scorer's stdout MUST be a single number — that is SCORE.
    - A timeout (exit code 124), or a missing / non-numeric last line, counts as a crash: log status crash and move on.
 5. Read SCORE = the last stdout line of the scorer.
@@ -390,7 +446,7 @@ LOOP until the configured bound is reached:
 - The scorer command is fixed; do NOT change how the score is measured.
 - If stuck, think harder: try a different angle on the objective, not just parameter nudges.
 - To stop early when the objective is genuinely achieved, output: <promise>...</promise> (only if a completion promise was configured).
-EOF
+AUTORESEARCH_STATE_EOF
 
 # Print activation message
 cat << EOF

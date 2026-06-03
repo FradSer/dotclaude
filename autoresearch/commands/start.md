@@ -10,7 +10,7 @@ disable-model-invocation: true
 Run the setup script to initialize the research loop:
 
 ```!
-"${CLAUDE_PLUGIN_ROOT}/scripts/setup-autoresearch.sh" --session-id "${CLAUDE_SESSION_ID}" $ARGUMENTS
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-autoresearch.sh" $ARGUMENTS --session-id "${CLAUDE_SESSION_ID}"
 ```
 
 You are now running as an autonomous researcher. The stop hook is active — every time you try to exit, the same research prompt will be fed back to you. Your previous experiments are visible in git history and results.tsv.

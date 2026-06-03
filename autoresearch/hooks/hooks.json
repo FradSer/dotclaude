@@ -1,5 +1,5 @@
 {
-  "description": "Autoresearch stop hook — keeps the experiment loop running indefinitely",
+  "description": "Autoresearch stop hook — continues the bounded experiment loop until limits or cancel",
   "hooks": {
     "Stop": [
       {

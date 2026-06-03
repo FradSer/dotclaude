@@ -50,9 +50,10 @@ Plus at least one bound (`--max-experiments` or `--max-wall-clock`).
 - `--max-experiments <n>` — stop after N experiments
 - `--max-wall-clock <duration>` — stop after a wall-clock budget (e.g. `8h`, `480m`, `30s`)
 - `--readonly <path>` — protect a path from edits (repeatable)
-- `--trial-timeout <duration>` — hard time limit per scorer run (default `600`s)
+- `--trial-timeout <duration>` — hard time limit per scorer run (default `600`s; plain numbers are seconds, unlike `--max-wall-clock`)
 - `--precheck '<shell>'` — a precondition that must exit 0 before the loop starts (repeatable)
 - `--completion-promise <text>` — Claude outputs `<promise>TEXT</promise>` to signal done
+- `--force` — replace an existing active loop state file (use after `/autoresearch:cancel` if needed)
 - `-h`, `--help` — show usage and exit
 
 **Examples:**

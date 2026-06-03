@@ -32,16 +32,37 @@ fm_get() {
   ' <<< "$FRONTMATTER"
 }
 
+# Strip optional YAML double quotes from a scalar value.
+fm_unquote() {
+  local v="$1"
+  if [[ "$v" =~ ^\"(.*)\"$ ]]; then
+    v="${BASH_REMATCH[1]}"
+    v="${v//\\\"/\"}"
+    v="${v//\\\\/\\}"
+  fi
+  printf '%s' "$v"
+}
+
 ITERATION=$(fm_get iteration)
 MAX_ITERATIONS=$(fm_get max_iterations)
 MAX_SECONDS=$(fm_get max_seconds)
 STARTED_AT_EPOCH=$(fm_get started_at_epoch)
-COMPLETION_PROMISE=$(fm_get completion_promise | sed 's/^"\(.*\)"$/\1/')
+COMPLETION_PROMISE=$(fm_unquote "$(fm_get completion_promise)")
 
-# Session isolation: only respond to the session that started the loop
-STATE_SESSION=$(fm_get session_id)
-HOOK_SESSION=$(echo "$HOOK_INPUT" | jq -r '.session_id // ""')
-if [[ -n "$STATE_SESSION" ]] && [[ "$STATE_SESSION" != "$HOOK_SESSION" ]]; then
+# Session isolation: only respond to the session that started the loop.
+STATE_SESSION=$(fm_unquote "$(fm_get session_id)")
+HOOK_SESSION=$(echo "$HOOK_INPUT" | jq -r '.session_id // ""' 2>/dev/null || echo "")
+
+if [[ -z "$STATE_SESSION" ]]; then
+  echo "Autoresearch: State file missing session_id — removing stale state." >&2
+  rm "$STATE_FILE"
+  exit 0
+fi
+
+if [[ "$STATE_SESSION" != "$HOOK_SESSION" ]]; then
+  echo "Autoresearch: Session mismatch (state vs hook) — removing stale state." >&2
+  echo "  If another session started this loop, use that session or /autoresearch:cancel." >&2
+  rm "$STATE_FILE"
   exit 0
 fi
 
@@ -60,6 +81,20 @@ if [[ ! "$MAX_ITERATIONS" =~ ^[0-9]+$ ]]; then
   exit 0
 fi
 
+if [[ ! "$MAX_SECONDS" =~ ^[0-9]+$ ]]; then
+  echo "Autoresearch: State file corrupted — 'max_seconds' is not a number (got: '$MAX_SECONDS')" >&2
+  echo "Removing state file. Run /autoresearch:start to start fresh." >&2
+  rm "$STATE_FILE"
+  exit 0
+fi
+
+# Reject unbounded state (setup enforces bounds at creation; tampering must not disable them).
+if [[ $MAX_ITERATIONS -eq 0 ]] && [[ $MAX_SECONDS -eq 0 ]]; then
+  echo "Autoresearch: State file has no stopping bounds — removing stale state." >&2
+  rm "$STATE_FILE"
+  exit 0
+fi
+
 # Check max iterations
 if [[ $MAX_ITERATIONS -gt 0 ]] && [[ $ITERATION -ge $MAX_ITERATIONS ]]; then
   echo "Autoresearch loop: Max experiments ($MAX_ITERATIONS) reached."
@@ -70,7 +105,7 @@ fi
 # Check wall-clock budget (independent of iteration count, so a stuck or
 # fast-spinning agent still terminates). Only enforced when both fields are
 # valid integers; a missing/corrupt epoch must not silently disable the bound.
-if [[ "${MAX_SECONDS:-0}" =~ ^[0-9]+$ ]] && [[ $MAX_SECONDS -gt 0 ]]; then
+if [[ $MAX_SECONDS -gt 0 ]]; then
   if [[ ! "${STARTED_AT_EPOCH:-}" =~ ^[0-9]+$ ]]; then
     echo "Autoresearch: State file corrupted — 'started_at_epoch' is not a number (got: '${STARTED_AT_EPOCH:-}')" >&2
     echo "Removing state file. Run /autoresearch:start to start fresh." >&2
@@ -79,6 +114,9 @@ if [[ "${MAX_SECONDS:-0}" =~ ^[0-9]+$ ]] && [[ $MAX_SECONDS -gt 0 ]]; then
   fi
   NOW_EPOCH=$(date +%s)
   ELAPSED=$((NOW_EPOCH - STARTED_AT_EPOCH))
+  if [[ $ELAPSED -lt 0 ]]; then
+    ELAPSED=0
+  fi
   if [[ $ELAPSED -ge $MAX_SECONDS ]]; then
     echo "Autoresearch loop: Wall-clock budget (${MAX_SECONDS}s) reached after ${ELAPSED}s."
     rm "$STATE_FILE"
@@ -91,16 +129,17 @@ fi
 # is treated as transient: warn and keep looping — never delete state or stop
 # the run over a momentarily-unreadable transcript.
 if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
-  TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path // ""')
+  TRANSCRIPT_PATH=$(echo "$HOOK_INPUT" | jq -r '.transcript_path // ""' 2>/dev/null || echo "")
 
   LAST_OUTPUT=""
   if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
-    # Parse each line independently with `try fromjson` so a single truncated or
-    # malformed line (e.g. one still being flushed) cannot abort the whole
-    # extraction. `try fromjson` (not `fromjson?`) keeps this working on jq 1.5.
-    # Take the most recent assistant text block.
-    LAST_OUTPUT=$(grep '"role":"assistant"' "$TRANSCRIPT_PATH" 2>/dev/null | tail -n 100 \
-      | jq -R -r 'try fromjson | .message.content[]? | select(.type == "text") | .text' 2>/dev/null \
+    # Parse each line with jq (role spacing/format tolerant). `try fromjson`
+    # (not `fromjson?`) keeps this working on jq 1.5.
+    LAST_OUTPUT=$(tail -n 200 "$TRANSCRIPT_PATH" 2>/dev/null \
+      | jq -R -r 'try fromjson
+        | select((.role == "assistant") or (.message.role == "assistant"))
+        | (.message.content // .content // [])[]
+        | select(.type == "text") | .text' 2>/dev/null \
       | tail -n 1 || true)
   else
     echo "Autoresearch: Transcript unreadable this round — skipping promise check, continuing loop." >&2
@@ -154,13 +193,16 @@ fi
 # `additionalContext` is NOT honored for Stop events (only SessionStart /
 # UserPromptSubmit), so it must not carry the prompt. `systemMessage` shows the
 # user the experiment counter / how to stop.
-jq -n \
+if ! jq -n \
   --arg prompt "$PROMPT_TEXT" \
   --arg msg "$SYSTEM_MSG" \
   '{
     "decision": "block",
     "reason": $prompt,
     "systemMessage": $msg
-  }'
+  }'; then
+  echo "Autoresearch: Failed to emit stop-hook response — removing state to avoid a stuck loop." >&2
+  rm -f "$STATE_FILE"
+fi
 
 exit 0
