@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "*/**"
+      - ".github/workflows/ci.yml"
+      - "plugin-optimizer/scripts/**"
+  pull_request:
+    paths:
+      - "*/**"
+      - ".github/workflows/ci.yml"
+      - "plugin-optimizer/scripts/**"
+
+jobs:
+  discover-plugins:
+    runs-on: ubuntu-latest
+    outputs:
+      plugins: ${{ steps.discover.outputs.plugins }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          plugins=()
+          for d in */; do
+            name="${d%/}"
+            if [ -f "$d.claude-plugin/plugin.json" ]; then
+              plugins+=("\"$name\"")
+            fi
+          done
+          printf 'plugins=[%s]' "$(IFS=,; echo "${plugins[*]}")" >> "$GITHUB_OUTPUT"
+
+  validate:
+    needs: discover-plugins
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJson(needs.discover-plugins.outputs.plugins) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate ${{ matrix.plugin }}
+        run: python3 plugin-optimizer/scripts/validate-plugin.py "${{ matrix.plugin }}"
+
+  test:
+    needs: discover-plugins
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJson(needs.discover-plugins.outputs.plugins) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: pip install pytest
+      - name: Run ${{ matrix.plugin }} tests
+        run: |
+          if [ -d "${{ matrix.plugin }}/tests" ] || [ -d "${{ matrix.plugin }}/test" ] || [ -d "${{ matrix.plugin }}/__tests__" ] || [ -d "${{ matrix.plugin }}/spec" ]; then
+            python3 -m pytest "${{ matrix.plugin }}" -q
+          else
+            echo "No tests found for ${{ matrix.plugin }}, skipping"
+          fi
+
+  ci-success:
+    if: always()
+    needs: [discover-plugins, validate, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs succeeded
+        run: |
+          [ "${{ needs.discover-plugins.result }}" = "success" ] \
+            && [ "${{ needs.validate.result }}" = "success" ] \
+            && [ "${{ needs.test.result }}" = "success" ] || exit 1
