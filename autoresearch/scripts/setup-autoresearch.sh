@@ -124,9 +124,11 @@ HELP_EOF
   esac
 done
 
-# Default run tag: current date (e.g. mar16)
+# Default run tag: current date (e.g. mar16). Force the C locale so the month
+# name is always ASCII — a localized `date` (e.g. zh_CN) yields "6月16", which
+# is not a valid git branch name.
 if [[ -z "$RUN_TAG" ]]; then
-  RUN_TAG=$(date +%b%d | tr '[:upper:]' '[:lower:]')
+  RUN_TAG=$(LC_ALL=C date +%b%d | tr '[:upper:]' '[:lower:]')
 fi
 
 # Require at least one stopping bound — never start an unbounded overnight loop.
@@ -176,9 +178,11 @@ if [[ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]]; then
   echo "Switched to experiment branch: $TARGET_BRANCH"
 fi
 
-# Quote completion promise for YAML if needed
+# Quote completion promise for YAML if needed. Escape any embedded double
+# quotes so a phrase like `SAY "DONE"` can't break out of the YAML string and
+# corrupt the frontmatter.
 if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
-  COMPLETION_PROMISE_YAML="\"$COMPLETION_PROMISE\""
+  COMPLETION_PROMISE_YAML="\"${COMPLETION_PROMISE//\"/\\\"}\""
 else
   COMPLETION_PROMISE_YAML="null"
 fi

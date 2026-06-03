@@ -17,14 +17,29 @@ fi
 # Parse YAML frontmatter — strictly the first --- ... --- block, so a later
 # `---` inside the prompt body (e.g. the output-format reference) can't leak in.
 FRONTMATTER=$(awk '/^---$/{n++; next} n==1{print} n>=2{exit}' "$STATE_FILE")
-ITERATION=$(echo "$FRONTMATTER" | grep '^iteration:' | sed 's/iteration: *//')
-MAX_ITERATIONS=$(echo "$FRONTMATTER" | grep '^max_iterations:' | sed 's/max_iterations: *//')
-MAX_SECONDS=$(echo "$FRONTMATTER" | grep '^max_seconds:' | sed 's/max_seconds: *//')
-STARTED_AT_EPOCH=$(echo "$FRONTMATTER" | grep '^started_at_epoch:' | sed 's/started_at_epoch: *//')
-COMPLETION_PROMISE=$(echo "$FRONTMATTER" | grep '^completion_promise:' | sed 's/completion_promise: *//' | sed 's/^"\(.*\)"$/\1/')
+
+# Read one frontmatter field by key. Uses awk (not grep|sed): a missing key
+# prints nothing and exits 0, so an absent field can't trip `set -e`/pipefail
+# and abort before the corruption handlers below get a chance to clean up.
+fm_get() {
+  awk -v key="$1" '
+    index($0, key ":") == 1 {
+      val = substr($0, length(key) + 2)
+      sub(/^ */, "", val)
+      print val
+      exit
+    }
+  ' <<< "$FRONTMATTER"
+}
+
+ITERATION=$(fm_get iteration)
+MAX_ITERATIONS=$(fm_get max_iterations)
+MAX_SECONDS=$(fm_get max_seconds)
+STARTED_AT_EPOCH=$(fm_get started_at_epoch)
+COMPLETION_PROMISE=$(fm_get completion_promise | sed 's/^"\(.*\)"$/\1/')
 
 # Session isolation: only respond to the session that started the loop
-STATE_SESSION=$(echo "$FRONTMATTER" | grep '^session_id:' | sed 's/session_id: *//' || true)
+STATE_SESSION=$(fm_get session_id)
 HOOK_SESSION=$(echo "$HOOK_INPUT" | jq -r '.session_id // ""')
 if [[ -n "$STATE_SESSION" ]] && [[ "$STATE_SESSION" != "$HOOK_SESSION" ]]; then
   exit 0
@@ -80,11 +95,12 @@ if [[ "$COMPLETION_PROMISE" != "null" ]] && [[ -n "$COMPLETION_PROMISE" ]]; then
 
   LAST_OUTPUT=""
   if [[ -n "$TRANSCRIPT_PATH" ]] && [[ -f "$TRANSCRIPT_PATH" ]]; then
-    # Parse each line independently with `fromjson?` so a single truncated or
+    # Parse each line independently with `try fromjson` so a single truncated or
     # malformed line (e.g. one still being flushed) cannot abort the whole
-    # extraction. Take the most recent assistant text block.
+    # extraction. `try fromjson` (not `fromjson?`) keeps this working on jq 1.5.
+    # Take the most recent assistant text block.
     LAST_OUTPUT=$(grep '"role":"assistant"' "$TRANSCRIPT_PATH" 2>/dev/null | tail -n 100 \
-      | jq -R -r 'fromjson? | .message.content[]? | select(.type == "text") | .text' 2>/dev/null \
+      | jq -R -r 'try fromjson | .message.content[]? | select(.type == "text") | .text' 2>/dev/null \
       | tail -n 1 || true)
   else
     echo "Autoresearch: Transcript unreadable this round — skipping promise check, continuing loop." >&2
@@ -132,22 +148,19 @@ else
   SYSTEM_MSG="Autoresearch experiment $NEXT_ITERATION | Runs until the configured bound — /autoresearch:cancel to stop early"
 fi
 
-# Block exit and inject the research prompt. The prompt MUST go in
-# hookSpecificOutput.additionalContext — that is the only field added to
-# Claude's context. `reason` is user-facing only and is NOT seen by Claude,
-# so it carries a short note, not the prompt. `systemMessage` shows the user
-# the experiment counter / how to stop.
+# Block exit and feed the research prompt back. For a Stop hook, `reason` is
+# the field fed back to Claude when `decision` is "block" — it becomes the next
+# instruction, so the full prompt goes here (matching Anthropic's ralph-loop).
+# `additionalContext` is NOT honored for Stop events (only SessionStart /
+# UserPromptSubmit), so it must not carry the prompt. `systemMessage` shows the
+# user the experiment counter / how to stop.
 jq -n \
   --arg prompt "$PROMPT_TEXT" \
   --arg msg "$SYSTEM_MSG" \
   '{
     "decision": "block",
-    "reason": "Autoresearch loop active — continuing the experiment loop.",
-    "systemMessage": $msg,
-    "hookSpecificOutput": {
-      "hookEventName": "Stop",
-      "additionalContext": $prompt
-    }
+    "reason": $prompt,
+    "systemMessage": $msg
   }'
 
 exit 0
