@@ -181,8 +181,8 @@
     {
       "name": "autoresearch",
       "displayName": "Autoresearch",
-      "version": "0.1.0",
-      "description": "Autonomous ML research loop inspired by karpathy/autoresearch — runs endless experiments on train.py, logs results, and iterates overnight",
+      "version": "0.2.0",
+      "description": "Autonomous research loop inspired by karpathy/autoresearch — edits an artifact, runs a scorer, keeps the change if it improves, and iterates overnight on any objective",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"

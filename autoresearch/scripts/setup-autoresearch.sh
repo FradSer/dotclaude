@@ -3,6 +3,10 @@
 # Autoresearch Setup Script
 # Initializes the autonomous research loop state file for a project.
 # The loop prompt embeds the full experiment instructions (equivalent to program.md).
+# Domain-agnostic: the editable artifact, the scorer, and the optimization
+# direction are all supplied as flags, so the loop works on any problem that can
+# be reduced to "edit something, run a scorer that prints one number, keep the
+# change if the number improved" — not just ML training.
 
 set -euo pipefail
 
@@ -11,6 +15,15 @@ MAX_ITERATIONS=0
 MAX_SECONDS=0
 COMPLETION_PROMISE="null"
 SESSION_ID=""
+
+PROMPT=""
+OBJECTIVE=""
+EDIT=""
+SCORE_CMD=""
+DIRECTION=""
+TRIAL_TIMEOUT=600
+READONLY_LIST=()
+PRECHECKS=()
 
 # Convert a duration like "8h", "480m", "30s", or plain "8" (hours) to seconds.
 parse_duration() {
@@ -27,54 +40,90 @@ parse_duration() {
   return 1
 }
 
+# Escape a value into a YAML double-quoted scalar for the state-file frontmatter.
+# Rejects embedded newlines, which would split the frontmatter block the stop
+# hook parses. Backslashes and double quotes are escaped. The hook never parses
+# these new fields (they are for monitoring), but valid YAML keeps tools happy.
+yaml_escape() {
+  local v="$1"
+  if [[ "$v" == *$'\n'* ]]; then
+    echo "Error: value contains a newline, which would corrupt the state file." >&2
+    exit 1
+  fi
+  v="${v//\\/\\\\}"
+  v="${v//\"/\\\"}"
+  printf '"%s"' "$v"
+}
+
 while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
       cat << 'HELP_EOF'
-autoresearch — Autonomous ML research loop
+autoresearch — Autonomous research loop for any objective
 
 USAGE:
-  /autoresearch:start [TAG] [OPTIONS]
+  /autoresearch:start [TAG] --prompt "..." --objective "..." \
+    --edit PATH --score-cmd "..." --direction min|max \
+    (--max-experiments N | --max-wall-clock 8h) [OPTIONS]
 
 ARGUMENTS:
   TAG    Run tag for the experiment branch.
          Defaults to today's date as <mon><dd> (e.g. mar16 for Mar 16).
 
+REQUIRED CONTRACT:
+  --prompt '<text>'        Free-form research goal handed to the agent
+  --objective '<text>'     The measurable target you are optimizing
+  --edit <glob|path>       The ONLY artifact the agent may modify
+  --score-cmd '<shell>'    Command whose LAST stdout line is a single number
+  --direction min|max      Whether a lower or higher score is better
+
+  At least one of --max-experiments or --max-wall-clock is ALSO required —
+  the loop refuses to start unbounded.
+
 OPTIONS:
   --max-experiments <n>          Stop after N experiments
   --max-wall-clock <duration>    Stop after a wall-clock budget (e.g. 8h, 480m, 30s)
-  --completion-promise '<text>'  Phrase Claude outputs to signal research complete
+  --readonly <path>              Protect a path from edits (repeatable)
+  --trial-timeout <duration>     Hard time limit per scorer run (default 600s)
+  --precheck '<shell>'           Precondition that must exit 0 (repeatable)
+  --completion-promise '<text>'  Phrase the agent outputs to signal completion
   -h, --help                     Show this help message
 
-  At least one of --max-experiments or --max-wall-clock is REQUIRED —
-  the loop refuses to start unbounded.
-
 DESCRIPTION:
-  Starts an autonomous research loop in the current session.
-  Claude modifies train.py, runs 5-minute training experiments, logs
-  results to results.tsv, and iterates indefinitely — like a researcher
-  working overnight.
+  Starts an autonomous research loop in the current session. Each experiment:
+  the agent makes one change to --edit, commits it, runs --score-cmd (hard
+  time-limited), reads the LAST stdout line as the score, logs it to
+  results.tsv, and keeps the commit only if the score improved in --direction
+  — otherwise it discards the change with git reset --hard HEAD~1.
 
-  The stop hook intercepts every exit attempt and feeds the same
-  research prompt back, so Claude keeps experimenting.
+  The stop hook intercepts every exit attempt and feeds the same research
+  prompt back, so the agent keeps experimenting until a bound is reached.
 
-  To signal completion, Claude must output: <promise>YOUR_PHRASE</promise>
+  To signal completion, the agent outputs: <promise>YOUR_PHRASE</promise>
 
 EXAMPLES:
-  /autoresearch:start --max-wall-clock 8h
-  /autoresearch:start mar16 --max-experiments 50
-  /autoresearch:start --completion-promise 'RESEARCH COMPLETE' --max-experiments 100
+  # Data cleaning — maximize F1 from a scorer script
+  /autoresearch:start clean1 --prompt 'improve the cleaning rules' \
+    --objective 'maximize F1, precision >= 0.90' \
+    --edit clean.py --readonly score.sh --score-cmd 'bash score.sh' \
+    --direction max --max-experiments 20
+
+  # ML training parity — reproduce the original behavior
+  /autoresearch:start --prompt 'lower validation bits-per-byte' \
+    --objective 'minimize val_bpb' --edit train.py \
+    --readonly prepare.py --readonly evaluate_bpb \
+    --score-cmd 'timeout 600 uv run train.py >run.log 2>&1; grep "^val_bpb:" run.log | awk "{print \$2}"' \
+    --direction min --max-wall-clock 8h
 
 REQUIREMENTS:
-  - A single NVIDIA GPU
-  - uv installed (https://docs.astral.sh/uv/)
-  - Data prepared: uv run prepare.py (one-time setup)
-  - train.py and prepare.py present in the working directory
+  - A git repository (the loop runs on a dedicated autoresearch/<tag> branch)
+  - A --score-cmd that prints one comparable number as its LAST stdout line
+  - Whatever runtime that scorer needs (interpreter, data, GPU, ...) — your call
 
 STOPPING:
   - Reaches --max-experiments limit
   - Exceeds --max-wall-clock budget
-  - Claude outputs <promise>PHRASE</promise>
+  - Agent outputs <promise>PHRASE</promise>
   - Run /autoresearch:cancel to force-stop
 
 MONITORING:
@@ -98,6 +147,34 @@ HELP_EOF
       fi
       shift 2
       ;;
+    --prompt)
+      if [[ -z "${2:-}" ]]; then echo "Error: --prompt requires a text argument" >&2; exit 1; fi
+      PROMPT="$2"; shift 2 ;;
+    --objective)
+      if [[ -z "${2:-}" ]]; then echo "Error: --objective requires a text argument" >&2; exit 1; fi
+      OBJECTIVE="$2"; shift 2 ;;
+    --edit)
+      if [[ -z "${2:-}" ]]; then echo "Error: --edit requires a path or glob" >&2; exit 1; fi
+      EDIT="$2"; shift 2 ;;
+    --score-cmd)
+      if [[ -z "${2:-}" ]]; then echo "Error: --score-cmd requires a shell command" >&2; exit 1; fi
+      SCORE_CMD="$2"; shift 2 ;;
+    --direction)
+      if [[ "${2:-}" != "min" && "${2:-}" != "max" ]]; then
+        echo "Error: --direction must be 'min' or 'max' (got: '${2:-}')" >&2; exit 1
+      fi
+      DIRECTION="$2"; shift 2 ;;
+    --trial-timeout)
+      if [[ -z "${2:-}" ]] || ! TRIAL_TIMEOUT=$(parse_duration "$2"); then
+        echo "Error: --trial-timeout requires a duration like 600, 10m, or 1h (got: '${2:-}')" >&2; exit 1
+      fi
+      shift 2 ;;
+    --readonly)
+      if [[ -z "${2:-}" ]]; then echo "Error: --readonly requires a path" >&2; exit 1; fi
+      READONLY_LIST+=("$2"); shift 2 ;;
+    --precheck)
+      if [[ -z "${2:-}" ]]; then echo "Error: --precheck requires a shell command" >&2; exit 1; fi
+      PRECHECKS+=("$2"); shift 2 ;;
     --completion-promise)
       if [[ -z "${2:-}" ]]; then
         echo "Error: --completion-promise requires a text argument" >&2
@@ -139,17 +216,34 @@ if [[ "$MAX_ITERATIONS" -eq 0 ]] && [[ "$MAX_SECONDS" -eq 0 ]]; then
   exit 1
 fi
 
-# Validate prerequisites
-if [[ ! -f "train.py" ]]; then
-  echo "Error: train.py not found in current directory." >&2
-  echo "Run this command from an autoresearch project directory." >&2
+# Require the research contract — the loop is domain-agnostic, so the problem,
+# the editable artifact, the scorer, and the direction must all be supplied.
+MISSING=()
+[[ -z "$PROMPT" ]] && MISSING+=(--prompt)
+[[ -z "$OBJECTIVE" ]] && MISSING+=(--objective)
+[[ -z "$EDIT" ]] && MISSING+=(--edit)
+[[ -z "$SCORE_CMD" ]] && MISSING+=(--score-cmd)
+[[ -z "$DIRECTION" ]] && MISSING+=(--direction)
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "Error: missing required flags: ${MISSING[*]}" >&2
+  echo "Run /autoresearch:start --help for the full contract." >&2
   exit 1
 fi
 
-if [[ ! -f "prepare.py" ]]; then
-  echo "Error: prepare.py not found in current directory." >&2
+# The editable artifact must match at least one existing path, so the agent
+# isn't pointed at something that doesn't exist.
+if ! compgen -G "$EDIT" >/dev/null; then
+  echo "Error: --edit '$EDIT' matches no existing file in the current directory." >&2
   exit 1
 fi
+
+# Run domain preconditions (fail loud, like the old train.py/prepare.py checks).
+for check in ${PRECHECKS[@]+"${PRECHECKS[@]}"}; do
+  if ! sh -c "$check" >/dev/null 2>&1; then
+    echo "Error: precheck failed: $check" >&2
+    exit 1
+  fi
+done
 
 # Ensure the loop runs on a dedicated branch, never on a protected branch and
 # never on a dirty tree — the loop auto-discards experiments with `git reset
@@ -199,7 +293,32 @@ if [[ -z "$SESSION_ID" ]] || [[ "$SESSION_ID" == *'${'* ]]; then
   SESSION_ID=""
 fi
 
-# Create state file
+# Human-readable and machine-readable read-only lists.
+if [[ ${#READONLY_LIST[@]} -gt 0 ]]; then
+  READONLY_DISPLAY=$(IFS=', '; echo "${READONLY_LIST[*]}")
+  READONLY_CSV=$(IFS=','; echo "${READONLY_LIST[*]}")
+else
+  READONLY_DISPLAY="(none specified)"
+  READONLY_CSV=""
+fi
+
+# The keep/discard rule, generated from the optimization direction.
+if [[ "$DIRECTION" == "min" ]]; then
+  DECISION_RULE="If SCORE is LOWER (better) than the best score recorded so far in results.tsv: keep the commit — it advances the branch. Otherwise: discard it with git reset --hard HEAD~1."
+else
+  DECISION_RULE="If SCORE is HIGHER (better) than the best score recorded so far in results.tsv: keep the commit — it advances the branch. Otherwise: discard it with git reset --hard HEAD~1."
+fi
+
+# Pre-escape frontmatter values (the hook never reads these, but keep the block
+# well-formed and impossible to break out of).
+EDIT_YAML=$(yaml_escape "$EDIT")
+SCORE_CMD_YAML=$(yaml_escape "$SCORE_CMD")
+OBJECTIVE_YAML=$(yaml_escape "$OBJECTIVE")
+READONLY_YAML=$(yaml_escape "$READONLY_CSV")
+
+# Create state file. NOTE: this is an unquoted heredoc, so $VAR references are
+# substituted — but the SUBSTITUTED VALUE is inserted literally and is NOT
+# re-scanned, so a $(...) or backtick inside e.g. $SCORE_CMD does not execute.
 mkdir -p .claude
 
 cat > .claude/autoresearch.local.md << EOF
@@ -211,73 +330,66 @@ max_iterations: $MAX_ITERATIONS
 max_seconds: $MAX_SECONDS
 completion_promise: $COMPLETION_PROMISE_YAML
 run_tag: $RUN_TAG
+edit_target: $EDIT_YAML
+readonly_list: $READONLY_YAML
+score_cmd: $SCORE_CMD_YAML
+direction: $DIRECTION
+trial_timeout: $TRIAL_TIMEOUT
+objective: $OBJECTIVE_YAML
 started_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 started_at_epoch: $(date +%s)
 ---
-You are an autonomous ML researcher running experiment loop for run tag: $RUN_TAG.
+You are an autonomous researcher running an experiment loop for run tag: $RUN_TAG.
 
-## Context
+## Goal
 
-Read these files for full context before experimenting:
-- README.md — repository overview
-- prepare.py — fixed constants, data prep, tokenizer, dataloader, evaluation. Do NOT modify.
-- train.py — the ONLY file you modify. Model architecture, optimizer, training loop.
+$PROMPT
 
-The experiment branch is: autoresearch/$RUN_TAG
+Your optimization objective: $OBJECTIVE
+
+## Ground rules
+
+- You may edit ONLY: $EDIT
+- NEVER modify (read-only): $READONLY_DISPLAY
+- The experiment branch is: autoresearch/$RUN_TAG (already checked out — do NOT create or switch branches).
+- One concrete change per experiment. Simpler is better: a small improvement from simple code beats a large improvement from complex code.
+- Do NOT install new packages or add dependencies unless the goal explicitly requires it.
+- Do NOT ask for permission to continue between experiments. Keep iterating until the configured bound (max experiments or wall-clock budget) is reached — the stop hook enforces it automatically. You are the researcher. The human is asleep.
 
 ## Setup (first iteration only)
 
 If results.tsv does not exist:
-1. You are already on the experiment branch autoresearch/$RUN_TAG (the setup script switched to it). Do NOT create or switch branches.
-2. Verify data exists: check that ~/.cache/autoresearch/ contains data shards and a tokenizer. If not, tell the human to run: uv run prepare.py
-3. Create results.tsv with just the header row: printf 'commit\tval_bpb\tmemory_gb\tstatus\tdescription\n' > results.tsv
-4. Read README.md, prepare.py, and train.py to understand the codebase.
-5. Run the baseline experiment (do not modify train.py yet).
+1. You are already on the experiment branch autoresearch/$RUN_TAG. Do NOT create or switch branches.
+2. Read README.md (if present) and the editable artifact ($EDIT) to understand the codebase.
+3. Create results.tsv with just the header row: printf 'commit\tscore\tstatus\tdescription\n' > results.tsv
+4. Run the BASELINE: run the scorer on the unmodified artifact, log the score as the first row (status keep). This is the bar to beat.
 
 ## Experiment loop
 
-LOOP FOREVER (until manually stopped or max experiments reached):
+LOOP until the configured bound is reached:
 
 1. Check git state: current branch and last commit (run: git log --oneline -5)
-2. Choose an experimental idea — modify train.py with one concrete change (architecture, optimizer, hyperparameters, batch size, etc.)
-3. Commit the change: git add train.py && git commit -m "experiment: <short description>"
-4. Run the experiment: timeout 600 uv run train.py > run.log 2>&1
-   - Each run takes ~5 minutes (fixed time budget); the timeout hard-kills any run that exceeds 10 minutes
-   - A timeout (exit code 124) counts as a crash: log status crash and move on
-5. Read results: grep "^val_bpb:\|^peak_vram_mb:" run.log
-   - If grep output is empty: the run crashed. Run: tail -n 50 run.log to diagnose.
-   - Fix simple crashes (typos, missing imports) and re-run. Give up after 3 failed attempts.
+2. Choose one concrete experimental change to $EDIT aimed at the objective.
+3. Commit the change: git add $EDIT && git commit -m "experiment: <short description>"
+4. Run the scorer (hard time-limited):
+   timeout $TRIAL_TIMEOUT sh -c '$SCORE_CMD'
+   - The LAST line of the scorer's stdout MUST be a single number — that is SCORE.
+   - A timeout (exit code 124), or a missing / non-numeric last line, counts as a crash: log status crash and move on.
+5. Read SCORE = the last stdout line of the scorer.
+   - If it crashed: inspect the scorer output to diagnose. Fix simple crashes (typos, missing imports) and re-run. Give up after 3 failed attempts.
 6. Log to results.tsv (tab-separated, NOT comma-separated):
-   - Format: <7-char-commit>\t<val_bpb>\t<memory_gb>\t<status>\t<description>
+   - Format: <7-char-commit>\t<score>\t<status>\t<description>
    - status: keep, discard, or crash
-   - memory_gb: peak_vram_mb / 1024, rounded to 1 decimal
-   - Use 0.000000 and 0.0 for crashes
-7. Decision:
-   - If val_bpb improved (lower): keep the commit — advance the branch
-   - If val_bpb equal or worse: git reset --hard HEAD~1
+   - Use 0 for the score of a crash.
+7. Decision ($DIRECTION):
+   - $DECISION_RULE
 
 ## Rules
 
-- Modify ONLY train.py. Never touch prepare.py.
-- Do NOT install new packages or add dependencies.
-- Do NOT modify the evaluate_bpb function.
-- Simpler is better: a small improvement from simple code beats a large improvement from complex code.
-- Do NOT ask for permission to continue between experiments. Keep iterating until the configured bound (max experiments or wall-clock budget) is reached — the stop hook enforces it automatically.
-- If stuck, think harder: try architectural changes, different optimizers, regularization, etc.
-
-## Output format reference
-
-A successful run prints:
----
-val_bpb:          0.997900
-training_seconds: 300.1
-total_seconds:    325.9
-peak_vram_mb:     45060.2
-mfu_percent:      39.80
-total_tokens_M:   499.6
-num_steps:        953
-num_params_M:     50.3
-depth:            8
+- Modify ONLY $EDIT. Never touch the read-only paths: $READONLY_DISPLAY.
+- The scorer command is fixed; do NOT change how the score is measured.
+- If stuck, think harder: try a different angle on the objective, not just parameter nudges.
+- To stop early when the objective is genuinely achieved, output: <promise>...</promise> (only if a completion promise was configured).
 EOF
 
 # Print activation message
@@ -286,12 +398,17 @@ Autoresearch loop activated!
 
 Run tag:      $RUN_TAG
 Branch:       autoresearch/$RUN_TAG
+Edit target:  $EDIT
+Read-only:    $READONLY_DISPLAY
+Scorer:       $SCORE_CMD
+Direction:    $DIRECTION (per-trial timeout ${TRIAL_TIMEOUT}s)
+Objective:    $OBJECTIVE
 Max experiments: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "unlimited"; fi)
 Wall-clock budget: $(if [[ $MAX_SECONDS -gt 0 ]]; then echo "${MAX_SECONDS}s"; else echo "none"; fi)
 Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "$COMPLETION_PROMISE"; else echo "none"; fi)
 
 The stop hook is now active. Every time you try to exit, the research
-prompt will be fed back — Claude keeps experimenting until stopped.
+prompt will be fed back — the loop keeps experimenting until stopped.
 
 Monitor progress:
   grep '^iteration:' .claude/autoresearch.local.md   # experiment count
@@ -310,4 +427,4 @@ fi
 echo ""
 echo "--- Starting autoresearch for run tag: $RUN_TAG ---"
 echo ""
-echo "Read program context from README.md, prepare.py, and train.py, then begin the experiment loop."
+echo "Read the goal and the editable artifact ($EDIT), then begin the experiment loop."

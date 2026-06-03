@@ -121,7 +121,7 @@ claude plugin install frontend@frad-dotclaude
 
 ### [autoresearch](autoresearch/)
 
-Autonomous ML research loop inspired by karpathy/autoresearch — runs bounded experiments on train.py, logs results to results.tsv, and iterates via a stop hook.
+Autonomous research loop inspired by karpathy/autoresearch — you supply an editable artifact, a scorer that prints one number, and an optimization direction; it runs bounded experiments, keeps a change only if the score improves, logs to results.tsv, and iterates via a stop hook. Works on any objective, not just ML training.
 
 **Installation:**
 ```bash
