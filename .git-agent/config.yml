@@ -1,6 +1,8 @@
 scopes:
     - name: acpx
       description: agent-to-agent communication via acpx/; does not cover general automation
+    - name: as
+      description: autonomous ML research loop plugin in autoresearch/; does not cover general automation
     - name: cfg
       description: claude configuration, templates, and fragments in claude-config/; does not cover specific plugin skills
     - name: cctx

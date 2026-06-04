@@ -177,6 +177,19 @@
       "source": "./utils",
       "category": "productivity",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/utils"
+    },
+    {
+      "name": "autoresearch",
+      "displayName": "Autoresearch",
+      "version": "0.2.0",
+      "description": "Autonomous research loop inspired by karpathy/autoresearch — edits an artifact, runs a scorer, keeps the change if it improves, and iterates overnight on any objective",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./autoresearch",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/autoresearch"
     }
   ]
 }
