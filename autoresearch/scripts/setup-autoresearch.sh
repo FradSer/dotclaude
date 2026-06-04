@@ -333,9 +333,12 @@ else
   READONLY_CSV=""
 fi
 
-# The keep/discard rule, generated from the optimization direction.
+# The keep/discard rule, generated from the optimization direction. Compares
+# only against the best KEPT score so a crash (logged as NA, never 0) cannot
+# pose as the baseline — that would otherwise wedge --direction min forever,
+# since 0 looks like the best possible score and nothing real ever beats it.
 _DIR_WORD=$( [[ "$DIRECTION" == "min" ]] && echo LOWER || echo HIGHER )
-DECISION_RULE="If SCORE is $_DIR_WORD (better) than the best score recorded so far in results.tsv: keep the commit — it advances the branch. Otherwise: discard it with git reset --hard HEAD~1."
+DECISION_RULE="Compare SCORE only against BEST_KEPT — the best score among results.tsv rows whose status is keep (the current branch baseline). Ignore crash and discard rows entirely. If SCORE is $_DIR_WORD (strictly better) than BEST_KEPT: keep the commit — it advances the branch and becomes the new BEST_KEPT. Otherwise — worse, tied, or a crash — discard it with git reset --hard HEAD~1."
 
 # Pre-escape frontmatter values (the hook never reads these, but keep the block
 # well-formed and impossible to break out of).
@@ -392,6 +395,7 @@ Your optimization objective: $OBJECTIVE
 - The experiment branch is: autoresearch/$RUN_TAG (already checked out — do NOT create or switch branches).
 - One concrete change per experiment. Simpler is better: a small improvement from simple code beats a large improvement from complex code.
 - Do NOT install new packages or add dependencies unless the goal explicitly requires it.
+- results.tsv is your append-only log. Keep it UNTRACKED by git: stage ONLY the artifact with "git add $EDIT" — NEVER "git add -A", "git add .", or "git add results.tsv". A discard runs "git reset --hard HEAD~1", which preserves results.tsv only while it stays untracked; staging it would let a discard silently wipe the log.
 - Do NOT ask for permission to continue between experiments. Keep iterating until the configured bound (max experiments or wall-clock budget) is reached — the stop hook enforces it automatically. You are the researcher. The human is asleep.
 
 ## Setup (first iteration only)
@@ -400,7 +404,7 @@ If results.tsv does not exist:
 1. You are already on the experiment branch autoresearch/$RUN_TAG. Do NOT create or switch branches.
 2. Read README.md (if present) and the editable artifact ($EDIT) to understand the codebase.
 3. Create results.tsv with just the header row: printf 'commit\tscore\tstatus\tdescription\n' > results.tsv
-4. Run the BASELINE: run the scorer on the unmodified artifact, log the score as the first row (status keep). This is the bar to beat.
+4. Run the BASELINE: run the scorer on the UNMODIFIED artifact and log it as the first row. If it prints a valid number, log it with status keep — that number is BEST_KEPT, the bar to beat. If the baseline CRASHES or prints no numeric last line, log it with status crash and score NA (NOT keep, NOT 0): the scorer or its preconditions are broken, not $EDIT. Diagnose and fix only non-read-only preconditions, then re-run. Never let a crash or 0 stand in as the baseline — if no valid baseline can be produced, the first experiment that scores a real number becomes BEST_KEPT instead.
 
 ## Experiment loop
 
@@ -418,7 +422,7 @@ LOOP until the configured bound is reached:
 6. Log to results.tsv (tab-separated, NOT comma-separated):
    - Format: <7-char-commit>\t<score>\t<status>\t<description>
    - status: keep, discard, or crash
-   - Use 0 for the score of a crash.
+   - For a crash, put NA in the score column — NEVER 0. A crash never counts toward BEST_KEPT, so a phantom 0 cannot wedge the run (especially under --direction min, where 0 would masquerade as the best possible score).
 7. Decision ($DIRECTION):
    - $DECISION_RULE
 
@@ -429,6 +433,25 @@ LOOP until the configured bound is reached:
 - If stuck, think harder: try a different angle on the objective, not just parameter nudges.
 - To stop early when the objective is genuinely achieved, output: <promise>...</promise> (only if a completion promise was configured).
 AUTORESEARCH_STATE_EOF
+
+# Stop-hook block cap check. Claude Code force-ends the turn after a Stop hook
+# blocks CLAUDE_CODE_STOP_HOOK_BLOCK_CAP times in a row (default 8) — and the
+# docs do NOT define whether intervening work resets that counter, so a loop
+# that wants more than the cap must not assume it does. This stop hook is itself
+# the loop's termination authority (it enforces --max-experiments / --max-wall-
+# clock and the completion promise), so the generic cap is redundant here and
+# only risks ending an overnight run early. A hook cannot set the env var (it is
+# read at session start), so detect the risk and tell the user to set it.
+CAP="${CLAUDE_CODE_STOP_HOOK_BLOCK_CAP:-8}"
+[[ "$CAP" =~ ^[0-9]+$ ]] || CAP=8
+CAP_RISK=false
+if [[ "$CAP" != "0" ]]; then
+  # Wall-clock-only runs are unbounded in iterations; an experiment count above
+  # the cap also intends more blocks than the cap allows.
+  if [[ "$MAX_ITERATIONS" -eq 0 ]] || [[ "$MAX_ITERATIONS" -gt "$CAP" ]]; then
+    CAP_RISK=true
+  fi
+fi
 
 # Print activation message
 cat << EOF
@@ -454,6 +477,26 @@ Monitor progress:
 
 To stop: /autoresearch:cancel
 EOF
+
+if [[ "$CAP_RISK" == true ]]; then
+  cat << CAP_EOF
+
+================================ ACTION REQUIRED ================================
+Claude Code force-stops a Stop hook after it blocks $CAP times in a row
+(CLAUDE_CODE_STOP_HOOK_BLOCK_CAP, default 8). This loop re-blocks once per
+experiment, so it WILL likely hit that ceiling before reaching its own bound.
+
+Autoresearch enforces its own stopping bound (experiments / wall-clock /
+completion promise), so disable the redundant cap. Add to .claude/settings.json:
+
+  { "env": { "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP": "0" } }
+
+("0" disables the cap; or set a number comfortably above your experiment count.)
+The env var is read at SESSION START, so set it and restart Claude Code BEFORE
+relying on a long run — it does not take effect in the current session.
+================================================================================
+CAP_EOF
+fi
 
 if [[ "$COMPLETION_PROMISE" != "null" ]]; then
   echo ""

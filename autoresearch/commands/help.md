@@ -30,6 +30,18 @@ This is the same spirit as the "ralph-loop" idea behind the original project (re
 - A `--score-cmd` that prints one comparable number as its **last** stdout line
 - Whatever runtime that scorer needs (interpreter, data, GPU, ...) — that is your scorer's concern, not the plugin's
 
+## Before a long run: raise the Stop-hook block cap
+
+Claude Code force-ends the turn after a Stop hook blocks `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` times in a row (**default 8**). This loop re-blocks once per experiment, so any run that wants more than ~8 experiments will hit that ceiling and stop early unless you raise it.
+
+Autoresearch already enforces its own bound (experiments / wall-clock / completion promise) inside the same Stop hook, so the generic cap is redundant here — disable it. Add to `.claude/settings.json` (or `~/.claude/settings.json`):
+
+```json
+{ "env": { "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP": "0" } }
+```
+
+`"0"` disables the cap; or set a number comfortably above your experiment count. The env var is read at **session start**, so set it and restart Claude Code *before* the run — a plugin cannot set it for you, and it does not take effect mid-session. `/autoresearch:start` prints a reminder when your configured bound exceeds the active cap.
+
 ## Commands
 
 ### /autoresearch:start [TAG] [CONTRACT] [OPTIONS]
@@ -130,3 +142,9 @@ To signal research is complete, Claude outputs:
 ```
 
 The stop hook detects this tag (when `--completion-promise` is configured) and ends the loop cleanly.
+
+## Limitations
+
+- **`iteration` counts re-prompts, not completed experiments.** The stop hook increments the counter every time it blocks an exit, whichever the reason. If a turn ends without finishing an experiment, the count still advances — so `--max-experiments N` is an upper bound on re-prompts, which usually but not always equals N completed experiments. Prefer `--max-wall-clock` when you care about total time rather than an exact experiment count.
+- **The block-cap ceiling is external.** See "raise the Stop-hook block cap" above — the plugin warns but cannot set the env var itself.
+- **`results.tsv` lives only in the working tree.** It is kept untracked on purpose (so discards preserve it). It is not committed, so it exists only on the experiment branch's working copy until you save it elsewhere.
