@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 14 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 15 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, gitflow, github, refactor, swiftui, claude-config, office, plugin-optimizer, superpowers, frontend
+**Active plugins:** git, gitflow, github, refactor, swiftui, claude-config, office, plugin-optimizer, superpowers, frontend, antigravity
 
 **Non-active plugins:** acpx, code-context, utils, meeseeks-vetted
 
@@ -89,7 +89,7 @@ Validation script enforces these limits with exit codes:
 
 ## Git Commit Conventions
 
-**Scopes:** acpx, as, cldc, cod, fe, git, gitflow, github, mve, office, po, sp, swiftui, utils
+**Scopes:** acpx, ag, as, cldc, cod, fe, git, gitflow, github, mve, office, po, sp, swiftui, utils
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 

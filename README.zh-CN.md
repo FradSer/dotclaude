@@ -5,7 +5,7 @@
 
 [English](README.md) | **简体中文**
 
-精心打造的 13 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 15 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -126,6 +126,17 @@ claude plugin install frontend@frad-dotclaude
 **安装：**
 ```bash
 claude plugin install autoresearch@frad-dotclaude
+```
+
+---
+
+### [antigravity](antigravity/)
+
+将任务和深度研究委托给运行在远程沙箱中的 Google Gemini Managed Agents（Antigravity），沙箱内可执行代码、调用 Google 搜索和读取网页，完成后把结果读回。异步运行，通过 Monitor 工具轮询直到完成。需要 `GEMINI_API_KEY` 和 `uv`。
+
+**安装：**
+```bash
+claude plugin install antigravity@frad-dotclaude
 ```
 
 ---

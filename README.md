@@ -5,7 +5,7 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 13 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 15 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -126,6 +126,17 @@ Autonomous research loop inspired by karpathy/autoresearch — you supply an edi
 **Installation:**
 ```bash
 claude plugin install autoresearch@frad-dotclaude
+```
+
+---
+
+### [antigravity](antigravity/)
+
+Delegate tasks and deep research to Google Gemini Managed Agents (Antigravity) running in a remote sandbox with code execution, Google Search, and URL reading, then read the results back. Runs asynchronously and polls for completion via the Monitor tool. Requires `GEMINI_API_KEY` and `uv`.
+
+**Installation:**
+```bash
+claude plugin install antigravity@frad-dotclaude
 ```
 
 ---
