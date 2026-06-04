@@ -190,6 +190,19 @@
       "source": "./autoresearch",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/autoresearch"
+    },
+    {
+      "name": "antigravity",
+      "displayName": "Antigravity",
+      "version": "0.1.0",
+      "description": "Delegate tasks and deep research to Google Gemini Managed Agents (Antigravity) running in a remote sandbox, then read the results back",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./antigravity",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/antigravity"
     }
   ]
 }

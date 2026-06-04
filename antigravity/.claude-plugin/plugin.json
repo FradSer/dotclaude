@@ -1,0 +1,22 @@
+{
+  "name": "antigravity",
+  "version": "0.1.0",
+  "description": "Delegate tasks and deep research to Google Gemini Managed Agents (Antigravity) running in a remote sandbox, then read the results back",
+  "keywords": [
+    "gemini",
+    "managed-agents",
+    "antigravity",
+    "delegate",
+    "deep-research",
+    "sandbox"
+  ],
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "commands": [
+    "./skills/delegate/",
+    "./skills/research/"
+  ]
+}
