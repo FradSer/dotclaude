@@ -29,6 +29,13 @@ PRECHECKS=()
 
 STATE_FILE=".claude/autoresearch.local.md"
 
+# Absolute path to the bundled tournament engine. The plateau-escalation step in
+# the injected prompt invokes it via the Workflow tool, but ${CLAUDE_PLUGIN_ROOT}
+# is NOT available when the stop hook re-injects the prompt — so bake the absolute
+# path in here, where the script knows its own location.
+PLUGIN_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+GAN_SCRIPT="$PLUGIN_ROOT/workflows/gan.mjs"
+
 # Parse a duration with optional h/m/s suffix. Bare numbers use $2 as default unit.
 # Usage: parse_duration "$value" h   # bare "8" → 28800
 #        parse_duration "$value" s   # bare "600" → 600
@@ -391,6 +398,25 @@ else
   BASELINE_RULE="Run the gate on the UNMODIFIED artifact and log the first row (status=keep if it passes, gatefail if not, score column NA either way — a gate has no number). If it already passes and the goal is met, the run is already complete."
 fi
 
+# Hybrid strategy: rounds default to a cheap sequential change; when sequential
+# stalls (a plateau / local optimum), escalate ONE round to a parallel tournament
+# via the bundled gan engine. A tournament costs ~100k+ tokens, so it is reserved
+# for when it is worth it. Only feasible for a single-file artifact (the engine
+# passes full file contents between agents).
+ESCALATE_AFTER=3
+if [[ $(compgen -G "$EDIT" 2>/dev/null | grep -c .) -eq 1 ]]; then
+  TOURNAMENT_BLOCK="## Plateau escalation (break out of a local optimum)
+
+Watch results.tsv. If the last $ESCALATE_AFTER rows are ALL non-improving (status discard/crash/gatefail, no new keep), sequential search is stuck. For THIS round only, run ONE parallel tournament instead of a single change, then resume sequential next round:
+- Invoke the Workflow tool with scriptPath \"$GAN_SCRIPT\" and args built from THIS run's contract: edit \"$EDIT\", the objective and goal above, the SAME evaluator shown in the frontmatter (score_cmd / check_cmd / direction), plus max_rounds 1, candidates 3, trial_timeout $TRIAL_TIMEOUT. (args may be a JSON object or string; the engine accepts both.)
+- It returns best_content — the winning/synthesized artifact. Re-evaluate it against BEST_KEPT with the DECIDE rule: if it wins, write best_content to $EDIT, then git add $EDIT && git commit -m \"tournament: <desc>\" and log status keep; otherwise discard and log status discard.
+- Then resume sequential rounds. Do not run a tournament every round — only to break a genuine plateau."
+else
+  TOURNAMENT_BLOCK="## Plateau escalation
+
+Not available for this run: --edit matches multiple files and the tournament engine optimizes a single file. Stay sequential; when stuck, attack the objective from a different angle rather than nudging parameters."
+fi
+
 # Pre-escape frontmatter values (the hook never reads these, but keep the block
 # well-formed and impossible to break out of).
 EDIT_YAML=$(yaml_escape "$EDIT")
@@ -471,7 +497,9 @@ $EVAL_BLOCK
    - $DECISION_RULE
 6. LOG to results.tsv (tab-separated, NOT comma-separated):
    - Format: <7-char-commit>\t<score-or-NA>\t<status>\t<description>
-   - status is one of: keep, discard, gatefail, crash. Use NA (never 0) in the score column for gatefail/crash, and for a gate-only run.
+   - status is one of: keep, discard, gatefail, crash, tournament. Use NA (never 0) in the score column for gatefail/crash, and for a gate-only run.
+
+$TOURNAMENT_BLOCK
 
 ## Rules
 
