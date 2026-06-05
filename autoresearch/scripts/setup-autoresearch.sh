@@ -159,7 +159,7 @@ EXAMPLES:
     --direction min --max-wall-clock 8h
 
 REQUIREMENTS:
-  - A git repository (the loop runs on a dedicated autoresearch/<tag> branch)
+  - A git repository (the loop runs in a dedicated git worktree; your checkout is untouched)
   - A --score-cmd that prints one comparable number as its LAST stdout line
   - Whatever runtime that scorer needs (interpreter, data, GPU, ...) — your call
 
@@ -322,39 +322,40 @@ for check in ${PRECHECKS[@]+"${PRECHECKS[@]}"}; do
   fi
 done
 
-# Ensure the loop runs on a dedicated branch, never on a protected branch and
-# never on a dirty tree — the loop auto-discards experiments with `git reset
-# --hard`, which would otherwise destroy unrelated work. Done here (not in the
-# injected prompt) so isolation is deterministic, not left to the agent.
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
   echo "Error: not inside a git repository." >&2
   exit 1
 fi
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "Error: working tree has uncommitted changes." >&2
-  echo "The loop edits the artifact and discards changes with 'git checkout --', which would overwrite uncommitted edits." >&2
-  echo "Commit or stash your changes, then re-run /autoresearch:start." >&2
+# Isolate the entire run in a dedicated git WORKTREE rather than switching the
+# main checkout to an experiment branch. The user's branch and working tree are
+# never touched, so the run can start even from a dirty main tree, and the loop's
+# edits/discards can never clobber unrelated work. (Verified 2026-06 via
+# claude-code-guide: the EnterWorktree tool's persistence across a Stop-hook loop
+# is undocumented and its cleanup prompts break automation, so manage the worktree
+# explicitly here with git worktree.)
+TARGET_BRANCH="autoresearch/$RUN_TAG"
+WORKTREE_DIR="$(git rev-parse --show-toplevel)/.claude/worktrees/autoresearch-$RUN_TAG"
+
+if [[ "$FORCE_START" == true ]]; then
+  git worktree remove --force "$WORKTREE_DIR" 2>/dev/null || rm -rf "$WORKTREE_DIR"
+  git worktree prune 2>/dev/null || true
+  git branch -D "$TARGET_BRANCH" 2>/dev/null || true
+fi
+if [[ -e "$WORKTREE_DIR" ]] || git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
+  echo "Error: a run for tag '$RUN_TAG' already exists (worktree or branch '$TARGET_BRANCH')." >&2
+  echo "Pass --force to recreate it, or choose a different TAG." >&2
   exit 1
 fi
+git worktree add "$WORKTREE_DIR" -b "$TARGET_BRANCH" >&2
+echo "Isolated run in git worktree: $WORKTREE_DIR"
+echo "  (branch $TARGET_BRANCH; your main checkout and current branch are untouched)"
 
-TARGET_BRANCH="autoresearch/$RUN_TAG"
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-if [[ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]]; then
-  if git show-ref --verify --quiet "refs/heads/$TARGET_BRANCH"; then
-    git checkout "$TARGET_BRANCH"
-  else
-    git checkout -b "$TARGET_BRANCH"
-  fi
-  echo "Switched to experiment branch: $TARGET_BRANCH"
-fi
-
-# The commit the run starts from. Experiments fold into ONE temporary "WIP"
-# commit on top of this; at the end the WIP is collapsed back to here so the
-# net result is an uncommitted diff for the human to review and land via the
-# dedicated /git:commit flow. No real/conventional commit happens inside the loop.
-BASELINE_SHA=$(git rev-parse HEAD)
+# The commit the worktree starts from. Kept experiments fold into ONE temporary
+# "WIP" commit on top of this; at the end the WIP is collapsed back to here so the
+# net result is an uncommitted diff the human lands via the dedicated /git:commit
+# flow. No real/conventional commit happens inside the loop.
+BASELINE_SHA=$(git -C "$WORKTREE_DIR" rev-parse HEAD)
 
 # Quote completion promise for YAML if needed.
 if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
@@ -442,6 +443,7 @@ OBJECTIVE_YAML=$(yaml_escape "$OBJECTIVE")
 READONLY_YAML=$(yaml_escape "$READONLY_CSV")
 RUN_TAG_YAML=$(yaml_escape "$RUN_TAG")
 SESSION_ID_YAML=$(yaml_escape "$SESSION_ID")
+WORKTREE_DIR_YAML=$(yaml_escape "$WORKTREE_DIR")
 
 mkdir -p .claude
 
@@ -475,8 +477,21 @@ objective: $OBJECTIVE_YAML
 started_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 started_at_epoch: $(date +%s)
 baseline_sha: $BASELINE_SHA
+worktree_dir: $WORKTREE_DIR_YAML
 ---
 You are an autonomous researcher running an experiment loop for run tag: $RUN_TAG.
+
+## Where you work — an isolated git worktree
+
+ALL of your work happens inside a dedicated git worktree:
+
+    $WORKTREE_DIR   (branch autoresearch/$RUN_TAG)
+
+The user's main checkout and current branch are NEVER touched — do not modify anything outside this worktree. At the START of every turn, cd into it:
+
+    cd "$WORKTREE_DIR"
+
+Then run every command (the scorer, the gate, git, results.tsv) from there, and edit the file at $WORKTREE_DIR/$EDIT. The state file that drives this loop lives in the user's main repo, not here.
 
 ## Goal
 
@@ -486,9 +501,9 @@ Your optimization objective: $OBJECTIVE
 
 ## Ground rules
 
-- You may edit ONLY: $EDIT
+- You may edit ONLY: $EDIT (inside the worktree — $WORKTREE_DIR/$EDIT)
 - NEVER modify (read-only): $READONLY_DISPLAY
-- The experiment branch is: autoresearch/$RUN_TAG (already checked out — do NOT create or switch branches).
+- Work ONLY inside the worktree $WORKTREE_DIR (branch autoresearch/$RUN_TAG, already created). Do NOT cd out of it, switch branches, or touch the user's main checkout.
 - One concrete change per experiment. Simpler is better: a small improvement from simple code beats a large improvement from complex code.
 - Do NOT install new packages or add dependencies unless the goal explicitly requires it.
 - results.tsv is your durable append-only log — the ONE place the run is recorded. Keep it UNTRACKED: stage ONLY the artifact with "git add $EDIT" — NEVER "git add -A", "git add .", or "git add results.tsv" (staging it would fold the log into the scratch WIP commit and a discard could lose entries).
@@ -497,8 +512,8 @@ Your optimization objective: $OBJECTIVE
 
 ## Setup (first iteration only)
 
-If results.tsv does not exist:
-1. You are already on the experiment branch autoresearch/$RUN_TAG. Do NOT create or switch branches.
+First, cd into the worktree: cd "$WORKTREE_DIR". Then, if results.tsv does not exist there:
+1. You are in the worktree on branch autoresearch/$RUN_TAG. Do NOT create or switch branches or leave the worktree.
 2. Read README.md (if present) and the editable artifact ($EDIT) to understand the codebase.
 3. Create results.tsv with just the header row: printf 'commit\tscore\tstatus\tdescription\n' > results.tsv
 4. Run the BASELINE. $BASELINE_RULE
@@ -525,7 +540,7 @@ $TOURNAMENT_BLOCK
 
 You are on a throwaway branch and you NEVER make a real or conventional commit during the loop. Kept experiments fold into ONE rolling scratch commit titled "autoresearch WIP (temporary)", so the next experiment can be discarded with a simple git checkout -- $EDIT. results.tsv is the durable record of every experiment.
 
-When the run ends (a bound is hit, or you output the completion promise), do NOT land the result yourself and do NOT run a conventional commit. Leave the WIP commit in place and report: the baseline-to-best change, results.tsv, and that the human should review and then run the dedicated commit flow (/git:commit) to make the real commit. To turn the net optimization back into an uncommitted diff for that flow: git reset --soft $BASELINE_SHA.
+When the run ends (a bound is hit, or you output the completion promise), do NOT land the result yourself and do NOT run a conventional commit. Leave the WIP commit in the worktree and report: the baseline-to-best change, results.tsv, the worktree path ($WORKTREE_DIR), and that the human should review and then land it with the dedicated commit flow. The handoff (all from inside the worktree): git reset --soft $BASELINE_SHA turns the net optimization into an uncommitted diff, then /git:commit makes the real commit; afterward the worktree can be removed with git worktree remove "$WORKTREE_DIR".
 
 ## Rules
 
@@ -559,7 +574,8 @@ cat << EOF
 Autoresearch loop activated!
 
 Run tag:      $RUN_TAG
-Branch:       autoresearch/$RUN_TAG
+Worktree:     $WORKTREE_DIR
+Branch:       autoresearch/$RUN_TAG (isolated worktree; your checkout is untouched)
 Edit target:  $EDIT
 Read-only:    $READONLY_DISPLAY
 Scorer:       $(if $HAS_SCORE; then echo "$SCORE_CMD (direction: $DIRECTION)"; else echo "(none — gate-only)"; fi)
@@ -573,14 +589,14 @@ Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "$COMP
 The stop hook is now active. Every time you try to exit, the research
 prompt will be fed back — the loop keeps experimenting until stopped.
 
-Experiments fold into ONE temporary "autoresearch WIP" commit on this branch
-(results.tsv is the log). The loop never makes a real commit — after the run,
-review the result and run /git:commit to land it (git reset --soft $BASELINE_SHA
-first to turn the WIP into an uncommitted diff).
+All work runs in the worktree above. Experiments fold into ONE temporary
+"autoresearch WIP" commit there (results.tsv is the log); the loop never makes a
+real commit. After the run, from inside the worktree: git reset --soft
+$BASELINE_SHA then /git:commit to land the result, then git worktree remove it.
 
 Monitor progress:
-  grep '^iteration:' .claude/autoresearch.local.md   # experiment count
-  cat results.tsv                                     # experiment log
+  grep '^iteration:' .claude/autoresearch.local.md       # experiment count (main repo)
+  cat "$WORKTREE_DIR/results.tsv"                          # experiment log (worktree)
 
 To stop: /autoresearch:cancel
 EOF
@@ -615,4 +631,4 @@ fi
 echo ""
 echo "--- Starting autoresearch for run tag: $RUN_TAG ---"
 echo ""
-echo "Read the goal and the editable artifact ($EDIT), then begin the experiment loop."
+echo "cd into the worktree ($WORKTREE_DIR), read the goal and the editable artifact ($EDIT), then begin the experiment loop."

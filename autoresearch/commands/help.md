@@ -25,7 +25,7 @@ This is the same spirit as the "ralph-loop" idea behind the original project (re
 
 ## Requirements
 
-- A git repository (the loop runs on a dedicated `autoresearch/<tag>` branch so auto-discards never touch your work)
+- A git repository (the loop runs in a dedicated git **worktree** so your main checkout, current branch, and even a dirty tree are never touched)
 - At least one bound: `--max-experiments` and/or `--max-wall-clock`
 - An evaluator: a `--score-cmd` (prints a number as its **last** stdout line) and/or a `--check-cmd` (objective pass/fail gate, exit 0 = pass)
 - Whatever runtime the evaluator needs (interpreter, data, GPU, ...) — that is its concern, not the plugin's
@@ -93,11 +93,11 @@ Plus at least one bound (`--max-experiments` or `--max-wall-clock`); the inferen
 ```
 
 **What happens:**
-1. Refuses to start unbounded, without the contract flags, on a dirty tree, or outside a git repo
+1. Refuses to start unbounded, without an evaluator, or outside a git repo (a dirty main tree is fine — the run is isolated)
 2. Runs any `--precheck` commands and aborts if one fails
-3. Deterministically checks out or creates branch `autoresearch/<tag>` (so auto-discards never touch your current branch)
-4. Creates `.claude/autoresearch.local.md` state file with the generated research prompt
-5. The agent initializes `results.tsv` and scores a baseline first
+3. Creates a dedicated git **worktree** (`.claude/worktrees/autoresearch-<tag>` on branch `autoresearch/<tag>`) — your checkout is never switched
+4. Creates `.claude/autoresearch.local.md` state file (in the main repo) with the generated research prompt
+5. The agent works inside the worktree: initializes `results.tsv` and scores a baseline first
 6. Loops until the bound is reached: edit artifact → evaluate → log → keep (fold into a temporary WIP commit) / discard. The real commit is made by you afterward via `/git:commit`.
 
 ---
@@ -141,11 +141,11 @@ Each experiment:
 ## Monitoring
 
 ```bash
-# Current experiment number
+# Current experiment number (main repo)
 grep '^iteration:' .claude/autoresearch.local.md
 
-# Experiment log
-cat results.tsv
+# Experiment log (inside the worktree)
+cat .claude/worktrees/autoresearch-<tag>/results.tsv
 ```
 
 ## Completion promise

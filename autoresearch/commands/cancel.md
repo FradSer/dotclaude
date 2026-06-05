@@ -15,6 +15,7 @@ To cancel the autoresearch loop:
 2. If NOT_FOUND: report "No active autoresearch loop found."
 
 3. If EXISTS:
-   - Read `.claude/autoresearch.local.md` to get `iteration:` (experiment count) and `run_tag:` fields from the frontmatter
-   - Remove the file: run `rm .claude/autoresearch.local.md`
-   - Report: "Cancelled autoresearch loop for run tag '<tag>' (was at experiment N)"
+   - Read `.claude/autoresearch.local.md` to get `iteration:` (experiment count), `run_tag:`, and `worktree_dir:` from the frontmatter
+   - Remove the file: run `rm .claude/autoresearch.local.md` (the loop's next stop-hook fire then exits cleanly)
+   - Do NOT delete the worktree automatically — it may hold an unconfirmed result. Report:
+     "Cancelled autoresearch loop for run tag '<tag>' (was at experiment N). The result is in the isolated worktree `<worktree_dir>` on branch `autoresearch/<tag>`. To land it: cd there, review, `git reset --soft <baseline>` then `/git:commit`. To discard it: `git worktree remove --force <worktree_dir>` and `git branch -D autoresearch/<tag>`."

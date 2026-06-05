@@ -16,7 +16,7 @@ claude plugin install autoresearch@frad-dotclaude
 
 | Command | What it does |
 |---------|--------------|
-| `/autoresearch:start <goal> [overrides]` | Give it a plain-language goal; it infers the artifact, evaluator, and bounds (asking only on true ambiguity), then runs the loop on a dedicated `autoresearch/<tag>` branch. |
+| `/autoresearch:start <goal> [overrides]` | Give it a plain-language goal; it infers the artifact, evaluator, and bounds (asking only on true ambiguity), then runs the loop in an isolated git **worktree** (your checkout is untouched). |
 | `/autoresearch:cancel` | Force-stop an active loop. Run from a **separate** session — the looping session is busy being re-prompted. |
 | `/autoresearch:help` | Explain the plugin and its commands. |
 
@@ -24,7 +24,7 @@ claude plugin install autoresearch@frad-dotclaude
 
 ## Requirements
 
-- **A git repository.** The loop runs on a dedicated `autoresearch/<tag>` branch, so its experimental edits and temporary WIP commit never touch your branch. It refuses to start on a dirty tree.
+- **A git repository.** The loop runs in a dedicated git **worktree** (`.claude/worktrees/autoresearch-<tag>` on branch `autoresearch/<tag>`), so your main checkout, current branch, and even a dirty working tree are never touched. (Verified that the `EnterWorktree` tool's persistence across the Stop-hook loop is undocumented, so the plugin manages the worktree itself.)
 - **At least one bound:** `--max-experiments` and/or `--max-wall-clock`. It refuses to start unbounded.
 - **An evaluator:** a `--score-cmd` (prints a number as its **last** stdout line) and/or a `--check-cmd` (pass/fail gate, exit 0 = pass). GAN also takes an anchored `--rubric`.
 - **`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`** raised for runs longer than ~8 experiments — see below.
@@ -70,7 +70,7 @@ Each experiment:
 
 ### Commits are temporary
 
-The loop **never makes a real commit**. Kept experiments fold into a single rolling `autoresearch WIP (temporary)` scratch commit on the throwaway branch (so the next experiment can be discarded with `git checkout`), and `results.tsv` — kept **untracked** — is the durable log. When the run ends, you review the result and land it yourself through the dedicated flow: `git reset --soft <baseline>` then `/git:commit`. No `experiment:` commits pollute history; the real, conventional commit happens only after you confirm.
+The loop **never makes a real commit**. Everything happens in the isolated worktree: kept experiments fold into a single rolling `autoresearch WIP (temporary)` scratch commit (so the next experiment can be discarded with `git checkout`), and `results.tsv` — kept **untracked** — is the durable log. When the run ends, you review the result and land it yourself, from inside the worktree, through the dedicated flow: `git reset --soft <baseline>` then `/git:commit` (then `git worktree remove` it). No `experiment:` commits pollute history; the real, conventional commit happens only after you confirm.
 
 ## Hybrid loop: tournament on plateau
 
@@ -112,8 +112,8 @@ More worked examples live in [`examples/`](examples/): data cleaning, prompt opt
 ## Monitoring
 
 ```bash
-grep '^iteration:' .claude/autoresearch.local.md   # current experiment number
-cat results.tsv                                     # experiment log
+grep '^iteration:' .claude/autoresearch.local.md          # experiment count (main repo)
+cat .claude/worktrees/autoresearch-<tag>/results.tsv      # experiment log (in the worktree)
 ```
 
 ## Limitations
