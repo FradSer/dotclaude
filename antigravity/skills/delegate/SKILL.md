@@ -52,7 +52,13 @@ Requires `GEMINI_API_KEY` in the environment and `uv` on PATH.
    ```
    Set the Monitor `timeout_ms` to 900000 (15 min) and a clear description such as
    "antigravity delegate <run_id>".
-2. When the Monitor event arrives, proceed to Phase 4. Do not poll manually in a loop.
+2. When the Monitor event arrives, read the last word of its line:
+   - `completed` or `failed` → proceed to Phase 4.
+   - `timeout` (the line reads `... : timeout (still ...)`) → the run is NOT done; the
+     detached worker is still going. Start the Monitor on the same `wait_command` again
+     to keep waiting. After a second consecutive timeout, tell the user it is still
+     running and give them `... status --run <run_id> --full` to fetch it later, then stop.
+   Never present a `timeout` / still-running state as the result. Do not poll manually in a loop.
 
 ## Phase 4: Report the result
 

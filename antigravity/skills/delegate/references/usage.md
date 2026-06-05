@@ -19,13 +19,14 @@ live API):
 from google import genai
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# delegate: antigravity agent — background MUST be omitted; create() blocks until done
+# delegate: antigravity agent — background MUST be omitted; create() blocks until done.
 interaction = client.interactions.create(
     agent="antigravity-preview-05-2026",
     input="<prompt>",
     tools=[{"type": "code_execution"}, {"type": "google_search"}, {"type": "url_context"}],
     environment={"type": "remote"},   # omit "network" = open; "disabled" = no outbound
     store=True,
+    timeout=7200,   # SECONDS; the SDK default is only 60s — far too short for sandbox work
 )
 print(interaction.output_text)
 
@@ -45,6 +46,20 @@ detached worker and the caller waits via the `wait` subcommand. The delegate wor
 blocks on the synchronous `create()`; the research worker polls `get()` until the
 server reports a terminal status. The detached worker survives an interrupted wait,
 so a run is always resumable via `status`.
+
+## Interaction status
+
+`interaction.status` is one of seven values (google-genai `Interaction.status` Literal):
+
+- **Active (keep polling):** `in_progress`, `requires_action`
+- **Terminal:** `completed` (the only success), `failed`, `cancelled`, `incomplete`, `budget_exceeded`
+
+There is no `done` flag or `is_terminal()` helper — callers compare the string. The
+worker polls until the status is in the terminal set, treating an empty status or any
+unrecognized value as "still working" (the worker deadline bounds a real hang), so a
+new active state the SDK adds is never mistaken for a finished run. Only `completed`
+maps to a local `completed` status; every other terminal state is recorded as `failed`
+with the server status in the error.
 
 ## Agents
 
@@ -108,3 +123,10 @@ Pre-GA as of mid-2026: no SLA, schema may change. `background` is required by th
 deep-research agent and rejected by the antigravity agent (so the worker branches on
 kind). `store=True` is sent on both. The `usage` namespace is flagged experimental by
 the SDK. Token usage is billed at the underlying model's rates.
+
+Timeout gotcha: the SDK's default per-request timeout is **60 seconds**, and the
+per-request `timeout=` kwarg is in **seconds** while `HttpOptions.timeout` is in
+**milliseconds** (opposite units). A synchronous `create()` blocks until the agent
+finishes, so the delegate worker passes an explicit multi-hour `timeout=` to keep
+long sandbox runs from aborting at the 60s default; the background research worker
+returns immediately and polls `get(..., timeout=...)` instead.

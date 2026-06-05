@@ -40,8 +40,14 @@ DEEP_RESEARCH_MAX_AGENT = "deep-research-max-preview-04-2026"
 DEFAULT_TOOLS = ["code_execution", "google_search", "url_context"]
 # Local run states written to the status file.
 TERMINAL = {"completed", "failed"}
-# Server-side interaction states that mean "still working"; anything else is terminal.
-SERVER_ACTIVE = {"queued", "in_progress", "running", "pending"}
+# Server-side TERMINAL interaction states, from the google-genai Interaction.status
+# Literal: in_progress, requires_action, completed, failed, cancelled, incomplete,
+# budget_exceeded. Only "completed" is success. Poll until the status lands in this
+# set; treat everything else — the active states in_progress / requires_action, an
+# empty status, or any future status the SDK adds — as "still working", so a new or
+# unrecognized active state is never mistaken for a finished run. The deadline below
+# bounds a genuine hang.
+SERVER_TERMINAL = {"completed", "failed", "cancelled", "incomplete", "budget_exceeded"}
 POLL_INTERVAL = 10  # seconds between interactions.get() polls
 GET_TIMEOUT = 60  # per-get() timeout so a long-poll can't block the deadline check
 WORKER_DEADLINE = 7200  # seconds before the worker gives up (deep research is slow)
@@ -103,6 +109,13 @@ def build_create_kwargs(meta: dict) -> dict:
     else:
         kwargs["tools"] = [{"type": t} for t in meta["tools"]]
         kwargs["environment"] = build_environment(meta["network"], meta.get("repo"))
+        # Synchronous create() blocks until the agent finishes (minutes for real
+        # work), but the SDK's default per-request timeout is only 60s (seconds) —
+        # so any task over ~1 minute would abort mid-run. Bound it at the worker
+        # deadline instead: long enough for genuine work, finite so a hung server
+        # can't leave a zombie worker. (research uses background=True, so its
+        # create() returns immediately and the 60s default is fine.)
+        kwargs["timeout"] = WORKER_DEADLINE
     return kwargs
 
 
@@ -224,7 +237,7 @@ def cmd_worker(run_id: str) -> None:
         # timeout: without one the SDK can long-poll and block the deadline check.
         deadline = time.monotonic() + WORKER_DEADLINE
         srv_status = str(getattr(interaction, "status", "") or "")
-        while meta["kind"] == "research" and (srv_status in SERVER_ACTIVE or not srv_status):
+        while meta["kind"] == "research" and srv_status not in SERVER_TERMINAL:
             if time.monotonic() >= deadline:
                 raise TimeoutError(f"worker gave up after {WORKER_DEADLINE}s (last: {srv_status})")
             time.sleep(POLL_INTERVAL)

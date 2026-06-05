@@ -53,7 +53,13 @@ in the environment and `uv` on PATH. Deep research can take several minutes.
    Deep research is slow: set the Monitor `timeout_ms` to 1800000 (30 min) and pass
    `--timeout 1800` to the wait command. Use a clear description like
    "antigravity research <run_id>".
-2. When the Monitor event arrives, proceed to Phase 4.
+2. When the Monitor event arrives, read the last word of its line:
+   - `completed` or `failed` → proceed to Phase 4.
+   - `timeout` → the research is still running (the worker keeps polling up to ~2h).
+     Start the Monitor on the same `wait_command` again to keep waiting. After a second
+     consecutive timeout, tell the user it is still running and give them
+     `... status --run <run_id> --full` to fetch it later, then stop.
+   Never present a `timeout` / still-running state as the report.
 
 ## Phase 4: Report the result
 
