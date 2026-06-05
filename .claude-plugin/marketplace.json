@@ -24,7 +24,7 @@
     {
       "name": "gitflow",
       "displayName": "GitFlow",
-      "version": "1.0.2",
+      "version": "1.1.0",
       "description": "GitFlow workflow automation for feature, hotfix, and release branches",
       "author": {
         "name": "Frad LEE",
@@ -181,8 +181,8 @@
     {
       "name": "autoresearch",
       "displayName": "Autoresearch",
-      "version": "0.3.0",
-      "description": "Autonomous research loop inspired by karpathy/autoresearch — edits an artifact, runs a scorer, keeps the change if it improves, and iterates overnight on any objective",
+      "version": "0.5.0",
+      "description": "Autonomous research loop inspired by karpathy/autoresearch — iterates on an artifact against a pluggable evaluator (numeric scorer, objective gate, or LLM rubric) and keeps what improves; an overnight sequential ralph-loop plus a GAN-style parallel tournament that iterates to a target",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"

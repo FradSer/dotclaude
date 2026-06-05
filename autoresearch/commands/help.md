@@ -27,8 +27,8 @@ This is the same spirit as the "ralph-loop" idea behind the original project (re
 
 - A git repository (the loop runs on a dedicated `autoresearch/<tag>` branch so auto-discards never touch your work)
 - At least one bound: `--max-experiments` and/or `--max-wall-clock`
-- A `--score-cmd` that prints one comparable number as its **last** stdout line
-- Whatever runtime that scorer needs (interpreter, data, GPU, ...) — that is your scorer's concern, not the plugin's
+- An evaluator: a `--score-cmd` (prints a number as its **last** stdout line) and/or a `--check-cmd` (objective pass/fail gate, exit 0 = pass)
+- Whatever runtime the evaluator needs (interpreter, data, GPU, ...) — that is its concern, not the plugin's
 
 ## Before a long run: raise the Stop-hook block cap
 
@@ -52,8 +52,12 @@ Start the autonomous research loop in your current session.
 - `--prompt '<text>'` — the free-form research goal handed to the agent
 - `--objective '<text>'` — the measurable target you are optimizing
 - `--edit <glob|path>` — the ONLY artifact the agent may modify
-- `--score-cmd '<shell>'` — command whose LAST stdout line is a single number
-- `--direction min|max` — whether a lower or higher score is better
+- An **evaluator** — at least one of:
+  - `--score-cmd '<shell>'` — numeric scorer; LAST stdout line is a single number (needs `--direction`)
+  - `--check-cmd '<shell>'` — objective gate; exit 0 = pass. Use alone to "iterate until it passes", or with `--score-cmd` as a hard filter on top of optimization.
+- `--direction min|max` — lower or higher score is better (only with `--score-cmd`)
+
+(LLM-rubric evaluation lives in `/autoresearch:gan`, which has independent judges.)
 
 Plus at least one bound (`--max-experiments` or `--max-wall-clock`).
 
@@ -110,6 +114,34 @@ Force-stop an active research loop.
 ```
 
 Run it from a **separate** session in the same project directory — the looping session is busy being re-prompted and can't run it itself. It removes `.claude/autoresearch.local.md`; the loop's next stop-hook fire then finds no state and exits cleanly.
+
+---
+
+### /autoresearch:gan [TAG] [CONTRACT] --max-rounds N [--target-score X]
+
+A foreground, multi-agent **tournament** optimizer for a single-file artifact — complementary to the overnight `/autoresearch:start`. Each round:
+
+1. Fan out `--candidates` candidate edits in parallel, each in an isolated git worktree, each self-evaluated.
+2. A judge (or a 3-judge rubric panel) ranks them and flags graftable ideas from the runners-up.
+3. A synthesis step combines the winner with those ideas and is re-evaluated.
+4. Keep the best; loop until `--target-score` / `--max-rounds` / two dry rounds.
+
+GAN takes the same pluggable evaluator as `start` **plus an LLM rubric**:
+- `--score-cmd` + `--direction` — numeric; ranks directly.
+- `--check-cmd` — objective gate; filters out failing candidates (also "find a passing variant" on its own).
+- `--rubric '<criteria>'` — an adversarial judge panel ranks candidates against your criteria. To resist reward-hacking it **must be anchored** by `--score-cmd` or `--check-cmd`; the carried-over best competes each round so quality only ratchets up.
+
+It runs a Claude Code **Workflow** (many parallel agents — real token cost) on a dedicated `autoresearch/gan-<tag>` branch and commits the winning artifact there. The objective signal is always the arbiter; synthesis only wins on a real re-measured result.
+
+**GAN vs the ralph-loop:** `start` is sequential, overnight, single-session hill-climbing over any `--edit` target; `gan` is parallel, foreground, single-file, tournament + synthesis toward a `--target-score`. GAN has no `--max-wall-clock` (a Workflow script cannot read the clock) — bound it with `--max-rounds`.
+
+```
+# raise prompt accuracy via a 6-round tournament, stop early at 0.95
+/autoresearch:gan --prompt 'raise accuracy on the eval set' \
+  --objective 'maximize accuracy on val.jsonl' --edit prompt.txt \
+  --score-cmd 'python eval_prompt.py --set val.jsonl' \
+  --direction max --max-rounds 6 --target-score 0.95 --candidates 4
+```
 
 ---
 

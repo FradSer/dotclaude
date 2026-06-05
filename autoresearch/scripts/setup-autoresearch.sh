@@ -21,6 +21,7 @@ PROMPT=""
 OBJECTIVE=""
 EDIT=""
 SCORE_CMD=""
+CHECK_CMD=""
 DIRECTION=""
 TRIAL_TIMEOUT=600
 READONLY_LIST=()
@@ -98,8 +99,16 @@ REQUIRED CONTRACT:
   --prompt '<text>'        Free-form research goal handed to the agent
   --objective '<text>'     The measurable target you are optimizing
   --edit <glob|path>       The ONLY artifact the agent may modify
-  --score-cmd '<shell>'    Command whose LAST stdout line is a single number
-  --direction min|max      Whether a lower or higher score is better
+
+  EVALUATOR — at least one of these (combine for a gated optimization):
+  --score-cmd '<shell>'    Numeric scorer; LAST stdout line is a single number
+                           (requires --direction)
+  --check-cmd '<shell>'    Objective gate; exit 0 = pass, non-zero = fail. A
+                           failing candidate is rejected. Use alone to "iterate
+                           until it passes", or with --score-cmd as a hard filter.
+  --direction min|max      Whether a lower or higher score is better (score only)
+
+  (LLM-rubric evaluation is in /autoresearch:gan, which has independent judges.)
 
   At least one of --max-experiments or --max-wall-clock is ALSO required —
   the loop refuses to start unbounded.
@@ -184,6 +193,9 @@ HELP_EOF
     --score-cmd)
       if [[ -z "${2:-}" ]]; then echo "Error: --score-cmd requires a shell command" >&2; exit 1; fi
       SCORE_CMD="$2"; shift 2 ;;
+    --check-cmd)
+      if [[ -z "${2:-}" ]]; then echo "Error: --check-cmd requires a shell command" >&2; exit 1; fi
+      CHECK_CMD="$2"; shift 2 ;;
     --direction)
       if [[ "${2:-}" != "min" && "${2:-}" != "max" ]]; then
         echo "Error: --direction must be 'min' or 'max' (got: '${2:-}')" >&2; exit 1
@@ -258,11 +270,24 @@ MISSING=()
 [[ -z "$PROMPT" ]] && MISSING+=(--prompt)
 [[ -z "$OBJECTIVE" ]] && MISSING+=(--objective)
 [[ -z "$EDIT" ]] && MISSING+=(--edit)
-[[ -z "$SCORE_CMD" ]] && MISSING+=(--score-cmd)
-[[ -z "$DIRECTION" ]] && MISSING+=(--direction)
 if [[ ${#MISSING[@]} -gt 0 ]]; then
   echo "Error: missing required flags: ${MISSING[*]}" >&2
   echo "Run /autoresearch:start --help for the full contract." >&2
+  exit 1
+fi
+
+# Evaluator contract: the loop needs at least one way to evaluate a change —
+# a numeric scorer (--score-cmd) and/or an objective gate (--check-cmd). A
+# numeric scorer also needs --direction. (Rubric/LLM-judge evaluation lives in
+# /autoresearch:gan, which has independent judge agents; self-judging in this
+# single-agent loop would reward-hack, so it is not offered here.)
+if [[ -z "$SCORE_CMD" ]] && [[ -z "$CHECK_CMD" ]]; then
+  echo "Error: provide an evaluator — --score-cmd (numeric) and/or --check-cmd (pass/fail gate)." >&2
+  echo "For LLM-rubric evaluation use /autoresearch:gan. Run /autoresearch:start --help for details." >&2
+  exit 1
+fi
+if [[ -n "$SCORE_CMD" ]] && [[ -z "$DIRECTION" ]]; then
+  echo "Error: --score-cmd requires --direction min|max." >&2
   exit 1
 fi
 
@@ -333,22 +358,48 @@ else
   READONLY_CSV=""
 fi
 
-# The keep/discard rule, generated from the optimization direction. Compares
-# only against the best KEPT score so a crash (logged as NA, never 0) cannot
-# pose as the baseline — that would otherwise wedge --direction min forever,
-# since 0 looks like the best possible score and nothing real ever beats it.
-_DIR_WORD=$( [[ "$DIRECTION" == "min" ]] && echo LOWER || echo HIGHER )
-DECISION_RULE="Compare SCORE only against BEST_KEPT — the best score among results.tsv rows whose status is keep (the current branch baseline). Ignore crash and discard rows entirely. If SCORE is $_DIR_WORD (strictly better) than BEST_KEPT: keep the commit — it advances the branch and becomes the new BEST_KEPT. Otherwise — worse, tied, or a crash — discard it with git reset --hard HEAD~1."
+# Pluggable evaluator: a numeric scorer (--score-cmd) and/or an objective gate
+# (--check-cmd). The gate is a hard filter (exit 0 = pass); the numeric score
+# ranks among gate-passers. Build the EVALUATE block, the keep/discard DECISION,
+# and the baseline caveat from whichever evaluator(s) were supplied. Crashes and
+# gate failures log NA (never 0), so they can never pose as BEST_KEPT — that
+# would otherwise wedge --direction min, where 0 looks like the best score.
+HAS_SCORE=false; [[ -n "$SCORE_CMD" ]] && HAS_SCORE=true
+HAS_GATE=false;  [[ -n "$CHECK_CMD" ]] && HAS_GATE=true
+SCORE_CMD_SH=$(sh_single_quote_escape "$SCORE_CMD")
+CHECK_CMD_SH=$(sh_single_quote_escape "$CHECK_CMD")
+
+GATE_EVAL=""
+if $HAS_GATE; then
+  GATE_EVAL="   a. GATE (objective ground truth): run  timeout $TRIAL_TIMEOUT sh -c '$CHECK_CMD_SH'  — exit code 0 = PASS, any non-zero (or a timeout, 124) = FAIL. The gate command is FIXED: never edit it or the read-only paths to force a pass. A candidate that FAILS the gate is rejected: log status=gatefail, score=NA, discard with git reset --hard HEAD~1, and skip the rest of this experiment."
+fi
+SCORE_EVAL=""
+if $HAS_SCORE; then
+  SCORE_EVAL="   b. SCORE$( $HAS_GATE && echo ' (only if the gate PASSED)' || : ): run  timeout $TRIAL_TIMEOUT sh -c '$SCORE_CMD_SH'  — the LAST stdout line MUST be a single number = SCORE. A timeout/missing/non-numeric last line is a crash: log status=crash, score=NA, discard. Fix simple crashes (typos, missing imports) and retry; give up after 3 attempts. The scorer is FIXED; never change how the score is measured."
+fi
+EVAL_BLOCK="$GATE_EVAL"
+[[ -n "$EVAL_BLOCK" && -n "$SCORE_EVAL" ]] && EVAL_BLOCK="$EVAL_BLOCK
+$SCORE_EVAL"
+[[ -z "$EVAL_BLOCK" ]] && EVAL_BLOCK="$SCORE_EVAL"
+
+if $HAS_SCORE; then
+  _DIR_WORD=$( [[ "$DIRECTION" == "min" ]] && echo LOWER || echo HIGHER )
+  DECISION_RULE="Keep the commit only if$( $HAS_GATE && echo ' the gate PASSED AND' || : ) SCORE is $_DIR_WORD (strictly better) than BEST_KEPT — the best score among results.tsv rows with status=keep (ignore crash, gatefail, and discard rows). Otherwise — gate failed, crash, worse, or tied — discard with git reset --hard HEAD~1. crash/gatefail rows log score NA (never 0), so they can never become BEST_KEPT."
+  BASELINE_RULE="Run the evaluator on the UNMODIFIED artifact and log the first row. If it produces a valid number$( $HAS_GATE && echo ' and the gate passes' || : ), status=keep and that number is BEST_KEPT, the bar to beat. If it crashes$( $HAS_GATE && echo ' or the gate fails for reasons outside '"$EDIT" || : ), log status=crash/gatefail with score NA, fix only non-read-only preconditions, and re-run. Never let NA or 0 stand in as BEST_KEPT — the first valid scored experiment becomes BEST_KEPT."
+else
+  DECISION_RULE="There is no numeric score — the objective is to make the GATE pass. Keep the commit if the gate PASSES (status=keep); discard it with git reset --hard HEAD~1 if it FAILS (status=gatefail). Once the gate passes AND the goal in ## Goal is genuinely met, you are done: output the completion promise if one is configured, and stop making changes that do not advance the stated goal."
+  BASELINE_RULE="Run the gate on the UNMODIFIED artifact and log the first row (status=keep if it passes, gatefail if not, score column NA either way — a gate has no number). If it already passes and the goal is met, the run is already complete."
+fi
 
 # Pre-escape frontmatter values (the hook never reads these, but keep the block
 # well-formed and impossible to break out of).
 EDIT_YAML=$(yaml_escape "$EDIT")
-SCORE_CMD_YAML=$(yaml_escape "$SCORE_CMD")
+SCORE_CMD_YAML=$( [[ -n "$SCORE_CMD" ]] && yaml_escape "$SCORE_CMD" || echo null )
+CHECK_CMD_YAML=$( [[ -n "$CHECK_CMD" ]] && yaml_escape "$CHECK_CMD" || echo null )
 OBJECTIVE_YAML=$(yaml_escape "$OBJECTIVE")
 READONLY_YAML=$(yaml_escape "$READONLY_CSV")
 RUN_TAG_YAML=$(yaml_escape "$RUN_TAG")
 SESSION_ID_YAML=$(yaml_escape "$SESSION_ID")
-SCORE_CMD_SH=$(sh_single_quote_escape "$SCORE_CMD")
 
 mkdir -p .claude
 
@@ -374,7 +425,8 @@ run_tag: $RUN_TAG_YAML
 edit_target: $EDIT_YAML
 readonly_list: $READONLY_YAML
 score_cmd: $SCORE_CMD_YAML
-direction: $DIRECTION
+check_cmd: $CHECK_CMD_YAML
+direction: ${DIRECTION:-null}
 trial_timeout: $TRIAL_TIMEOUT
 objective: $OBJECTIVE_YAML
 started_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -404,7 +456,7 @@ If results.tsv does not exist:
 1. You are already on the experiment branch autoresearch/$RUN_TAG. Do NOT create or switch branches.
 2. Read README.md (if present) and the editable artifact ($EDIT) to understand the codebase.
 3. Create results.tsv with just the header row: printf 'commit\tscore\tstatus\tdescription\n' > results.tsv
-4. Run the BASELINE: run the scorer on the UNMODIFIED artifact and log it as the first row. If it prints a valid number, log it with status keep — that number is BEST_KEPT, the bar to beat. If the baseline CRASHES or prints no numeric last line, log it with status crash and score NA (NOT keep, NOT 0): the scorer or its preconditions are broken, not $EDIT. Diagnose and fix only non-read-only preconditions, then re-run. Never let a crash or 0 stand in as the baseline — if no valid baseline can be produced, the first experiment that scores a real number becomes BEST_KEPT instead.
+4. Run the BASELINE. $BASELINE_RULE
 
 ## Experiment loop
 
@@ -413,23 +465,18 @@ LOOP until the configured bound is reached:
 1. Check git state: current branch and last commit (run: git log --oneline -5)
 2. Choose one concrete experimental change to $EDIT aimed at the objective.
 3. Commit the change: git add $EDIT && git commit -m "experiment: <short description>"
-4. Run the scorer (hard time-limited):
-   timeout $TRIAL_TIMEOUT sh -c '$SCORE_CMD_SH'
-   - The LAST line of the scorer's stdout MUST be a single number — that is SCORE.
-   - A timeout (exit code 124), or a missing / non-numeric last line, counts as a crash: log status crash and move on.
-5. Read SCORE = the last stdout line of the scorer.
-   - If it crashed: inspect the scorer output to diagnose. Fix simple crashes (typos, missing imports) and re-run. Give up after 3 failed attempts.
-6. Log to results.tsv (tab-separated, NOT comma-separated):
-   - Format: <7-char-commit>\t<score>\t<status>\t<description>
-   - status: keep, discard, or crash
-   - For a crash, put NA in the score column — NEVER 0. A crash never counts toward BEST_KEPT, so a phantom 0 cannot wedge the run (especially under --direction min, where 0 would masquerade as the best possible score).
-7. Decision ($DIRECTION):
+4. EVALUATE the candidate (hard time-limited; run each part in order):
+$EVAL_BLOCK
+5. DECIDE:
    - $DECISION_RULE
+6. LOG to results.tsv (tab-separated, NOT comma-separated):
+   - Format: <7-char-commit>\t<score-or-NA>\t<status>\t<description>
+   - status is one of: keep, discard, gatefail, crash. Use NA (never 0) in the score column for gatefail/crash, and for a gate-only run.
 
 ## Rules
 
 - Modify ONLY $EDIT. Never touch the read-only paths: $READONLY_DISPLAY.
-- The scorer command is fixed; do NOT change how the score is measured.
+- The evaluator (scorer and/or gate) is fixed; do NOT change how success is measured, and never edit it or the read-only paths to game it.
 - If stuck, think harder: try a different angle on the objective, not just parameter nudges.
 - To stop early when the objective is genuinely achieved, output: <promise>...</promise> (only if a completion promise was configured).
 AUTORESEARCH_STATE_EOF
@@ -461,8 +508,9 @@ Run tag:      $RUN_TAG
 Branch:       autoresearch/$RUN_TAG
 Edit target:  $EDIT
 Read-only:    $READONLY_DISPLAY
-Scorer:       $SCORE_CMD
-Direction:    $DIRECTION (per-trial timeout ${TRIAL_TIMEOUT}s)
+Scorer:       $(if $HAS_SCORE; then echo "$SCORE_CMD (direction: $DIRECTION)"; else echo "(none — gate-only)"; fi)
+Gate:         $(if $HAS_GATE; then echo "$CHECK_CMD (must exit 0)"; else echo "(none)"; fi)
+Per-trial timeout: ${TRIAL_TIMEOUT}s
 Objective:    $OBJECTIVE
 Max experiments: $(if [[ $MAX_ITERATIONS -gt 0 ]]; then echo $MAX_ITERATIONS; else echo "unlimited"; fi)
 Wall-clock budget: $(if [[ $MAX_SECONDS -gt 0 ]]; then echo "${MAX_SECONDS}s"; else echo "none"; fi)

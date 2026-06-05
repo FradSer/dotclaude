@@ -16,7 +16,8 @@ claude plugin install autoresearch@frad-dotclaude
 
 | Command | What it does |
 |---------|--------------|
-| `/autoresearch:start [TAG] <contract> [options]` | Start the loop in the current session on a dedicated `autoresearch/<tag>` branch. |
+| `/autoresearch:start [TAG] <contract> [options]` | Start the overnight ralph-loop in the current session on a dedicated `autoresearch/<tag>` branch. |
+| `/autoresearch:gan [TAG] <contract> --max-rounds N [--target-score X]` | Run a foreground GAN-style tournament (parallel candidates → judge → synthesize → re-score) over a single-file artifact, iterating to a target score. |
 | `/autoresearch:cancel` | Force-stop an active loop. Run from a **separate** session — the looping session is busy being re-prompted. |
 | `/autoresearch:help` | Explain the plugin and its commands. |
 
@@ -24,9 +25,9 @@ claude plugin install autoresearch@frad-dotclaude
 
 - **A git repository.** The loop runs on a dedicated `autoresearch/<tag>` branch so its auto-discards (`git reset --hard`) never touch your work. It refuses to start on a dirty tree.
 - **At least one bound:** `--max-experiments` and/or `--max-wall-clock`. It refuses to start unbounded.
-- **A `--score-cmd`** that prints one comparable number as its **last** stdout line.
+- **An evaluator:** a `--score-cmd` (prints a number as its **last** stdout line) and/or a `--check-cmd` (pass/fail gate, exit 0 = pass). GAN also takes an anchored `--rubric`.
 - **`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`** raised for runs longer than ~8 experiments — see below.
-- Whatever runtime the scorer needs (interpreter, data, GPU, ...) — that is your scorer's concern, not the plugin's.
+- Whatever runtime the evaluator needs (interpreter, data, GPU, ...) — that is its concern, not the plugin's.
 
 ## Before a long run: raise the Stop-hook block cap
 
@@ -47,10 +48,11 @@ Autoresearch enforces its own bound (experiments / wall-clock / completion promi
 | `--prompt '<text>'` | Free-form research goal handed to the agent. |
 | `--objective '<text>'` | The measurable target being optimized. |
 | `--edit <glob\|path>` | The ONLY artifact the agent may modify. |
-| `--score-cmd '<shell>'` | Command whose LAST stdout line is a single number. |
-| `--direction min\|max` | Whether a lower or higher score is better. |
+| `--score-cmd '<shell>'` | Numeric evaluator; LAST stdout line is a single number (needs `--direction`). |
+| `--check-cmd '<shell>'` | Objective gate; exit 0 = pass. Use alone ("iterate until it passes") or as a hard filter with `--score-cmd`. |
+| `--direction min\|max` | Whether a lower or higher score is better (with `--score-cmd`). |
 
-Plus at least one of `--max-experiments <n>` / `--max-wall-clock <duration>`.
+Provide at least one evaluator (`--score-cmd` and/or `--check-cmd`), plus at least one of `--max-experiments <n>` / `--max-wall-clock <duration>`. (LLM-rubric evaluation is in `/autoresearch:gan`.)
 
 Options: `--readonly <path>` (protect a path, repeatable), `--trial-timeout <duration>` (per-scorer-run hard limit, default `600`s; plain numbers are seconds), `--precheck '<shell>'` (precondition that must exit 0, repeatable), `--completion-promise '<text>'` (agent outputs `<promise>TEXT</promise>` to signal done), `--force` (replace an existing active state file).
 
@@ -66,6 +68,36 @@ Each experiment:
 6. Keep the commit only if the score is strictly better, in `--direction`, than the best `keep` score so far (`BEST_KEPT`). Otherwise `git reset --hard HEAD~1`.
 
 `results.tsv` is kept **untracked** so a discard preserves the log; the plugin instructs the agent never to stage it.
+
+## GAN tournament mode (`/autoresearch:gan`)
+
+A different optimizer for when one sequential hill-climb is too slow or gets stuck in a local optimum. Instead of one change at a time, each **round** explores many in parallel and combines the best:
+
+1. **Candidates** — fan out `--candidates` agents, each in an isolated git worktree, each starting from the current best content, each making one *distinct* change (guided by a different angle) and self-scoring.
+2. **Judge** — an agent ranks the scored candidates and names concrete ideas from the runners-up worth grafting into the winner.
+3. **Synthesize** — an agent combines the winner with those grafted ideas and **re-scores** the result. The scorer is the arbiter: synthesis only wins on a real score, never on plausibility.
+4. **Iterate** — keep the best real score and repeat until `--target-score` is reached, `--max-rounds` is hit, two rounds pass with no improvement, or the token budget runs low.
+
+It runs as a Claude Code **Workflow** (`workflows/gan.mjs`) — many parallel agents, real token cost — on a dedicated `autoresearch/gan-<tag>` branch, and commits the winning artifact there. Because a Workflow script cannot read the wall clock, GAN has **no `--max-wall-clock`**; bound it with `--max-rounds`. Because candidates pass full file contents as text, GAN requires a **single-file `--edit`**.
+
+```
+/autoresearch:gan feat1 \
+  --prompt 'raise accuracy on the eval set' \
+  --objective 'maximize accuracy on val.jsonl' \
+  --edit prompt.txt \
+  --score-cmd 'python eval_prompt.py --set val.jsonl' \
+  --direction max --max-rounds 6 --target-score 0.95 --candidates 4
+```
+
+| GAN flag | Meaning |
+|----------|---------|
+| `--max-rounds <n>` | Hard bound on tournament rounds (required). |
+| `--target-score <x>` | Stop early once the best numeric score reaches/passes this. |
+| `--candidates <n>` | Parallel candidates per round (default 4). |
+| `--check-cmd '<shell>'` | Objective gate; filters out failing candidates (or "find a passer" alone). |
+| `--rubric '<criteria>'` | Criteria a 3-judge panel ranks candidates against. **Must** be paired with `--score-cmd` or `--check-cmd` (anti-reward-hack); the carried-over best competes each round so quality only ratchets up. |
+
+Provide at least one evaluator (`--score-cmd`, `--check-cmd`, and/or anchored `--rubric`). The rest of the contract matches `start` (`--prompt`, `--objective`, `--edit`, `--direction`, `--readonly`, `--trial-timeout`).
 
 ## Examples
 
