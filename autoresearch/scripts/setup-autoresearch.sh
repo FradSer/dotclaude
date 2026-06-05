@@ -137,7 +137,7 @@ DESCRIPTION:
   the agent makes one change to --edit, commits it, runs --score-cmd (hard
   time-limited), reads the LAST stdout line as the score, logs it to
   results.tsv, and keeps the commit only if the score improved in --direction
-  — otherwise it discards the change with git reset --hard HEAD~1.
+  — otherwise it discards the change with git checkout -- $EDIT.
 
   The stop hook intercepts every exit attempt and feeds the same research
   prompt back, so the agent keeps experimenting until a bound is reached.
@@ -333,7 +333,7 @@ fi
 
 if [[ -n "$(git status --porcelain)" ]]; then
   echo "Error: working tree has uncommitted changes." >&2
-  echo "Autoresearch auto-discards experiments with 'git reset --hard', which would destroy them." >&2
+  echo "The loop edits the artifact and discards changes with 'git checkout --', which would overwrite uncommitted edits." >&2
   echo "Commit or stash your changes, then re-run /autoresearch:start." >&2
   exit 1
 fi
@@ -349,6 +349,12 @@ if [[ "$CURRENT_BRANCH" != "$TARGET_BRANCH" ]]; then
   fi
   echo "Switched to experiment branch: $TARGET_BRANCH"
 fi
+
+# The commit the run starts from. Experiments fold into ONE temporary "WIP"
+# commit on top of this; at the end the WIP is collapsed back to here so the
+# net result is an uncommitted diff for the human to review and land via the
+# dedicated /git:commit flow. No real/conventional commit happens inside the loop.
+BASELINE_SHA=$(git rev-parse HEAD)
 
 # Quote completion promise for YAML if needed.
 if [[ -n "$COMPLETION_PROMISE" ]] && [[ "$COMPLETION_PROMISE" != "null" ]]; then
@@ -387,7 +393,7 @@ CHECK_CMD_SH=$(sh_single_quote_escape "$CHECK_CMD")
 
 GATE_EVAL=""
 if $HAS_GATE; then
-  GATE_EVAL="   a. GATE (objective ground truth): run  timeout $TRIAL_TIMEOUT sh -c '$CHECK_CMD_SH'  — exit code 0 = PASS, any non-zero (or a timeout, 124) = FAIL. The gate command is FIXED: never edit it or the read-only paths to force a pass. A candidate that FAILS the gate is rejected: log status=gatefail, score=NA, discard with git reset --hard HEAD~1, and skip the rest of this experiment."
+  GATE_EVAL="   a. GATE (objective ground truth): run  timeout $TRIAL_TIMEOUT sh -c '$CHECK_CMD_SH'  — exit code 0 = PASS, any non-zero (or a timeout, 124) = FAIL. The gate command is FIXED: never edit it or the read-only paths to force a pass. A candidate that FAILS the gate is rejected: log status=gatefail, score=NA, discard with git checkout -- $EDIT, and skip the rest of this experiment."
 fi
 SCORE_EVAL=""
 if $HAS_SCORE; then
@@ -400,10 +406,10 @@ $SCORE_EVAL"
 
 if $HAS_SCORE; then
   _DIR_WORD=$( [[ "$DIRECTION" == "min" ]] && echo LOWER || echo HIGHER )
-  DECISION_RULE="Keep the commit only if$( $HAS_GATE && echo ' the gate PASSED AND' || : ) SCORE is $_DIR_WORD (strictly better) than BEST_KEPT — the best score among results.tsv rows with status=keep (ignore crash, gatefail, and discard rows). Otherwise — gate failed, crash, worse, or tied — discard with git reset --hard HEAD~1. crash/gatefail rows log score NA (never 0), so they can never become BEST_KEPT."
+  DECISION_RULE="Keep the commit only if$( $HAS_GATE && echo ' the gate PASSED AND' || : ) SCORE is $_DIR_WORD (strictly better) than BEST_KEPT — the best score among results.tsv rows with status=keep (ignore crash, gatefail, and discard rows). Otherwise — gate failed, crash, worse, or tied — discard with git checkout -- $EDIT. crash/gatefail rows log score NA (never 0), so they can never become BEST_KEPT."
   BASELINE_RULE="Run the evaluator on the UNMODIFIED artifact and log the first row. If it produces a valid number$( $HAS_GATE && echo ' and the gate passes' || : ), status=keep and that number is BEST_KEPT, the bar to beat. If it crashes$( $HAS_GATE && echo ' or the gate fails for reasons outside '"$EDIT" || : ), log status=crash/gatefail with score NA, fix only non-read-only preconditions, and re-run. Never let NA or 0 stand in as BEST_KEPT — the first valid scored experiment becomes BEST_KEPT."
 else
-  DECISION_RULE="There is no numeric score — the objective is to make the GATE pass. Keep the commit if the gate PASSES (status=keep); discard it with git reset --hard HEAD~1 if it FAILS (status=gatefail). Once the gate passes AND the goal in ## Goal is genuinely met, you are done: output the completion promise if one is configured, and stop making changes that do not advance the stated goal."
+  DECISION_RULE="There is no numeric score — the objective is to make the GATE pass. Keep the commit if the gate PASSES (status=keep); discard it with git checkout -- $EDIT if it FAILS (status=gatefail). Once the gate passes AND the goal in ## Goal is genuinely met, you are done: output the completion promise if one is configured, and stop making changes that do not advance the stated goal."
   BASELINE_RULE="Run the gate on the UNMODIFIED artifact and log the first row (status=keep if it passes, gatefail if not, score column NA either way — a gate has no number). If it already passes and the goal is met, the run is already complete."
 fi
 
@@ -418,7 +424,7 @@ if [[ $(compgen -G "$EDIT" 2>/dev/null | grep -c .) -eq 1 ]]; then
 
 Watch results.tsv. If the last $ESCALATE_AFTER rows are ALL non-improving (status discard/crash/gatefail, no new keep), sequential search is stuck. For THIS round only, run ONE parallel tournament instead of a single change, then resume sequential next round:
 - Invoke the Workflow tool with scriptPath \"$GAN_SCRIPT\" and args built from THIS run's contract: edit \"$EDIT\", the objective and goal above, the SAME evaluator shown in the frontmatter (score_cmd / check_cmd / direction / rubric — include the rubric if one is set, since the tournament has independent judges that can apply it), plus max_rounds 1, candidates 3, trial_timeout $TRIAL_TIMEOUT. (args may be a JSON object or string; the engine accepts both.)
-- It returns best_content — the winning/synthesized artifact. Re-evaluate it against BEST_KEPT with the DECIDE rule: if it wins, write best_content to $EDIT, then git add $EDIT && git commit -m \"tournament: <desc>\" and log status keep; otherwise discard and log status discard.
+- It returns best_content — the winning/synthesized artifact. Re-evaluate it against BEST_KEPT with the DECIDE rule: if it wins, write best_content to $EDIT and KEEP it (fold into the temporary WIP commit, same as a normal keep), log status tournament; otherwise git checkout -- $EDIT and log status discard.
 - Then resume sequential rounds. Do not run a tournament every round — only to break a genuine plateau."
 else
   TOURNAMENT_BLOCK="## Plateau escalation
@@ -468,6 +474,7 @@ trial_timeout: $TRIAL_TIMEOUT
 objective: $OBJECTIVE_YAML
 started_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 started_at_epoch: $(date +%s)
+baseline_sha: $BASELINE_SHA
 ---
 You are an autonomous researcher running an experiment loop for run tag: $RUN_TAG.
 
@@ -484,7 +491,8 @@ Your optimization objective: $OBJECTIVE
 - The experiment branch is: autoresearch/$RUN_TAG (already checked out — do NOT create or switch branches).
 - One concrete change per experiment. Simpler is better: a small improvement from simple code beats a large improvement from complex code.
 - Do NOT install new packages or add dependencies unless the goal explicitly requires it.
-- results.tsv is your append-only log. Keep it UNTRACKED by git: stage ONLY the artifact with "git add $EDIT" — NEVER "git add -A", "git add .", or "git add results.tsv". A discard runs "git reset --hard HEAD~1", which preserves results.tsv only while it stays untracked; staging it would let a discard silently wipe the log.
+- results.tsv is your durable append-only log — the ONE place the run is recorded. Keep it UNTRACKED: stage ONLY the artifact with "git add $EDIT" — NEVER "git add -A", "git add .", or "git add results.tsv" (staging it would fold the log into the scratch WIP commit and a discard could lose entries).
+- Do NOT make real/conventional commits during the loop. Kept experiments fold into ONE temporary "autoresearch WIP" scratch commit; the human runs the real commit (/git:commit) only after reviewing — see "Commits are temporary" below.
 - Do NOT ask for permission to continue between experiments. Keep iterating until the configured bound (max experiments or wall-clock budget) is reached — the stop hook enforces it automatically. You are the researcher. The human is asleep.
 
 ## Setup (first iteration only)
@@ -499,18 +507,25 @@ If results.tsv does not exist:
 
 LOOP until the configured bound is reached:
 
-1. Check git state: current branch and last commit (run: git log --oneline -5)
-2. Choose one concrete experimental change to $EDIT aimed at the objective.
-3. Commit the change: git add $EDIT && git commit -m "experiment: <short description>"
-4. EVALUATE the candidate (hard time-limited; run each part in order):
+1. Check git state: current branch and recent commits (run: git log --oneline -5)
+2. Make ONE concrete change to $EDIT aimed at the objective (edit the file; do NOT commit yet).
+3. EVALUATE the candidate (hard time-limited; run each part in order):
 $EVAL_BLOCK
-5. DECIDE:
-   - $DECISION_RULE
+4. DECIDE: $DECISION_RULE
+5. APPLY the decision via the TEMPORARY scratch commit (you NEVER make a real commit in the loop — see below):
+   - KEEP: git add $EDIT; then fold it into the single rolling scratch commit — if HEAD is still the baseline run: git commit -m "autoresearch WIP (temporary)"; otherwise run: git commit --amend --no-edit. The working tree now holds the new best.
+   - DISCARD: git checkout -- $EDIT (reverts to the last kept best, or the baseline if nothing has been kept yet).
 6. LOG to results.tsv (tab-separated, NOT comma-separated):
-   - Format: <7-char-commit>\t<score-or-NA>\t<status>\t<description>
+   - Format: <7-char-commit-or-dash>\t<score-or-NA>\t<status>\t<description>
    - status is one of: keep, discard, gatefail, crash, tournament. Use NA (never 0) in the score column for gatefail/crash, and for a gate-only run.
 
 $TOURNAMENT_BLOCK
+
+## Commits are temporary — the human lands the result
+
+You are on a throwaway branch and you NEVER make a real or conventional commit during the loop. Kept experiments fold into ONE rolling scratch commit titled "autoresearch WIP (temporary)", so the next experiment can be discarded with a simple git checkout -- $EDIT. results.tsv is the durable record of every experiment.
+
+When the run ends (a bound is hit, or you output the completion promise), do NOT land the result yourself and do NOT run a conventional commit. Leave the WIP commit in place and report: the baseline-to-best change, results.tsv, and that the human should review and then run the dedicated commit flow (/git:commit) to make the real commit. To turn the net optimization back into an uncommitted diff for that flow: git reset --soft $BASELINE_SHA.
 
 ## Rules
 
@@ -557,6 +572,11 @@ Completion promise: $(if [[ "$COMPLETION_PROMISE" != "null" ]]; then echo "$COMP
 
 The stop hook is now active. Every time you try to exit, the research
 prompt will be fed back — the loop keeps experimenting until stopped.
+
+Experiments fold into ONE temporary "autoresearch WIP" commit on this branch
+(results.tsv is the log). The loop never makes a real commit — after the run,
+review the result and run /git:commit to land it (git reset --soft $BASELINE_SHA
+first to turn the WIP into an uncommitted diff).
 
 Monitor progress:
   grep '^iteration:' .claude/autoresearch.local.md   # experiment count

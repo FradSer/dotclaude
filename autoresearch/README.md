@@ -24,7 +24,7 @@ claude plugin install autoresearch@frad-dotclaude
 
 ## Requirements
 
-- **A git repository.** The loop runs on a dedicated `autoresearch/<tag>` branch so its auto-discards (`git reset --hard`) never touch your work. It refuses to start on a dirty tree.
+- **A git repository.** The loop runs on a dedicated `autoresearch/<tag>` branch, so its experimental edits and temporary WIP commit never touch your branch. It refuses to start on a dirty tree.
 - **At least one bound:** `--max-experiments` and/or `--max-wall-clock`. It refuses to start unbounded.
 - **An evaluator:** a `--score-cmd` (prints a number as its **last** stdout line) and/or a `--check-cmd` (pass/fail gate, exit 0 = pass). GAN also takes an anchored `--rubric`.
 - **`CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`** raised for runs longer than ~8 experiments — see below.
@@ -63,14 +63,14 @@ Options: `--readonly <path>` (protect a path, repeatable), `--trial-timeout <dur
 
 Each experiment:
 
-1. Choose one concrete change aimed at the objective.
-2. Modify the `--edit` artifact (only that) and `git add <artifact>` — never `git add -A`.
-3. `git commit`.
-4. `timeout <trial-timeout> sh -c '<score-cmd>'`; read the **last** stdout line as the score.
-5. Log to `results.tsv` (tab-separated: commit, score, status, description). Crashes are logged with score `NA` and always discarded.
-6. Keep the commit only if the score is strictly better, in `--direction`, than the best `keep` score so far (`BEST_KEPT`). Otherwise `git reset --hard HEAD~1`.
+1. Make one concrete change to the `--edit` artifact (only that).
+2. Evaluate: `timeout <trial-timeout> sh -c '<score-cmd>'` and/or the `--check-cmd` gate.
+3. Log to `results.tsv` (tab-separated: commit, score, status, description); crashes/gate-fails are `NA` and discarded.
+4. **Keep** if it's strictly better in `--direction` than the best so far (`BEST_KEPT`) and passes the gate — else **discard** (`git checkout -- <artifact>`).
 
-`results.tsv` is kept **untracked** so a discard preserves the log; the plugin instructs the agent never to stage it.
+### Commits are temporary
+
+The loop **never makes a real commit**. Kept experiments fold into a single rolling `autoresearch WIP (temporary)` scratch commit on the throwaway branch (so the next experiment can be discarded with `git checkout`), and `results.tsv` — kept **untracked** — is the durable log. When the run ends, you review the result and land it yourself through the dedicated flow: `git reset --soft <baseline>` then `/git:commit`. No `experiment:` commits pollute history; the real, conventional commit happens only after you confirm.
 
 ## Hybrid loop: tournament on plateau
 

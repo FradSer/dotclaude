@@ -1,6 +1,6 @@
 {
   "name": "autoresearch",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal and it infers the artifact, evaluator (numeric scorer / objective gate / LLM rubric), and bounds, then iterates: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau",
   "author": {
     "name": "Frad LEE",

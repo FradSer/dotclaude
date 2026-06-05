@@ -98,7 +98,7 @@ Plus at least one bound (`--max-experiments` or `--max-wall-clock`); the inferen
 3. Deterministically checks out or creates branch `autoresearch/<tag>` (so auto-discards never touch your current branch)
 4. Creates `.claude/autoresearch.local.md` state file with the generated research prompt
 5. The agent initializes `results.tsv` and scores a baseline first
-6. Loops until the bound is reached: edit artifact → commit → run scorer → log → keep/discard
+6. Loops until the bound is reached: edit artifact → evaluate → log → keep (fold into a temporary WIP commit) / discard. The real commit is made by you afterward via `/git:commit`.
 
 ---
 
@@ -131,13 +131,12 @@ A tournament round costs ~100k+ tokens, so escalation is reserved for genuine pl
 ## Experiment loop
 
 Each experiment:
-1. Choose one concrete change aimed at the objective
-2. Modify the `--edit` artifact (only that)
-3. `git commit`
-4. `timeout <trial-timeout> sh -c '<score-cmd>'`
-5. Read the scorer's **last** stdout line as the score
-6. Log to `results.tsv` (tab-separated: commit, score, status, description)
-7. If the score improved in `--direction`: keep the commit. Else: `git reset --hard HEAD~1`
+1. Make one concrete change to the `--edit` artifact (only that)
+2. Evaluate: `timeout <trial-timeout> sh -c '<score-cmd>'` and/or the `--check-cmd` gate
+3. Log to `results.tsv` (tab-separated: commit, score, status, description)
+4. **Keep** if strictly better in `--direction` than `BEST_KEPT` and the gate passes — else **discard** (`git checkout -- <artifact>`)
+
+**Commits are temporary.** The loop never makes a real commit: kept experiments fold into one rolling `autoresearch WIP (temporary)` scratch commit, and `results.tsv` is the durable log. After the run you review the result and land it through the dedicated flow — `git reset --soft <baseline>` then `/git:commit`. The real commit happens only after you confirm.
 
 ## Monitoring
 
