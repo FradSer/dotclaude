@@ -10,7 +10,17 @@ export const meta = {
 }
 
 // --- config (from gan-setup.sh JSON, passed verbatim as Workflow args) -------
-const cfg = args || {}
+// The config comes from gan-setup.sh. In real use the command captures that
+// JSON from stdout and forwards it, so args commonly arrives as a JSON *string*
+// rather than an object — accept both. Then validate loudly: a silent no-op
+// (which degrades to an empty "gate satisfied" result) is worse than an error.
+let cfg = args
+if (typeof cfg === 'string') { try { cfg = JSON.parse(cfg) } catch (_) { cfg = {} } }
+if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) cfg = {}
+if (!cfg.edit || (!cfg.score_cmd && !cfg.check_cmd && !cfg.rubric)) {
+  log(`GAN: invalid config — need an "edit" file and at least one evaluator (score_cmd/check_cmd/rubric). Received args of type "${typeof args}".`)
+  return { error: 'invalid config', received_type: typeof args }
+}
 const EDIT = cfg.edit
 const OBJECTIVE = cfg.objective
 const PROMPT = cfg.prompt || ''
