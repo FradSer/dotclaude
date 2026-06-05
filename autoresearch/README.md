@@ -16,10 +16,11 @@ claude plugin install autoresearch@frad-dotclaude
 
 | Command | What it does |
 |---------|--------------|
-| `/autoresearch:start [TAG] <contract> [options]` | Start the overnight ralph-loop in the current session on a dedicated `autoresearch/<tag>` branch. |
-| `/autoresearch:gan [TAG] <contract> --max-rounds N [--target-score X]` | Run a foreground GAN-style tournament (parallel candidates → judge → synthesize → re-score) over a single-file artifact, iterating to a target score. |
+| `/autoresearch:start <goal> [overrides]` | Give it a plain-language goal; it infers the artifact, evaluator, and bounds (asking only on true ambiguity), then runs the loop on a dedicated `autoresearch/<tag>` branch. |
 | `/autoresearch:cancel` | Force-stop an active loop. Run from a **separate** session — the looping session is busy being re-prompted. |
 | `/autoresearch:help` | Explain the plugin and its commands. |
+
+`/autoresearch:start` is the single entry point. The loop runs cheap **sequential** rounds and, when it plateaus, escalates one round to a parallel **tournament** (the GAN engine: candidates → judge → synthesize → re-score) to break out — so you get overnight autonomy and tournament power from one command.
 
 ## Requirements
 
@@ -41,20 +42,22 @@ Autoresearch enforces its own bound (experiments / wall-clock / completion promi
 
 `"0"` disables the cap; or set a number comfortably above your experiment count. The variable is read at **session start**, so set it and restart Claude Code *before* the run — a plugin cannot set it for you, and it does not take effect mid-session. `/autoresearch:start` prints a reminder whenever your configured bound exceeds the active cap.
 
-## The contract
+## The contract (mostly inferred)
+
+Normally you just give a goal: `/autoresearch:start <plain-language goal>`. The command inspects the repo and infers everything below, asking only when the artifact or evaluator is genuinely ambiguous. Pass any flag to pin it as an override.
 
 | Flag | Meaning |
 |------|---------|
-| `--prompt '<text>'` | Free-form research goal handed to the agent. |
-| `--objective '<text>'` | The measurable target being optimized. |
-| `--edit <glob\|path>` | The ONLY artifact the agent may modify. |
+| `--edit <glob\|path>` | The ONLY artifact the agent may modify (inferred from the goal). |
 | `--score-cmd '<shell>'` | Numeric evaluator; LAST stdout line is a single number (needs `--direction`). |
 | `--check-cmd '<shell>'` | Objective gate; exit 0 = pass. Use alone ("iterate until it passes") or as a hard filter with `--score-cmd`. |
+| `--rubric '<criteria>'` | Criteria an LLM judge panel applies when a plateau escalates to a tournament. **Must** be anchored by `--score-cmd` or `--check-cmd` (a judge-only loop reward-hacks). |
 | `--direction min\|max` | Whether a lower or higher score is better (with `--score-cmd`). |
+| `--prompt` / `--objective` | The goal and its measurable restatement (auto-filled from your goal). |
 
-Provide at least one evaluator (`--score-cmd` and/or `--check-cmd`), plus at least one of `--max-experiments <n>` / `--max-wall-clock <duration>`. (LLM-rubric evaluation is in `/autoresearch:gan`.)
+Need at least one evaluator (`--score-cmd`, `--check-cmd`, and/or anchored `--rubric`) plus a bound (`--max-experiments <n>` / `--max-wall-clock <duration>`) — the inference supplies sensible defaults.
 
-Options: `--readonly <path>` (protect a path, repeatable), `--trial-timeout <duration>` (per-scorer-run hard limit, default `600`s; plain numbers are seconds), `--precheck '<shell>'` (precondition that must exit 0, repeatable), `--completion-promise '<text>'` (agent outputs `<promise>TEXT</promise>` to signal done), `--force` (replace an existing active state file).
+Options: `--readonly <path>` (protect a path, repeatable), `--trial-timeout <duration>` (per-scorer-run hard limit, default `600`s), `--precheck '<shell>'` (precondition that must exit 0, repeatable), `--completion-promise '<text>'`, `--force` (replace an existing active state file).
 
 ## Experiment loop
 
@@ -69,35 +72,23 @@ Each experiment:
 
 `results.tsv` is kept **untracked** so a discard preserves the log; the plugin instructs the agent never to stage it.
 
-## GAN tournament mode (`/autoresearch:gan`)
+## Hybrid loop: tournament on plateau
 
-A different optimizer for when one sequential hill-climb is too slow or gets stuck in a local optimum. Instead of one change at a time, each **round** explores many in parallel and combines the best:
+Sequential hill-climbing is cheap but stalls in local optima. When the loop plateaus — the last few rounds all non-improving — it escalates **one** round to a parallel tournament (the GAN engine, `workflows/gan.mjs`) to break out, then resumes sequential:
 
-1. **Candidates** — fan out `--candidates` agents, each in an isolated git worktree, each starting from the current best content, each making one *distinct* change (guided by a different angle) and self-scoring.
-2. **Judge** — an agent ranks the scored candidates and names concrete ideas from the runners-up worth grafting into the winner.
-3. **Synthesize** — an agent combines the winner with those grafted ideas and **re-scores** the result. The scorer is the arbiter: synthesis only wins on a real score, never on plausibility.
-4. **Iterate** — keep the best real score and repeat until `--target-score` is reached, `--max-rounds` is hit, two rounds pass with no improvement, or the token budget runs low.
+1. **Candidates** — fan out a few agents, each in an isolated git worktree, each starting from the current best, each making one *distinct* change and self-evaluating.
+2. **Judge** — ranks the survivors (by score, or a 3-judge panel against your `--rubric`) and names ideas from the runners-up worth grafting.
+3. **Synthesize** — combines the winner with those ideas and **re-evaluates**. The objective signal is the arbiter: synthesis only wins on a real re-measured result.
+4. The winner is kept if it beats the current best; the loop returns to cheap sequential rounds.
 
-It runs as a Claude Code **Workflow** (`workflows/gan.mjs`) — many parallel agents, real token cost — on a dedicated `autoresearch/gan-<tag>` branch, and commits the winning artifact there. Because a Workflow script cannot read the wall clock, GAN has **no `--max-wall-clock`**; bound it with `--max-rounds`. Because candidates pass full file contents as text, GAN requires a **single-file `--edit`**.
+A tournament round costs ~100k+ tokens, so escalation is reserved for genuine plateaus (single-file artifacts only — the engine passes full file contents between agents). This is why a `--rubric` lives here: independent judges can apply it without the self-judging reward-hack that a single sequential agent would fall into.
 
 ```
-/autoresearch:gan feat1 \
-  --prompt 'raise accuracy on the eval set' \
-  --objective 'maximize accuracy on val.jsonl' \
-  --edit prompt.txt \
-  --score-cmd 'python eval_prompt.py --set val.jsonl' \
-  --direction max --max-rounds 6 --target-score 0.95 --candidates 4
+# qualitative goal — sequential by the wc anchor, escalating to a rubric tournament when stuck
+/autoresearch:start make antigravity/README.md clearer and more concise
+# inferred: --edit antigravity/README.md --score-cmd 'wc -w < ...' --direction min
+#           --rubric '...clarity, no factual drift...' --check-cmd 'validate-plugin.py antigravity'
 ```
-
-| GAN flag | Meaning |
-|----------|---------|
-| `--max-rounds <n>` | Hard bound on tournament rounds (required). |
-| `--target-score <x>` | Stop early once the best numeric score reaches/passes this. |
-| `--candidates <n>` | Parallel candidates per round (default 4). |
-| `--check-cmd '<shell>'` | Objective gate; filters out failing candidates (or "find a passer" alone). |
-| `--rubric '<criteria>'` | Criteria a 3-judge panel ranks candidates against. **Must** be paired with `--score-cmd` or `--check-cmd` (anti-reward-hack); the carried-over best competes each round so quality only ratchets up. |
-
-Provide at least one evaluator (`--score-cmd`, `--check-cmd`, and/or anchored `--rubric`). The rest of the contract matches `start` (`--prompt`, `--objective`, `--edit`, `--direction`, `--readonly`, `--trial-timeout`).
 
 ## Examples
 

@@ -22,6 +22,7 @@ OBJECTIVE=""
 EDIT=""
 SCORE_CMD=""
 CHECK_CMD=""
+RUBRIC=""
 DIRECTION=""
 TRIAL_TIMEOUT=600
 READONLY_LIST=()
@@ -113,9 +114,10 @@ REQUIRED CONTRACT:
   --check-cmd '<shell>'    Objective gate; exit 0 = pass, non-zero = fail. A
                            failing candidate is rejected. Use alone to "iterate
                            until it passes", or with --score-cmd as a hard filter.
+  --rubric '<text>'        Criteria an LLM judge panel applies when a plateau
+                           escalates to a tournament. Needs a --score-cmd or
+                           --check-cmd anchor (a judge-only loop reward-hacks).
   --direction min|max      Whether a lower or higher score is better (score only)
-
-  (LLM-rubric evaluation is in /autoresearch:gan, which has independent judges.)
 
   At least one of --max-experiments or --max-wall-clock is ALSO required —
   the loop refuses to start unbounded.
@@ -203,6 +205,9 @@ HELP_EOF
     --check-cmd)
       if [[ -z "${2:-}" ]]; then echo "Error: --check-cmd requires a shell command" >&2; exit 1; fi
       CHECK_CMD="$2"; shift 2 ;;
+    --rubric)
+      if [[ -z "${2:-}" ]]; then echo "Error: --rubric requires a text argument" >&2; exit 1; fi
+      RUBRIC="$2"; shift 2 ;;
     --direction)
       if [[ "${2:-}" != "min" && "${2:-}" != "max" ]]; then
         echo "Error: --direction must be 'min' or 'max' (got: '${2:-}')" >&2; exit 1
@@ -284,13 +289,17 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
 fi
 
 # Evaluator contract: the loop needs at least one way to evaluate a change —
-# a numeric scorer (--score-cmd) and/or an objective gate (--check-cmd). A
-# numeric scorer also needs --direction. (Rubric/LLM-judge evaluation lives in
-# /autoresearch:gan, which has independent judge agents; self-judging in this
-# single-agent loop would reward-hack, so it is not offered here.)
-if [[ -z "$SCORE_CMD" ]] && [[ -z "$CHECK_CMD" ]]; then
-  echo "Error: provide an evaluator — --score-cmd (numeric) and/or --check-cmd (pass/fail gate)." >&2
-  echo "For LLM-rubric evaluation use /autoresearch:gan. Run /autoresearch:start --help for details." >&2
+# a numeric scorer (--score-cmd), an objective gate (--check-cmd), and/or an LLM
+# rubric (--rubric). Sequential rounds use the objective signal (score/gate); the
+# rubric is applied by independent judges only when a plateau escalates to a
+# tournament (a single agent self-judging a rubric would reward-hack). A numeric
+# scorer also needs --direction. A rubric needs an objective anchor.
+if [[ -z "$SCORE_CMD" ]] && [[ -z "$CHECK_CMD" ]] && [[ -z "$RUBRIC" ]]; then
+  echo "Error: provide an evaluator — --score-cmd (numeric), --check-cmd (pass/fail gate), and/or --rubric (LLM judge, applied on tournament escalation)." >&2
+  exit 1
+fi
+if [[ -n "$RUBRIC" ]] && [[ -z "$SCORE_CMD" ]] && [[ -z "$CHECK_CMD" ]]; then
+  echo "Error: --rubric needs an objective anchor — add --score-cmd or --check-cmd. A judge-only loop reward-hacks." >&2
   exit 1
 fi
 if [[ -n "$SCORE_CMD" ]] && [[ -z "$DIRECTION" ]]; then
@@ -408,7 +417,7 @@ if [[ $(compgen -G "$EDIT" 2>/dev/null | grep -c .) -eq 1 ]]; then
   TOURNAMENT_BLOCK="## Plateau escalation (break out of a local optimum)
 
 Watch results.tsv. If the last $ESCALATE_AFTER rows are ALL non-improving (status discard/crash/gatefail, no new keep), sequential search is stuck. For THIS round only, run ONE parallel tournament instead of a single change, then resume sequential next round:
-- Invoke the Workflow tool with scriptPath \"$GAN_SCRIPT\" and args built from THIS run's contract: edit \"$EDIT\", the objective and goal above, the SAME evaluator shown in the frontmatter (score_cmd / check_cmd / direction), plus max_rounds 1, candidates 3, trial_timeout $TRIAL_TIMEOUT. (args may be a JSON object or string; the engine accepts both.)
+- Invoke the Workflow tool with scriptPath \"$GAN_SCRIPT\" and args built from THIS run's contract: edit \"$EDIT\", the objective and goal above, the SAME evaluator shown in the frontmatter (score_cmd / check_cmd / direction / rubric — include the rubric if one is set, since the tournament has independent judges that can apply it), plus max_rounds 1, candidates 3, trial_timeout $TRIAL_TIMEOUT. (args may be a JSON object or string; the engine accepts both.)
 - It returns best_content — the winning/synthesized artifact. Re-evaluate it against BEST_KEPT with the DECIDE rule: if it wins, write best_content to $EDIT, then git add $EDIT && git commit -m \"tournament: <desc>\" and log status keep; otherwise discard and log status discard.
 - Then resume sequential rounds. Do not run a tournament every round — only to break a genuine plateau."
 else
@@ -422,6 +431,7 @@ fi
 EDIT_YAML=$(yaml_escape "$EDIT")
 SCORE_CMD_YAML=$( [[ -n "$SCORE_CMD" ]] && yaml_escape "$SCORE_CMD" || echo null )
 CHECK_CMD_YAML=$( [[ -n "$CHECK_CMD" ]] && yaml_escape "$CHECK_CMD" || echo null )
+RUBRIC_YAML=$( [[ -n "$RUBRIC" ]] && yaml_escape "$RUBRIC" || echo null )
 OBJECTIVE_YAML=$(yaml_escape "$OBJECTIVE")
 READONLY_YAML=$(yaml_escape "$READONLY_CSV")
 RUN_TAG_YAML=$(yaml_escape "$RUN_TAG")
@@ -452,6 +462,7 @@ edit_target: $EDIT_YAML
 readonly_list: $READONLY_YAML
 score_cmd: $SCORE_CMD_YAML
 check_cmd: $CHECK_CMD_YAML
+rubric: $RUBRIC_YAML
 direction: ${DIRECTION:-null}
 trial_timeout: $TRIAL_TIMEOUT
 objective: $OBJECTIVE_YAML

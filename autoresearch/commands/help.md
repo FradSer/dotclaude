@@ -44,22 +44,20 @@ Autoresearch already enforces its own bound (experiments / wall-clock / completi
 
 ## Commands
 
-### /autoresearch:start [TAG] [CONTRACT] [OPTIONS]
+### /autoresearch:start <goal> [overrides]
 
-Start the autonomous research loop in your current session.
+Give it a plain-language goal — `/autoresearch:start make X faster` — and it inspects the repo to infer the full contract, asking only when the artifact or evaluator is genuinely ambiguous. Pass any flag below to pin it as an override.
 
-**The required contract:**
-- `--prompt '<text>'` — the free-form research goal handed to the agent
-- `--objective '<text>'` — the measurable target you are optimizing
+**Inferred (or overridden) contract:**
 - `--edit <glob|path>` — the ONLY artifact the agent may modify
 - An **evaluator** — at least one of:
   - `--score-cmd '<shell>'` — numeric scorer; LAST stdout line is a single number (needs `--direction`)
   - `--check-cmd '<shell>'` — objective gate; exit 0 = pass. Use alone to "iterate until it passes", or with `--score-cmd` as a hard filter on top of optimization.
+  - `--rubric '<criteria>'` — criteria an LLM judge panel applies when a plateau escalates to a tournament. Must be anchored by `--score-cmd` or `--check-cmd` (a judge-only loop reward-hacks).
 - `--direction min|max` — lower or higher score is better (only with `--score-cmd`)
+- `--prompt` / `--objective` — the goal and its measurable restatement (auto-filled)
 
-(LLM-rubric evaluation lives in `/autoresearch:gan`, which has independent judges.)
-
-Plus at least one bound (`--max-experiments` or `--max-wall-clock`).
+Plus at least one bound (`--max-experiments` or `--max-wall-clock`); the inference fills sensible defaults.
 
 **Options:**
 - `TAG` — branch suffix (e.g. `mar16`); defaults to today's date
@@ -117,31 +115,16 @@ Run it from a **separate** session in the same project directory — the looping
 
 ---
 
-### /autoresearch:gan [TAG] [CONTRACT] --max-rounds N [--target-score X]
+### Hybrid loop: tournament on plateau
 
-A foreground, multi-agent **tournament** optimizer for a single-file artifact — complementary to the overnight `/autoresearch:start`. Each round:
+The loop runs cheap **sequential** rounds. When it plateaus (the last few rounds all non-improving — a local optimum), it escalates **one** round to a parallel **tournament** (the bundled GAN engine, `workflows/gan.mjs`), then resumes sequential:
 
-1. Fan out `--candidates` candidate edits in parallel, each in an isolated git worktree, each self-evaluated.
-2. A judge (or a 3-judge rubric panel) ranks them and flags graftable ideas from the runners-up.
-3. A synthesis step combines the winner with those ideas and is re-evaluated.
-4. Keep the best; loop until `--target-score` / `--max-rounds` / two dry rounds.
+1. Fan out a few candidate edits in parallel, each in an isolated git worktree, each self-evaluated.
+2. A judge — or a 3-judge panel against your `--rubric` — ranks the survivors and flags graftable ideas from the runners-up.
+3. A synthesis step combines the winner with those ideas and is **re-evaluated**; it only wins on a real re-measured result.
+4. The winner is kept if it beats the current best; the loop returns to sequential rounds.
 
-GAN takes the same pluggable evaluator as `start` **plus an LLM rubric**:
-- `--score-cmd` + `--direction` — numeric; ranks directly.
-- `--check-cmd` — objective gate; filters out failing candidates (also "find a passing variant" on its own).
-- `--rubric '<criteria>'` — an adversarial judge panel ranks candidates against your criteria. To resist reward-hacking it **must be anchored** by `--score-cmd` or `--check-cmd`; the carried-over best competes each round so quality only ratchets up.
-
-It runs a Claude Code **Workflow** (many parallel agents — real token cost) on a dedicated `autoresearch/gan-<tag>` branch and commits the winning artifact there. The objective signal is always the arbiter; synthesis only wins on a real re-measured result.
-
-**GAN vs the ralph-loop:** `start` is sequential, overnight, single-session hill-climbing over any `--edit` target; `gan` is parallel, foreground, single-file, tournament + synthesis toward a `--target-score`. GAN has no `--max-wall-clock` (a Workflow script cannot read the clock) — bound it with `--max-rounds`.
-
-```
-# raise prompt accuracy via a 6-round tournament, stop early at 0.95
-/autoresearch:gan --prompt 'raise accuracy on the eval set' \
-  --objective 'maximize accuracy on val.jsonl' --edit prompt.txt \
-  --score-cmd 'python eval_prompt.py --set val.jsonl' \
-  --direction max --max-rounds 6 --target-score 0.95 --candidates 4
-```
+A tournament round costs ~100k+ tokens, so escalation is reserved for genuine plateaus, and only for a **single-file** `--edit` (the engine passes full file contents between agents). The `--rubric` evaluator lives here because independent judges can apply it without the self-judging reward-hack a single sequential agent would fall into.
 
 ---
 

@@ -1,68 +1,50 @@
-# Example: GAN tournament (prompt optimization)
+# Example: qualitative goal (gate + rubric, tournament on plateau)
 
-Optimize a single prompt file toward a target accuracy using the parallel
-tournament instead of the sequential ralph-loop. Use this when one-change-at-a-
-time hill climbing is too slow or keeps stalling in a local optimum.
+`/autoresearch:start` is the single entry point. Give it a goal; it infers the
+contract and runs the hybrid loop — cheap sequential rounds that escalate to a
+parallel tournament when they stall. You rarely pass flags; this example shows
+both the plain-language form and the contract it infers.
 
-```
-/autoresearch:gan promptv2 \
-  --prompt 'Rewrite prompt.txt to raise accuracy on the validation set without overfitting to its examples.' \
-  --objective 'maximize accuracy on val.jsonl' \
-  --edit prompt.txt \
-  --score-cmd 'python eval_prompt.py --prompt prompt.txt --set val.jsonl' \
-  --direction max \
-  --max-rounds 6 \
-  --target-score 0.95 \
-  --candidates 4
-```
-
-What happens each round:
-
-1. Four candidate agents each take the current best `prompt.txt`, make one
-   distinct rewrite (one minimal, one aggressive, one different approach, one
-   targeting the current weakness), and run `eval_prompt.py` in their own
-   worktree.
-2. A judge ranks the four by accuracy and notes which phrasings from the
-   runners-up look worth borrowing.
-3. A synthesis agent grafts those phrasings onto the top candidate and re-runs
-   `eval_prompt.py`. It is kept only if its real accuracy beats the top candidate.
-4. The best `prompt.txt` carries into the next round.
-
-The run stops at the first of: accuracy >= 0.95, six rounds, two rounds with no
-improvement, or a low token budget. The winning `prompt.txt` is committed on the
-`autoresearch/gan-promptv2` branch; `gan-results.tsv` logs each round's scores.
-
-Notes:
-- `eval_prompt.py` must print accuracy as its last stdout line (a noisy LLM judge
-  should average several runs internally so the number is stable).
-- GAN requires a single file for `--edit`. For multi-file or glob targets, use
-  `/autoresearch:start` (the sequential ralph-loop) instead.
-- This spawns many parallel agents per round — expect meaningfully higher token
-  cost than the sequential loop, in exchange for breadth and synthesis.
-
-## Beyond a numeric scorer: gate + rubric
-
-When "better" is not a single number — e.g. refactoring a module where the only
-hard requirement is "tests still pass" and the rest is judgement — combine an
-objective **gate** with an LLM **rubric**:
+## Plain-language form
 
 ```
-/autoresearch:gan refactor1 \
+/autoresearch:start refactor src/parser.ts for clarity without changing behavior
+```
+
+The command inspects the repo and infers a contract like the one below (it would
+ask you only if it could not find the file or a test command):
+
+```
+setup-autoresearch.sh \
   --prompt 'Refactor src/parser.ts for clarity without changing behavior.' \
-  --objective 'cleaner, simpler parser; all tests green' \
+  --objective 'cleaner, simpler parser; all tests stay green' \
   --edit src/parser.ts \
   --check-cmd 'pnpm test parser' \
   --rubric 'Prefer fewer branches, clear names, no dead code, smaller functions; behavior must be unchanged.' \
-  --max-rounds 5 --candidates 4
+  --max-experiments 20
 ```
 
-Each round, only candidates whose tests pass (`--check-cmd` exit 0) survive; a
-3-judge panel then ranks the survivors against the rubric, and the current best
-is carried into the panel so quality only ratchets up. The rubric is **anchored**
-by the gate — a judge-only loop would reward-hack, so `--rubric` requires a
-`--check-cmd` or `--score-cmd`. There is no `--target-score` here (the rubric has
-no fixed scale); the run stops at `--max-rounds` or two rounds with no improvement.
+## What happens
 
-To "iterate until it passes" with no quality judging at all, use the gate alone
-(`--check-cmd`, no `--rubric`/`--score-cmd`): GAN searches for a passing variant
-and stops at the first one.
+- **Sequential rounds (cheap):** each round makes one change to `src/parser.ts`,
+  commits, and keeps it only if `pnpm test parser` still passes (the gate). The
+  rubric is dormant here — a single agent judging its own work would reward-hack.
+- **Plateau escalation (the tournament):** after 3 non-improving rounds, the loop
+  escalates one round to the bundled GAN engine. A few candidates each rewrite the
+  file in isolated worktrees and run the gate; a **3-judge panel** ranks the
+  test-passing survivors against the rubric; a synthesis grafts the best ideas and
+  is re-evaluated. The winner is kept only if it still passes the gate. Then the
+  loop resumes sequential rounds.
+
+The rubric is **anchored** by the gate (`pnpm test`), so the loop can't trade
+correctness for prose — `--rubric` requires a `--score-cmd` or `--check-cmd`.
+
+## Variations
+
+- **Numeric goal** ("minimize tour length in config/solver.yaml"): inferred as
+  `--score-cmd ... --direction min`; sequential rounds optimize the number,
+  escalation explores broadly when stuck.
+- **Just make tests pass** ("fix the failing parser tests"): inferred as a bare
+  `--check-cmd 'pnpm test parser'`; the loop iterates until the gate is green.
+- A tournament round costs ~100k+ tokens, so escalation is reserved for genuine
+  plateaus, and only for a single-file `--edit`.
