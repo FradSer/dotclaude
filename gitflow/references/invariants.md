@@ -4,10 +4,16 @@ Core rules enforced by this plugin.
 
 ## Pre-operation Checks
 
-Before any start/finish operation:
-- Working tree must be clean (`git status`)
-- Current branch must match operation type
+Before any start or finish operation:
+- Working tree must be clean (`git status --porcelain` is empty)
+
+Finish operations additionally require:
+- Current branch must match the operation type
   (`feature/*`, `hotfix/*`, `release/*`)
+
+Start operations create the branch from its base (`develop` for feature and
+release, `main` for hotfix), so the current branch is NOT required to match the
+operation type — only the clean-tree check applies.
 
 ## Testing Requirements
 

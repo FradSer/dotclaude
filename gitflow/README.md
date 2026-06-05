@@ -2,7 +2,7 @@
 
 GitFlow workflow automation using [git-flow-next](https://git-flow.sh/docs/) CLI.
 
-**Version**: 1.0.2
+**Version**: 1.1.0
 
 ## Installation
 

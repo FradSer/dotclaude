@@ -33,8 +33,8 @@ Verify working tree is clean and current branch matches `feature/*` per `${CLAUD
 **Goal**: Document changes in CHANGELOG.md.
 1. Ensure changes are in `[Unreleased]` section per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
 2. Stage CHANGELOG.md: `git add CHANGELOG.md`
-3. Determine the correct Claude model name for co-author attribution
-   - Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+3. Determine the Claude model name for co-author attribution
+   - Derive it from your own runtime model identity (e.g. Claude Opus 4.8) so it never goes stale; do not hardcode a fixed version
 4. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for feature $FEATURE_NAME" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 5. On auth error (401), retry with `--free`
 6. **Fallback** (git-agent unavailable): `git commit -m "chore: update changelog for feature $FEATURE_NAME"` with conventional format and `Co-Authored-By` footer

@@ -36,8 +36,8 @@ Verify working tree is clean and current branch matches `release/*` per `${CLAUD
 2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
 3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
 4. Stage CHANGELOG.md: `git add CHANGELOG.md`
-5. Determine the correct Claude model name for co-author attribution
-   - Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+5. Determine the Claude model name for co-author attribution
+   - Derive it from your own runtime model identity (e.g. Claude Opus 4.8) so it never goes stale; do not hardcode a fixed version
 6. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for v$VERSION" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 7. On auth error (401), retry with `--free`
 8. **Fallback** (git-agent unavailable): `git commit -m "chore: update changelog for v$VERSION"` with conventional format and `Co-Authored-By` footer
@@ -45,7 +45,7 @@ Verify working tree is clean and current branch matches `release/*` per `${CLAUD
 ## Phase 4: Finish Release
 **Goal**: Complete release using git-flow-next CLI.
 1. Run `git flow release finish $VERSION --tagname "v$VERSION" -m "Release v$VERSION"`
-2. Verify current branch: `git branch --show-current` (should be on develop)
+2. Verify current branch: `git branch --show-current` (git-flow-next lands you on `main` after finish; `develop` is updated automatically). git-flow-next does NOT auto-push.
 3. Push all: `git push origin main develop --tags`
 
 ## Phase 5: GitHub Release

@@ -10,11 +10,11 @@ disable-model-invocation: true
 
 ## Workflow Execution
 
-**Launch a general-purpose agent** that executes all 4 phases in a single task.
+**Launch a general-purpose agent** that executes all 5 phases in a single task.
 
 **Prompt template**:
 ```
-Execute the finish-hotfix workflow (4 phases).
+Execute the finish-hotfix workflow (5 phases).
 
 ## Pre-operation Checks
 Verify working tree is clean and current branch matches `hotfix/*` per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
@@ -36,8 +36,8 @@ Verify working tree is clean and current branch matches `hotfix/*` per `${CLAUDE
 2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
 3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
 4. Stage CHANGELOG.md: `git add CHANGELOG.md`
-5. Determine the correct Claude model name for co-author attribution
-   - Valid models: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5
+5. Determine the Claude model name for co-author attribution
+   - Derive it from your own runtime model identity (e.g. Claude Opus 4.8) so it never goes stale; do not hardcode a fixed version
 6. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for v$VERSION" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 7. On auth error (401), retry with `--free`
 8. **Fallback** (git-agent unavailable): `git commit -m "chore: update changelog for v$VERSION"` with conventional format and `Co-Authored-By` footer
@@ -45,8 +45,14 @@ Verify working tree is clean and current branch matches `hotfix/*` per `${CLAUDE
 ## Phase 4: Finish Hotfix
 **Goal**: Complete hotfix using git-flow-next CLI.
 1. Run `git flow hotfix finish $VERSION --tagname "v$VERSION" -m "Release v$VERSION"`
-2. Verify current branch: `git branch --show-current` (should be on develop)
+2. Verify current branch: `git branch --show-current` (git-flow-next lands you on `main` after finish; `develop` is updated automatically). git-flow-next does NOT auto-push.
 3. Push all: `git push origin main develop --tags`
+
+## Phase 5: Finalize
+**Goal**: Return to develop for ongoing work (git-flow-next leaves you on `main` after a hotfix finish).
+1. Switch to develop: `git checkout develop`
+2. Pull latest: `git pull origin develop`
+3. Verify: `git branch --show-current` (should output "develop")
 ```
 
 **Execute**: Launch a general-purpose agent using the prompt template above
