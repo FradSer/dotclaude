@@ -1,8 +1,8 @@
 ---
 name: create-pr
-allowed-tools: Task, Bash(gh:*), Bash(git:*)
+allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor
 description: Creates comprehensive GitHub pull requests with automated quality validation and security scanning. This skill should be used when the user asks to "create a PR", "submit a pull request", or needs to merge completed work with full compliance checks.
-argument-hint: [optional description or issue reference]
+argument-hint: [optional description or issue reference] [--monitor]
 user-invocable: true
 ---
 
@@ -64,6 +64,24 @@ See `references/repository-templates.md` for template detection and compliance d
    - Fill title/body automatically using `--fill` for simple changes
 7. Check remote CI status with `gh pr checks <pr-number> --watch` to ensure all checks pass remotely
 8. Report final PR URL and status to user
+9. If `$ARGUMENTS` contains `--monitor`, proceed to Phase 4
+
+## Phase 4: Post-PR Monitoring and Auto-Fix (Optional)
+
+**Trigger**: `$ARGUMENTS` contains `--monitor`
+
+**Goal**: Monitor CI failures and review comments, auto-fix what is actionable, stop for ambiguous issues.
+
+**Actions**:
+1. Use Monitor tool to watch CI check status until all checks reach terminal state (pass/fail/cancel)
+2. If CI fails: analyze failure logs via `gh run view --log-failed`, apply fixes, push, and re-monitor
+3. Poll review comments with `gh api` on a 30-second interval, collecting new comments since last check
+4. For each actionable comment (clear bug, lint issue, missing test, typo): apply fix, commit, and push
+5. For ambiguous comments (design disagreement, unclear intent, scope change): stop monitoring and report to user with the comment content
+6. After fixes pushed: re-monitor CI until terminal state again
+7. Exit monitoring when: all checks pass AND no new actionable comments remain
+
+See `references/post-pr-monitoring.md` for monitoring commands, comment parsing rules, and auto-fix decision matrix.
 
 ## References
 
@@ -72,4 +90,5 @@ See `references/repository-templates.md` for template detection and compliance d
 - **Quality Validation**: `references/quality-validation.md` - Node.js/Python validation commands
 - **PR Structure**: `references/pr-structure.md` - Title guidelines, body template, labels
 - **Failure Resolution**: `references/failure-resolution.md` - Agent collaboration for fixing failures
+- **Post-PR Monitoring**: `references/post-pr-monitoring.md` - Monitor commands, comment parsing, auto-fix rules
 - **Examples**: `references/examples.md` - Commit message examples
