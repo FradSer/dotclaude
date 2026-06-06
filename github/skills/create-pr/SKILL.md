@@ -76,11 +76,11 @@ See `references/repository-templates.md` for template detection and compliance d
 1. Launch a single Monitor with `persistent: true` whose command emits one tagged stdout line per new event: `[ci] <name>: <bucket>` for checks reaching a terminal bucket, and `[comment] ...` for new issue comments, inline review comments, and review summaries. Use the consolidated script in `references/post-pr-monitoring.md` — do not run a foreground `while` loop.
 2. React as each Monitor event arrives (the watch runs across turns):
    - `[ci]` failure → analyze logs via `gh run view --log-failed`, apply the fix, commit, push. The push triggers a fresh CI run that the same Monitor re-emits — no relaunch needed.
-   - `[comment]` actionable (clear bug, lint, typo, missing test — see decision matrix) → fix ALL actionable comments pulled in this batch, not just the first. Apply every needed fix, then commit and push together (one round), and acknowledge each with a reply. Repeat each polling round until no actionable comment remains unaddressed.
-   - `[comment]` ambiguous (design disagreement, scope change, unclear intent) → send a PushNotification and report the comment body, author, and file context to the user; do not guess.
+   - `[comment]` batch arrives → **CRITICAL: Spawn an independent review-triage agent** to evaluate every comment. The main conversation context is biased by the PR creation flow — it authored the code and tends to either defend or over-correct. The triage agent starts with a **clean context**, reads the diff and each comment independently, and returns a verdict per comment: `fix` / `reject` (with reason) / `escalate`. Apply ONLY the `fix` verdicts. See `references/post-pr-monitoring.md` for the agent prompt template and verdict format.
+   - `[comment]` escalated (design disagreement, scope change, unclear intent) → send a PushNotification and report the comment body, author, and file context to the user; do not guess.
 3. Stop the Monitor with TaskStop when all `[ci]` checks are terminal AND passing, no actionable comments remain, and the user no longer wants live coverage. If a PR has no CI and no reviewers (terminal immediately), report that and skip launching the watch rather than polling an empty signal.
 
-See `references/post-pr-monitoring.md` for the consolidated Monitor script, comment parsing rules, and the auto-fix decision matrix.
+See `references/post-pr-monitoring.md` for the consolidated Monitor script, comment parsing rules, triage agent prompt, and verdict format.
 
 ## References
 
