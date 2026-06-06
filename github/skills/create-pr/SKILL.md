@@ -1,6 +1,6 @@
 ---
 name: create-pr
-allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor
+allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop
 description: Creates comprehensive GitHub pull requests with automated quality validation and security scanning. This skill should be used when the user asks to "create a PR", "submit a pull request", or needs to merge completed work with full compliance checks.
 argument-hint: [optional description or issue reference] [--monitor]
 user-invocable: true
@@ -70,18 +70,17 @@ See `references/repository-templates.md` for template detection and compliance d
 
 **Trigger**: `$ARGUMENTS` contains `--monitor`
 
-**Goal**: Monitor CI failures and review comments, auto-fix what is actionable, stop for ambiguous issues.
+**Goal**: Use the Monitor tool to watch BOTH CI checks and new PR comments in one persistent background watch, auto-fix what is actionable, and surface ambiguous items to the user — without busy-polling in the foreground.
 
 **Actions**:
-1. Use Monitor tool to watch CI check status until all checks reach terminal state (pass/fail/cancel)
-2. If CI fails: analyze failure logs via `gh run view --log-failed`, apply fixes, push, and re-monitor
-3. Poll review comments with `gh api` on a 30-second interval, collecting new comments since last check
-4. For each actionable comment (clear bug, lint issue, missing test, typo): apply fix, commit, and push
-5. For ambiguous comments (design disagreement, unclear intent, scope change): stop monitoring and report to user with the comment content
-6. After fixes pushed: re-monitor CI until terminal state again
-7. Exit monitoring when: all checks pass AND no new actionable comments remain
+1. Launch a single Monitor with `persistent: true` whose command emits one tagged stdout line per new event: `[ci] <name>: <bucket>` for checks reaching a terminal bucket, and `[comment] ...` for new issue comments, inline review comments, and review summaries. Use the consolidated script in `references/post-pr-monitoring.md` — do not run a foreground `while` loop.
+2. React as each Monitor event arrives (the watch runs across turns):
+   - `[ci]` failure → analyze logs via `gh run view --log-failed`, apply the fix, commit, push. The push triggers a fresh CI run that the same Monitor re-emits — no relaunch needed.
+   - `[comment]` actionable (clear bug, lint, typo, missing test — see decision matrix) → fix ALL actionable comments pulled in this batch, not just the first. Apply every needed fix, then commit and push together (one round), and acknowledge each with a reply. Repeat each polling round until no actionable comment remains unaddressed.
+   - `[comment]` ambiguous (design disagreement, scope change, unclear intent) → send a PushNotification and report the comment body, author, and file context to the user; do not guess.
+3. Stop the Monitor with TaskStop when all `[ci]` checks are terminal AND passing, no actionable comments remain, and the user no longer wants live coverage. If a PR has no CI and no reviewers (terminal immediately), report that and skip launching the watch rather than polling an empty signal.
 
-See `references/post-pr-monitoring.md` for monitoring commands, comment parsing rules, and auto-fix decision matrix.
+See `references/post-pr-monitoring.md` for the consolidated Monitor script, comment parsing rules, and the auto-fix decision matrix.
 
 ## References
 
