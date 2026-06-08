@@ -103,7 +103,7 @@
     {
       "name": "superpowers",
       "displayName": "Superpowers",
-      "version": "3.2.0",
+      "version": "3.3.0",
       "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
       "author": {
         "name": "Frad LEE",
