@@ -148,7 +148,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" evolution-log \
 
 Substitute `item_removed | item_modified | item_promoted` for the `event` arg as appropriate.
 
-**Provenance** (optional, recommended): `"retrospective"` (Phase 4 ADD with driving_plans), `"phase_5a_override"` (single-plan post-plan-diff ADD), or `"maintainer_baseline"` (seed promotion with empty `driving_plans`). Phase 1 readers use this to avoid treating maintainer baselines as retrospective-backed evidence.
+**Provenance** (optional, recommended): `"retrospective"` (Phase 4 ADD with driving_plans), `"phase_5a_override"` (single-plan post-plan-diff ADD), `"maintainer_baseline"` (seed promotion with empty `driving_plans`), or `"hook_backfill"` (state-recovered by the Stop hook from a checklist version diff — carries `item_id` + `event` but no rationale). Phase 1 readers use this to avoid treating maintainer baselines as retrospective-backed evidence; a `hook_backfill` `item_removed` still arms the re-proposal guard, but cite the checklist version diff (not a rationale) when overriding it.
 
 **Retrospective-run event** — invoked from Phase 6 closure exactly once per retrospective:
 
@@ -160,6 +160,13 @@ bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" evolution-log \
   --argjson approved <N> --argjson rejected <M>
 ```
 
+## Stop-Hook Backfill (state-based safety net)
+
+The retrospective writes both event families as model-instructed steps, and an instructed side-effect can be silently dropped. The single Stop hook `hooks/stop-state-sync.sh` is the state-based net for the two rows whose absence is self-reinforcing or guard-defeating — it never replaces the in-skill emit (which is richer), only backfills what is missing, and dedups so the normal path is a no-op:
+
+- **`retrospective_run` watermark.** When a `docs/retros/retro-*.md` report has no `retrospective_run` row referencing it, the hook appends a minimal `{event, timestamp, plans_analyzed:[], report, provenance:"hook_backfill"}`. This keeps Phase 1 auto-scope (which reads only the watermark's existence + timestamp) from re-analyzing already-analyzed plans. Counts and `plans_analyzed` are left empty — only the Phase 6 emit carries them.
+- **`item_added` / `item_removed`.** When the latest `{mode}-v{N}.md` (N ≥ 2) has no evolution-log row carrying its `checklist_version`, the hook diffs its item IDs against `{mode}-v{N-1}.md` and emits the add/remove deltas with `provenance:"hook_backfill"`. This is all-or-nothing per version (it fires only when *every* row for that version is missing); a *partial* drop is caught instead by the in-skill Phase 4 step 4 self-check.
+
 ## Log Reader Protocol
 
 The evolution log's consumer is retrospective Phase 1 (proposal history):
@@ -168,7 +175,7 @@ Scan for `item_*` events to build an item-history table. In Phase 3, **suppress 
 
 ## Plan Completion Log Schema
 
-Log at `docs/retros/plans-completed.jsonl` (one JSON object per line, append-only). Written deterministically by the `Stop` hook `hooks/plan-completed.sh`, which detects completion from durable plan artifacts — every batch handed off (`handoff-summary-*` count ≥ `sprint-contract-batch-*` count) plus a git commit touching the `handoff-state.md` modified-files set — and appends one row per plan on first completion. Detection is state-based, not keyed off any model utterance, so it is immune to a paraphrased or skipped completion summary. (The v3.0.0 teardown removed the old continuation-loop Stop hook and briefly demoted this write to a Claude-instructed Phase 6 step, which empirical audit showed was silently dropped; the minimal single-purpose hook restores the mechanical write without the loop runtime.) May be absent for plans completed outside `executing-plans` or on a host without `jq`/`git`. Each entry follows this shape:
+Log at `docs/retros/plans-completed.jsonl` (one JSON object per line, append-only). Written deterministically by the `Stop` hook `hooks/stop-state-sync.sh` (Responsibility 1), which detects completion from durable plan artifacts — every batch handed off (`handoff-summary-*` count ≥ `sprint-contract-batch-*` count) plus a git commit touching the `handoff-state.md` modified-files set — and appends one row per plan on first completion. Detection is state-based, not keyed off any model utterance, so it is immune to a paraphrased or skipped completion summary. (The v3.0.0 teardown removed the old continuation-loop Stop hook and briefly demoted this write to a Claude-instructed Phase 6 step, which empirical audit showed was silently dropped; v3.1 restored the mechanical write as a single minimal hook, and v3.2 generalized that hook to also backfill the evolution-log rows above — both responsibilities state-based, neither carrying the loop runtime.) May be absent for plans completed outside `executing-plans` or on a host without `jq`/`git`. Each entry follows this shape:
 
 ```json
 {
@@ -186,7 +193,7 @@ Log at `docs/retros/plans-completed.jsonl` (one JSON object per line, append-onl
 }
 ```
 
-**Canonical emit (`hooks/plan-completed.sh`, first completion only):** the hook composes the row below and writes it via `lib/jsonl-emit.sh` executed mode:
+**Canonical emit (`hooks/stop-state-sync.sh`, first completion only):** the hook composes the row below and writes it via `lib/jsonl-emit.sh` executed mode:
 
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh" plans-completed \

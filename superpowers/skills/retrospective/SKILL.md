@@ -127,7 +127,8 @@ Apply steps:
 
 1. **Pre-edit snapshot**: Write current checklist content to the retrospective report under "Pre-Edit Snapshot" with rollback instructions
 2. **Create new version**: Write `{mode}-v{N+1}.md` with all applied changes. Version increments once per run (not per proposal). Original version preserved unchanged.
-3. **Log evolution**: For each applied proposal, append one row to `docs/retros/evolution-log.jsonl` via `lib/jsonl-emit.sh` with `<channel>=evolution-log`. The event arg is one of `item_added | item_removed | item_modified | item_promoted`. The full canonical bash invocation (with every required field and `--arg` pair) lives in `./references/evolution-protocol.md` §"Canonical Emit Invocations" — substitute the event arg per applied proposal.
+3. **Log evolution** — **CRITICAL: a proposal is NOT "applied" until its evolution-log row exists.** Immediately after writing the new version file, append one row to `docs/retros/evolution-log.jsonl` per applied proposal via `lib/jsonl-emit.sh` with `<channel>=evolution-log` — emit per-proposal here, do NOT defer to the end of the run. The event arg is one of `item_added | item_removed | item_modified | item_promoted`. The full canonical bash invocation (every required field and `--arg` pair) lives in `./references/evolution-protocol.md` §"Canonical Emit Invocations" — substitute the event arg per applied proposal. These rows feed Phase 1 step 5's re-proposal guard; a dropped `item_removed` row silently re-adds the just-removed item next run. The Stop hook (`hooks/stop-state-sync.sh`) backfills `item_added`/`item_removed` from the checklist version diff only when *every* row for this version is missing (all-or-nothing) and carries no rationale — so the in-skill emit is authoritative and must run.
+4. **Verify the log** — **CRITICAL self-check, do NOT skip:** before leaving Phase 4, count evolution-log rows whose `checklist_version` equals the version(s) written this run and confirm the count equals `proposals_approved`. Emit any missing rows now. This is the guard against a *partial* drop the hook's all-or-nothing backfill will not catch.
 
 ## Phase 5: Harness Health (advisory)
 
@@ -156,7 +157,7 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
 4. Harness Health notes (5a post-plan corrections mined into ADD proposals; 5b informational recommendations)
 5. Summary: N proposals approved, M rejected, checklists updated to version X
 
-**Close the calibration loop** (mandatory): Append one `retrospective_run` row to `docs/retros/evolution-log.jsonl` via the canonical emit pattern in `./references/evolution-protocol.md` §"Canonical Emit Invocations", recording `proposals_approved` and `proposals_rejected`. This entry is the closure marker — do not skip it even when zero proposals were approved.
+**Close the calibration loop** — **CRITICAL: do this before you stop, not after the report "feels done."** Append one `retrospective_run` row to `docs/retros/evolution-log.jsonl` via the canonical emit pattern in `./references/evolution-protocol.md` §"Canonical Emit Invocations", recording `proposals_approved` and `proposals_rejected`. This row is the closure marker the *next* run's auto-scope (Phase 1 step 1) reads to avoid re-analyzing these plans — skip it and the next retrospective silently re-analyzes already-analyzed plans, re-proposing the same changes. Do not skip it even when zero proposals were approved. The Stop hook (`hooks/stop-state-sync.sh`) backfills a minimal watermark from this run's `retro-*.md` report if you drop this, but only your emit carries `proposals_approved` / `proposals_rejected` / `plans_analyzed` — so write the rich row here.
 
 ## References
 
