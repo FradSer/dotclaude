@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes.
+description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes. For autonomous multi-turn runs, invoke wrapped in `/goal`.
 argument-hint: "<bug description or symptom>"
 user-invocable: true
 allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)"]
@@ -15,6 +15,16 @@ Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by ot
 **When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement, then start at Phase 1 (Root Cause Investigation) immediately. Debugging is iterative within a single session, not phase-driven. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
 
 **Output discipline**: Report findings inline as you complete each phase. End with: (a) root cause one-liner, (b) fix diff summary, (c) regression test path.
+
+## Recommended: run wrapped in `/goal`
+
+Debugging is iterative and can span several turns of hypothesis → test → fix. **Launch it under Claude Code's built-in `/goal`** (v2.1.139+) so the investigation continues until the regression is actually fixed:
+
+```
+/goal "Claude has narrated the three-part completion output (root-cause one-liner, fix diff summary, regression-test path) with the regression test passing" /superpowers:systematic-debugging "<symptom>"
+```
+
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition against what Claude narrates (the test-run result it prints, the three-part summary), never raw filesystem state, which is unverifiable and will time out. (A bug with a named root cause + named fix still short-circuits via the bail-out check below.)
 
 ## CRITICAL: Bail-Out Check (run before Phase 1)
 

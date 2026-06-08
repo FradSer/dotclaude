@@ -8,17 +8,17 @@ allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agen
 
 # Writing Plans
 
-Create executable implementation plans that reduce ambiguity for whoever executes them. The skill walks Phase 1 → Phase 6 in a single turn for normal-sized plans; for unattended long runs, wrap in `/goal` (see below).
+Create executable implementation plans that reduce ambiguity for whoever executes them. This is substantial Phase 1 → Phase 6 work — **the recommended way to run it is wrapped in Claude Code's built-in `/goal`** (see below).
 
-## For unattended multi-turn runs
+## Recommended: run wrapped in `/goal`
 
-Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
+Writing a plan is multi-phase work. **Launch it under Claude Code's built-in `/goal`** (v2.1.139+) so the run continues to a committed plan instead of stopping mid-phase:
 
 ```
 /goal "Claude has narrated a successful plan commit (with commit hash) and reported the Phase 4 reflection sub-agent verdicts inline" /superpowers:writing-plans <design-path>
 ```
 
-`/goal` provides multi-turn continuation — a fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal Phase 4 reflection summary, an explicit completion statement). Conditions written against filesystem state (`_index.md exists`, `Execution Plan YAML present`, `git commit clean`) are unverifiable and will time out. For most reasonable-sized plans, `/goal` is unnecessary; the skill runs to completion in one turn.
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal Phase 4 reflection summary, an explicit completion statement). Conditions written against filesystem state (`_index.md exists`, `Execution Plan YAML present`, `git commit clean`) are unverifiable and will time out. (Thin designs still short-circuit via the bail-out check below — `/goal` then simply confirms completion on the first turn.)
 
 ## CRITICAL: Bail-Out Check (run first)
 

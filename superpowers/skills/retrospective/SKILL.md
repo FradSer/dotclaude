@@ -1,6 +1,6 @@
 ---
 name: retrospective
-description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective".
+description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective". For autonomous multi-turn runs, invoke wrapped in `/goal`.
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
 allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
@@ -11,6 +11,16 @@ allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bas
 Analyze evaluation patterns across completed plans, identify recurring failures, and auto-apply checklist evolution. The user reviews post-commit via `git show docs/retros/checklists/`.
 
 **Chain position**: This skill is the downstream consumer of executing-plans Phase 4 "Checklist Evolution Candidates". It aggregates signals across plans and produces versioned checklist updates.
+
+## Recommended: run wrapped in `/goal`
+
+A retrospective aggregates signals across plans and can span multiple turns. **Launch it under Claude Code's built-in `/goal`** (v2.1.139+):
+
+```
+/goal "Claude has narrated a successful checklist-evolution commit (with commit hash) and stated the retrospective is complete" /superpowers:retrospective <plan-paths>
+```
+
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration demonstrates (the commit-hash line, an explicit completion statement), never filesystem state (`checklists/ updated`, `git clean`), which is unverifiable and will time out.
 
 ## Pre-Check (run first, in order)
 

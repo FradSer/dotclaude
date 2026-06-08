@@ -7,17 +7,17 @@ allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "
 
 # Brainstorming Ideas Into Designs
 
-Turn rough ideas into implementation-ready designs through structured codebase-grounded research. The full pipeline (parallel research sub-agents + evaluator) is calibrated for **open-ended multi-component problems**. Trivial work bypasses via the bail-out check below. The skill runs phase-by-phase in a single turn for normal-sized work; for unattended long runs, wrap in `/goal` (see below).
+Turn rough ideas into implementation-ready designs through structured codebase-grounded research. The full pipeline (parallel research sub-agents + evaluator) is calibrated for **open-ended multi-component problems**. Trivial work bypasses via the bail-out check below. This is substantial multi-phase work — **the recommended way to run it is wrapped in Claude Code's built-in `/goal`** (see below).
 
-## For unattended multi-turn runs
+## Recommended: run wrapped in `/goal`
 
-Wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+):
+Brainstorming does open-ended, multi-turn research. **Launch it under Claude Code's built-in `/goal`** (v2.1.139+) so a fresh evaluator drives it to completion across turns instead of stopping mid-pipeline:
 
 ```
 /goal "Claude has narrated a successful design commit (with commit hash) and the evaluator's verdict is PASS" /superpowers:brainstorming "<problem>"
 ```
 
-`/goal` provides multi-turn continuation — a fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal verdict line from the evaluator agent, an explicit "Phase 3 wrap-up complete" statement). Conditions written against filesystem state (`_index.md exists`, `git commit clean`) are unverifiable and will time out. For most reasonable-sized brainstorms (a few minutes of work), `/goal` is unnecessary; the skill runs to completion in one turn.
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal verdict line from the evaluator agent, an explicit "Phase 3 wrap-up complete" statement). Conditions written against filesystem state (`_index.md exists`, `git commit clean`) are unverifiable and will time out. (Trivial inputs still short-circuit via the bail-out check below — `/goal` then simply confirms completion on the first turn.)
 
 ## CRITICAL: Bail-Out Check (run before Initialization)
 

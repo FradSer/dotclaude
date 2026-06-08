@@ -16,7 +16,7 @@ claude plugin install superpowers@frad-dotclaude
 
 The superpowers plugin provides a comprehensive framework for collaborative software development, enabling teams to move from rough ideas through structured planning to coordinated execution. It combines strategic planning tools with behavior-driven development practices.
 
-Each skill is a plain phase-based pipeline that runs to completion within a turn. For autonomous multi-turn continuation ("keep working until condition X holds"), wrap the skill invocation in Claude Code's native `/goal` — the plugin no longer ships its own continuation loop.
+Each skill is a plain phase-based pipeline. These are substantial multi-turn tasks, so **the recommended way to run any of them is wrapped in Claude Code's native `/goal`** ("keep working until condition X holds" — autonomous multi-turn continuation); the plugin no longer ships its own continuation loop.
 
 ## When NOT to use superpowers
 
@@ -35,7 +35,7 @@ Using the full pipeline for smaller work is **net negative** — the overhead (s
 
 **For incident response and root-cause work, use `/superpowers:systematic-debugging` directly** — the design pipeline is the wrong shape for unknown-root-cause bugs.
 
-**For unattended multi-turn pipeline work**, wrap the skill invocation in Claude Code's native `/goal` (v2.1.139+). Example:
+**Recommended invocation — wrap in `/goal`.** These skills do substantial multi-turn work, so launch them under Claude Code's native `/goal` (v2.1.139+). It is a user-typed outer wrapper — a skill cannot enable it for itself mid-run. Example:
 
 ```
 /goal "Claude has narrated a successful design commit (with commit hash) and the evaluator's verdict is PASS" /superpowers:brainstorming "<problem>"
@@ -241,7 +241,7 @@ superpowers/
 - **Skill Tool:** Load skills dynamically during workflows
 - **Agent Tool:** Spawn fresh sub-agent coordinators (per batch) and the read-only `superpowers-evaluator` (design / code modes — plan-mode review is handled inline by `writing-plans` Phase 4)
 - **Task Management:** Create and track tasks during execution
-- **Native `/goal` Continuation:** For unattended multi-turn runs, wrap a skill invocation in Claude Code's built-in `/goal` (v2.1.139+) — the plugin ships no *continuation* hooks of its own (its single `Stop` hook only mechanically syncs durable retro state — plan completion + evolution-log backfill; see below)
+- **Native `/goal` Continuation:** The recommended way to run any superpowers skill — wrap the invocation in Claude Code's built-in `/goal` (v2.1.139+) — the plugin ships no *continuation* hooks of its own (its single `Stop` hook only mechanically syncs durable retro state — plan completion + evolution-log backfill; see below)
 - **Git Integration:** Automatic commit messages via `git-agent` with fallback to conventional-format `git commit`
 
 ## Harness Calibration
@@ -250,7 +250,7 @@ The plugin exposes a lightweight feedback loop so checklists improve as models i
 
 | Mechanism | What it verifies | Ground truth |
 |-----------|------------------|--------------|
-| `/goal` (optional) | Multi-turn continuation stop rule | Transcript only — phrase conditions as narrated commit hash + Phase 6 summary |
+| `/goal` (recommended) | Multi-turn continuation stop rule | Transcript only — phrase conditions as narrated commit hash + Phase 6 summary |
 | `superpowers-evaluator` (per batch) | Artifacts, commands, checklists | Filesystem + shell |
 | `hooks/stop-state-sync.sh` (Stop) | `plan_completed` row for Phase 5a + evolution-log backfill (`retrospective_run` watermark, `item_*` deltas) | Plan artifacts + git + `docs/retros/` reports & checklist versions |
 | `/superpowers:retrospective` | Cross-plan patterns → checklist versions | Evaluation reports + post-plan-diff + evolution-log |
