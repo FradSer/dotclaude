@@ -1,23 +1,23 @@
 scopes:
     - name: acpx
-      description: agent-to-agent communication via acpx/; does not cover general automation
+      description: Agent-to-agent communication and workspace management in acpx/; does not cover general automation.
     - name: as
-      description: autonomous ML research loop plugin in autoresearch/; does not cover general automation
+      description: Autonomous ML research and experimentation plugin in autoresearch/; does not cover general automation.
     - name: cfg
-      description: claude configuration, templates, and fragments in claude-config/; does not cover specific plugin skills
+      description: Claude configuration, templates, and tech fragments in claude-config/; does not cover specific plugin-level skills.
     - name: cctx
-      description: code context and environment researcher in code-context/; does not cover documentation
+      description: Code context and environment research tools in code-context/; does not cover documentation.
     - name: fe
-      description: frontend skill definitions, rules, and sync scripts in frontend/; does not cover design docs
+      description: Frontend development skill definitions, rules, and sync scripts in frontend/; does not cover design-only documentation.
     - name: git
-      description: git plugin, commands, and commit handling in git/; does not cover gitflow branches
+      description: Git plugin commands, config, and repository setup in git/; does not cover gitflow workflow automation.
     - name: gf
-      description: gitflow branch management and workflow templates in gitflow/; does not cover base git operations
+      description: Gitflow branch lifecycle and feature management in gitflow/; does not cover base git utility operations.
     - name: gh
-      description: github issue and pull request automation in github/; does not cover general git tasks
+      description: GitHub PR monitoring, triage, and automation in github/; does not cover general git version control.
     - name: "off"
-      description: office productivity tools, including lark and prd generation in office/; does not cover general code skills
+      description: Office productivity and Lark suite integration in office/; does not cover development-focused coding skills.
     - name: po
-      description: plugin optimization agents and validation scripts in plugin-optimizer/; does not cover general plugin config
+      description: Plugin-optimizer framework for validation and optimization in plugin-optimizer/; does not cover marketplace config.
     - name: sp
-      description: superpowers framework for planning, evaluation, and execution in superpowers/; does not cover general utilities
+      description: Superpowers framework for autonomous planning, evaluation, and execution in superpowers/; does not cover general utilities.
