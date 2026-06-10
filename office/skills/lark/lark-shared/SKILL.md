@@ -14,7 +14,7 @@ description: "Use when first setting up lark-cli, running auth login, switching 
 
 当你帮用户初始化配置时，使用background方式使用下面的命令发起配置应用流程，启动后读取输出，从中提取授权链接并发给用户。
 
-**URL 转发规则**：当命令输出 `verification_url`、`verification_uri_complete`、`console_url` 等 URL 字段时：**必须生成二维码**：你必须调用 `lark-cli auth qrcode` 将 URL 转为二维码并展示给用户，这是必须步骤，不要跳过。优先生成 PNG 二维码（--output）；仅当用户明确要求时才使用 ASCII（--ascii）。**URL 输出规则**：将 URL 视为不可修改的 opaque string，不要做任何修改（包括 URL 编码/解码、添加空格或标点、重新拼接 query），建议用仅包含原始 URL 的代码块单独输出，二维码和链接请一起展示给用户。
+**URL 转发规则**：当命令输出 `verification_url`、`verification_uri_complete`、`console_url` 等 URL 字段时：**必须生成二维码**：你必须调用 `lark-cli auth qrcode` 将 URL 转为二维码并展示给用户，这是必须步骤，不要跳过。优先生成 PNG 二维码（--output）；仅当用户明确要求时才使用 ASCII（--ascii）。**URL 输出规则**：将 URL 视为不可修改的 opaque string，不要做任何修改（包括 URL 编码/解码、添加空格或标点、重新拼接 query），二维码和链接请一起展示给用户。
 
 ```bash
 # 发起配置（该命令会阻塞直到用户打开链接并完成操作或过期）
@@ -81,6 +81,29 @@ lark-cli auth login --scope "calendar:calendar:readonly" --no-wait --json
 lark-cli auth login --device-code <device_code>
 ```
 
+**Split-Flow 完整步骤**：
+
+**第一步：发起授权（当前轮）**
+
+1. 执行 `lark-cli auth login --scope "xxx" --no-wait --json`（必须加 `--no-wait --json`）
+2. 从 JSON 输出中提取 `verification_url` 和 `device_code`
+3. 生成二维码：`lark-cli auth qrcode <verification_url> --output "xxx"`
+4. 将 URL 和二维码展示给用户（先 URL，后二维码）
+5. **结束本轮对话前，必须明确告知用户**："请完成授权后，回来告诉我已授权完成，我会帮你完成后续步骤"
+
+**第二步：完成授权（后续轮）**
+
+1. 等待用户回复"已完成授权"
+2. **由你（AI agent）亲自执行**：`lark-cli auth login --device-code <device_code>`
+3. 此命令会轮询授权状态并完成登录
+4. 如果返回授权成功，流程结束
+
+**关键规则**：
+
+- **你必须亲自执行 `--device-code` 命令**，不要指示用户自行执行
+- **不要在同一轮中展示 URL 后立刻执行 `--device-code`**，这会导致用户看不到 URL
+- **禁止缓存 `verification_url` 或 `device_code`**：每次需要授权时，必须重新执行 `lark-cli auth login --no-wait --json` 生成新的链接。不要将授权链接和 device code 存入上下文供后续复用
+
 ## 更新检查
 
 lark-cli 命令执行后，如果检测到新版本，JSON 输出中会包含 `_notice.update` 字段（含 `message`、`command` 等）。
@@ -103,6 +126,7 @@ lark-cli 命令执行后，如果检测到新版本，JSON 输出中会包含 `_
 - **禁止输出密钥**（appSecret、accessToken）到终端明文。
 - **写入/删除操作前必须确认用户意图**。
 - 用 `--dry-run` 预览危险请求。
+- **文件路径只接受相对路径**：`--file`、`--output`、`--output-dir`、`@file` 等路径参数只接受 cwd 下的相对路径，传绝对路径会报 `unsafe file path`。数据输入（`@file`、大 JSON）优先用 stdin 传入，避免路径和转义问题。
 
 ## 高风险操作的审批协议（exit 10）
 

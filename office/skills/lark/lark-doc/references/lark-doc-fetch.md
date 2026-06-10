@@ -1,8 +1,6 @@
 
 # docs +fetch（获取飞书云文档）
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
-
 ## 命令
 
 ```bash
@@ -36,9 +34,8 @@ lark-cli docs +fetch --api-version v2 --doc Z1Fj...tnAc \
 | 意图 | `--detail` | 说明 |
 |------|-----------|------|
 | **只读**：浏览或总结文档内容 | `simple`（默认） | 简洁 XML/Markdown，不含 block ID、样式属性、引用元数据 |
-| **定位**：需要 block ID 与其他业务交互 | `with-ids` | 包含 block ID（如 `<p id="blkcnXXXX">`），可用于 `+update` 的 `--block-id` |
+| **定位**：需要 block ID 与其他业务交互 | `with-ids` | 包含 block ID（如 `<p id="blkcnXXXX">`），可用于 `+update` 的 `--block-id`，也可用于拼接 `文档URL#block_id` 形式的直达链接 |
 | **编辑**：任何修改文档内容的需求 | `full` | 包含 block ID + 样式属性 + 引用元数据，提供完整文档结构信息 |
-
 
 ## 选 `--scope`（读取范围）
 
@@ -138,4 +135,3 @@ lark-cli docs +fetch --api-version v2 --doc Z1Fj...tnAc \
 - [lark-doc-update](lark-doc-update.md) — 更新文档
 - [lark-doc-media-preview](lark-doc-media-preview.md) — 预览素材
 - [lark-doc-media-download](lark-doc-media-download.md) — 下载素材/画板缩略图
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
