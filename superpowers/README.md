@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.2.0
+**Version**: 3.3.0
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 **Runtime** (state-sync hook): `git` and `jq` on `PATH` — without them the single Stop hook exits silently and neither `docs/retros/plans-completed.jsonl` nor the evolution-log backfill is written
 
