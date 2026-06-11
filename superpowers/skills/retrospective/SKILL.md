@@ -20,7 +20,7 @@ A retrospective aggregates signals across plans and can span multiple turns. **L
 /goal "Claude has narrated a successful checklist-evolution commit (with commit hash) and stated the retrospective is complete" /superpowers:retrospective <plan-paths>
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration demonstrates (the commit-hash line, an explicit completion statement), never filesystem state (`checklists/ updated`, `git clean`), which is unverifiable and will time out.
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output (the commit-hash line, an explicit completion statement), never filesystem state, which is unverifiable and will time out. Full semantics and condition phrasing: `../../skills/references/goal-wrapper.md`.
 
 ## Pre-Check (run first, in order)
 
@@ -173,4 +173,5 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
 
 - `./references/analysis-patterns.md` - Failure frequency, plateau detection, never-failing analysis
 - `./references/evolution-protocol.md` - Proposal types, thresholds, version management, evolution log schema, pre-edit snapshot
+- `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared)
 - `${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh` - classifies post-plan commits as `feedback` (refactor/fix/style/perf — user correcting superpowers output) or `evolution` (feat/chore/docs/build/ci/test — user adding new requirements). Used by the Pre-Check and Phase 1 step 6 to mine the post-plan correction signal (Phase 5a)

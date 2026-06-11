@@ -18,7 +18,7 @@ Writing a plan is multi-phase work. **Launch it under Claude Code's built-in `/g
 /goal "Claude has narrated a successful plan commit (with commit hash) and reported the Phase 4 reflection sub-agent verdicts inline" /superpowers:writing-plans <design-path>
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal Phase 4 reflection summary, an explicit completion statement). Conditions written against filesystem state (`_index.md exists`, `Execution Plan YAML present`, `git commit clean`) are unverifiable and will time out. (Thin designs still short-circuit via the bail-out check below — `/goal` then simply confirms completion on the first turn.)
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output (the commit hash, the literal Phase 4 reflection summary), never filesystem state, which is unverifiable and will time out. Full semantics, condition phrasing, and bail-out interaction: `../../skills/references/goal-wrapper.md`.
 
 ## CRITICAL: Bail-Out Check (run first)
 
@@ -238,3 +238,4 @@ Plan created with clear goal/constraints, decomposed tasks with file lists and v
 - `./references/task-granularity-and-verification.md` - Guide for task breakdown and verification
 - `./references/reflection.md` - Sub-agent prompts for plan reflection
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements
+- `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared)

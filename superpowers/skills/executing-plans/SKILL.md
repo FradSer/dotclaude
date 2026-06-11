@@ -18,7 +18,7 @@ Execute written implementation plans through phase-based orchestration: Plan Rev
 /goal "Claude has emitted the Phase 6 completion message 'Plan execution complete. All N tasks verified and committed' AND has reported the final commit hash from Phase 5 in the transcript" /superpowers:executing-plans <plan>
 ```
 
-`/goal` is a **user-typed outer wrapper** (it must prefix the invocation; a skill cannot enable it for itself mid-run) — it provides the multi-turn continuation that the plugin's v2.x runtime used to provide (Removed in v3.0.0). A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (the literal Phase 6 completion-message string, the single final commit-hash narration from `git-agent commit` at Phase 5). Conditions written against filesystem state (`_index.md status=completed`, `evaluator PASS report` files, `git commit clean`) are unverifiable from the transcript and will time out. **Note**: executing-plans commits **once** at Phase 5 after all batches finish, not once per batch — do NOT phrase the condition around "per-batch commit hash" or it will never match. Per-batch evaluator verdicts ARE narrated inline during Phase 4 of each batch, but those are progress signals, not completion signals. The skill body itself is single-turn-driven and orients via `scripts/batch-progress.sh` at the top of every turn (see Step 1 below).
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output, never filesystem state. **Note**: executing-plans commits **once** at Phase 5 after all batches finish — do NOT phrase the condition around a "per-batch commit hash" or it will never match; per-batch evaluator verdicts are progress signals, not completion signals. Full semantics and condition phrasing: `../../skills/references/goal-wrapper.md`. The skill body itself is single-turn-driven and orients via `scripts/batch-progress.sh` at the top of every turn (see Step 1 below).
 
 ## Step 1 of every iteration — orient via batch-progress.sh
 
@@ -112,6 +112,7 @@ All tasks executed and verified, evidence captured, no blockers, final verificat
 - `./references/phase-3-orchestration.md` - Main-agent batch loop and coordinator spawn
 - `./references/phase-4-verification.md` - Evidence, handoff, and intra-plan learning
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
+- `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared cross-skill resource)
 - `./references/evaluation-file-formats.md` - Evaluation file format definitions (sprint contract, evaluation report, handoff summary)
 - `./references/sprint-contract-template.md` - Sprint contract template and negotiation protocol
 - `./references/handoff-template.md` - Handoff summary template for long plans

@@ -32,7 +32,7 @@ description: |
 model: inherit
 color: red
 tools: ["Read", "Grep", "Glob", "Bash"]
-disallowedTools: ["Write", "Edit", "MultiEdit", "NotebookEdit"]
+disallowedTools: ["Write", "Edit", "NotebookEdit"]
 ---
 
 You are an independent evaluator for the superpowers workflow. Read artifacts, apply a checklist, return a binary verdict with evidence. Read-only -- never modify artifacts.

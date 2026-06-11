@@ -24,7 +24,7 @@ Debugging is iterative and can span several turns of hypothesis → test → fix
 /goal "Claude has narrated the three-part completion output (root-cause one-liner, fix diff summary, regression-test path) with the regression test passing" /superpowers:systematic-debugging "<symptom>"
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition against what Claude narrates (the test-run result it prints, the three-part summary), never raw filesystem state, which is unverifiable and will time out. (A bug with a named root cause + named fix still short-circuits via the bail-out check below.)
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output (the printed test-run result, the three-part summary), never filesystem state, which is unverifiable and will time out. Full semantics, condition phrasing, and bail-out interaction: `../../skills/references/goal-wrapper.md`.
 
 ## CRITICAL: Bail-Out Check (run before Phase 1)
 
@@ -359,6 +359,7 @@ If systematic investigation reveals issue is environmental, timing-dependent, or
 - `./references/condition-based-waiting.md` - Replace arbitrary timeouts with condition polling
 - `./references/condition-based-waiting-example.ts` - Example implementation of condition-based waiting
 - `./find-polluter.sh` - Bisect test suite to identify which test pollutes shared state
+- `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared)
 
 **Related skills:**
 - `superpowers:behavior-driven-development` - BDD principles including Gherkin scenarios for test design

@@ -17,7 +17,7 @@ Brainstorming does open-ended, multi-turn research. **Launch it under Claude Cod
 /goal "Claude has narrated a successful design commit (with commit hash) and the evaluator's verdict is PASS" /superpowers:brainstorming "<problem>"
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. A fresh fast model checks the condition against the conversation transcript after each turn and re-prompts until satisfied. **The evaluator does NOT read files or run commands** ([upstream docs](https://code.claude.com/docs/en/goal)) — phrase the condition as something Claude's own narration will demonstrate (commit-hash narration from `git-agent commit`, the literal verdict line from the evaluator agent, an explicit "Phase 3 wrap-up complete" statement). Conditions written against filesystem state (`_index.md exists`, `git commit clean`) are unverifiable and will time out. (Trivial inputs still short-circuit via the bail-out check below — `/goal` then simply confirms completion on the first turn.)
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output (the commit hash, the literal evaluator verdict line), never filesystem state, which is unverifiable and will time out. Full semantics, condition phrasing, and bail-out interaction: `../../skills/references/goal-wrapper.md`.
 
 ## CRITICAL: Bail-Out Check (run before Initialization)
 
@@ -162,3 +162,4 @@ See `../../skills/references/git-commit.md` for detailed commit patterns.
 - `./references/design-and-qa.md` -- Output structures, sub-agent patterns, QA procedures
 - `./references/evaluation-checklist-reference.md` -- Design evaluation checklist reference for evaluator
 - `../../skills/references/git-commit.md` -- Git commit patterns (shared)
+- `../../skills/references/goal-wrapper.md` -- `/goal` wrapper semantics and condition phrasing (shared)

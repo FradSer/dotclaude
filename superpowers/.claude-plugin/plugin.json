@@ -13,8 +13,7 @@
     "brainstorming",
     "bdd",
     "teams",
-    "execution",
-    "claude-code>=2.1.139"
+    "execution"
   ],
   "agents": [
     "./agents/superpowers-evaluator.md"
