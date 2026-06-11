@@ -297,3 +297,4 @@ uv.lock
 .cache/
 Thumbs.db
 *.orig
+.worktrees
