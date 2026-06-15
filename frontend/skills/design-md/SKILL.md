@@ -54,7 +54,7 @@ version: alpha
 name: <string>
 description: <string>                   # optional
 colors:
-  <token-name>: "#RRGGBB"               # sRGB hex, required start with "#"
+  <token-name>: "#RRGGBB"               # any CSS color (hex/named/rgb/hsl/oklch/color-mix); hex recommended, converted to sRGB for WCAG checks
 typography:
   <token-name>:
     fontFamily: <string>

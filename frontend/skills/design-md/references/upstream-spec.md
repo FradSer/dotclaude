@@ -59,7 +59,17 @@ components:
 
 The `<scale-level>` placeholder represents a named level in a sizing or spacing scale. Common level names include `xs`, `sm`, `md`, `lg`, `xl`, and `full`. Any descriptive string key is valid.
 
-**Color**: A color value must start with "#" followed by a hex color code in the SRGB color space.
+**Color**: A color value is any valid CSS color string. Supported formats include:
+
+* Hex: `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`
+* Named colors: `red`, `cornflowerblue`, `transparent`
+* Functional: `rgb()`, `rgba()`, `hsl()`, `hsla()`, `hwb()`
+* Wide-gamut: `oklch()`, `oklab()`, `lch()`, `lab()`
+* Mixing: `color-mix(in srgb, ...)`
+
+All color values are internally converted to sRGB for WCAG contrast checking. The original format is preserved for display and export.
+
+Hex notation (`#RRGGBB`) remains the recommended default for simplicity and broad tooling support.
 
 - `fontFamily` (string)
 - `fontSize` (Dimension)

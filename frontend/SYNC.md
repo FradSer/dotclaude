@@ -4,7 +4,7 @@
 
 ## shadcn
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [shadcn-ui/ui](https://github.com/shadcn-ui/ui)
 - **路径**: `skills/shadcn/`
 - **同步脚本**: `./frontend/scripts/sync-shadcn.sh`
@@ -12,15 +12,16 @@
 
 ## impeccable
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
 - **路径**: `.claude/skills/` 与 `.claude/agents/`
 - **同步脚本**: `./frontend/scripts/sync-impeccable.sh`
 - **说明**: 子 skill 自动加 `impeccable-` 前缀；`impeccable/SKILL.md` 保留本地版本；上游 SKILL.md 存为 `reference/upstream-SKILL.md`；anti-patterns 原文保存到 `frontend/agents/references/`。
+- **每次同步后必做**: 本地 `impeccable/SKILL.md` 不由 sync 覆盖，会随上游重构而漂移（失效的 `reference/*.md` 链接、过期的 Specialized Skills 表）。同步后据实更新它——对照 `reference/` 实际文件清单、`impeccable-*` 子技能目录、以及 `reference/upstream-SKILL.md` 的命令表与设计指南，删除/改写失效链接、补齐新增项，并保留本地自定义结构（Context Gathering、Modes、子技能拆分）。
 
 ## react-best-practices
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills)
 - **路径**: `skills/react-best-practices/`
 - **同步脚本**: `./frontend/scripts/sync-vercel-skills.sh`
@@ -28,28 +29,28 @@
 
 ## web-design-guidelines
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills)
 - **路径**: `skills/web-design-guidelines/`
 - **同步脚本**: `./frontend/scripts/sync-vercel-skills.sh`
 
 ## supabase
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [supabase/agent-skills](https://github.com/supabase/agent-skills)
 - **路径**: `skills/supabase/`
 - **同步脚本**: `./frontend/scripts/sync-supabase-skills.sh`
 
 ## supabase-postgres-best-practices
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [supabase/agent-skills](https://github.com/supabase/agent-skills)
 - **路径**: `skills/supabase-postgres-best-practices/`
 - **同步脚本**: `./frontend/scripts/sync-supabase-skills.sh`
 
 ## design-md
 
-- **上次同步**: 2026-04-22
+- **上次同步**: 2026-06-16
 - **仓库**: [google-labs-code/design.md](https://github.com/google-labs-code/design.md)
 - **路径**: `skills/design-md/references/`（仅缓存上游 spec 作为审计参考；`SKILL.md` 为本地自定义集成，不由 sync 管理）
 - **同步脚本**: `./frontend/scripts/sync-design-md.sh`

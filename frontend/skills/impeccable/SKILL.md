@@ -28,26 +28,26 @@ Commit to a BOLD aesthetic direction with: Purpose, Tone (pick an extreme -- min
 
 ## Design Guidelines
 
-See `reference/upstream-SKILL.md` for the full design guide covering:
-- Typography (modular scale, fluid sizing, font selection)
-- Color & Contrast (OKLCH, 60-30-10 rule, tinted neutrals)
-- Layout & Space (4pt scale, semantic tokens, gap not margins)
-- Visual Details (absolute bans: side-stripe borders > 1px, gradient text)
-- Motion (exponential easing, staggered reveals, transform+opacity only)
-- Interaction (optimistic UI, progressive disclosure)
-- Responsive (container queries for components)
-- UX Writing (every word earns its place)
+See `reference/upstream-SKILL.md` for the full upstream design guide covering:
+- Color (contrast floors, tinted neutrals, OKLCH color strategy)
+- Typography (line length, font pairing, display clamps, text-wrap)
+- Layout (rhythm, cards-are-lazy, flex-vs-grid, semantic z-index)
+- Motion (exponential easing, reduced-motion, reveal-on-visible)
+- Interaction (stacking-context-safe overlays)
+- Absolute bans (match-and-refuse: side-stripe borders, gradient text, glassmorphism, hero-metric, eyebrows) and the AI slop test
 
-Detailed reference files for each domain:
-- `reference/typography.md` -- Type scale, font selection, line height
-- `reference/color-and-contrast.md` -- OKLCH, theming, contrast
-- `reference/spatial-design.md` -- Spacing, grid, containment
-- `reference/motion-design.md` -- Easing, transitions, orchestration
-- `reference/interaction-design.md` -- Feedback, affordance, state
-- `reference/responsive-design.md` -- Breakpoints, container queries
-- `reference/ux-writing.md` -- Microcopy, labels, error messages
-- `reference/craft.md` -- Shape-then-build workflow
-- `reference/extract.md` -- Design system extraction
+Pick the matching register guide before design work:
+- `reference/brand.md` -- design IS the product (marketing, landing, campaign, portfolio, long-form)
+- `reference/product.md` -- design SERVES the product (app UI, admin, dashboard, tools)
+
+Workflow references:
+- `reference/craft.md` -- shape-then-build a feature end-to-end
+- `reference/shape.md` -- plan UX/UI before writing code
+- `reference/extract.md` -- pull reusable tokens and components into the design system
+- `reference/init.md` -- set up project context (PRODUCT.md / DESIGN.md)
+- `reference/document.md` -- generate DESIGN.md from existing code
+- `reference/interaction-design.md` -- feedback, affordance, state
+- `reference/live.md` -- in-browser visual variant iteration
 
 ## Specialized Skills
 
