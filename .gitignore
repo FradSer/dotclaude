@@ -257,6 +257,11 @@ lerna-debug.log*
 # Sync backups
 .backup/
 
+# Sync snapshots: committed baseline for `sync-*.sh --check` (per scripts/lib/sync-common.sh).
+# Re-include from the generic `*.manifest` Python rule in the git-agent block above,
+# which would otherwise ignore them and force --check into its false-positive fallback.
+!frontend/.sync-snapshots/*.manifest
+
 # Python
 __pycache__/
 *.py[cod]
