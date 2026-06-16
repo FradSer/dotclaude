@@ -1,10 +1,10 @@
 # Frontend Plugin
 
-**Version**: 0.3.1
+**Version**: 0.5.0
 
 Web frontend development toolkit combining component management, framework tools, best practices, and design skills.
 
-## Skills (25)
+## Skills (9)
 
 ### Design System Source of Truth
 
@@ -23,6 +23,7 @@ Web frontend development toolkit combining component management, framework tools
 | next-devtools-guide   | local                                                                   | --                      |
 | react-best-practices  | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
 | web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
+| articulate            | [index.how/to/articulate](https://index.how/to/articulate)              | local (manual)          |
 
 
 ### Backend & Data
@@ -37,12 +38,12 @@ Web frontend development toolkit combining component management, framework tools
 ### Design & Quality (from impeccable)
 
 
-| Skill                         | Source                                                      | Sync Script          |
-| ----------------------------- | ----------------------------------------------------------- | -------------------- |
-| impeccable + 17 design skills | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | `sync-impeccable.sh` |
+| Skill      | Source                                                      | Sync Script          |
+| ---------- | ----------------------------------------------------------- | -------------------- |
+| impeccable | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | `sync-impeccable.sh` |
 
 
-Impeccable skills: adapt, animate, audit, bolder, clarify, colorize, critique, delight, distill, harden, impeccable, layout, optimize, overdrive, polish, quieter, shape, typeset
+`impeccable` is a **single** skill (`/impeccable`, SKILL.md tracks upstream verbatim) with sub-commands invoked as `/impeccable <command>` — craft, shape, init, document, extract, critique, audit, polish, bolder, quieter, distill, harden, onboard, animate, colorize, typeset, layout, delight, overdrive, clarify, adapt, optimize, live — each routing to `reference/<command>.md`. There are no separate `impeccable-*` skills.
 
 ## Agents (2)
 
