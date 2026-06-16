@@ -23,6 +23,11 @@ SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/shadcn-sync-$$"
 
+# shellcheck source=lib/sync-common.sh
+source "$SCRIPT_DIR/lib/sync-common.sh"
+SNAPSHOT_DIR="$SCRIPT_DIR/../.sync-snapshots"
+SNAPSHOT_KEY="shadcn"
+
 # 排除的上游目录（OpenAI 特定，Claude Code 不需要）
 EXCLUDE_DIRS=("agents" "assets")
 
@@ -319,6 +324,16 @@ main() {
     # 克隆上游
     clone_upstream
 
+    # --check:优先用上游快照判定(本地 modifications 不再造成假阳性);无快照时回退 check_diff
+    if [ "$check_only" = true ] && snapshot_exists "$SNAPSHOT_KEY" "$SNAPSHOT_DIR"; then
+        if snapshot_changed "$SNAPSHOT_KEY" "$TEMP_DIR/repo" "$SNAPSHOT_DIR"; then
+            log_info "上游较上次同步有更新,运行 $0 进行同步"
+            exit 1
+        fi
+        log_success "上游与上次同步一致,无更新"
+        exit 0
+    fi
+
     # 检查差异
     local has_diff=0
     check_diff || has_diff=$?
@@ -351,8 +366,13 @@ main() {
 
     # 执行同步
     sync_files "$no_backup"
+    snapshot_save "$SNAPSHOT_KEY" "$TEMP_DIR/repo" "$SNAPSHOT_DIR" || true
 
     log_success "同步完成!"
+
+    # 引用完整性校验(死链不阻断同步,仅提示据实更新 SKILL.md 链接)
+    echo ""
+    "$SCRIPT_DIR/check-references.sh" || log_warning "请据实修复上面的 SKILL.md 死链"
 
     # 检查是否有本地 modifications 需要 replay
     local modifications_file="$SCRIPT_DIR/../modifications/shadcn.md"

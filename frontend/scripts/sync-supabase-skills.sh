@@ -21,6 +21,11 @@ TARGET_DIR="$SCRIPT_DIR/../skills"
 SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 TEMP_DIR="/tmp/supabase-skills-sync-$$"
 
+# shellcheck source=lib/sync-common.sh
+source "$SCRIPT_DIR/lib/sync-common.sh"
+SNAPSHOT_DIR="$SCRIPT_DIR/../.sync-snapshots"
+SNAPSHOT_KEY="supabase-skills"
+
 # 要同步的 skill 目录
 SKILL_DIRS=("supabase" "supabase-postgres-best-practices")
 
@@ -246,6 +251,16 @@ main() {
     check_requirements
     clone_upstream
 
+    # --check:优先用上游快照判定(本地 modifications 不再造成假阳性);无快照时回退 check_diff
+    if [ "$check_only" = true ] && snapshot_exists "$SNAPSHOT_KEY" "$SNAPSHOT_DIR"; then
+        if snapshot_changed "$SNAPSHOT_KEY" "$TEMP_DIR/repo" "$SNAPSHOT_DIR"; then
+            log_info "上游较上次同步有更新,运行 $0 进行同步"
+            exit 1
+        fi
+        log_success "上游与上次同步一致,无更新"
+        exit 0
+    fi
+
     local has_diff=0
     check_diff || has_diff=$?
 
@@ -266,8 +281,13 @@ main() {
     fi
 
     sync_files "$no_backup"
+    snapshot_save "$SNAPSHOT_KEY" "$TEMP_DIR/repo" "$SNAPSHOT_DIR" || true
 
     log_success "同步完成!"
+
+    # 引用完整性校验(死链不阻断同步,仅提示据实更新 SKILL.md 链接)
+    echo ""
+    "$SCRIPT_DIR/check-references.sh" || log_warning "请据实修复上面的 SKILL.md 死链"
 
     # 检查是否有本地 modifications 需要 replay
     local modifications_dir="$SCRIPT_DIR/../modifications"

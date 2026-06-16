@@ -2,7 +2,8 @@
 #
 # Impeccable Skills 同步脚本
 # 从 pbakaus/impeccable 仓库同步 .claude/skills/ 和 .claude/agents/anti-patterns.md
-# 子 skill 自动添加 impeccable- 前缀（impeccable 本身不加）
+# 上游为单一 impeccable skill（v3.6.0 起把各命令合并为 reference/<cmd>.md）；
+# 本地不再拆分 impeccable-* 子技能，目录名直接沿用上游名。
 #
 
 set -euo pipefail
@@ -25,18 +26,18 @@ TARGET_AGENTS_DIR="$SCRIPT_DIR/../agents"
 SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 TEMP_DIR="/tmp/impeccable-sync-$$"
 
-# impeccable skill 的 SKILL.md 保留本地版本，上游原文存为 reference
-IMPECCABLE_LOCAL_SKILL=true
+# shellcheck source=lib/sync-common.sh
+source "$SCRIPT_DIR/lib/sync-common.sh"
+SNAPSHOT_DIR="$SCRIPT_DIR/../.sync-snapshots"
+SNAPSHOT_KEY="impeccable"
+
+# impeccable skill 的本地 SKILL.md 由 modifications/impeccable.md 声明式重放（与 shadcn/vercel 同机制），
+# sync 不再特殊保留它；上游原文仍存为 reference/upstream-SKILL.md 供查阅与 diff。
 
 # 上游名 -> 本地目录名映射
-# impeccable 保持原名，其余加 impeccable- 前缀
+# 上游现为单一 impeccable skill，目录名直接沿用（不再拆分 impeccable-* 子技能）
 get_target_name() {
-    local upstream_name="$1"
-    if [ "$upstream_name" = "impeccable" ]; then
-        echo "impeccable"
-    else
-        echo "impeccable-$upstream_name"
-    fi
+    echo "$1"
 }
 
 # 帮助信息
@@ -55,7 +56,7 @@ ${GREEN}选项:${NC}
 
 ${GREEN}同步内容:${NC}
     - .claude/skills/impeccable -> frontend/skills/impeccable
-    - .claude/skills/<name>     -> frontend/skills/impeccable-<name>
+      (SKILL.md 保留本地版本并由 modifications/impeccable.md 重放;上游原文存为 reference/upstream-SKILL.md)
     - .claude/agents/anti-patterns.md -> frontend/agents/references/
 
 ${GREEN}上游仓库:${NC}
@@ -224,36 +225,21 @@ sync_skill() {
 
     mkdir -p "$skill_target"
 
-    # 构建跳过列表
-    local skip_files=()
+    # impeccable 标记仅用于把上游 SKILL.md 另存为 reference/upstream-SKILL.md
     local is_impeccable=false
+    [ "$skill_name" = "impeccable" ] && is_impeccable=true
 
-    if [ "$skill_name" = "impeccable" ] && [ "$IMPECCABLE_LOCAL_SKILL" = true ]; then
-        skip_files+=("SKILL.md")
-        is_impeccable=true
-    fi
-
-    # 删除旧内容（保留本地文件和备份）
+    # 删除旧内容（仅保留 .backup；本地 curated SKILL.md 由 modifications/impeccable.md 重放恢复）
     while IFS= read -r -d '' item; do
         local basename
         basename=$(basename "$item")
-        local skip=false
-        for sf in "${skip_files[@]}"; do
-            [ "$basename" = "$sf" ] && skip=true && break
-        done
-        [ "$basename" = ".backup" ] && skip=true
-        [ "$skip" = true ] && continue
+        [ "$basename" = ".backup" ] && continue
         rm -rf "$item"
     done < <(find "$skill_target" -maxdepth 1 -mindepth 1 -print0)
 
-    # 复制上游内容（impeccable 跳过 SKILL.md）
+    # 复制上游内容（含上游 SKILL.md，稍后由 replay 覆盖为本地 curated 版）
     local count=0
     while IFS= read -r -d '' item; do
-        local item_basename
-        item_basename=$(basename "$item")
-        if [ "$is_impeccable" = true ] && [ "$item_basename" = "SKILL.md" ]; then
-            continue
-        fi
         cp -R "$item" "$skill_target/"
         count=$((count + 1))
     done < <(find "$upstream_skill" -maxdepth 1 -mindepth 1 -print0)
@@ -264,9 +250,6 @@ sync_skill() {
         cp "$upstream_skill/SKILL.md" "$skill_target/reference/upstream-SKILL.md"
         log_info "  $target_name: 上游 SKILL.md 已保存为 reference/upstream-SKILL.md"
     fi
-
-    # 子 skill 保留 user-invocable: true，让 frontend-expert agent 可以通过
-    # Skill 工具显式加载它们（否则 Skill tool 只能调用列出的 skills）
 
     log_success "  $target_name: 已同步 $count 个项目"
 }
@@ -342,6 +325,16 @@ main() {
     check_requirements
     clone_upstream
 
+    # --check:优先用上游快照判定(本地 modifications 不再造成假阳性);无快照时回退 check_diff
+    if [ "$check_only" = true ] && snapshot_exists "$SNAPSHOT_KEY" "$SNAPSHOT_DIR"; then
+        if snapshot_changed "$SNAPSHOT_KEY" "$TEMP_DIR/repo" "$SNAPSHOT_DIR"; then
+            log_info "上游较上次同步有更新,运行 $0 进行同步"
+            exit 1
+        fi
+        log_success "上游与上次同步一致,无更新"
+        exit 0
+    fi
+
     local has_diff=0
     check_diff || has_diff=$?
 
@@ -362,8 +355,13 @@ main() {
     fi
 
     sync_files "$no_backup"
+    snapshot_save "$SNAPSHOT_KEY" "$TEMP_DIR/repo" "$SNAPSHOT_DIR" || true
 
     log_success "同步完成!"
+
+    # 引用完整性校验(死链不阻断同步,仅提示据实更新 SKILL.md 链接)
+    echo ""
+    "$SCRIPT_DIR/check-references.sh" || log_warning "请据实修复上面的 SKILL.md 死链"
 
     # 检查是否有本地 modifications 需要 replay
     local modifications_dir="$SCRIPT_DIR/../modifications"
@@ -371,8 +369,7 @@ main() {
     while IFS= read -r -d '' mod_file; do
         local name
         name=$(basename "$mod_file" .md)
-        # impeccable 或 impeccable-* 都属于本脚本管辖
-        if [ "$name" = "impeccable" ] || [[ "$name" == impeccable-* ]]; then
+        if [ "$name" = "impeccable" ]; then
             local count
             count=$(grep -c "^## " "$mod_file" 2>/dev/null || echo 0)
             pending=$((pending + count))
@@ -381,8 +378,8 @@ main() {
 
     if [ $pending -gt 0 ]; then
         echo ""
-        log_warning "检测到 $pending 条本地 modification 需要 replay"
-        log_warning "请让 Claude 读取 frontend/modifications/impeccable*.md 并重新应用到对应目标文件"
+        log_warning "检测到 $pending 条本地 modification 需要 replay(本地 curated SKILL.md 已被上游版覆盖)"
+        log_warning "请让 Claude 读取 frontend/modifications/impeccable.md 并重新应用到 skills/impeccable/SKILL.md"
         echo ""
     fi
 

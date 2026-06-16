@@ -14,10 +14,10 @@
 
 - **上次同步**: 2026-06-16
 - **仓库**: [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
-- **路径**: `.claude/skills/` 与 `.claude/agents/`
+- **路径**: `skills/impeccable/`（单一 skill）与 `agents/references/anti-patterns.md`
 - **同步脚本**: `./frontend/scripts/sync-impeccable.sh`
-- **说明**: 子 skill 自动加 `impeccable-` 前缀；`impeccable/SKILL.md` 保留本地版本；上游 SKILL.md 存为 `reference/upstream-SKILL.md`；anti-patterns 原文保存到 `frontend/agents/references/`。
-- **每次同步后必做**: 本地 `impeccable/SKILL.md` 不由 sync 覆盖，会随上游重构而漂移（失效的 `reference/*.md` 链接、过期的 Specialized Skills 表）。同步后据实更新它——对照 `reference/` 实际文件清单、`impeccable-*` 子技能目录、以及 `reference/upstream-SKILL.md` 的命令表与设计指南，删除/改写失效链接、补齐新增项，并保留本地自定义结构（Context Gathering、Modes、子技能拆分）。
+- **说明**: 上游自 v3.6.0 起为**单一 `impeccable` skill**（各命令合并为 `reference/<cmd>.md`）。本地不再拆分 `impeccable-*` 子技能（2026-06-16 已删除 17 个孤立目录，回归单 skill）。sync 像其他 skill 一样**整体覆盖**目录（含 SKILL.md），上游 SKILL.md 另存为 `reference/upstream-SKILL.md`；anti-patterns 原文存入 `frontend/agents/references/`。
+- **本地 SKILL.md 改动机制**: curated 版 `SKILL.md` 由 `modifications/impeccable.md` 声明式重放（与 shadcn/vercel 同机制）。sync 后 `SKILL.md` 是上游版，需让 Claude 重放 `modifications/impeccable.md` 恢复 curated 版（脚本会打印提示）。**不再有「手工据实协调」这条路径。** 收尾的 `check-references.sh` 会校验 SKILL.md 的 reference 链接是否仍解析；上游删/改 reference 文件导致的死链会当场报出，据实更新 `modifications/impeccable.md` 里的链接即可。
 
 ## react-best-practices
 
@@ -78,4 +78,13 @@
 # design-md spec
 ./frontend/scripts/sync-design-md.sh --check
 ./frontend/scripts/sync-design-md.sh
+
+# 引用完整性独立校验(也在每次 sync 收尾自动运行)
+./frontend/scripts/check-references.sh
 ```
+
+## 同步体系约定
+
+- **`scripts/lib/sync-common.sh`** — 共享 lib。`--check` 优先比对「当前上游 vs 上次同步快照」（`.sync-snapshots/<key>.manifest`，随仓库提交），而非「本地 vs 上游」。本地有 modifications 重放的源（shadcn / vercel / impeccable）因此不再永远误报「有更新」。无快照时回退旧的本地比对（首次 sync 后建立快照基线）。design-md 是全量 clone 且无本地改动，不接入快照。
+- **`scripts/check-references.sh`** — 扫描所有 `SKILL.md` 的 `reference/*.md` 链接是否解析；每次 sync 收尾自动运行（死链不阻断同步,仅告警）。上游删除/重命名 reference 文件造成的死链会当场暴露。
+- **`modifications/*.md`** — 所有「sync 覆盖后需重放的本地改动」的唯一声明式来源（react-best-practices / shadcn / impeccable）。sync 脚本打印 replay 提示;让 Claude 读对应文件重新应用。

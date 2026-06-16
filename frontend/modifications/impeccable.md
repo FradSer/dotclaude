@@ -1,3 +1,36 @@
+# Modifications — impeccable
+
+Upstream: `pbakaus/impeccable` → `skills/impeccable`
+Sync script: `scripts/sync-impeccable.sh`
+
+Upstream ships a single `impeccable` skill (v3.6.0+ consolidated every command into
+`reference/<cmd>.md`). The sync script wipes the skill directory and copies upstream
+content verbatim — **including upstream's own `SKILL.md`** — then saves that upstream
+`SKILL.md` to `reference/upstream-SKILL.md`. The frontend plugin exposes a *curated*
+local `SKILL.md` instead (slim entry point + Context Gathering Protocol + sub-command
+index). Re-apply the block below after every sync to restore it.
+
+> Why curated rather than upstream-verbatim: upstream's `SKILL.md` is a long
+> standalone-CLI guide with `npx impeccable` setup scripts and a 20-command
+> argument-hint. The local version is a slim plugin entry that defers the full guide
+> to `reference/upstream-SKILL.md` and indexes the sub-commands.
+
+---
+
+## Replace: SKILL.md — curated local entry point
+
+**Target**: `skills/impeccable/SKILL.md`
+
+**Intent**: The sync copies upstream's `SKILL.md` into place; overwrite it with the
+curated local version below. This is the plugin's user-facing `/impeccable` entry: it
+keeps context-gathering enforcement and a sub-command index, and points to
+`reference/upstream-SKILL.md` for the full upstream design guide. Keep the reference
+links in sync with the files that actually exist under `reference/` (the post-sync
+`check-references.sh` run will flag any that don't).
+
+**Content**: overwrite the entire file with:
+
+````markdown
 ---
 name: impeccable
 description: Create distinctive, production-grade frontend interfaces with high design quality. Generates creative, polished code that avoids generic AI aesthetics. Use when the user asks to build web components, pages, artifacts, posters, or applications, or when any design skill requires project context. Call with 'craft' for shape-then-build, 'teach' for design context setup, or 'extract' to pull reusable components and tokens into the design system.
@@ -82,3 +115,12 @@ Invoke these as `/impeccable <command> [target]`. Each loads its reference file 
 - **`craft`**: Shape-then-build flow from `reference/craft.md` -- pass feature description as additional args
 - **`teach`**: One-time design context setup -- explore codebase, ask questions, save to `.impeccable.md`
 - **`extract`**: Pull reusable components and tokens into the design system per `reference/extract.md`
+````
+
+**Added**: 2026-06-16
+
+> Known staleness to revisit (not a sync concern): upstream deprecated `teach` in
+> favor of `init` and now uses `PRODUCT.md`/`DESIGN.md` (via `scripts/context.mjs`)
+> rather than `.impeccable.md`. The curated entry above still documents the older
+> `teach` / `.impeccable.md` convention. Refresh deliberately when revisiting the
+> skill's setup flow.

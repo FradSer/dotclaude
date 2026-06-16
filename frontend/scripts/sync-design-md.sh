@@ -22,6 +22,9 @@ TARGET_DIR="$SCRIPT_DIR/../skills/design-md/references"
 SYNC_FILE="$SCRIPT_DIR/../SYNC.md"
 TEMP_DIR="/tmp/design-md-sync-$$"
 
+# 注:design-md 不接入 .sync-snapshots 快照——它是全量 clone(快照会被无关上游改动污染),
+# 且本地仅缓存上游原文(无 modifications 重放),check_diff 比对本身已准确,无假阳性。
+
 # 上游路径 <-> 本地缓存文件名(同索引对应)
 UPSTREAM_FILES=("docs/spec.md" "README.md")
 CACHE_NAMES=("upstream-spec.md" "upstream-README.md")
@@ -260,6 +263,10 @@ main() {
     sync_files "$no_backup"
 
     log_success "同步完成!"
+
+    # 引用完整性校验(死链不阻断同步,仅提示据实更新 SKILL.md 链接)
+    echo ""
+    "$SCRIPT_DIR/check-references.sh" || log_warning "请据实修复上面的 SKILL.md 死链"
 
     # 检查是否有本地 modifications 需要 replay
     local modifications_file="$SCRIPT_DIR/../modifications/design-md.md"
