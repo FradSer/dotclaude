@@ -55,7 +55,7 @@ All skills are registered in the `frontend` plugin. Invoke them with the fully q
 |----------|---------|---------|
 | `frontend:design-md` | DESIGN.md spec (Google Labs `@google/design.md`): YAML token authoring, lint (broken refs, WCAG contrast, section order), `diff` regression check, `export --format tailwind` / `dtcg`, Tailwind v4 `@theme` transform | `DESIGN.md` present at root or `docs/`, design-token work, "design system spec", translating brand → tokens, auditing token consistency |
 
-**This skill is upstream of every other design skill.** When `DESIGN.md` exists, load it *first* and let it ground the rest of the pipeline — `impeccable-colorize`, `impeccable-typeset`, `impeccable-audit`, `web-design-guidelines`, and `shadcn` should all defer to its tokens and prose rather than heuristic defaults.
+**This skill is upstream of every other design skill.** When `DESIGN.md` exists, load it *first* and let it ground the rest of the pipeline — `frontend:impeccable` (and its `colorize` / `typeset` / `audit` flows), `frontend:web-design-guidelines`, and `frontend:shadcn` should all defer to its tokens and prose rather than heuristic defaults.
 
 ### Component & Framework
 
@@ -65,6 +65,7 @@ All skills are registered in the `frontend` plugin. Invoke them with the fully q
 | `frontend:next-devtools-guide` | Next.js MCP server, runtime diagnostics, Cache Components | Next.js project, dev server running |
 | `frontend:react-best-practices` | 70+ React/Next.js performance rules across 8 categories | Writing React code, performance optimization |
 | `frontend:web-design-guidelines` | Web Interface Guidelines compliance review | UI code review for standards compliance |
+| `frontend:articulate` | Precise design vocabulary — ~188 terms across 12 domains — for naming and communicating design decisions, critiques, reviews | Writing/sharpening critique · review · handoff copy, describing a UI issue precisely, unsure of the exact term |
 
 ### Backend & Data
 
@@ -73,33 +74,24 @@ All skills are registered in the `frontend` plugin. Invoke them with the fully q
 | `frontend:supabase` | Supabase fundamentals, security checklist, CLI, MCP | Any Supabase task, RLS, auth, storage |
 | `frontend:supabase-postgres-best-practices` | 30+ Postgres optimization rules | Database queries, schema design, connection management |
 
-### Design & Quality (from impeccable)
+### Design hub (impeccable — one skill, many sub-commands)
+
+`frontend:impeccable` is a **single** user-invocable skill (`/impeccable`), not a family of skills. It owns design direction plus the sub-commands below — **there are no separate `frontend:impeccable-*` skills** (they were consolidated upstream into `reference/<command>.md`).
 
 | Skill ID | Purpose | Trigger |
 |----------|---------|---------|
-| `frontend:impeccable` | Core design skill: typography, color, layout, motion, interaction | Any design work, establishing design direction |
-| `frontend:impeccable-critique` | Nielsen's 10 Usability Heuristics evaluation | UX evaluation, usability review |
-| `frontend:impeccable-audit` | Technical quality checks: accessibility, performance, standards | Pre-ship quality gate |
-| `frontend:impeccable-polish` | Final quality pass: alignment, typography, spacing fixes | Last-mile refinement |
-| `frontend:impeccable-optimize` | UI performance: rendering, paint, layout optimization | Slow UI, jank, performance issues |
+| `frontend:impeccable` | Core design skill: typography, color, layout, motion, interaction — plus all sub-commands below | Any design work, establishing design direction |
 
-### Design Transformation
+**To run a sub-command**, **Load `frontend:impeccable` skill** with the sub-command as its argument (e.g. argument `audit`); impeccable routes to `reference/<command>.md` and follows that flow. Sub-commands by intent:
 
-| Skill ID | Purpose | Trigger |
-|----------|---------|---------|
-| `frontend:impeccable-bolder` | Amplify safe/boring designs to be more distinctive | Design feels generic or safe |
-| `frontend:impeccable-quieter` | Tone down overstimulating or aggressive designs | Design feels overwhelming |
-| `frontend:impeccable-colorize` | Add strategic color to monochrome/neutral interfaces | Needs more color, visual hierarchy |
-| `frontend:impeccable-typeset` | Typography improvements: font choice, scale, rhythm | Typography feels off or generic |
-| `frontend:impeccable-delight` | Add moments of joy, personality, unexpected touches | Design feels lifeless |
-| `frontend:impeccable-overdrive` | Push past conventional limits for maximum impact | Need to make a strong impression |
-| `frontend:impeccable-distill` | Strip to essence, remove visual noise | Too much going on, needs simplification |
-| `frontend:impeccable-clarify` | Improve UX copy, error messages, microcopy | Confusing labels, unclear messaging |
-| `frontend:impeccable-animate` | Add purposeful motion and transitions | Needs movement, feels static |
-| `frontend:impeccable-adapt` | Responsive design across screens, devices, contexts | Responsive issues, multi-device support |
-| `frontend:impeccable-layout` | Layout structure and spatial organization | Layout problems, grid/flex issues |
-| `frontend:impeccable-shape` | Visual shape and form refinement | Element shapes feel off |
-| `frontend:impeccable-harden` | Defensive design: edge cases, error states, resilience | Missing error states, fragile UI |
+| Intent | Sub-commands | When |
+|--------|-------------|------|
+| Build | `craft` · `shape` · `init` · `document` · `extract` | shape-then-build a feature · plan UX before code · set up PRODUCT.md/DESIGN.md · generate spec from code · pull reusable tokens/components |
+| Evaluate | `critique` · `audit` | heuristic UX review · technical quality gate (a11y / perf / responsive) |
+| Refine | `polish` · `bolder` · `quieter` · `distill` · `harden` · `onboard` | last-mile fixes · amplify safe designs · tone down loud ones · strip to essence · edge cases & errors · first-run / empty states |
+| Enhance | `animate` · `colorize` · `typeset` · `layout` · `delight` · `overdrive` | motion · strategic color · typography · spacing & hierarchy · personality · maximum impact |
+| Fix | `clarify` · `adapt` · `optimize` | UX copy & microcopy · responsive / multi-device · UI performance |
+| Iterate | `live` | in-browser visual variant iteration |
 
 ### Companion Agent
 
@@ -108,6 +100,8 @@ All skills are registered in the `frontend` plugin. Invoke them with the fully q
 | `frontend-anti-patterns` | Detect UI anti-patterns: AI slop and quality issues | Anti-pattern scan, design quality audit |
 
 Launch the companion agent via the Task tool when anti-pattern detection is part of the plan — do not try to invoke it as a skill.
+
+**Articulating findings.** When writing critiques, reviews, or design rationale, **Load `frontend:articulate` skill** using the Skill tool for precise terminology — name the domain + term + state (e.g. "Interaction: missing `focus-visible` state") instead of vague feedback ("feels unfinished"). It pairs with `frontend:impeccable` (and its `critique`) and `frontend:web-design-guidelines`.
 
 ## Skill Invocation
 
@@ -130,6 +124,7 @@ Rules:
 3. **Announce before loading.** Say which skill and why in one sentence so the user can redirect before context is spent.
 4. **Don't echo skill content.** Let the Skill tool load the SKILL.md body; summarize only the decisions you make from it.
 5. **Pure triage = no load.** If the user only asked "which skill?", answer with the qualified IDs and stop — don't load anything.
+6. **impeccable sub-commands.** impeccable is one skill, not a family. To run `critique` / `audit` / `polish` / `colorize` / etc., **Load `frontend:impeccable` skill** with the sub-command as the argument — never `frontend:impeccable-<cmd>` (no such skill exists; it routes to `reference/<command>.md`).
 
 ## Approach
 
@@ -154,26 +149,27 @@ Each pipeline below shows the canonical load order. Execute them left-to-right: 
 
 **Pre-ship review**
 1. **Load `frontend:design-md` skill** using the Skill tool (run `lint` + `diff` vs baseline, surface broken refs and contrast failures — skip if no DESIGN.md)
-2. **Load `frontend:impeccable-audit` skill** using the Skill tool (technical quality gate; incorporate lint findings)
-3. **Load `frontend:impeccable-critique` skill** using the Skill tool (heuristic UX review; cite DESIGN.md Do's and Don'ts)
-4. **Load `frontend:impeccable-polish` skill** using the Skill tool (last-mile fixes)
-5. Launch the `frontend-anti-patterns` agent via the Task tool (slop + quality scan)
+2. **Load `frontend:impeccable` skill** using the Skill tool (argument: `audit`) — technical quality gate; incorporate lint findings
+3. **Load `frontend:impeccable` skill** using the Skill tool (argument: `critique`) — heuristic UX review; cite DESIGN.md Do's and Don'ts
+4. **Load `frontend:impeccable` skill** using the Skill tool (argument: `polish`) — last-mile fixes
+5. **Load `frontend:articulate` skill** using the Skill tool — write up the findings in precise terms (domain + term + state) so the report is actionable
+6. Launch the `frontend-anti-patterns` agent via the Task tool (slop + quality scan)
 
 **Design improvement**
 1. **Load `frontend:design-md` skill** using the Skill tool (establish token ground truth — read existing spec or propose authoring one)
-2. **Load `frontend:impeccable-critique` skill** using the Skill tool (diagnose)
+2. **Load `frontend:impeccable` skill** using the Skill tool (argument: `critique`) — diagnose
 3. **Load `frontend:impeccable` skill** using the Skill tool (direction, constrained by DESIGN.md tokens)
-4. **Load `frontend:impeccable-<targeted>` skill** using the Skill tool — pick from `-bolder`, `-colorize`, `-typeset`, `-distill`, `-delight`, etc., based on the diagnosis. Each targeted skill must reuse DESIGN.md tokens when present; propose new tokens rather than inline hex.
+4. **Load `frontend:impeccable` skill** using the Skill tool (argument: a targeted sub-command — `bolder` / `colorize` / `typeset` / `distill` / `delight`) based on the diagnosis. Reuse DESIGN.md tokens when present; propose new tokens rather than inline hex.
 
 **Tokenize existing UI**
 1. **Load `frontend:design-md` skill** using the Skill tool (extract current palette + type scale into a DESIGN.md draft)
-2. **Load `frontend:impeccable-colorize` skill** or **`frontend:impeccable-typeset` skill** using the Skill tool (refine candidate tokens)
+2. **Load `frontend:impeccable` skill** using the Skill tool (argument: `colorize` or `typeset`) — refine candidate tokens
 3. **Load `frontend:design-md` skill** using the Skill tool again (lint, export to Tailwind v4 `@theme`, wire into stylesheet)
 4. **Load `frontend:shadcn` skill** using the Skill tool (rebind component styles to new semantic variables)
 
 **Performance work**
 1. **Load `frontend:react-best-practices` skill** using the Skill tool
-2. **Load `frontend:impeccable-optimize` skill** using the Skill tool
+2. **Load `frontend:impeccable` skill** using the Skill tool (argument: `optimize`)
 3. **Load `frontend:next-devtools-guide` skill** using the Skill tool (runtime diagnostics)
 
 **Backend / data**
