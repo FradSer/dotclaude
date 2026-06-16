@@ -18,6 +18,8 @@ import {
   EDIT_COUNT_THRESHOLD,
   GENERATED_PATH,
   SENSITIVE_PATH,
+  appendDesignSystemNote,
+  designSystemOptions,
   filterFindings,
   loadDetector,
   matchesAnyGlob,
@@ -415,10 +417,11 @@ async function main() {
   if (!detector || typeof detector.detectText !== 'function') {
     return allow({ ...audit, skipped: 'detector-missing', durationMs: Date.now() - started });
   }
+  const scanOptions = designSystemOptions(config, detector, cwd);
 
   let findings = [];
   try {
-    findings = await detector.detectText(content, filePath);
+    findings = await detector.detectText(content, filePath, scanOptions);
   } catch {
     return allow({ ...audit, error: 'detector-threw', durationMs: Date.now() - started });
   }
@@ -433,7 +436,7 @@ async function main() {
     });
   }
 
-  const message = cursorBlockMessage(filtered, filePath, config, cwd);
+  const message = appendDesignSystemNote(cursorBlockMessage(filtered, filePath, config, cwd), scanOptions);
   const sessionId = event.session_id || event.conversation_id || 'unknown';
   const cache = readCache(cwd);
   const denial = bumpCursorDenial(cache, sessionId, filePath, filtered);

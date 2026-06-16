@@ -31,8 +31,9 @@ source "$SCRIPT_DIR/lib/sync-common.sh"
 SNAPSHOT_DIR="$SCRIPT_DIR/../.sync-snapshots"
 SNAPSHOT_KEY="impeccable"
 
-# impeccable skill 的本地 SKILL.md 由 modifications/impeccable.md 声明式重放（与 shadcn/vercel 同机制），
-# sync 不再特殊保留它；上游原文仍存为 reference/upstream-SKILL.md 供查阅与 diff。
+# impeccable skill 的 SKILL.md 追随上游原文（verbatim，无 curated 重放；按「所有内容以上游为优先」）。
+# sync 整体覆盖目录（含上游 SKILL.md，即最终版）；同源副本另存为 reference/upstream-SKILL.md 供查阅与 diff。
+# modifications/impeccable.md 不含可重放块（replay 计数为 0），仅文档化脚本路径取舍选项。
 
 # 上游名 -> 本地目录名映射
 # 上游现为单一 impeccable skill，目录名直接沿用（不再拆分 impeccable-* 子技能）
@@ -56,7 +57,7 @@ ${GREEN}选项:${NC}
 
 ${GREEN}同步内容:${NC}
     - .claude/skills/impeccable -> frontend/skills/impeccable
-      (SKILL.md 保留本地版本并由 modifications/impeccable.md 重放;上游原文存为 reference/upstream-SKILL.md)
+      (SKILL.md = 上游原文 verbatim,无重放;同源副本另存为 reference/upstream-SKILL.md 供 diff)
     - .claude/agents/anti-patterns.md -> frontend/agents/references/
 
 ${GREEN}上游仓库:${NC}
@@ -229,7 +230,7 @@ sync_skill() {
     local is_impeccable=false
     [ "$skill_name" = "impeccable" ] && is_impeccable=true
 
-    # 删除旧内容（仅保留 .backup；本地 curated SKILL.md 由 modifications/impeccable.md 重放恢复）
+    # 删除旧内容（仅保留 .backup；SKILL.md 随后由上游原文覆盖，即最终版，无重放）
     while IFS= read -r -d '' item; do
         local basename
         basename=$(basename "$item")
@@ -237,7 +238,7 @@ sync_skill() {
         rm -rf "$item"
     done < <(find "$skill_target" -maxdepth 1 -mindepth 1 -print0)
 
-    # 复制上游内容（含上游 SKILL.md，稍后由 replay 覆盖为本地 curated 版）
+    # 复制上游内容（含上游 SKILL.md，即最终 verbatim 版，无重放覆盖）
     local count=0
     while IFS= read -r -d '' item; do
         cp -R "$item" "$skill_target/"
@@ -378,8 +379,8 @@ main() {
 
     if [ $pending -gt 0 ]; then
         echo ""
-        log_warning "检测到 $pending 条本地 modification 需要 replay(本地 curated SKILL.md 已被上游版覆盖)"
-        log_warning "请让 Claude 读取 frontend/modifications/impeccable.md 并重新应用到 skills/impeccable/SKILL.md"
+        log_warning "检测到 $pending 条 impeccable 本地 modification 需要 replay"
+        log_warning "请让 Claude 读取 frontend/modifications/impeccable.md 并按各 Target 重新应用到对应文件"
         echo ""
     fi
 

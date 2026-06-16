@@ -73,6 +73,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   enabled: true,
   quiet: false,
   auditLog: null,
+  designSystem: { enabled: true },
   ignoreRules: [],
   ignoreFiles: [],
   ignoreValues: [],
@@ -135,10 +136,14 @@ export function resolveProjectCwd(event, fallback = process.cwd()) {
 
 export function readConfig(cwd) {
   const config = cloneDefaultConfig();
-  // Hook settings live under the `hook` key of config.json (shared) and
-  // config.local.json (per-developer, gitignored); local wins.
-  applyConfigSource(config, hookSection(safeReadJson(getConfigPath(cwd))));
-  applyConfigSource(config, hookSection(safeReadJson(getLocalConfigPath(cwd))));
+  // Hook runtime settings live under `hook`; detector filters live under
+  // `detector`. Back-compat: older configs stored detector filters in `hook`,
+  // so read those first and let canonical `detector` settings win.
+  for (const filePath of [getConfigPath(cwd), getLocalConfigPath(cwd)]) {
+    const raw = safeReadJson(filePath);
+    applyConfigSource(config, hookSection(raw));
+    applyDetectorConfigSource(config, detectorSection(raw));
+  }
   return config;
 }
 
@@ -146,6 +151,11 @@ export function readConfig(cwd) {
 function hookSection(raw) {
   if (!raw || typeof raw !== 'object') return null;
   return raw.hook && typeof raw.hook === 'object' && !Array.isArray(raw.hook) ? raw.hook : null;
+}
+
+function detectorSection(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  return raw.detector && typeof raw.detector === 'object' && !Array.isArray(raw.detector) ? raw.detector : null;
 }
 
 function numberOr(value, fallback) {
@@ -158,8 +168,29 @@ function cloneDefaultConfig() {
     ignoreRules: [],
     ignoreFiles: [],
     ignoreValues: [],
+    designSystem: { ...DEFAULT_CONFIG.designSystem },
     limits: { ...DEFAULT_CONFIG.limits },
   };
+}
+
+function applyDetectorConfigSource(config, raw) {
+  if (!raw || typeof raw !== 'object') return config;
+  if (raw.designSystem && typeof raw.designSystem === 'object' && !Array.isArray(raw.designSystem)) {
+    config.designSystem = {
+      ...config.designSystem,
+      enabled: raw.designSystem.enabled === false ? false : true,
+    };
+  }
+  if (Array.isArray(raw.ignoreRules)) {
+    config.ignoreRules = uniqueStrings([...config.ignoreRules, ...raw.ignoreRules]);
+  }
+  if (Array.isArray(raw.ignoreFiles)) {
+    config.ignoreFiles = uniqueStrings([...config.ignoreFiles, ...raw.ignoreFiles]);
+  }
+  if (Array.isArray(raw.ignoreValues)) {
+    config.ignoreValues = mergeIgnoreValues(config.ignoreValues, raw.ignoreValues);
+  }
+  return config;
 }
 
 function applyConfigSource(config, raw) {
@@ -173,15 +204,7 @@ function applyConfigSource(config, raw) {
   if (typeof raw.auditLog === 'string' && raw.auditLog.trim()) {
     config.auditLog = raw.auditLog.trim();
   }
-  if (Array.isArray(raw.ignoreRules)) {
-    config.ignoreRules = uniqueStrings([...config.ignoreRules, ...raw.ignoreRules]);
-  }
-  if (Array.isArray(raw.ignoreFiles)) {
-    config.ignoreFiles = uniqueStrings([...config.ignoreFiles, ...raw.ignoreFiles]);
-  }
-  if (Array.isArray(raw.ignoreValues)) {
-    config.ignoreValues = mergeIgnoreValues(config.ignoreValues, raw.ignoreValues);
-  }
+  applyDetectorConfigSource(config, raw);
   if (raw.limits && typeof raw.limits === 'object') {
     config.limits = {
       maxFindings: numberOr(raw.limits.maxFindings, config.limits.maxFindings),
@@ -208,6 +231,157 @@ function normalizeIgnoreRule(rule) {
   return String(rule || '').trim().toLowerCase();
 }
 
+function colorIgnoreKey(value) {
+  const color = parseIgnoreColor(value);
+  if (!color) return '';
+  return `${color.r},${color.g},${color.b},${Math.round(color.a * 255)}`;
+}
+
+function parseIgnoreColor(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if (!text) return null;
+
+  const hex = text.match(/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+  if (hex) return parseHexIgnoreColor(hex[1]);
+
+  const rgb = text.match(/^rgba?\((.*)\)$/i);
+  if (rgb) {
+    const parts = splitColorArgs(rgb[1]);
+    if (parts.length < 3 || parts.length > 4) return null;
+    const r = parseRgbChannel(parts[0]);
+    const g = parseRgbChannel(parts[1]);
+    const b = parseRgbChannel(parts[2]);
+    const a = parts[3] === undefined ? 1 : parseAlphaChannel(parts[3]);
+    if ([r, g, b, a].some((v) => v === null)) return null;
+    return { r, g, b, a };
+  }
+
+  const hsl = text.match(/^hsla?\((.*)\)$/i);
+  if (hsl) {
+    const parts = splitColorArgs(hsl[1]);
+    if (parts.length < 3 || parts.length > 4) return null;
+    const h = parseHueChannel(parts[0]);
+    const s = parsePercentChannel(parts[1]);
+    const l = parsePercentChannel(parts[2]);
+    const a = parts[3] === undefined ? 1 : parseAlphaChannel(parts[3]);
+    if ([h, s, l, a].some((v) => v === null)) return null;
+    return hslToRgb(h, s, l, a);
+  }
+
+  return null;
+}
+
+function parseHexIgnoreColor(hex) {
+  if (hex.length === 3 || hex.length === 4) {
+    const r = parseInt(hex[0] + hex[0], 16);
+    const g = parseInt(hex[1] + hex[1], 16);
+    const b = parseInt(hex[2] + hex[2], 16);
+    const a = hex.length === 4 ? parseInt(hex[3] + hex[3], 16) / 255 : 1;
+    return { r, g, b, a };
+  }
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+  return { r, g, b, a };
+}
+
+function splitColorArgs(body) {
+  const text = String(body || '').trim();
+  if (!text) return [];
+  if (text.includes(',')) {
+    const parts = text.split(',').map((part) => part.trim()).filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last && last.includes('/')) {
+      const split = last.split('/').map((part) => part.trim()).filter(Boolean);
+      return [...parts.slice(0, -1), ...split];
+    }
+    return parts;
+  }
+  return text.replace(/\s*\/\s*/g, ' / ').split(/\s+/).filter((part) => part && part !== '/');
+}
+
+function parseRgbChannel(raw) {
+  const text = String(raw || '').trim();
+  const match = text.match(/^(-?\d*\.?\d+)(%)?$/);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value)) return null;
+  const scaled = match[2] ? value * 2.55 : value;
+  if (scaled < 0 || scaled > 255) return null;
+  return Math.round(scaled);
+}
+
+function parseAlphaChannel(raw) {
+  const text = String(raw || '').trim();
+  const match = text.match(/^(-?\d*\.?\d+)(%)?$/);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value)) return null;
+  const alpha = match[2] ? value / 100 : value;
+  return alpha >= 0 && alpha <= 1 ? alpha : null;
+}
+
+function parseHueChannel(raw) {
+  const text = String(raw || '').trim();
+  const match = text.match(/^(-?\d*\.?\d+)(deg|rad|turn|grad)?$/);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value)) return null;
+  const unit = match[2] || 'deg';
+  if (unit === 'turn') return value * 360;
+  if (unit === 'rad') return value * (180 / Math.PI);
+  if (unit === 'grad') return value * 0.9;
+  return value;
+}
+
+function parsePercentChannel(raw) {
+  const text = String(raw || '').trim();
+  const match = text.match(/^(-?\d*\.?\d+)%$/);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value)) return null;
+  return value >= 0 && value <= 100 ? value / 100 : null;
+}
+
+function hslToRgb(hue, saturation, lightness, alpha) {
+  const h = (((hue % 360) + 360) % 360) / 360;
+  if (saturation === 0) {
+    const gray = clampByte(Math.round(lightness * 255));
+    return { r: gray, g: gray, b: gray, a: alpha };
+  }
+  const q = lightness < 0.5
+    ? lightness * (1 + saturation)
+    : lightness + saturation - lightness * saturation;
+  const p = 2 * lightness - q;
+  const toRgb = (t) => {
+    let channel = t;
+    if (channel < 0) channel += 1;
+    if (channel > 1) channel -= 1;
+    if (channel < 1 / 6) return p + (q - p) * 6 * channel;
+    if (channel < 1 / 2) return q;
+    if (channel < 2 / 3) return p + (q - p) * (2 / 3 - channel) * 6;
+    return p;
+  };
+  return {
+    r: clampByte(Math.round(toRgb(h + 1 / 3) * 255)),
+    g: clampByte(Math.round(toRgb(h) * 255)),
+    b: clampByte(Math.round(toRgb(h - 1 / 3) * 255)),
+    a: alpha,
+  };
+}
+
+function clampByte(value) {
+  return Math.min(255, Math.max(0, value));
+}
+
+function ignoreValueMatches(rule, entryValue, findingValue) {
+  if (entryValue === findingValue) return true;
+  if (rule !== 'design-system-color') return false;
+  const entryColor = colorIgnoreKey(entryValue);
+  return Boolean(entryColor && entryColor === colorIgnoreKey(findingValue));
+}
+
 export function normalizeIgnoreValueEntries(entries) {
   if (!Array.isArray(entries)) return [];
   const out = [];
@@ -217,6 +391,11 @@ export function normalizeIgnoreValueEntries(entries) {
     const value = normalizeIgnoreValue(entry.value);
     if (!rule || !value) continue;
     const normalized = { rule, value };
+    const files = uniqueStrings([
+      ...(typeof entry.file === 'string' && entry.file.trim() ? [entry.file.trim()] : []),
+      ...(Array.isArray(entry.files) ? entry.files.filter(v => typeof v === 'string' && v.trim()).map(v => v.trim()) : []),
+    ]);
+    if (files.length > 0) normalized.files = files;
     if (typeof entry.reason === 'string' && entry.reason.trim()) {
       normalized.reason = entry.reason.trim();
     }
@@ -231,12 +410,16 @@ export function normalizeIgnoreValueEntries(entries) {
 function mergeIgnoreValues(existing, incoming) {
   const map = new Map();
   for (const entry of normalizeIgnoreValueEntries(existing)) {
-    map.set(`${entry.rule}\0${entry.value}`, entry);
+    map.set(`${entry.rule}\0${entry.value}\0${ignoreValueFilesKey(entry.files)}`, entry);
   }
   for (const entry of normalizeIgnoreValueEntries(incoming)) {
-    map.set(`${entry.rule}\0${entry.value}`, entry);
+    map.set(`${entry.rule}\0${entry.value}\0${ignoreValueFilesKey(entry.files)}`, entry);
   }
   return Array.from(map.values());
+}
+
+function ignoreValueFilesKey(files) {
+  return Array.isArray(files) && files.length > 0 ? files.join('\x1f') : '';
 }
 
 export function readCache(cwd) {
@@ -447,13 +630,39 @@ function isIgnoredFindingValue(finding, ignoreValues) {
   const rule = normalizeIgnoreRule(finding.antipattern);
   const value = extractFindingIgnoreValue(finding);
   if (!rule || !value) return false;
-  return ignoreValues.some((entry) => entry.rule === rule && entry.value === value);
+  return ignoreValues.some((entry) => {
+    const wildcardValue = entry.value === '*';
+    if (entry.rule !== rule || (!wildcardValue && !ignoreValueMatches(rule, entry.value, value))) return false;
+    if (!Array.isArray(entry.files) || entry.files.length === 0) return !wildcardValue;
+    return findingMatchesScopedIgnoreFile(finding, entry.files);
+  });
+}
+
+function findingMatchesScopedIgnoreFile(finding, globs) {
+  const filePath = String(finding?.file || '').trim();
+  if (!filePath) return false;
+  if (matchesAnyGlob(filePath, globs)) return true;
+
+  const normalized = filePath.split(path.sep).join('/');
+  const parts = normalized.split('/').filter(Boolean);
+  for (let i = 0; i < parts.length; i++) {
+    const suffix = parts.slice(i).join('/');
+    if (matchesAnyGlob(suffix, globs)) return true;
+  }
+  return false;
 }
 
 export function extractFindingIgnoreValue(finding) {
   if (!finding || typeof finding !== 'object') return '';
   const rule = normalizeIgnoreRule(finding.antipattern);
-  if (rule !== 'overused-font' && rule !== 'bounce-easing') return '';
+  const directValueRules = new Set([
+    'overused-font',
+    'bounce-easing',
+    'design-system-font',
+    'design-system-color',
+    'design-system-radius',
+  ]);
+  if (!directValueRules.has(rule)) return '';
   return normalizeIgnoreValue(extractFindingIgnoreValueRaw(finding, rule));
 }
 
@@ -520,7 +729,7 @@ export function dedupeAgainstCache(findings, cache, sessionId, filePath) {
   const known = new Set(fileEntry.findings || []);
   const fresh = [];
   for (const f of findings) {
-    const key = `${f.antipattern}:${f.line || 0}`;
+    const key = findingCacheKey(f);
     if (known.has(key)) continue;
     known.add(key);
     fresh.push(f);
@@ -531,9 +740,19 @@ export function dedupeAgainstCache(findings, cache, sessionId, filePath) {
 export function rememberFindings(cache, sessionId, filePath, findings) {
   const fileEntry = ensureFile(cache, sessionId, filePath);
   const known = new Set(fileEntry.findings || []);
-  for (const f of findings) known.add(`${f.antipattern}:${f.line || 0}`);
+  for (const f of findings) known.add(findingCacheKey(f));
   fileEntry.findings = Array.from(known);
   ensureSession(cache, sessionId).updatedAt = Date.now();
+}
+
+function findingCacheKey(finding) {
+  const line = finding?.line || 0;
+  const value = extractFindingIgnoreValue(finding);
+  if (line > 0 && value) return `${finding.antipattern}:${line}:${value}`;
+  if (line > 0) return `${finding.antipattern}:${line}`;
+  if (value) return `${finding.antipattern}:0:${value}`;
+  const snippet = String(finding?.snippet || '').trim().slice(0, 80);
+  return snippet ? `${finding.antipattern}:0:${snippet}` : `${finding.antipattern}:0`;
 }
 
 export function renderTemplate(findings, filePath, config, opts = {}) {
@@ -942,7 +1161,11 @@ export async function loadDetector(candidates = DETECTOR_CANDIDATES) {
   const found = candidates.find((c) => fs.existsSync(c));
   if (!found) return null;
   const mod = await import(pathToFileURL(found));
-  detectorCache = { detectText: mod.detectText, detectHtml: mod.detectHtml };
+  detectorCache = {
+    detectText: mod.detectText,
+    detectHtml: mod.detectHtml,
+    loadDesignSystemForCwd: mod.loadDesignSystemForCwd,
+  };
   return detectorCache;
 }
 
@@ -997,6 +1220,22 @@ export function renderPendingAck(filePath, knownFindings, opts = {}) {
 
 export function shouldEmitAckForFile(filePath) {
   return ACK_EXTS.has(path.extname(String(filePath || '')).toLowerCase());
+}
+
+export function designSystemOptions(config, detector, projectCwd) {
+  if (config?.designSystem?.enabled === false) return {};
+  if (!detector || typeof detector.loadDesignSystemForCwd !== 'function') return {};
+  try {
+    const designSystem = detector.loadDesignSystemForCwd(projectCwd);
+    return designSystem ? { designSystem } : {};
+  } catch {
+    return {};
+  }
+}
+
+export function appendDesignSystemNote(text, scanOptions) {
+  if (!text || !scanOptions?.designSystem?.mdNewerThanJson) return text;
+  return `${text}\n\n${ENVELOPE_PREFIX} DESIGN.md is newer than .impeccable/design.json. Run /impeccable document to refresh the design-system sidecar.`;
 }
 
 // The directive footer is the part of the hook output that steers model
@@ -1086,6 +1325,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       persistCache(projectCwd, cache);
       return result({ skipped: 'detector-missing', durationMs: Date.now() - started });
     }
+    const scanOptions = designSystemOptions(config, det, projectCwd);
 
     let pendingWinner = null;
     let cleanWinner = null;
@@ -1143,9 +1383,9 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       let findings;
       let detectorThrew = false;
       if ((ext === '.html' || ext === '.htm') && typeof det.detectHtml === 'function') {
-        try { findings = await det.detectHtml(filePath); } catch { findings = []; detectorThrew = true; }
+        try { findings = await det.detectHtml(filePath, scanOptions); } catch { findings = []; detectorThrew = true; }
       } else {
-        try { findings = await det.detectText(content, filePath); } catch { findings = []; detectorThrew = true; }
+        try { findings = await det.detectText(content, filePath, scanOptions); } catch { findings = []; detectorThrew = true; }
       }
 
       const filtered = filterFindings(findings || [], content, ext, config);
@@ -1176,7 +1416,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
 
     if (freshGroups.length > 0) {
       const firstGroup = freshGroups[0];
-      const text = renderGroupedTemplate(freshGroups, config, { cwd: projectCwd });
+      const text = appendDesignSystemNote(renderGroupedTemplate(freshGroups, config, { cwd: projectCwd }), scanOptions);
       const allFindings = freshGroups.flatMap((group) => group.findings);
       return {
         exitCode: 0,
@@ -1208,7 +1448,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
     }
 
     if (pendingWinner && shouldEmitAckForFile(pendingWinner.filePath)) {
-      const text = renderPendingAck(pendingWinner.filePath, pendingWinner.known, { cwd: projectCwd });
+      const text = appendDesignSystemNote(renderPendingAck(pendingWinner.filePath, pendingWinner.known, { cwd: projectCwd }), scanOptions);
       return {
         exitCode: 0,
         stdout: payload(text, 'PostToolUse', harness),
@@ -1242,7 +1482,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
     }
 
     if (cleanWinner && shouldEmitAckForFile(cleanWinner.filePath)) {
-      const text = renderCleanAck(cleanWinner.filePath, { cwd: projectCwd });
+      const text = appendDesignSystemNote(renderCleanAck(cleanWinner.filePath, { cwd: projectCwd }), scanOptions);
       return {
         exitCode: 0,
         stdout: payload(text, 'PostToolUse', harness),
