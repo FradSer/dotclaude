@@ -16,8 +16,9 @@
 - **仓库**: [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
 - **路径**: `skills/impeccable/`（单一 skill）与 `agents/references/anti-patterns.md`
 - **同步脚本**: `./frontend/scripts/sync-impeccable.sh`
-- **说明**: 上游自 v3.6.0 起为**单一 `impeccable` skill**（各命令合并为 `reference/<cmd>.md`）。本地不再拆分 `impeccable-*` 子技能（2026-06-16 已删除 17 个孤立目录，回归单 skill）。sync 像其他 skill 一样**整体覆盖**目录（含 SKILL.md），上游 SKILL.md 另存为 `reference/upstream-SKILL.md`；anti-patterns 原文存入 `frontend/agents/references/`。
-- **本地 SKILL.md 改动机制**: curated 版 `SKILL.md` 由 `modifications/impeccable.md` 声明式重放（与 shadcn/vercel 同机制）。sync 后 `SKILL.md` 是上游版，需让 Claude 重放 `modifications/impeccable.md` 恢复 curated 版（脚本会打印提示）。**不再有「手工据实协调」这条路径。** 收尾的 `check-references.sh` 会校验 SKILL.md 的 reference 链接是否仍解析；上游删/改 reference 文件导致的死链会当场报出，据实更新 `modifications/impeccable.md` 里的链接即可。
+- **说明**: 上游自 v3.6.0 起为**单一 `impeccable` skill**（各命令合并为 `reference/<cmd>.md`）。本地不再拆分 `impeccable-*` 子技能（2026-06-16 已删除 17 个孤立目录，回归单 skill）。sync 像其他 skill 一样**整体覆盖**目录（含 SKILL.md），上游 SKILL.md 另存为 `reference/upstream-SKILL.md`。
+- **SKILL.md 机制**: **追随上游原文,无 curated 重放**（2026-06-16 起,按「所有内容以上游为优先」)。sync 覆盖进来的上游 `SKILL.md` 即最终版,`modifications/impeccable.md` 不含可重放块（replay 计数为 0,脚本不再提示重放）。`reference/upstream-SKILL.md` 与 live `SKILL.md` 同源,留作 pristine 快照供 diff。收尾的 `check-references.sh` 校验 reference 链接解析。**已知局限**: 上游 SKILL.md 里 5 处 `node .claude/skills/impeccable/scripts/*.mjs` 路径在 plugin 安装后不解析(脚本优雅降级),详见 `modifications/impeccable.md` 的取舍选项 A/B/C。
+- **anti-patterns（独立待办）**: 上游已删除独立 `anti-patterns.md`,sync 该步现报「上游未找到」;`frontend/agents/references/anti-patterns.md` 为冻结副本,仍被 `frontend-anti-patterns` agent 引用。刷新来源与退役死同步步骤为单独决策。
 
 ## react-best-practices
 

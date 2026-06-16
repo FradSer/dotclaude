@@ -56,6 +56,5 @@ the mismatch for human review — it does not silently skip or duplicate.
 - [react-best-practices.md](./react-best-practices.md) — React 19 hooks, React
   Compiler, state management, RSC + TanStack Query hybrid
 - [shadcn.md](./shadcn.md) — Tailwind v4 CSS-first configuration guidance
-- [impeccable.md](./impeccable.md) — curated local `SKILL.md` entry point (replaces
-  the upstream `SKILL.md` the sync copies in; full guide deferred to
-  `reference/upstream-SKILL.md`)
+- [impeccable.md](./impeccable.md) — no override: `SKILL.md` tracks upstream verbatim;
+  documents the bundled-script-path caveat and the options to make scripts run in-plugin
