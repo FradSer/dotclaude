@@ -1,6 +1,6 @@
 ---
 name: acpx
-description: Use acpx as a headless ACP CLI for agent-to-agent communication, including prompt/exec/sessions workflows, session scoping, queueing, permissions, output formats, system-prompt overrides, and multi-agent flows authored with defineFlow/decision/decisionEdge.
+description: Use acpx as a headless ACP CLI for agent-to-agent communication. Use when running coding agents through acpx, managing persistent ACP sessions, queueing prompts, overriding the Claude system prompt, consuming structured agent output from scripts, or composing multi-agent workflows with defineFlow/decision/decisionEdge.
 ---
 
 # acpx
@@ -62,15 +62,6 @@ acpx [global_options] status [-s <name>]
 acpx [global_options] sessions [list | new [--name <name>] | ensure [--name <name>] | close [name] | show [name] | history [name] [--limit <count>] | export [name] --output <path> | import <archive> [--name <name>] [--cwd <dir>] | prune [--dry-run] [--before <date> | --older-than <days>] [--include-history]]
 acpx [global_options] config [show | init]
 acpx [global_options] flow run <file> [--input-json '<json>' | --input-file <path>] [--default-agent <name>]
-
-acpx [global_options] <agent> [prompt_options] [prompt_text...]
-acpx [global_options] <agent> prompt [prompt_options] [prompt_text...]
-acpx [global_options] <agent> exec [prompt_options] [prompt_text...]
-acpx [global_options] <agent> cancel [-s <name>]
-acpx [global_options] <agent> set-mode <mode> [-s <name>]
-acpx [global_options] <agent> set <key> <value> [-s <name>]
-acpx [global_options] <agent> status [-s <name>]
-acpx [global_options] <agent> sessions [list | new [--name <name>] | ensure [--name <name>] | close [name] | show [name] | history [name] [--limit <count>] | export [name] --output <path> | import <archive> [--name <name>] [--cwd <dir>] | prune [--dry-run] [--before <date> | --older-than <days>] [--include-history]]
 ```
 
 If prompt text is omitted and stdin is piped, `acpx` reads prompt text from stdin.
@@ -82,11 +73,11 @@ Friendly agent names resolve to commands:
 - `pi` -> `npx pi-acp`
 - `openclaw` -> `openclaw acp`
 - `codex` -> `npx -y @agentclientprotocol/codex-acp`
-- `claude` -> `npx -y @agentclientprotocol/claude-agent-acp` (ACPX-owned package range)
+- `claude` -> `npx -y @agentclientprotocol/claude-agent-acp`
 - `gemini` -> `gemini --acp`
 - `cursor` -> `cursor-agent acp`
 - `copilot` -> `copilot --acp --stdio`
-- `droid` -> `droid exec --output-format acp` (`factory-droid` and `factorydroid` also resolve to `droid`)
+- `droid` -> `droid exec --output-format acp`
 - `fast-agent` -> `uvx fast-agent-mcp acp`
 - `iflow` -> `iflow --experimental-acp`
 - `kilocode` -> `npx -y @kilocode/cli acp`
@@ -94,7 +85,6 @@ Friendly agent names resolve to commands:
 - `kiro` -> `kiro-cli-chat acp`
 - `opencode` -> `npx -y opencode-ai acp`
 - `qoder` -> `qodercli --acp`
-  Forwards Qoder-native `--allowed-tools` and `--max-turns` startup flags from `acpx` session options.
 - `qwen` -> `qwen --acp`
 - `trae` -> `traecli acp serve`
 
@@ -105,36 +95,22 @@ Rules:
 - `--agent <command>` explicitly sets a raw ACP adapter command.
 - Do not combine a positional agent and `--agent` in the same command.
 
-## Commands
+## Key commands
 
 ### Prompt (default, persistent session)
 
-Implicit:
-
 ```bash
 acpx codex 'fix flaky tests'
-```
-
-Explicit:
-
-```bash
 acpx codex prompt 'fix flaky tests'
 acpx prompt 'fix flaky tests'   # defaults to codex
 ```
 
-Behavior:
-
-- Uses a saved session for the session scope key
-- Auto-resumes prior session when one exists for that scope
+- Uses a saved session for the session scope key, auto-resumes prior session
 - If no session exists for the scope, exits with `NO_SESSION` and prompts for `sessions new`
 - Is queue-aware when another prompt is already running for the same session
 - On interrupt during an active turn, sends ACP `session/cancel` before force-kill fallback
 
-Prompt options:
-
-- `-s, --session <name>`: use a named session within the same cwd
-- `--no-wait`: enqueue and return immediately when session is already busy
-- `-f, --file <path>`: read prompt text from file (`-` means stdin)
+Prompt options: `-s, --session <name>`, `--no-wait`, `-f, --file <path>`
 
 ### Exec (one-shot)
 
@@ -143,10 +119,7 @@ acpx exec 'summarize this repo'
 acpx codex exec 'summarize this repo'
 ```
 
-Behavior:
-
-- Runs a single prompt in a temporary ACP session
-- Does not reuse or save persistent session state
+Runs a single prompt in a temporary ACP session. Does not reuse or save persistent session state.
 
 ### Cancel / Mode / Config / Model
 
@@ -157,75 +130,28 @@ acpx codex set model gpt-5.2[high]
 acpx codex set model gpt-5.4
 ```
 
-Behavior:
-
-- `cancel`: sends cooperative `session/cancel` through queue-owner IPC.
-- `set-mode`: calls ACP `session/set_mode`.
-- `set-mode` mode ids are adapter-defined; unsupported values are rejected by the adapter (often `Invalid params`).
-- `set`: calls ACP `session/set_config_option`.
-- For codex, reasoning effort is selected through advertised ACP model ids when the adapter reports model variants.
-- `--model <id>`: Claude-compatible adapters may consume session creation metadata; other agents must advertise ACP models and support `session/set_model`, otherwise `acpx` fails clearly instead of silently falling back.
-- `set model <id>`: calls `session/set_model`. This is the generic ACP method for mid-session model switching.
-- `set-mode`/`set` route through queue-owner IPC when active, otherwise reconnect directly.
+- `cancel`: sends cooperative `session/cancel` through queue-owner IPC
+- `set-mode`: calls ACP `session/set_mode`
+- `set`: calls ACP `session/set_config_option`
+- `set model <id>`: calls `session/set_model` for mid-session model switching
 
 ### Sessions
 
 ```bash
-acpx sessions
-acpx sessions list
-acpx sessions list --filter-cwd .
-acpx sessions list --cursor <cursor>
-acpx sessions list --local
-acpx sessions new
-acpx sessions new --name backend
-acpx sessions ensure
-acpx sessions ensure --name backend
-acpx sessions close
-acpx sessions close backend
-acpx sessions show
-acpx sessions history --limit 20
+acpx sessions list                          # list all sessions
+acpx sessions new --name backend            # create fresh session
+acpx sessions ensure --name backend         # idempotent: get or create
+acpx sessions close backend                 # close a session
+acpx sessions show backend                  # show metadata
+acpx sessions history backend --limit 20    # show turn history
 acpx sessions export backend --output backend-session.json
 acpx sessions import backend-session.json --name backend-restored
 acpx sessions prune --dry-run --older-than 7
 acpx sessions prune --older-than 30 --include-history
-acpx status
-
-acpx codex sessions
-acpx codex sessions new --name backend
-acpx codex sessions ensure --name backend
-acpx codex sessions close backend
-acpx codex sessions show backend
-acpx codex sessions history backend --limit 20
-acpx codex sessions export backend --output backend-session.json
-acpx codex sessions import backend-session.json --name backend-restored
-acpx codex sessions prune --before 2026-04-01 --include-history
-acpx codex status
+acpx status                                 # check local agent process
 ```
 
-Behavior:
-
-- `sessions` and `sessions list` are equivalent
-- `sessions list` uses ACP `session/list` when the agent advertises it; JSON
-  includes agent `SessionInfo`, `_meta`, and `nextCursor`
-- `sessions list --filter-cwd <dir>` applies the ACP cwd filter, and
-  `--cursor <cursor>` requests a specific page
-- `sessions list --local` reads saved acpx records instead
-- `new` creates a fresh session for the current `(agentCommand, cwd, optional name)` scope
-- `new --name <name>` targets a named session scope
-- when `new` replaces an existing open session in that scope, the old one is soft-closed
-- `ensure` returns the nearest matching active session for the scope, or creates one when none is open. Idempotent — safe to call before every prompt in scripts.
-- `close` targets current cwd default session
-- `close <name>` targets current cwd named session
-- `show [name]` prints stored metadata for that scoped session
-- `history [name]` prints stored turn history previews (default 20, use `--limit`)
-- `export [name] --output <path>` writes a portable JSON archive containing session state and event history
-- `import <archive>` creates a fresh local record, reopens the copied session as idle, keeps the provider session id, and clears source-machine process metadata
-- imported sessions must resume that provider session; if the destination agent cannot load it, prompts fail clearly instead of starting an empty conversation
-- `import --name <name>` and `--cwd <dir>` override the destination scope; import fails if that scope already has an active session or another local record already uses the same provider session id
-- `prune` deletes closed session records to reclaim disk space
-  - `--dry-run` previews what would be deleted without touching disk
-  - `--older-than <days>` and `--before <date>` filter by close time, falling back to last-used time when a record was never explicitly closed
-  - `--include-history` also removes per-session event stream files (otherwise only the JSON record is removed)
+Prefix any command with an agent name: `acpx codex sessions ensure --name backend`
 
 ## Global options
 
@@ -235,26 +161,24 @@ Behavior:
 - `--approve-reads`: auto-approve reads/searches, prompt for writes (default mode)
 - `--deny-all`: deny all permission requests
 - `--non-interactive-permissions <policy>`: when prompting is unavailable, choose `deny` or `fail`
-- `--permission-policy <json-or-file>` / `--policy`: per-tool ACP permission rules (`autoApprove`, `autoDeny`, `escalate`, `defaultAction`)
+- `--permission-policy <json-or-file>` / `--policy`: per-tool ACP permission rules
 - `--format <fmt>`: output format (`text`, `json`, `quiet`)
 - `--json-strict`: strict JSON mode; requires `--format json` and suppresses non-JSON stderr output
 - `--suppress-reads`: suppress raw read-file contents while preserving the selected format
 - `--timeout <seconds>`: max wait time (positive number)
 - `--ttl <seconds>`: queue owner idle TTL before shutdown (default `300`, `0` disables TTL)
-- `--model <id>`: request an agent model during session creation; non-Claude agents must advertise ACP models and support `session/set_model`
-- `--system-prompt <text>`: replace the agent system prompt. Forwarded to claude-agent-acp via ACP `_meta.systemPrompt`; persisted in `session_options.system_prompt` so reuse keeps the override. Other agents ignore the field.
-- `--append-system-prompt <text>`: append text to the agent system prompt. Forwarded to claude-agent-acp via ACP `_meta.systemPrompt.append`; same persistence rules as `--system-prompt`.
+- `--model <id>`: request an agent model during session creation
+- `--system-prompt <text>`: replace the agent system prompt (persisted in session)
+- `--append-system-prompt <text>`: append text to the agent system prompt
 - `--allowed-tools <list>`: comma-separated tool whitelist (use `""` for no tools)
 - `--max-turns <count>`: cap session turn count
 - `--prompt-retries <count>`: retry failed prompt turns on transient errors (default `0`)
-- `--no-terminal`: do not advertise the ACP terminal capability — useful for review-only or sandboxed agent invocations
+- `--no-terminal`: do not advertise the ACP terminal capability
 - `--verbose`: verbose ACP/debug logs to stderr
 
 Permission flags are mutually exclusive.
 
 ## System prompt override (Claude)
-
-`--system-prompt` and `--append-system-prompt` let you specialize a Claude session without leaving lingering one-off state, while still benefiting from persistent session reuse.
 
 ```bash
 # Replace the system prompt for a named session, persisted across reuse
@@ -264,24 +188,7 @@ acpx --system-prompt "You are a code reviewer who challenges every implicit assu
 acpx --append-system-prompt "Always explain trade-offs before recommending a fix." claude -s impl
 ```
 
-The override is forwarded via ACP `_meta.systemPrompt` (or `_meta.systemPrompt.append`) on `session/new` and stored in `session_options.system_prompt`. Subsequent `prompt`/`ensure` calls in the same scope keep the override unless you explicitly create a new session. Non-Claude adapters ignore the field, so the same flag is safe inside cross-agent scripts.
-
-## Sessions cleanup
-
-Closed session records accumulate on disk by default. Use `sessions prune` to enforce retention:
-
-```bash
-# Preview what would be deleted (no writes)
-acpx codex sessions prune --dry-run --older-than 7
-
-# Remove records closed more than 30 days ago, including their event-stream files
-acpx codex sessions prune --older-than 30 --include-history
-
-# Remove everything closed before a date
-acpx codex sessions prune --before 2026-04-01
-```
-
-Without `--include-history`, only the lightweight JSON record is removed; event-stream files are preserved for audit. With it, the per-session event log is also deleted to reclaim disk space.
+The override is forwarded via ACP `_meta.systemPrompt` on `session/new` and stored in `session_options.system_prompt`. Subsequent `prompt`/`ensure` calls in the same scope keep the override unless you explicitly create a new session. Non-Claude adapters ignore the field.
 
 ## Config files
 
@@ -290,65 +197,32 @@ Config files are merged in this order (later wins):
 - global: `~/.acpx/config.json`
 - project: `<cwd>/.acpxrc.json`
 
-Supported keys:
-
-- `defaultAgent`
-- `defaultPermissions` (`approve-all`, `approve-reads`, `deny-all`)
-- `nonInteractivePermissions` (`deny`, `fail`)
-- `ttl` (seconds)
-- `timeout` (seconds or `null`)
-- `format` (`text`, `json`, `quiet`)
-- `agents` map (`name -> { command, args? }`)
-- `auth` map (`authMethodId -> credential`)
+Supported keys: `defaultAgent`, `defaultPermissions`, `nonInteractivePermissions`, `ttl`, `timeout`, `format`, `agents` map, `auth` map.
 
 Use `acpx config show` to inspect the resolved config and `acpx config init` to create the global template.
 
-For ACP `authenticate` handshakes, use either config `auth` entries or explicit
-`ACPX_AUTH_<METHOD_ID>` environment variables such as `ACPX_AUTH_OPENAI_API_KEY`.
-Ambient provider env vars such as `OPENAI_API_KEY` are still passed through to
-child agents, but they do not trigger ACP auth-method selection on their own.
+For ACP `authenticate` handshakes, use either config `auth` entries or explicit `ACPX_AUTH_<METHOD_ID>` environment variables such as `ACPX_AUTH_OPENAI_API_KEY`.
 
 ## Session behavior
 
-Persistent prompt sessions are scoped by:
+Persistent prompt sessions are scoped by: `agentCommand`, absolute `cwd`, optional session `name`.
 
-- `agentCommand`
-- absolute `cwd`
-- optional session `name`
-
-Persistence:
-
-- Session records are stored in `~/.acpx/sessions/*.json`.
-- `-s/--session` creates parallel named conversations in the same repo.
-- Changing `--cwd` changes scope and therefore session lookup.
-- closed sessions are retained on disk with `closed: true` and `closedAt` until pruned.
-- auto-resume by scope skips closed sessions.
-
-Resume behavior:
-
-- Prompt mode attempts to reconnect to saved session.
-- If adapter-side session is invalid/not found, `acpx` creates a fresh session and updates the saved record.
-- explicitly selected session records can still be resumed via `loadSession` even if previously closed.
-- dead saved PIDs are detected and reconnected on the next prompt.
-- each completed prompt stores lightweight turn history previews in the session record.
+- Session records are stored in `~/.acpx/sessions/*.json`
+- `-s/--session` creates parallel named conversations in the same repo
+- Changing `--cwd` changes scope and therefore session lookup
+- Closed sessions are retained on disk with `closed: true` and `closedAt` until pruned
+- Auto-resume by scope skips closed sessions
+- Prompt mode attempts to reconnect to saved session; if adapter-side session is invalid/not found, `acpx` creates a fresh session and updates the saved record
 
 ## Prompt queueing and `--no-wait`
 
-Queueing is per persistent session.
+Queueing is per persistent session. The active `acpx` process for a running prompt becomes the queue owner. Other invocations submit prompts over local IPC.
 
-- The active `acpx` process for a running prompt becomes the queue owner.
-- Other invocations submit prompts over local IPC.
-- On Unix-like systems, queue IPC uses a Unix socket under `~/.acpx/queues/<hash>.sock`.
-- Ownership is coordinated with a lock file under `~/.acpx/queues/<hash>.lock`.
-- On Windows, named pipes are used instead of Unix sockets.
-- after the queue drains, owner shutdown is governed by TTL (default 300s, configurable with `--ttl`).
-
-Submission behavior:
-
-- Default: enqueue and wait for queued prompt completion, streaming updates back.
-- `--no-wait`: enqueue and return after queue acknowledgement.
-- `Ctrl+C` during an active turn sends ACP `session/cancel`, waits briefly, then force-kills only if cancellation does not finish in time.
-- `cancel` sends the same cooperative cancellation without requiring terminal signals.
+- Default: enqueue and wait for queued prompt completion, streaming updates back
+- `--no-wait`: enqueue and return after queue acknowledgement
+- `Ctrl+C` during an active turn sends ACP `session/cancel`, waits briefly, then force-kills only if cancellation does not finish in time
+- `cancel` sends the same cooperative cancellation without requiring terminal signals
+- After the queue drains, owner shutdown is governed by TTL (default 300s, configurable with `--ttl`)
 
 ## Output formats
 
@@ -357,8 +231,8 @@ Use `--format <fmt>`:
 - `text` (default): human-readable stream with updates/tool status and done line
 - `json`: NDJSON event stream (good for automation)
 - `quiet`: final assistant text only
-- `--suppress-reads`: replace raw read-file contents with `[read output suppressed]` in `text` and `json` output
-- `--json-strict`: pair with `--format json` to suppress non-JSON stderr noise (logs, banners) for downstream consumers
+- `--suppress-reads`: replace raw read-file contents with `[read output suppressed]`
+- `--json-strict`: pair with `--format json` to suppress non-JSON stderr noise
 
 Example automation:
 
@@ -367,21 +241,9 @@ acpx --format json codex exec 'review changed files' \
   | jq -r 'select(.type=="tool_call") | [.status, .title] | @tsv'
 ```
 
-## Permission modes
-
-- `--approve-all`: no interactive permission prompts
-- `--approve-reads` (default): approve reads/searches, prompt for writes
-- `--deny-all`: deny all permission requests
-- `--non-interactive-permissions <deny|fail>`: chosen behavior when no TTY is available to prompt
-- `--policy <json-or-file>`: match ACP permission requests by tool kind/title; non-interactive escalations add ACP response metadata
-
-If every permission request is denied/cancelled and none approved, `acpx` exits with permission-denied status.
-
 ## Flows (multi-agent workflows)
 
 Flows let you declare a multi-agent workflow as a graph of typed nodes connected by edges, executed by the `acpx` runtime. The runtime owns persistence, retries, timeouts, and routing — the flow file declares the shape, not the engine.
-
-### Run a flow
 
 ```bash
 acpx flow run ./my-flow.flow.ts --input-file ./flow-input.json
@@ -391,100 +253,11 @@ acpx --approve-all flow run examples/flows/pr-triage/pr-triage.flow.ts \
 acpx flow run ./my-flow.flow.ts --default-agent claude
 ```
 
-Run artifacts persist under `~/.acpx/flows/runs/<runId>/`. Default per-step timeout is 15 minutes when `--timeout` is unset; flows that declare permission requirements fail fast before starting.
+Run artifacts persist under `~/.acpx/flows/runs/<runId>/`. Default per-step timeout is 15 minutes when `--timeout` is unset.
 
-### Authoring a flow
+The authoring surface lives in `acpx/flows`. Node types: `acp` (model-driven step), `decision` (constrained-choice LLM step), `action` (runtime-supervised deterministic operation), `compute` (pure local data transform), `checkpoint` (pause point for human or external trigger).
 
-The authoring surface lives in `acpx/flows`. The minimal example:
-
-```ts
-import { acp, decision, decisionEdge, defineFlow, checkpoint, extractJsonObject } from "acpx/flows";
-
-const choices = ["bug", "feat", "doc"] as const;
-
-export default defineFlow({
-  name: "pr-triage",
-  startAt: "classify",
-  nodes: {
-    classify: decision({
-      choices,
-      question: ({ input }) =>
-        `Classify the PR description below. Reply with one of: ${choices.join(", ")}.\n\n${input.description}`,
-    }),
-    bug_lane: acp({
-      prompt: ({ outputs }) =>
-        `The PR is a bug. Write a regression test that reproduces it.\n\nDecision context: ${JSON.stringify(outputs.classify)}`,
-      parse: (text) => extractJsonObject(text),
-    }),
-    feat_lane: acp({
-      prompt: () => "List acceptance criteria for the feature, one bullet per criterion.",
-    }),
-    doc_lane: checkpoint({
-      summary: "doc change — needs human review",
-      run: ({ outputs }) => ({ route: "doc", note: outputs.classify }),
-    }),
-  },
-  edges: [
-    decisionEdge({
-      from: "classify",
-      choices,
-      cases: {
-        bug: "bug_lane",
-        feat: "feat_lane",
-        doc: "doc_lane",
-      },
-    }),
-  ],
-});
-```
-
-### Node types
-
-| Type                                    | Purpose                                                                                                                                                          |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `acp({ prompt, parse?, agent?, cwd? })` | Model-driven step. The `prompt` builder receives `{ input, outputs }`. Optional `parse` coerces the raw text (e.g., `extractJsonObject`).                        |
-| `decision({ choices, question })`       | Constrained-choice LLM step. `choices` is a `readonly` tuple; the runtime validates the model's reply against it and TypeScript infers the union from `choices`. |
-| `action(...)`                           | Runtime-supervised deterministic operation: shell, GitHub API, test execution, comment posting.                                                                  |
-| `compute(...)`                          | Pure local data transform: normalization, routing key derivation, signal reduction.                                                                              |
-| `checkpoint({ summary, run })`          | Pause point for human or external trigger. `run` returns the outcome to record while paused.                                                                     |
-
-### Edge shapes
-
-```ts
-// Linear edge
-{ from: "node", to: "next" }
-
-// JSONPath switch — non-decision routing
-{
-  from: "node",
-  switch: {
-    on: "$.route",
-    cases: { "value-a": "branch_a", "value-b": "branch_b" },
-  },
-}
-
-// Decision edge — exhaustive at compile time
-decisionEdge({
-  from: "classify",
-  choices,                                 // same readonly tuple as decision()
-  cases: {                                 // every choice must map to a node id
-    bug: "bug_lane",
-    feat: "feat_lane",
-    doc: "doc_lane",
-  },
-})
-```
-
-If a `decisionEdge` omits a case from `choices`, the TypeScript compiler refuses to compile — so a flow can't ship with a forgotten branch when new choices are added.
-
-### Why use flows
-
-- **Cross-vendor by construction**: classify with `codex`, write code with `claude`, summarize with `gemini` — same flow file, no glue.
-- **Persistence and replay**: every run streams events to disk, replayable via the flow viewer under `~/.acpx/flows/runs/`.
-- **Permission preflight**: flows declaring permission requirements fail before any agent starts, instead of mid-run.
-- **Typed routing**: the LLM is constrained to a literal union, the compiler verifies exhaustivity, the runtime validates the reply.
-
-See `examples/flows/` in the repo for working samples (`branch.flow.ts`, `pr-triage/`, `two-turn.flow.ts`, `shell.flow.ts`, `workdir.flow.ts`).
+See `references/advanced.md` for the full authoring example, edge shapes, and detailed node type reference.
 
 ## Practical workflows
 
