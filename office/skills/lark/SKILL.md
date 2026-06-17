@@ -1,7 +1,7 @@
 ---
 name: lark
 version: 1.0.0
-description: "Lark/Feishu CLI skills: lark-cli operations for docs, markdown, sheets, base, calendar, im, mail, task, okr, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, vc, minutes, event. Use when the user needs to operate Lark/Feishu resources via lark-cli, send messages, manage documents, spreadsheets, calendars, tasks, OKRs, deploy web pages, or any Feishu/Lark workspace operations."
+description: "Lark/Feishu CLI skills: lark-cli operations for docs, markdown, sheets, base, calendar, im, mail, task, okr, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, vc, minutes, note, event. Use when the user needs to operate Lark/Feishu resources via lark-cli, send messages, manage documents, spreadsheets, calendars, tasks, OKRs, deploy web pages, or any Feishu/Lark workspace operations."
 metadata:
   requires:
     bins: ["lark-cli"]
@@ -38,6 +38,7 @@ This skill is a router for all Lark/Feishu CLI operations. Based on user intent,
 | Video Conference | `lark-vc/` | Meeting recordings, notes, search meetings |
 | VC Agent (live) | `lark-vc-agent/` | Bot joins/leaves an ongoing meeting on your behalf; read live in-meeting events (joins, speech, chat, screen share) |
 | Minutes | `lark-minutes/` | Search/download meeting minutes |
+| Note | `lark-note/` | Query meeting note (纪要) detail and raw transcript by known `note_id` (or a `vc-node-id` from a doc); does not locate meetings or search by title |
 | Event Subscription | `lark-event/` | Subscribe to Lark event callbacks |
 | OpenAPI Explorer | `lark-openapi-explorer/` | Discover and explore Lark OpenAPI endpoints |
 | Skill Maker | `lark-skill-maker/` | Create new lark-cli skills |
