@@ -16,8 +16,10 @@ claude plugin install office@frad-dotclaude
 ### 1. Setup API Keys
 
 ```bash
-export SERPAPI_KEY="your_serpapi_key"
-export EXA_API_KEY="your_exa_api_key"
+export SERPAPI_KEY="your_serpapi_key"   # patent-architect
+export EXA_API_KEY="your_exa_api_key"    # patent-architect
+export GEMINI_API_KEY="your_gemini_key"  # generate-image
+export ARK_API_KEY="your_ark_key"        # generate-video
 # Add to ~/.zshrc or ~/.bashrc for persistence
 source ~/.zshrc
 ```
@@ -25,6 +27,11 @@ source ~/.zshrc
 Get your API keys:
 - **SERPAPI_KEY**: Sign up at [serpapi.com](https://serpapi.com)
 - **EXA_API_KEY**: Get from [dashboard.exa.ai](https://dashboard.exa.ai)
+- **GEMINI_API_KEY**: Get from [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- **ARK_API_KEY**: Get from [console.volcengine.com/ark](https://console.volcengine.com/ark)
+
+Each generation skill resolves its key progressively — a shell `export`, a `.env` file, or a
+`--api-key` flag all work, so only the skills you actually use need a key set.
 
 ### 2. Use the Patent Architect Skill
 
@@ -78,6 +85,42 @@ Generate comprehensive Chinese Product Requirements Documents (PRD) following 20
 
 **Prerequisites:**
 - None (interactive workflow)
+
+### `/office:generate-image` (Command)
+
+Generate or edit images from a text prompt using Google's `gemini-3-pro-image` model.
+
+**Usage:**
+```bash
+/office:generate-image "RayNeo AR glasses product hero shot" -o hero.png --aspect-ratio 16:9 --size 2K
+/office:generate-image "swap the sky to a sunset, keep everything else" -i street.png -o street_sunset.png
+```
+
+**Features:**
+- Text-to-image and image editing/composition (one or more `-i` reference images)
+- Aspect ratio (`1:1` … `21:9`), resolution tier (`1K`/`2K`/`4K`), multiple candidates
+- Progressive configuration — key/model resolved via flag → env → `.env` → default
+
+**Prerequisites:** `uv`, and `GEMINI_API_KEY` ([aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)).
+
+### `/office:generate-video` (Command)
+
+Generate short videos from text or stills using ByteDance Seedance on Volcengine Ark (火山方舟).
+
+**Usage:**
+```bash
+/office:generate-video "drone shot rising over a misty forest at sunrise" --resolution 1080p --duration 5
+/office:generate-video "gently animate this panel, keep the line-art style" --first-frame panel.png -o panel.mp4
+```
+
+**Features:**
+- Text-to-video, image-to-video (first frame), and first→last-frame morph
+- Ratio / duration / resolution control; watermark off by default
+- Async submit + poll + download, handled by the script
+- Progressive configuration — key/model/base-URL resolved via flag → env → `.env` → default
+  (switch model version with `SEEDANCE_MODEL`, region with `ARK_BASE_URL`, no code change)
+
+**Prerequisites:** `uv`, and `ARK_API_KEY` ([console.volcengine.com/ark](https://console.volcengine.com/ark)).
 
 ### `agent-browser` (Reference Skill)
 
@@ -176,7 +219,8 @@ office/
 │   └── scripts/
 │       └── check-keys.sh    # API key validation
 ├── lib/
-│   └── utils.sh             # Shared utilities
+│   ├── utils.sh             # Shared shell utilities
+│   └── progressive_env.py   # Progressive config resolver (flag → env → .env → default)
 ├── scripts/
 │   ├── search-patents.sh      # Patent search helper
 │   ├── sync-agent-browser.sh  # Agent-browser skill sync
@@ -189,6 +233,14 @@ office/
     │   └── examples.md
     ├── create-prd/            # PRD generation (command)
     │   └── SKILL.md
+    ├── generate-image/        # Image generation (command, gemini-3-pro-image)
+    │   ├── SKILL.md
+    │   ├── scripts/generate_image.py
+    │   └── references/prompting.md
+    ├── generate-video/        # Video generation (command, Seedance / Ark)
+    │   ├── SKILL.md
+    │   ├── scripts/generate_video.py
+    │   └── references/prompting.md
     ├── agent-browser/         # Browser automation (internal)
     │   └── SKILL.md
     ├── lark/                  # Lark/Feishu CLI operations (internal)
