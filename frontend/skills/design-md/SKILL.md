@@ -214,7 +214,7 @@ When DESIGN.md is present, **it is the source of truth**. Override heuristic def
 
 - Spec version is `alpha`. Re-check `spec --rules` if more than a week has passed since last use.
 - `export --format tailwind` still targets v3. Apply the v4 transform above until upstream ships a v4 adapter.
-- Linter WCAG findings are warnings by default — promote to errors in `impeccable-audit` for AA+ commitments.
+- Linter WCAG findings are warnings by default — promote to errors when running `frontend:impeccable` (argument: `audit`) for AA+ commitments.
 - No runtime dependency. All CLI invocations go via `npx @google/design.md@latest`. Do not add `@google/design.md` to `dependencies` or `devDependencies`.
 - `alpha` status means token groups may gain or lose fields — treat unknown properties as warnings, not errors (matches the spec's "Consumer Behavior for Unknown Content" table).
 

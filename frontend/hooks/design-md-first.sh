@@ -44,7 +44,7 @@ preamble="This project has a DESIGN.md at ${design_md}. Frontend token authority
 1. \`frontend:design-md\` is the source of truth for tokens; it is directly callable as \`/design-md\` for narrow lint/diff/export work.
 2. \`frontend:impeccable\` (colorize/typeset) proposes tokens; in this project those proposals are written back to DESIGN.md / the @theme stylesheet rather than inlined as raw hex, so proposed tokens stay aligned with DESIGN.md.
 3. \`frontend:shadcn\` rebinds component styles to semantic tokens (--primary, --background); DESIGN.md exports map onto shadcn's CSS variable contract rather than raw \`bg-blue-500\`.
-4. The four quality authorities measure different axes: design-md lint is computed facts, impeccable audit is heuristic, web-design-guidelines is standard citations, the anti-patterns agent is pattern-match. Reconciliation is by evidence type — computed supersedes heuristic on the same node; pattern-match is additive; standards are advisory. See \`skills/impeccable/AUDIT-AUTHORITY.md\`."
+4. The four quality authorities measure different axes: design-md lint is computed facts, impeccable audit is heuristic, web-design-guidelines is standard citations, the anti-patterns agent is pattern-match. Reconciliation is by evidence type — computed supersedes heuristic on the same node; pattern-match findings are additive; standard citations are advisory."
 
 # JSON 转义 preamble(处理双引号/反斜杠/换行)。
 escaped=$(printf '%s' "$preamble" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')

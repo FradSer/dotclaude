@@ -80,7 +80,7 @@ All skills are registered in the `frontend` plugin. Invoke them with the fully q
 
 `frontend:design-md` is **also** user-invocable (`/design-md`) — the token source of truth is directly callable for narrow lint / diff / export / spec work, not gated behind this coordinator.
 
-> **Plugin-script caveat.** Upstream `SKILL.md` invokes bundled helper scripts (`context.mjs` / `palette.mjs` / `detect.mjs` / etc.) via `node .claude/skills/impeccable/scripts/*.mjs` — a path that assumes the standalone install and does not resolve in this plugin. When impeccable's flow calls those scripts, consult `skills/impeccable/PLUGIN-INSTALL-NOTES.md` for the resolution recipe (and upstream's graceful-degradation fallbacks). Do not treat a script-path error as a hard failure.
+> **Plugin-script caveat.** Upstream `SKILL.md` invokes bundled helper scripts (`context.mjs` / `palette.mjs` / `detect.mjs` / etc.) via `node .claude/skills/impeccable/scripts/*.mjs` — a path that assumes the standalone install and does not resolve in this plugin. When impeccable's flow calls those scripts, consult `skills/impeccable/PLUGIN-INSTALL-NOTES.local.md` for the resolution recipe (and upstream's graceful-degradation fallbacks). Do not treat a script-path error as a hard failure.
 
 | Skill ID | Purpose | Trigger |
 |----------|---------|---------|
@@ -137,7 +137,7 @@ Rules:
 3. **Plan the pipeline.** Pick the minimum set of skills and fix their order (see *Skill Selection Guidelines* below). If `DESIGN.md` exists, `frontend:design-md` goes first in any design-touching pipeline so its tokens ground the work.
 4. **Invoke and apply.** For each skill in order, **Load `frontend:<skill>` skill** using the Skill tool, then act on its guidance before moving on.
 5. **Delegate anti-pattern scans.** When the plan includes anti-pattern detection, launch the `frontend-anti-patterns` agent via the Task tool in parallel with (or between) skill loads.
-6. **Report.** Summarize which skills ran, what changed, and what the user should verify. When multiple quality authorities ran (design-md lint / impeccable audit / anti-patterns agent), reconcile by evidence type — see `skills/impeccable/AUDIT-AUTHORITY.md`.
+6. **Report.** Summarize which skills ran, what changed, and what the user should verify. When multiple quality authorities ran (design-md lint / impeccable audit / anti-patterns agent), reconcile by evidence type — computed supersedes heuristic on the same node; pattern-match findings are additive; standard citations are advisory. Detail is in `skills/impeccable/AUDIT-AUTHORITY.local.md`.
 
 ## Scope (Option B — emergent, coordinator is opt-in)
 

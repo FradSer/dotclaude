@@ -65,21 +65,26 @@ done < <(
         ! -path "*/node_modules/*"
 )
 
-# ── 断言 1: 无 phantom frontend:impeccable-<cmd> ID ──────────────────────
+# ── 断言 1: 无 phantom impeccable-<cmd> ID ──────────────────────────────
+# 捕获两种形式：(a) `frontend:impeccable-<cmd>`（带前缀）；(b) bare `impeccable-<cmd>`
+# （无前缀，如 `impeccable-audit`）。后者也是 phantom —— 子命令应写作
+# `frontend:impeccable (argument: <cmd>)` 或 prose 形式 `impeccable audit`（空格）。
+# 排除上游合法 token：`data-impeccable-*`、`live-*` 脚本名、`.impeccable` 等。
 phantom_hits=""
 for f in "${scan_files[@]}"; do
     while IFS= read -r line; do
         [ -z "$line" ] && continue
         phantom_hits+="${f#$FRONTEND_DIR/}: $line"$'\n'
-    done < <(grep -nE 'frontend:impeccable-[a-z]+' "$f" 2>/dev/null)
+    done < <(grep -nE '(frontend:)?impeccable-(audit|critique|colorize|typeset|polish|clarify|bolder|quieter|distill|harden|onboard|animate|layout|delight|overdrive|optimize|adapt|live|craft|shape|init|document|extract)' "$f" 2>/dev/null \
+        | grep -vE 'impeccable-(browser|server|poll|target|status|resume|complete|insert|wrap)|data-impeccable|\.impeccable/')
 done
-if [ -n "$phantom_hits" ]; then
-    printf '%s' "$phantom_hits" | while IFS= read -r l; do
-        [ -n "$l" ] && add_violation "断言1 phantom ID" "$l"
-    done
-fi
+while IFS= read -r l; do
+    [ -n "$l" ] && add_violation "断言1 phantom ID" "$l"
+done < <(printf '%s' "$phantom_hits")
 
 # ── 断言 2: node *.mjs 调用解析或属已知 caveat ──────────────────────────
+# 注意：add_violation 必须在父 shell 调用（不能在 `printf | while` 管道子 shell 里，
+# 否则 violations 计数器修改丢失，脚本永远 exit 0 假绿灯）。用进程替换 < <(...) 避免子 shell。
 node_hits=""
 for f in "${scan_files[@]}"; do
     while IFS= read -r line; do
@@ -87,9 +92,10 @@ for f in "${scan_files[@]}"; do
         # 提取 `node <path>.mjs` 里的路径
         path=$(printf '%s' "$line" | grep -oE 'node [^` ]+\.mjs' | sed 's/^node //')
         [ -z "$path" ] && continue
-        # 跳过示例/占位路径：含 shell 变量 $ / 占位符 <> / 环境变量
+        # 跳过示例/占位路径：含 shell 变量 $ / 占位符 <>。
+        # 注意：模式里不能有裸 `*|*` 分支（那是 "*" OR "*"，匹配任意字符串，会让断言全 no-op）。
         case "$path" in
-            *\$*|*\<*|*\${*|*|*) continue ;;
+            *\$*|*\<*|*\${*) continue ;;
         esac
         if is_known_caveat "$path"; then
             continue
@@ -101,11 +107,9 @@ for f in "${scan_files[@]}"; do
         fi
     done < <(grep -nE 'node [^` ]+\.mjs' "$f" 2>/dev/null)
 done
-if [ -n "$node_hits" ]; then
-    printf '%s' "$node_hits" | while IFS= read -r l; do
-        [ -n "$l" ] && add_violation "断言2 死路径" "$l"
-    done
-fi
+while IFS= read -r l; do
+    [ -n "$l" ] && add_violation "断言2 死路径" "$l"
+done < <(printf '%s' "$node_hits")
 
 # ── 断言 3: modifications Edit/Add 的 Target 文件存在 ─────────────────────
 if [ -d "$MODIFICATIONS_DIR" ]; then

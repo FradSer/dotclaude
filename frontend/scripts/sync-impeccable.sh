@@ -223,16 +223,19 @@ sync_skill() {
     local is_impeccable=false
     [ "$skill_name" = "impeccable" ] && is_impeccable=true
 
-    # 删除旧内容（保留 .backup 与本地 plugin-install 补充文件；
+    # 删除旧内容（保留 .backup 与本地 *.local.md 补充文件；
     # SKILL.md 随后由上游原文覆盖，即最终版，无重放）。
-    # PLUGIN-INSTALL-NOTES.md / AUDIT-AUTHORITY.md 是本地补充（上游不存在），
-    # 记录插件布局下脚本路径 caveat 与 audit 权威对账阶梯，sync 不覆盖它们。
+    # 本地补充用 .local.md 后缀命名，从结构上避免 upstream 同名文件覆盖
+    # （upstream 文件无 .local 后缀）。wipe 阶段保留它们；copy 阶段因 upstream
+    # 无同名也不会覆盖。PLUGIN-INSTALL-NOTES.local.md 记录插件布局脚本路径 caveat，
+    # AUDIT-AUTHORITY.local.md 记录 audit 权威对账阶梯。
     while IFS= read -r -d '' item; do
         local basename
         basename=$(basename "$item")
         [ "$basename" = ".backup" ] && continue
-        [ "$basename" = "PLUGIN-INSTALL-NOTES.md" ] && continue
-        [ "$basename" = "AUDIT-AUTHORITY.md" ] && continue
+        case "$basename" in
+            *.local.md) continue ;;
+        esac
         rm -rf "$item"
     done < <(find "$skill_target" -maxdepth 1 -mindepth 1 -print0)
 
