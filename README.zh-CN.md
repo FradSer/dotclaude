@@ -88,7 +88,7 @@ claude plugin install claude-config@frad-dotclaude
 
 ### [office](office/)
 
-专利申请书生成、飞书文档创建、产品需求文档、智能体浏览器自动化、Lark/Feishu CLI 操作以及 AI 写作俗套检测。
+专利申请书生成、产品需求文档、图片与视频生成、飞书文档创建、智能体浏览器自动化、Lark/Feishu CLI 操作以及 AI 写作俗套检测。
 
 **安装：**
 ```bash
