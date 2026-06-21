@@ -30,7 +30,7 @@ is **no clean one-line path swap** from within a SKILL.md body.
 
 Resolve the plugin root by locating the installed `frontend` plugin, then run
 the script from there. The plugin directory is the one containing this file
-(`skills/impeccable/PLUGIN-INSTALL-NOTES.md`), so the scripts are at
+(`skills/impeccable/PLUGIN-INSTALL-NOTES.local.md`), so the scripts are at
 `scripts/` relative to the skill dir — i.e. two levels up from this file's
 parent's `scripts/`. Concretely, if the skill dir is `$SKILL_DIR`, the scripts
 are at `$SKILL_DIR/scripts/`:

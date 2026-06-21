@@ -256,6 +256,31 @@ sync_skill() {
     log_success "  $target_name: 已同步 $count 个项目"
 }
 
+# 把内嵌文档里的 impeccable 版本号从 live SKILL.md 回填，消除手维护漂移。
+# 上游 SKILL.md frontmatter 含 `version: X.Y.Z`；几处本地文档把它内嵌为
+# 「currently vX.Y.Z」/「Upstream `SKILL.md` (vX.Y.Z)」，过去靠手改易 stale。
+backfill_version() {
+    local skill_md="$TARGET_SKILLS_DIR/impeccable/SKILL.md"
+    [ ! -f "$skill_md" ] && return 0
+    local ver
+    ver=$(grep -m1 -E '^version:' "$skill_md" | sed -E 's/^version:[[:space:]]*//' | tr -d '[:space:]')
+    [ -z "$ver" ] && return 0
+
+    local root="$SCRIPT_DIR/.."
+    local f
+    for f in \
+        "$root/modifications/impeccable.md" \
+        "$root/agents/frontend-anti-patterns.md" \
+        "$root/skills/impeccable/PLUGIN-INSTALL-NOTES.local.md"; do
+        [ -f "$f" ] || continue
+        sed -E \
+            -e "s/currently v[0-9]+\.[0-9]+\.[0-9]+/currently v$ver/g" \
+            -e "s/(Upstream \`SKILL\.md\` )\(v[0-9]+\.[0-9]+\.[0-9]+\)/\1(v$ver)/g" \
+            "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done
+    log_info "  已回填 impeccable 版本号 v$ver 到内嵌文档"
+}
+
 # 更新 SYNC.md impeccable section 的时间（每次 sync 只调用一次）
 update_sync_timestamp() {
     [ ! -f "$SYNC_FILE" ] && return 0
@@ -295,6 +320,7 @@ sync_files() {
     find "$TARGET_SKILLS_DIR" -name "*.mjs" -exec chmod +x {} \; 2>/dev/null || true
     find "$TARGET_SKILLS_DIR" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
+    backfill_version
     update_sync_timestamp
     log_success "共同步 $skill_count 个 skills"
 }
