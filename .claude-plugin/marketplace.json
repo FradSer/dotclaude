@@ -76,8 +76,8 @@
     {
       "name": "office",
       "displayName": "Office",
-      "version": "0.4.4",
-      "description": "Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
+      "version": "0.5.0",
+      "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
