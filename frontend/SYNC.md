@@ -4,7 +4,7 @@
 
 ## shadcn
 
-- **上次同步**: 2026-06-16
+- **上次同步**: 2026-06-20
 - **仓库**: [shadcn-ui/ui](https://github.com/shadcn-ui/ui)
 - **路径**: `skills/shadcn/`
 - **同步脚本**: `./frontend/scripts/sync-shadcn.sh`
@@ -12,13 +12,14 @@
 
 ## impeccable
 
-- **上次同步**: 2026-06-16
+- **上次同步**: 2026-06-20
 - **仓库**: [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
-- **路径**: `skills/impeccable/`（单一 skill）与 `agents/references/anti-patterns.md`
+- **路径**: `skills/impeccable/`（单一 skill）
 - **同步脚本**: `./frontend/scripts/sync-impeccable.sh`
 - **说明**: 上游自 v3.6.0 起为**单一 `impeccable` skill**（各命令合并为 `reference/<cmd>.md`）。本地不再拆分 `impeccable-*` 子技能（2026-06-16 已删除 17 个孤立目录，回归单 skill）。sync 像其他 skill 一样**整体覆盖**目录（含 SKILL.md），上游 SKILL.md 另存为 `reference/upstream-SKILL.md`。
-- **SKILL.md 机制**: **追随上游原文,无 curated 重放**（2026-06-16 起,按「所有内容以上游为优先」)。sync 覆盖进来的上游 `SKILL.md` 即最终版,`modifications/impeccable.md` 不含可重放块（replay 计数为 0,脚本不再提示重放）。`reference/upstream-SKILL.md` 与 live `SKILL.md` 同源,留作 pristine 快照供 diff。收尾的 `check-references.sh` 校验 reference 链接解析。**已知局限**: 上游 SKILL.md 里 5 处 `node .claude/skills/impeccable/scripts/*.mjs` 路径在 plugin 安装后不解析(脚本优雅降级),详见 `modifications/impeccable.md` 的取舍选项 A/B/C。
-- **anti-patterns（独立待办）**: 上游已删除独立 `anti-patterns.md`,sync 该步现报「上游未找到」;`frontend/agents/references/anti-patterns.md` 为冻结副本,仍被 `frontend-anti-patterns` agent 引用。刷新来源与退役死同步步骤为单独决策。
+- **SKILL.md 机制**: **追随上游原文,无 curated 重放**（2026-06-16 起,按「所有内容以上游为优先」)。sync 覆盖进来的上游 `SKILL.md` 即最终版,`modifications/impeccable.md` 不含可重放块（replay 计数为 0,脚本不再提示重放）。`reference/upstream-SKILL.md` 与 live `SKILL.md` 同源,留作 pristine 快照供 diff。收尾的 `check-references.sh` 校验 reference 链接解析。**已知局限**: 上游 SKILL.md 里 5 处 `node .claude/skills/impeccable/scripts/*.mjs` 路径在 plugin 安装后不解析(脚本优雅降级),详见 `modifications/impeccable.md` 的取舍选项 A/B/C（2026-06-20 落地 Option A + 本地 `PLUGIN-INSTALL-NOTES.md` 文档补充,sync wipe 时保留该文件）。
+- **anti-patterns（已退役）**: 上游从未存在独立 `anti-patterns.md`（仓库 code search = 0、git history = 0）。规则权威源为两处，均随 skill 整体同步：(a) `skills/impeccable/SKILL.md` 的 `### Absolute bans`（8 条文字 ban）；(b) `skills/impeccable/scripts/detector/registry/antipatterns.mjs`（~40 条可执行规则，注意是 `registry/` 不是 `engines/`）。本地 frozen `agents/references/anti-patterns.md` 已于 2026-06-20 删除，`frontend-anti-patterns` agent 改为指向上游两处权威源；`sync-impeccable.sh` 的 anti-patterns agent 步骤已改 no-op，不再每轮报「上游未找到」。
+- **本地非同步补充文件（sync wipe 时保留,2026-06-20 P1-b Option B）**: `skills/impeccable/PLUGIN-INSTALL-NOTES.md`（插件布局脚本路径 caveat + 解析配方）、`skills/impeccable/AUDIT-AUTHORITY.md`（四权威 evidence-type 对账阶梯）。二者上游不存在,sync-impeccable.sh wipe 时显式 skip。`hooks/design-md-first.sh`（UserPromptSubmit hook,cwd 有 DESIGN.md 时注入 design-md-first + token authority ladder preamble）。
 
 ## react-best-practices
 
