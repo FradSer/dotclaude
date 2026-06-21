@@ -1,7 +1,7 @@
 ---
 name: design-md
-description: Author, consume, and enforce a DESIGN.md design system spec (Google Labs open format, package @google/design.md). This skill should be used when the project has a DESIGN.md at the root or under docs/, when the user mentions "design tokens", "design system spec", "DESIGN.md", "tokens.json", needs to translate a design system into Tailwind theme config, export tokens to DTCG, lint token consistency, diff design system revisions, or check WCAG contrast on component color pairs. Acts as the upstream source of truth for impeccable-colorize, impeccable-typeset, impeccable-audit, impeccable-critique, web-design-guidelines, and shadcn.
-user-invocable: false
+description: Author, consume, and enforce a DESIGN.md design system spec (Google Labs open format, package @google/design.md). This skill should be used when the project has a DESIGN.md at the root or under docs/, when the user mentions "design tokens", "design system spec", "DESIGN.md", "tokens.json", needs to translate a design system into Tailwind theme config, export tokens to DTCG, lint token consistency, diff design system revisions, or check WCAG contrast on component color pairs. Acts as the upstream source of truth for the impeccable sub-commands (colorize/typeset/audit/critique), web-design-guidelines, and shadcn.
+user-invocable: true
 allowed-tools: ["Bash(npx @google/design.md*)", "Bash(npx @google/design.md@latest *)", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch"]
 ---
 
@@ -186,10 +186,10 @@ For v3 projects, copy the JSON straight into `theme.extend` and stop.
 When DESIGN.md is present, **it is the source of truth**. Override heuristic defaults from other skills:
 
 - **`frontend:impeccable`** — inject the `## Overview` and `## Do's and Don'ts` prose into the context-gathering protocol. Never suggest palettes that contradict defined tokens.
-- **`frontend:impeccable-colorize`** — restrict new accents to the `colors.*` map. If a hue is genuinely missing, propose adding it to DESIGN.md (and the token name) rather than inlining raw hex.
-- **`frontend:impeccable-typeset`** — pull from `typography.*` tokens directly. Surface `missing-typography` findings before suggesting fonts from scratch.
-- **`frontend:impeccable-audit`** — run `lint --format json` as part of the audit. Include every `error` in the report; treat `contrast-ratio` warnings as blockers on AA-committed projects.
-- **`frontend:impeccable-critique`** — cite `## Do's and Don'ts` when flagging usability issues.
+- **`frontend:impeccable` (argument: `colorize`)** — restrict new accents to the `colors.*` map. If a hue is genuinely missing, propose adding it to DESIGN.md (and the token name) rather than inlining raw hex.
+- **`frontend:impeccable` (argument: `typeset`)** — pull from `typography.*` tokens directly. Surface `missing-typography` findings before suggesting fonts from scratch.
+- **`frontend:impeccable` (argument: `audit`)** — run `lint --format json` as part of the audit. Include every `error` in the report; treat `contrast-ratio` warnings as blockers on AA-committed projects.
+- **`frontend:impeccable` (argument: `critique`)** — cite `## Do's and Don'ts` when flagging usability issues.
 - **`frontend:web-design-guidelines`** — cross-reference `contrast-ratio` findings with the guideline rules.
 - **`frontend:shadcn`** — map DESIGN.md `components.button-primary.*` onto shadcn's CSS variable contract (`--primary`, `--primary-foreground`, `--radius`). DESIGN.md exports provide the semantic variables that satisfy the shadcn rule "no raw `bg-blue-500`".
 

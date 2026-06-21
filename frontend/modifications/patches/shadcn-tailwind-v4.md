@@ -1,34 +1,4 @@
-# Modifications — shadcn
-
-Upstream: `shadcn-ui/ui` → `skills/shadcn`
-Sync script: `scripts/sync-shadcn.sh`
-
-> **Auto-replay (2026-06-20).** This Edit is now applied automatically by
-> `sync-shadcn.sh` via the patch fragment `patches/shadcn-tailwind-v4.md`
-> (which carries a `<!-- LOCAL-MOD: tailwind-v4 -->` sentinel). On sync the
-> script detects a missing sentinel in `rules/styling.md` and re-appends the
-> fragment — no manual replay needed. The block below is the human-readable
-> record; the patch file is the source of truth for the content.
-
----
-
-## Edit: rules/styling.md — append Tailwind v4 specifics section
-
-**Target**: `skills/shadcn/rules/styling.md`
-
-**Intent**: The shadcn SKILL.md references `tailwindVersion: "v4"` in the
-project context but `rules/styling.md` has no v4-specific guidance. Without
-this section the assistant falls back to v3 habits (`tailwind.config.js`,
-`dark:` variants, viewport breakpoints) even on v4 projects. Append a new
-section at the end of `rules/styling.md` covering CSS-first tokens via
-`@theme`, discouraging `@apply`, preferring container queries, and keeping
-semantic tokens for dark mode.
-
-**Content**: After the final line of `rules/styling.md` (`## No manual z-index
-on overlay components` and its two paragraphs), append:
-
-````markdown
-
+<!-- LOCAL-MOD: tailwind-v4 (auto-replayed by sync-shadcn.sh; do not edit in styling.md directly — sync wipes it) -->
 ---
 
 ## Tailwind v4 specifics (when `tailwindVersion: "v4"`)
@@ -84,6 +54,3 @@ v4 ships container queries without a plugin. Prefer `@container` + `@md:grid-col
 ### Dark mode via CSS variables, not `dark:` variants
 
 shadcn/ui already defines token values for both modes and flips them with a `.dark` selector on `html`. Keep using semantic tokens (`bg-background`, `text-foreground`) — never write `dark:bg-gray-900` in component classNames.
-````
-
-**Added**: 2026-04-19

@@ -161,6 +161,8 @@ import { cn } from "@/lib/utils"
 
 `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `DropdownMenu`, `Popover`, `Tooltip`, `HoverCard` handle their own stacking. Never add `z-50` or `z-[999]`.
 
+
+<!-- LOCAL-MOD: tailwind-v4 (auto-replayed by sync-shadcn.sh; do not edit in styling.md directly — sync wipes it) -->
 ---
 
 ## Tailwind v4 specifics (when `tailwindVersion: "v4"`)
@@ -216,3 +218,4 @@ v4 ships container queries without a plugin. Prefer `@container` + `@md:grid-col
 ### Dark mode via CSS variables, not `dark:` variants
 
 shadcn/ui already defines token values for both modes and flips them with a `.dark` selector on `html`. Keep using semantic tokens (`bg-background`, `text-foreground`) — never write `dark:bg-gray-900` in component classNames.
+

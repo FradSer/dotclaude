@@ -33,7 +33,7 @@ description: |
   <example>
   Context: User needs help with a specific frontend problem
   user: "The forms in our app are inconsistent and hard to use"
-  assistant: "I'll launch the frontend-expert agent to diagnose the form issues, then apply the shadcn forms rules, audit for accessibility, and use the clarify skill for UX copy improvements."
+  assistant: "I'll launch the frontend-expert agent to diagnose the form issues, then apply the shadcn forms rules, load frontend:impeccable with argument audit for accessibility, and load frontend:impeccable with argument clarify for UX copy improvements."
   <commentary>
   Specific problem maps to multiple skills. Expert agent identifies the right combination.
   </commentary>
@@ -77,6 +77,10 @@ All skills are registered in the `frontend` plugin. Invoke them with the fully q
 ### Design hub (impeccable — one skill, many sub-commands)
 
 `frontend:impeccable` is a **single** user-invocable skill (`/impeccable`), not a family of skills. It owns design direction plus the sub-commands below — **there are no separate `frontend:impeccable-*` skills** (they were consolidated upstream into `reference/<command>.md`).
+
+`frontend:design-md` is **also** user-invocable (`/design-md`) — the token source of truth is directly callable for narrow lint / diff / export / spec work, not gated behind this coordinator.
+
+> **Plugin-script caveat.** Upstream `SKILL.md` invokes bundled helper scripts (`context.mjs` / `palette.mjs` / `detect.mjs` / etc.) via `node .claude/skills/impeccable/scripts/*.mjs` — a path that assumes the standalone install and does not resolve in this plugin. When impeccable's flow calls those scripts, consult `skills/impeccable/PLUGIN-INSTALL-NOTES.md` for the resolution recipe (and upstream's graceful-degradation fallbacks). Do not treat a script-path error as a hard failure.
 
 | Skill ID | Purpose | Trigger |
 |----------|---------|---------|
@@ -133,13 +137,17 @@ Rules:
 3. **Plan the pipeline.** Pick the minimum set of skills and fix their order (see *Skill Selection Guidelines* below). If `DESIGN.md` exists, `frontend:design-md` goes first in any design-touching pipeline so its tokens ground the work.
 4. **Invoke and apply.** For each skill in order, **Load `frontend:<skill>` skill** using the Skill tool, then act on its guidance before moving on.
 5. **Delegate anti-pattern scans.** When the plan includes anti-pattern detection, launch the `frontend-anti-patterns` agent via the Task tool in parallel with (or between) skill loads.
-6. **Report.** Summarize which skills ran, what changed, and what the user should verify.
+6. **Report.** Summarize which skills ran, what changed, and what the user should verify. When multiple quality authorities ran (design-md lint / impeccable audit / anti-patterns agent), reconcile by evidence type — see `skills/impeccable/AUDIT-AUTHORITY.md`.
+
+## Scope (Option B — emergent, coordinator is opt-in)
+
+This coordinator exists only for requests that genuinely need **multiple skills with write dependencies** (e.g. Tokenize existing UI: design-md → impeccable colorize → design-md again → shadcn rebind, where step N+1 depends on step N's committed output). For single-skill or read-only requests, **do not spawn this agent** — load the one skill directly in the parent session. The `design-md-first` UserPromptSubmit hook already injects the token-authority ladder when `DESIGN.md` is present, so most design-touching work no longer needs a coordinator pass.
 
 ## Skill Selection Guidelines
 
 Each pipeline below shows the canonical load order. Execute them left-to-right: load → apply → load next.
 
-> **DESIGN.md convention.** Every design-touching pipeline below begins with `frontend:design-md` *only if* `DESIGN.md` or `docs/DESIGN.md` is present. If absent and the task creates a cohesive visual identity (new project, rebrand, "make it consistent"), ask via `AskUserQuestion` whether to author one before starting — then lead with `frontend:design-md` in author mode.
+> **DESIGN.md convention.** Every design-touching pipeline below begins with `frontend:design-md` *only if* `DESIGN.md` or `docs/DESIGN.md` is present (the `design-md-first` hook surfaces this automatically). If absent and the task creates a cohesive visual identity (new project, rebrand, "make it consistent"), proceed to author one with `frontend:design-md` in author mode — do not block on a confirmation prompt.
 
 **New project setup**
 1. **Load `frontend:design-md` skill** using the Skill tool (author tokens / detect existing spec)

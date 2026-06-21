@@ -24,10 +24,10 @@
   },
   "license": "MIT",
   "commands": [
-    "./skills/impeccable/"
+    "./skills/impeccable/",
+    "./skills/design-md/"
   ],
   "skills": [
-    "./skills/design-md/",
     "./skills/shadcn/",
     "./skills/next-devtools-guide/",
     "./skills/react-best-practices/",
@@ -40,6 +40,18 @@
     "./agents/frontend-expert.md",
     "./agents/frontend-anti-patterns.md"
   ],
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/design-md-first.sh"
+          }
+        ]
+      }
+    ]
+  },
   "mcpServers": {
     "next-devtools": {
       "type": "stdio",

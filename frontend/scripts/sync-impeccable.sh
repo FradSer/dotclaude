@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Impeccable Skills 同步脚本
-# 从 pbakaus/impeccable 仓库同步 .claude/skills/ 和 .claude/agents/anti-patterns.md
+# 从 pbakaus/impeccable 仓库同步 .claude/skills/impeccable/（单一 skill，含 SKILL.md + reference/ + scripts/）
 # 上游为单一 impeccable skill（v3.6.0 起把各命令合并为 reference/<cmd>.md）；
 # 本地不再拆分 impeccable-* 子技能，目录名直接沿用上游名。
 #
@@ -58,7 +58,9 @@ ${GREEN}选项:${NC}
 ${GREEN}同步内容:${NC}
     - .claude/skills/impeccable -> frontend/skills/impeccable
       (SKILL.md = 上游原文 verbatim,无重放;同源副本另存为 reference/upstream-SKILL.md 供 diff)
-    - .claude/agents/anti-patterns.md -> frontend/agents/references/
+    - (anti-patterns agent reference 已退役:上游从未存在独立 anti-patterns.md,
+       规则在 SKILL.md 的 ### Absolute bans + scripts/detector/registry/antipatterns.mjs,
+       随 skill 整体同步,无独立步骤)
 
 ${GREEN}上游仓库:${NC}
     $UPSTREAM_REPO (branch: $UPSTREAM_BRANCH)
@@ -192,18 +194,9 @@ check_diff() {
         fi
     done
 
-    # 检查 anti-patterns agent
-    local upstream_agent="$TEMP_DIR/repo/$UPSTREAM_AGENTS_PATH/anti-patterns.md"
-    local local_agent="$TARGET_AGENTS_DIR/references/anti-patterns.md"
-    if [ -f "$upstream_agent" ]; then
-        if [ ! -f "$local_agent" ]; then
-            log_info "  anti-patterns agent: 新文件"
-            has_changes=true
-        elif ! diff -q "$local_agent" "$upstream_agent" &> /dev/null; then
-            log_info "  anti-patterns agent: 有变更"
-            has_changes=true
-        fi
-    fi
+    # anti-patterns agent reference 已退役（上游从未存在独立 anti-patterns.md；
+    # 规则在 SKILL.md 的 ### Absolute bans + scripts/detector/registry/antipatterns.mjs，
+    # 随 skill 整体同步，无需独立 agent reference 步骤）
 
     if [ "$has_changes" = true ]; then
         return 1
@@ -230,11 +223,16 @@ sync_skill() {
     local is_impeccable=false
     [ "$skill_name" = "impeccable" ] && is_impeccable=true
 
-    # 删除旧内容（仅保留 .backup；SKILL.md 随后由上游原文覆盖，即最终版，无重放）
+    # 删除旧内容（保留 .backup 与本地 plugin-install 补充文件；
+    # SKILL.md 随后由上游原文覆盖，即最终版，无重放）。
+    # PLUGIN-INSTALL-NOTES.md / AUDIT-AUTHORITY.md 是本地补充（上游不存在），
+    # 记录插件布局下脚本路径 caveat 与 audit 权威对账阶梯，sync 不覆盖它们。
     while IFS= read -r -d '' item; do
         local basename
         basename=$(basename "$item")
         [ "$basename" = ".backup" ] && continue
+        [ "$basename" = "PLUGIN-INSTALL-NOTES.md" ] && continue
+        [ "$basename" = "AUDIT-AUTHORITY.md" ] && continue
         rm -rf "$item"
     done < <(find "$skill_target" -maxdepth 1 -mindepth 1 -print0)
 
@@ -267,19 +265,12 @@ update_sync_timestamp() {
     ' "$SYNC_FILE" > "$SYNC_FILE.tmp" && mv "$SYNC_FILE.tmp" "$SYNC_FILE"
 }
 
-# 同步 anti-patterns agent 原始文本
+# anti-patterns agent reference 已退役（上游从未存在独立 anti-patterns.md）。
+# 规则权威源：skills/impeccable/SKILL.md 的 ### Absolute bans（文字 ban）+
+# skills/impeccable/scripts/detector/registry/antipatterns.mjs（可执行规则），
+# 二者随 skill 整体同步，无需独立 agent reference 步骤。
 sync_agent() {
-    local upstream_agent="$TEMP_DIR/repo/$UPSTREAM_AGENTS_PATH/anti-patterns.md"
-    local target_ref_dir="$TARGET_AGENTS_DIR/references"
-
-    if [ ! -f "$upstream_agent" ]; then
-        log_warning "上游未找到 anti-patterns.md"
-        return 0
-    fi
-
-    mkdir -p "$target_ref_dir"
-    cp "$upstream_agent" "$target_ref_dir/anti-patterns.md"
-    log_success "  anti-patterns agent: 已保存原始文本到 agents/references/"
+    return 0
 }
 
 # 执行同步
@@ -295,15 +286,14 @@ sync_files() {
         skill_count=$((skill_count + 1))
     done
 
-    log_info "正在同步 anti-patterns agent..."
-    sync_agent
+    # anti-patterns agent reference 已退役（见 sync_agent 注释），跳过该步骤
 
     # 设置脚本执行权限
     find "$TARGET_SKILLS_DIR" -name "*.mjs" -exec chmod +x {} \; 2>/dev/null || true
     find "$TARGET_SKILLS_DIR" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
     update_sync_timestamp
-    log_success "共同步 $skill_count 个 skills + 1 个 agent 参考文件"
+    log_success "共同步 $skill_count 个 skills"
 }
 
 # 主函数

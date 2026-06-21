@@ -374,18 +374,40 @@ main() {
     echo ""
     "$SCRIPT_DIR/check-references.sh" || log_warning "请据实修复上面的 SKILL.md 死链"
 
-    # 检查是否有本地 modifications 需要 replay
-    local modifications_file="$SCRIPT_DIR/../modifications/shadcn.md"
-    if [ -f "$modifications_file" ]; then
-        local pending
-        pending=$(grep -c "^## " "$modifications_file" 2>/dev/null || echo 0)
-        if [ $pending -gt 0 ]; then
-            echo ""
-            log_warning "检测到 $pending 条本地 modification 需要 replay"
-            log_warning "请让 Claude 读取 frontend/modifications/shadcn.md 并重新应用到对应目标文件"
-            echo ""
-        fi
-    fi
+    # 本地 modifications 自动 replay。
+    # 每个 modifications/patches/<name>.md 片段以 sentinel 注释 `<!-- LOCAL-MOD: <key> -->` 开头,
+    # sync 前已记录在 patches/ 下;sync 整体覆盖目录后会洗掉 sentinel,这里检测缺失并自动重新追加,
+    # 替代旧的「提示 Claude 手动 replay」流程。
+    replay_patches() {
+        local patches_dir="$SCRIPT_DIR/../modifications/patches"
+        local target_file="$SCRIPT_DIR/../skills/shadcn/rules/styling.md"
+        [ -d "$patches_dir" ] || return 0
+
+        local replayed=0
+        while IFS= read -r -d '' patch; do
+            # 从 sentinel 注释提取 key
+            local key
+            key=$(grep -m1 -oE 'LOCAL-MOD: [a-z0-9-]+' "$patch" | sed 's/^LOCAL-MOD: //')
+            [ -z "$key" ] && continue
+
+            local sentinel="LOCAL-MOD: $key"
+            if grep -q "$sentinel" "$target_file" 2>/dev/null; then
+                continue  # 已存在,无需重放
+            fi
+
+            # 追加片段(片段自身含 sentinel 首行 + 内容)
+            {
+                echo ""
+                cat "$patch"
+                echo ""
+            } >> "$target_file"
+            log_info "  自动 replay: $key -> $(basename "$target_file")"
+            replayed=$((replayed + 1))
+        done < <(find "$patches_dir" -name "shadcn-*.md" -type f -print0 2>/dev/null)
+
+        [ $replayed -gt 0 ] && log_success "已自动 replay $replayed 条本地 modification"
+    }
+    replay_patches
 
     log_info "建议执行以下命令提交更改:"
     echo ""
