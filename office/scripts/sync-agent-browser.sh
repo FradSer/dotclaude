@@ -149,10 +149,23 @@ create_backup() {
 
     if [ $count -gt 0 ]; then
         log_success "已备份 $count 个项目到: $backup_path"
+        prune_backups
     else
         log_info "没有需要备份的内容"
         rmdir "$backup_path" 2>/dev/null || true
     fi
+}
+
+# 仅保留最近 KEEP_BACKUPS 份备份,清理更旧的(避免镜像备份无限累积)
+KEEP_BACKUPS=2
+prune_backups() {
+    [ -d "$BACKUP_DIR" ] || return 0
+    local old
+    while IFS= read -r old; do
+        [ -n "$old" ] || continue
+        rm -rf "$BACKUP_DIR/$old"
+        log_info "已清理旧备份: $old"
+    done < <(ls -1 "$BACKUP_DIR" 2>/dev/null | sort -r | tail -n +$((KEEP_BACKUPS + 1)))
 }
 
 # 检查差异
