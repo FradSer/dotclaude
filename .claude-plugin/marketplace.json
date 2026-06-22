@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "frad-dotclaude",
-  "version": "1.12.2",
+  "version": "1.13.0",
   "description": "Frad's Claude Code plugin marketplace featuring specialized agents and workflow automation",
   "owner": {
     "name": "Frad LEE",
