@@ -10,6 +10,12 @@ disable-model-invocation: true
 
 Keep README.md (English, primary) and README.zh-CN.md (Simplified Chinese, secondary) in sync with the project's actual current state. Both files must be accurate, complete, and consistent with each other.
 
+## CRITICAL: Ground Truth and Header Format
+
+- Write from ground truth, not from memory or assumption. Every skill/component listed in the README MUST exist in the repository at the time of writing. Verify existence before writing.
+- Every README MUST open with the exact header structure shown in the "Header Format" section below, including the language toggle. Adapt badges, project name, and description to the project; do not omit the structure.
+- Do not output README content as a code block in the conversation. Use the Edit or Write tool to write the files directly.
+
 ## Header Format (Required)
 
 Every README must open with this exact structure — adapt the badges, project name, and description to the project at hand:

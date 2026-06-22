@@ -10,6 +10,16 @@ disable-model-invocation: true
 
 Create or update CHANGELOG.md following the [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) format, using git tags as version boundaries.
 
+## CRITICAL: Human-First Entries and Format
+
+- Do NOT copy commit messages verbatim. Changelogs are for humans -- readers who care about what changed and why, not how the code was modified. Group related commits into logical changes and write each entry as a clear, meaningful description.
+- The `[Unreleased]` section MUST always be present, even if empty.
+- Versions MUST be in reverse chronological order (newest first), with ISO 8601 dates (`YYYY-MM-DD`).
+- Omit empty categories -- only include categories that have entries.
+- When updating an existing changelog, preserve any hand-edited entries in existing version sections -- do not overwrite them.
+
+See `references/keepachangelog-format.md` for the full format specification.
+
 ## Process
 
 ### 1. Gather git tag and remote info
@@ -151,4 +161,4 @@ When CHANGELOG.md already exists:
 
 ## References
 
-- `references/keepachangelog-format.md` -- Full format specification and diff link patterns
+- `references/keepachangelog-format.md` -- Full format specification, diff link patterns, and category ordering
