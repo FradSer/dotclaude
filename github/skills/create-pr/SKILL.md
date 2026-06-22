@@ -57,7 +57,7 @@ See `references/repository-templates.md` for template detection and compliance d
 2. Generate PR title (≤70 chars, imperative, no emojis)
 3. Assemble PR body following template in `references/pr-structure.md`
 4. Apply automated labels based on file changes
-5. Check if targeting a non-default branch (e.g. `develop`), and if so explicitly warn the user that auto-closing keywords will not trigger automatically on merge
+5. **CRITICAL: Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only trigger when the PR merges into the repository's default branch. If targeting a non-default branch (e.g. `develop`), explicitly warn the user that linked issues will NOT close automatically on merge and must be closed manually.**
 6. Create PR using `gh pr create` with all metadata
    - Use `--draft` if the PR requires early feedback or is not fully complete
    - Set reviewers with `--reviewer` and assignees with `--assignee` when requested

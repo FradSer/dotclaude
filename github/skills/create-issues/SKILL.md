@@ -47,7 +47,7 @@ See `references/repository-templates.md` for template detection and compliance d
    - Assign owners using `--assignee`
    - Link milestones using `--milestone` or projects using `--project` if requested
 4. Add auto-closing keywords if PR-scoped issue (NOT for epics)
-   - Note: warn user that auto-closing keywords only trigger automatically when merged into the default branch (usually `main`/`master`)
+   - **CRITICAL: Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only trigger when the PR merges into the repository's default branch (usually `main`/`master`). If the issue will be resolved by a PR targeting a non-default branch (e.g. `develop`), warn the user that the issue will NOT close automatically and must be closed manually.**
 5. Link to related issues or epics if applicable
 
 ## Phase 3: Documentation and Handoff

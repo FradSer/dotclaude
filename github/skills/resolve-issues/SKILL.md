@@ -50,7 +50,7 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 
 **Actions**:
 1. Push branch to remote with `git push -u origin <branch-name>`
-2. Create PR using `gh pr create` with auto-closing keywords (e.g., "Closes #456") if targeting the default branch. If targeting a non-default branch, warn the user they will need to close the issue manually.
+2. Create PR using `gh pr create` with auto-closing keywords (e.g., "Closes #456"). **CRITICAL: Auto-closing keywords only trigger when the PR merges into the repository's default branch. If targeting a non-default branch (e.g. `develop`), warn the user that the issue will NOT close automatically on merge and must be closed manually.**
    - Consider using `--draft` if the fix requires further feedback before review
 3. Report PR URL and status to user
 4. After successful merge: use the ExitWorktree tool with action "remove" to clean up worktree and branch
