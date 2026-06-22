@@ -16,8 +16,7 @@ disable-model-invocation: true
 ```
 Execute the start-feature workflow.
 
-## Pre-operation Checks
-Verify working tree is clean per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
+CRITICAL: Verify working tree is clean (`git status --porcelain` is empty) before starting. Abort if dirty. See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 
 ## Phase 1: Start Feature
 **Goal**: Create feature branch using git-flow-next CLI.

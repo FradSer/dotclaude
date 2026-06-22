@@ -16,8 +16,10 @@ disable-model-invocation: true
 ```
 Execute the finish-feature workflow (4 phases).
 
-## Pre-operation Checks
-Verify working tree is clean and current branch matches `feature/*` per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
+CRITICAL:
+- Verify working tree is clean (`git status --porcelain` is empty) before finishing.
+- Verify current branch matches `feature/*` before finishing — wrong branch type merges to the wrong parent.
+See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 
 ## Phase 1: Identify Feature
 **Goal**: Determine feature name from current branch or argument.

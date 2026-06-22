@@ -16,8 +16,10 @@ disable-model-invocation: true
 ```
 Execute the start-release workflow.
 
-## Pre-operation Checks
-Verify working tree is clean per `${CLAUDE_PLUGIN_ROOT}/references/invariants.md`.
+CRITICAL:
+- Verify working tree is clean (`git status --porcelain` is empty) before starting. Abort if dirty.
+- If `$ARGUMENTS` is not strictly greater than the latest tag (semver), abort immediately.
+See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 
 ## Phase 0: Validate Version
 **Goal**: Ensure `$ARGUMENTS` is a valid next version.
