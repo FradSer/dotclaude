@@ -1,0 +1,33 @@
+{
+  "name": "storm",
+  "displayName": "STORM",
+  "version": "0.1.0",
+  "description": "Wikipedia-style long-form article generation via multi-perspective question asking and retrieval — a Claude-native port of Stanford STORM's two-stage research-to-article pipeline",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "storm",
+    "research",
+    "long-form",
+    "wikipedia",
+    "article-generation",
+    "knowledge-curation",
+    "retrieval"
+  ],
+  "commands": [
+    "./skills/generate/",
+    "./skills/research/",
+    "./skills/outline/",
+    "./skills/write/",
+    "./skills/polish/"
+  ],
+  "skills": [
+    "./skills/engine/"
+  ],
+  "agents": [
+    "./agents/storm-researcher.md"
+  ]
+}

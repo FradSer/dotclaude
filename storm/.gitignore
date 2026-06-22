@@ -1,0 +1,3 @@
+# Storm runtime artifacts (default: temporary working dir)
+storm-output/
+.tmp/
