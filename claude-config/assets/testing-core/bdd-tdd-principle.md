@@ -1,1 +1,0 @@
-- Follow BDD-driven TDD: define Given/When/Then scenarios first (store in .feature files, NOT as code comments) → RED failing test → GREEN minimal code → REFACTOR keep tests green

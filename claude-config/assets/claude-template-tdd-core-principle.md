@@ -1,1 +1,0 @@
-- Follow TDD: RED write a failing test first → GREEN write minimal code to pass → REFACTOR clean up code while keeping tests green

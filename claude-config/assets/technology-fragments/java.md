@@ -1,1 +1,0 @@
-Design domain models as immutable by default, validate inputs at boundaries and use `Optional` for absent return values, and prefer modern Java language features that keep APIs explicit and null-safe.

@@ -1,2 +1,0 @@
-- Define Given/When/Then scenarios first (store in .feature files, NOT as code comments) for shared understanding
-- Keep scenarios declarative (business behavior, not UI implementation details)
