@@ -19,3 +19,5 @@ scopes:
       description: Plugin optimizer framework for validation, optimization, and plugin hooks in plugin-optimizer/; does not cover marketplace metadata.
     - name: sp
       description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/; does not cover general office automation.
+    - name: storm
+      description: STORM two-stage article generation pipeline, persona research, and citation hygiene in storm/; does not cover general web search.
