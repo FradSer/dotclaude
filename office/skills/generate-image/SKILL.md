@@ -20,8 +20,8 @@ and configuration; your job is to craft a strong prompt and wire up the flags.
   - a `.env` file (checked in order: `$PWD/.env`, then `${CLAUDE_PLUGIN_ROOT}/.env`), or
   - `--api-key ...` on the command line.
 
-  Never paste the key into chat or commit a `.env`. If it is missing, the script
-  prints exactly how to set it — relay that to the user rather than guessing.
+  **CRITICAL** -- Never paste the API key into chat or commit a `.env`. If the key is missing,
+  the script prints exactly how to set it — relay that to the user rather than guessing.
 
 ## Workflow
 

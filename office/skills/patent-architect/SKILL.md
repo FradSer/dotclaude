@@ -154,7 +154,7 @@ Create the form as a Feishu cloud document:
    ```
 5. For long forms, split creation: `docs +create` for the first half, then `docs +update --mode append` for the rest
 6. If `board_tokens` are returned (whiteboards were created):
-   - Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard-cli/SKILL.md`
+   - Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard/SKILL.md`
    - Fill each whiteboard with actual content (architecture diagrams, flowcharts)
    - All whiteboards must have real content before task is complete
 7. Report the document URL

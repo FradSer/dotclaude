@@ -1,7 +1,7 @@
 {
   "name": "office",
   "displayName": "Office",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "license": "MIT",
   "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
   "keywords": [

@@ -111,7 +111,7 @@ allowed-tools: ["Read", "Write", "AskUserQuestion", "Glob", "Bash(lark-cli:*)", 
    - 先用 `docs +create` 创建文档（包含前半部分内容）
    - 再用 `docs +update --mode append` 追加剩余章节
 7. 如果文档中包含空白画板（`board_tokens` 不为空）：
-   - 读取 `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard-cli/SKILL.md`
+   - 读取 `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard/SKILL.md`
    - 为每个画板填充实际内容（流程图、架构图等）
    - 确认所有画板都有实际内容后才算完成
 8. 保存后报告文档 URL
@@ -136,8 +136,8 @@ allowed-tools: ["Read", "Write", "AskUserQuestion", "Glob", "Bash(lark-cli:*)", 
 | 关键风险/假设/依赖 | `<callout>` 高亮块 | 风险用红色/橙色，假设用蓝色，依赖用黄色 |
 | 核心目标/成功指标 | `<callout emoji="..." background-color="light-green">` | 突出关键 OKR 和量化指标 |
 | 功能优先级对比（P0/P1/P2） | `<grid cols="3">` 分栏 | 三列并排展示不同优先级 |
-| 用户旅程/业务流程 | `<whiteboard type="blank">` 画板 | 用流程图绘制，创建后用 lark-whiteboard-cli 填充 |
-| 系统架构/技术方案 | `<whiteboard type="blank">` 画板 | 用架构图绘制，创建后用 lark-whiteboard-cli 填充 |
+| 用户旅程/业务流程 | `<whiteboard type="blank">` 画板 | 用流程图绘制，创建后用 lark-whiteboard 填充 |
+| 系统架构/技术方案 | `<whiteboard type="blank">` 画板 | 用架构图绘制，创建后用 lark-whiteboard 填充 |
 | 里程碑/时间线 | `<whiteboard type="blank">` 画板 | 用里程碑图绘制 |
 | 非目标/范围排除 | `<callout emoji="..." background-color="light-red">` | 红色高亮，明确标注禁止范围 |
 | 术语表/缩写对照 | 两列 Markdown 表格 | 简洁的对照表 |
