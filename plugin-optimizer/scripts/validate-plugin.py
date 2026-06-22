@@ -52,6 +52,10 @@ SKILL_LINE_CRITICAL = 800
 SKILL_BODY_WARNING = 4500  # Warning when approaching 5k limit
 SKILL_BODY_MAX = 5000      # Under 5k tokens hard limit (SKILL.md body)
 
+# 官方规范推荐详细文档移入 references/；README.md/CHANGELOG.md 这类纯辅助文件
+# 不应出现在 skill 文件夹内（SKILL.md 才是 skill 的入口）
+FORBIDDEN_SKILL_AUX_FILES = {"README.md", "CHANGELOG.md"}
+
 # Manifest schema (mirrors https://code.claude.com/docs/en/plugins-reference)
 KNOWN_MANIFEST_FIELDS = {
     "$schema",
@@ -244,6 +248,33 @@ def get_relative_path(file_path: Path, plugin_dir: Path) -> str:
         return str(file_path)
 
 
+def _check_skill_folder_contents(skill_dir: Path, plugin_dir: Path, result) -> None:
+    """Validate skill folder against official spec.
+
+    The official skill spec is permissive in practice: the skill-creator's own
+    skill contains scripts/, references/, assets/, agents/, eval-viewer/, and
+    LICENSE.txt; the official PDF example shows reference.md/examples.md/
+    FORMS.md alongside scripts/ at the skill root. We therefore do NOT enforce
+    a hard subdirectory whitelist. We only flag clearly auxiliary files
+    (README.md, CHANGELOG.md) that the spec recommends moving into references/.
+    """
+    skill_rel = get_relative_path(skill_dir, plugin_dir)
+
+    for child in skill_dir.iterdir():
+        if child.is_dir() or not child.is_file():
+            continue
+        if child.name in FORBIDDEN_SKILL_AUX_FILES:
+            result.should(
+                f"Auxiliary file in skill folder: {child.name}",
+                file=f"{skill_rel}/{child.name}",
+                source=child.name,
+                suggestion=(
+                    "Move README.md/CHANGELOG.md content into references/ — "
+                    "SKILL.md is the entry point for a skill"
+                ),
+            )
+
+
 # =============================================================================
 # Check: Structure
 # =============================================================================
@@ -292,12 +323,23 @@ def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult
         for skill_dir in skills_dir.iterdir():
             if skill_dir.name in NON_SKILL_DIRS:
                 continue
-            if skill_dir.is_dir() and not (skill_dir / "SKILL.md").exists():
+            if not skill_dir.is_dir():
+                continue
+            if not (skill_dir / "SKILL.md").exists():
                 result.must(
                     "Missing SKILL.md",
                     file=f"skills/{skill_dir.name}/",
                     suggestion="Create SKILL.md with frontmatter and content"
                 )
+                continue
+            # Check skill folder for clearly auxiliary files (README.md/CHANGELOG.md).
+            # Note: non-standard subdirs and loose .md docs are NOT flagged — the
+            # official spec is permissive (PDF example shows reference.md/examples.md
+            # at skill root; skill-creator itself has agents/ and eval-viewer/).
+            # Nested skills (a subdirectory containing its own SKILL.md, e.g.
+            # skills/lark/lark-mail/SKILL.md) are a legitimate pattern: they are
+            # directories, not files, so the file-only check below skips them.
+            _check_skill_folder_contents(skill_dir, plugin_dir, result)
 
     # Check for hardcoded paths in config files
     for config_file in ["hooks/hooks.json", ".mcp.json"]:

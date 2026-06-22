@@ -64,6 +64,26 @@ enterprise-plugin/
 
 > **Best Practice**: See `./references/manifest-schema.md` for plugin.json declaration guidance.
 
+## Skill folder contents
+
+The plugin-root layout above governs where components live. **Inside each skill folder**, the standard structure is:
+
+```
+skills/
+└── my-skill/
+    ├── SKILL.md          # required - the entry point
+    ├── scripts/          # optional - executable code (deterministic/repetitive tasks)
+    ├── references/       # optional - docs loaded into context as needed
+    └── assets/           # optional - files used in output (templates, icons, fonts)
+```
+
+**Recommended**: `SKILL.md` plus `scripts/`, `references/`, `assets/`. The spec is permissive in practice — the skill-creator's own skill ships `agents/` and `eval-viewer/`, and the official PDF example shows `reference.md`/`examples.md`/`FORMS.md` alongside `scripts/` at the skill root. Nested skills (a subdirectory with its own `SKILL.md`, e.g. `skills/lark/lark-mail/SKILL.md`) are also a legitimate pattern.
+
+**Avoid** inside a skill folder:
+- Auxiliary files: `README.md`, `CHANGELOG.md` — these are flagged by the validator. Move documentation into `references/`; `SKILL.md` is the skill's entry point.
+
+**Variant organization**: when a skill supports multiple variations (e.g., AWS/GCP/Azure), keep the core workflow and selection guidance in `SKILL.md` and move variant-specific details into `references/<variant>.md`. See `./components/skills.md` → Degrees of Freedom.
+
 ## File locations reference
 
 | Component         | Default Location             | Purpose                                                                                    |

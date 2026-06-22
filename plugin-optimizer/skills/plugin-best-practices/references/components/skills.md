@@ -14,11 +14,13 @@ Skills package domain expertise in a format agents can access and apply—turnin
 skills/
 └── my-skill/
     ├── SKILL.md          (required - main instructions)
-    ├── reference.md      (optional - detailed docs)
-    ├── examples.md       (optional - usage examples)
-    └── scripts/          (optional - executable logic)
-        └── helper.py
+    ├── scripts/          (optional - executable code)
+    ├── references/       (optional - docs loaded into context as needed)
+    └── assets/           (optional - files used in output: templates, icons, fonts)
 ```
+
+**Recommended subdirectories**: `scripts/`, `references/`, `assets/` are the three standard bundled-resource dirs. The spec is permissive in practice — the skill-creator's own skill ships `agents/` and `eval-viewer/`, and the official PDF example shows `reference.md`/`examples.md`/`FORMS.md` alongside `scripts/` at the skill root. The only hard rule: `SKILL.md` is the entry point. Avoid auxiliary files (`README.md`, `CHANGELOG.md`) inside a skill folder — move documentation into `references/`.
+
 
 ## Frontmatter fields
 
@@ -131,9 +133,45 @@ Skills use progressive disclosure to protect the context window and enable compo
   - Basic workflow overview using imperative style
   - Target ~500 tokens
 - **Level 3 (Detailed Documentation)**: Reference external files for complex logic
-  - Reference supporting files from SKILL.md: `For complete API details, see reference.md`
+  - Reference supporting files from SKILL.md: `For complete API details, see ./references/api.md`
   - Use code interpreter scripts for complex operations
   - MUST only access when specifically needed
+
+### Degrees of Freedom (Configuration-Driven Patterns)
+
+Match the level of specificity to the task's fragility and variability. The official spec endorses three freedom levels:
+
+| Freedom | When to use | Form |
+|---------|-------------|------|
+| **High** | Multiple approaches valid; decisions depend on context | Text-based instructions (general direction, trust Claude) |
+| **Medium** | A preferred pattern exists; some variation acceptable; configuration affects behavior | Pseudocode or scripts with parameters |
+| **Low** | Operations fragile/error-prone; consistency critical; specific sequence required | Specific scripts with few or no parameters |
+
+**Medium freedom** is the configuration-driven pattern: provide a preferred pattern as a parameterized script or pseudocode, then let Claude customize per invocation.
+
+````markdown
+## Generate report
+
+Use this template and customize as needed:
+
+```python
+def generate_report(data, format="markdown", include_charts=True):
+    # Process data
+    # Generate output in specified format
+    # Optionally include visualizations
+```
+````
+
+**Domain organization for multiple variants**: when a skill supports multiple variations (e.g., deploy to AWS/GCP/Azure), keep only the core workflow and selection guidance in `SKILL.md`. Move variant-specific details (patterns, examples, configuration) into separate reference files — Claude reads only the relevant one:
+
+```
+cloud-deploy/
+├── SKILL.md          (workflow + selection guidance)
+└── references/
+    ├── aws.md
+    ├── gcp.md
+    └── azure.md
+```
 
 ### Must Do
 - Place `SKILL.md` inside a subdirectory (e.g., `skills/my-skill/SKILL.md`)
@@ -145,6 +183,7 @@ Skills use progressive disclosure to protect the context window and enable compo
 - Each skill SHOULD have a single, well-defined responsibility
 - Scripts MUST be executable with shebang and `${CLAUDE_PLUGIN_ROOT}` paths
 - Reference supporting files from SKILL.md so Claude knows what they contain
+- Keep skill folder contents to `SKILL.md` + `scripts/` + `references/` + `assets/` (recommended; spec is permissive — see skill-creator)
 
 ### Instruction-Type Skill Structure
 - MAY include pre-phase sections before "Phase 1":
@@ -155,11 +194,13 @@ Skills use progressive disclosure to protect the context window and enable compo
 - Reference external documentation files rather than embedding all details
 - Use `user-invocable: false` for agent-only skills and `context: fork` for complex analysis
 - Use `disable-model-invocation: true` for workflows with side effects you want to control timing
+- Match freedom level to task fragility (High/Medium/Low); use Medium (parameterized scripts) when a preferred pattern exists but variation is acceptable
 
 ### Avoid
 - Exceeding ~500 tokens in SKILL.md (indicates poor design—refactor)
 - Duplicating information between `SKILL.md` and reference files
 - Combining multiple unrelated capabilities into a single skill
+- Non-standard subdirectories (`config/`, `strategies/`) or auxiliary files (`README.md`, `CHANGELOG.md`) inside a skill folder — note `README.md`/`CHANGELOG.md` are flagged; other layouts are permissive
 
 ### Scripts as Tools
 

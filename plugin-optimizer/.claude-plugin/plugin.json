@@ -1,7 +1,7 @@
 {
   "name": "plugin-optimizer",
   "displayName": "Plugin Optimizer",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
   "author": {
     "name": "Frad LEE",

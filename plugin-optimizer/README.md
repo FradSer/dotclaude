@@ -1,7 +1,7 @@
 # Plugin Optimizer
 
 **displayName:** Plugin Optimizer
-**Version:** 0.12.0
+**Version:** 0.13.0
 
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
 
@@ -99,7 +99,7 @@ Autonomous analysis agent launched by the optimize-plugin workflow. Validates pl
 
 A unified Python validator (`scripts/validate-plugin.py`) runs five checks automatically:
 
-- **Structure**: File patterns, naming conventions, directory layout (incl. `monitors/`, `themes/`, `output-styles/`, `bin/`, `lsp-servers/`)
+- **Structure**: File patterns, naming conventions, directory layout (incl. `monitors/`, `themes/`, `output-styles/`, `bin/`, `lsp-servers/`), and skill folder auxiliary-file check (`README.md`/`CHANGELOG.md` inside a skill are flagged; spec is permissive on other layouts)
 - **Manifest**: plugin.json schema, required fields, `displayName` field, and unknown-field warnings (typo detection). Validates `monitors`, `themes`, `outputStyles`, `lspServers`, `mcpServers`, `userConfig`, `dependencies` paths and shapes
 - **Frontmatter**: YAML frontmatter in components. For agents, enforces the upstream-forbidden fields (`hooks`, `mcpServers`, `permissionMode`) and `isolation: "worktree"` constraint
 - **Tool invocations**: Anti-pattern detection in tool usage
