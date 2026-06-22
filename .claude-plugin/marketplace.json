@@ -11,7 +11,7 @@
     {
       "name": "git",
       "displayName": "Git",
-      "version": "0.5.0",
+      "version": "0.5.2",
       "description": "Conventional Git automation and advanced repository management",
       "author": {
         "name": "Frad LEE",
@@ -24,7 +24,7 @@
     {
       "name": "gitflow",
       "displayName": "GitFlow",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "description": "GitFlow workflow automation for feature, hotfix, and release branches",
       "author": {
         "name": "Frad LEE",
@@ -37,7 +37,7 @@
     {
       "name": "github",
       "displayName": "GitHub",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -50,7 +50,7 @@
     {
       "name": "swiftui",
       "displayName": "SwiftUI",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "description": "SwiftUI code review with modern API best practices",
       "author": {
         "name": "Frad LEE",
@@ -63,7 +63,7 @@
     {
       "name": "office",
       "displayName": "Office",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
       "author": {
         "name": "Frad LEE",
@@ -77,7 +77,7 @@
     {
       "name": "refactor",
       "displayName": "Refactor",
-      "version": "1.5.4",
+      "version": "1.5.5",
       "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
@@ -142,7 +142,7 @@
     {
       "name": "code-context",
       "displayName": "Code Context",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
       "author": {
         "name": "Frad LEE",
@@ -155,7 +155,7 @@
     {
       "name": "utils",
       "displayName": "Utils",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "General-purpose utility skills for documentation, writing, and project maintenance",
       "author": {
         "name": "Frad LEE",
@@ -190,6 +190,19 @@
       "source": "./antigravity",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/antigravity"
+    },
+    {
+      "name": "storm",
+      "displayName": "STORM",
+      "version": "0.1.0",
+      "description": "Wikipedia-style long-form article generation via multi-perspective question asking and retrieval — a Claude-native port of Stanford STORM's two-stage research-to-article pipeline",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./storm",
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/storm"
     }
   ]
 }

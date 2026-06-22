@@ -130,6 +130,17 @@ claude plugin install antigravity@frad-dotclaude
 
 ---
 
+### [storm](storm/)
+
+基于多视角提问与检索的维基百科风格长文生成 —— Stanford STORM 两阶段"研究→成文"流水线的 Claude 原生移植。给定主题,发现研究 persona、进行基于网络检索的模拟问答,再经由大纲 → 分节 → 润色阶段撰写带引用的文章。每个阶段可独立运行且可恢复。
+
+**安装：**
+```bash
+claude plugin install storm@frad-dotclaude
+```
+
+---
+
 ### [acpx](acpx/)
 
 acpx 知识库 - 用于 Agent 间通信的无头 ACP CLI。

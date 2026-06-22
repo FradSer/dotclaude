@@ -1,7 +1,7 @@
 {
   "name": "git",
   "displayName": "Git",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Conventional Git automation and advanced repository management",
   "author": {
     "name": "Frad LEE",
@@ -19,5 +19,18 @@
     "./skills/commit/",
     "./skills/commit-and-push/",
     "./skills/setup/"
-  ]
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-commit-pretool.sh"
+          }
+        ]
+      }
+    ]
+  }
 }

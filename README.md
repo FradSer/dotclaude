@@ -130,6 +130,17 @@ claude plugin install antigravity@frad-dotclaude
 
 ---
 
+### [storm](storm/)
+
+Wikipedia-style long-form article generation via multi-perspective question asking and retrieval — a Claude-native port of Stanford STORM's two-stage research-to-article pipeline. Given a topic, it discovers research personas, runs simulated Q&A grounded in web search, then writes a cited article through outline → per-section → polish phases. Each phase is independently runnable and resumable.
+
+**Installation:**
+```bash
+claude plugin install storm@frad-dotclaude
+```
+
+---
+
 ### [acpx](acpx/)
 
 Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication.
