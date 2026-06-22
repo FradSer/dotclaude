@@ -75,17 +75,6 @@ claude plugin install swiftui@frad-dotclaude
 
 ---
 
-### [claude-config](claude-config/)
-
-通过交互式工作流生成 CLAUDE.md 配置，支持环境检测、BDD/TDD 测试选项和本地最佳实践引用。
-
-**安装：**
-```bash
-claude plugin install claude-config@frad-dotclaude
-```
-
----
-
 ### [office](office/)
 
 专利申请书生成、产品需求文档、图片与视频生成、飞书文档创建、智能体浏览器自动化、Lark/Feishu CLI 操作以及 AI 写作俗套检测。

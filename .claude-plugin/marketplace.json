@@ -35,19 +35,6 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/gitflow"
     },
     {
-      "name": "claude-config",
-      "displayName": "Claude Config",
-      "version": "1.4.1",
-      "description": "Generate a CLAUDE.md through an interactive workflow with environment detection, BDD/TDD options, technology-stack selection, and local best-practices references",
-      "author": {
-        "name": "Frad LEE",
-        "email": "fradser@gmail.com"
-      },
-      "source": "./claude-config",
-      "category": "productivity",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/claude-config"
-    },
-    {
       "name": "github",
       "displayName": "GitHub",
       "version": "0.2.2",

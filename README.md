@@ -75,17 +75,6 @@ claude plugin install swiftui@frad-dotclaude
 
 ---
 
-### [claude-config](claude-config/)
-
-Generate a CLAUDE.md through an interactive workflow with environment detection, BDD/TDD testing options, and local best-practices references.
-
-**Installation:**
-```bash
-claude plugin install claude-config@frad-dotclaude
-```
-
----
-
 ### [office](office/)
 
 Patent application generation, Product Requirements Documents, image and video generation, Feishu document creation, agent-based browser automation, Lark/Feishu CLI operations, and AI writing trope detection.
