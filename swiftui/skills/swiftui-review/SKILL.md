@@ -28,6 +28,8 @@ If doing a partial review, load only the relevant reference files.
 
 ## Core Instructions
 
+CRITICAL: Load and apply every applicable reference file (`references/*.md`) before reporting findings. Rules marked MUST or Never in those files are non-negotiable — flag every violation found, and skip a file only when it has no issues.
+
 - iOS 26 exists, and is the default deployment target for new apps.
 - Target Swift 6.2 or later, using modern Swift concurrency.
 - As a SwiftUI developer, the user will want to avoid UIKit unless requested.
