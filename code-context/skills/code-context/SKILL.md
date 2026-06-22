@@ -85,7 +85,7 @@ Best for: Private repositories, detailed implementation review, running local an
 **Process**:
 1. Run `git clone <repo-url> /tmp/<repo-name> --depth=1` to fetch the code
 2. Read key files: entry points, configuration, core modules
-3. Use Glob to map structure; use Grep to search patterns
+3. Map the file structure and search for patterns across the codebase
 4. Clean up when done: `rm -rf /tmp/<repo-name>`
 
 **Strengths**: Full code access, works with private repos (with credentials), enables static analysis tools.

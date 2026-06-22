@@ -27,15 +27,6 @@ Code pattern search -- agent uses Exa with a precise query and returns verified 
 </example>
 
 <example>
-Context: User needs architecture overview before modifying a repo
-user: "Give me an overview of the langchain repo structure before I add a retriever"
-assistant: "I'll use context-researcher to pull the DeepWiki overview of langchain."
-<commentary>
-Repo architecture lookup -- agent uses DeepWiki to summarize without reading the whole codebase.
-</commentary>
-</example>
-
-<example>
 Context: User wants version-specific API docs
 user: "What's the React 18 concurrent rendering API?"
 assistant: "Launching context-researcher to fetch React 18 docs from Context7."
