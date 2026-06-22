@@ -1,7 +1,7 @@
 {
   "name": "refactor",
   "displayName": "Refactor",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
   "keywords": [
     "refactor",

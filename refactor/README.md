@@ -2,7 +2,7 @@
 
 Agent and skills for code simplification and refactoring to improve code quality while preserving functionality.
 
-**Version:** 1.5.4
+**Version:** 1.5.5
 
 ## Installation
 
@@ -31,7 +31,7 @@ refactor/
 │   │       ├── go.md
 │   │       ├── swift.md
 │   │       ├── universal.md
-│   │       └── react/rules/ # 47 Next.js/React patterns
+│   │       └── react/rules/ # 57 Next.js/React patterns
 │   ├── refactor/            # Instruction skill (user-invocable)
 │   │   └── SKILL.md
 │   └── refactor-project/    # Instruction skill (user-invocable)
@@ -60,7 +60,7 @@ For details, see [agents/code-simplifier.md](agents/code-simplifier.md).
 Provides language-specific best practices, code quality standards, and framework detection for refactoring workflows. Automatically loaded by `code-simplifier` agent.
 
 **Language Support:** TypeScript, Python, Go, Swift, JavaScript
-**Framework Support:** React (47 performance patterns), Next.js
+**Framework Support:** React (57 performance patterns), Next.js
 
 For details, see [skills/best-practices/SKILL.md](skills/best-practices/SKILL.md).
 
@@ -165,7 +165,7 @@ function processUser(user: User | null): { status: string; user: User | null } {
 
 ### Next.js: Eliminating Waterfalls
 
-Demonstrates parallelizing independent async operations to eliminate sequential waterfalls. See [skills/best-practices/references/nextjs/async-parallel.md](skills/best-practices/references/nextjs/async-parallel.md) for detailed examples.
+Demonstrates parallelizing independent async operations to eliminate sequential waterfalls. See [skills/best-practices/references/react/rules/async-parallel.md](skills/best-practices/references/react/rules/async-parallel.md) for detailed examples.
 
 ### Python: Applying DRY and Type Safety
 
@@ -174,7 +174,7 @@ Demonstrates eliminating code duplication using Enums and type hints. See [skill
 ## Key Features
 
 - **Language Support**: TypeScript, JavaScript, Python, Go, Swift
-- **Framework Support**: Next.js (47 performance patterns), React
+- **Framework Support**: Next.js (57 performance patterns), React
 - **Automated Workflow**: Agent-driven refactoring with best practices
 - **Safe Refactoring**: Preserves functionality, uses git for rollback
 - **Impact-Based**: Prioritizes CRITICAL > HIGH > MEDIUM > LOW improvements
