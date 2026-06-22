@@ -4,14 +4,14 @@ description: Initializes git-agent for a repository — generates commit scopes 
 user-invocable: true
 argument-hint: "[scope|gitignore]"
 model: haiku
-allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Edit"]
+allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(ls:*)", "Bash(find:*)", "Read", "Write", "Edit", "AskUserQuestion"]
 ---
 
 CRITICAL:
 - Always preserve custom `.gitignore` rules before running `git-agent init --gitignore`.
 - On auth error (401), retry the same `git-agent init` command with `--free` appended.
 
-1. Verify `git config user.name` and `git config user.email`; prompt if missing.
+1. Verify `git config user.name` and `git config user.email`; if either is missing, use `AskUserQuestion` tool to collect it from the user.
 2. Parse `$ARGUMENTS` to determine mode:
    - Empty → run both scope and gitignore
    - `scope` → run only scope generation
