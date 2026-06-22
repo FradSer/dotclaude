@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.13.0] - 2026-06-23
+
+### Added
+
+- **autoresearch** — New plugin with rolling research loop, git worktree isolation, hybrid plateau escalation, Gemini agent bridge, temporary experiment commits, and unified `/start` entry point
+- **antigravity** — New managed agent plugin with Gemini worker stability enhancements
+- **storm** — Article generation plugin
+- **office** — Image and video media generation skills, automatic backup pruning, lark-note skill, and lark workspace sync
+- **frontend** — Articulate design skill, design system compliance checking, anti-patterns detector enabled, impeccable skill upstream sync, and project snapshots
+- **github** — Triage agent for PR feedback and post-pr monitoring with auto-fix loop
+- **git** — Pre-commit hook with skill reflection and user-input-driven setup
+- **superpowers** — Generalized stop hook for state backfill (v3.3.0)
+- **plugin-optimizer** — Skill file validation with version bump
+
+### Changed
+
+- **autoresearch** — Unified state and duration logic, rolling loop implementation, harden safety and transcript resilience, optimize gitflow model resolution
+- **frontend** — Restructured skill architecture, renamed local docs and hardened scripts, updated plugin and skills documentation
+- **github** — Optimized PR monitoring skill
+- **swiftui** — Updated review guidelines and plugin
+- **acpx** — Consolidated CLI documentation
+- **gitflow** — Clarified pre-operation safety checks
+- **github** — Clarified auto-closing limitations
+- **superpowers** — Standardized `/goal` usage documentation
+- **acpx** — Clarified exec vs prompt and added cwd workflows
+
+### Fixed
+
+- **acpx** — Trimmed skill.md for context limit
+- **autoresearch** — Handled JSON args and validated GAN config, added bounded loop isolation and transcript resilience
+
 ## [v1.12.2] - 2026-06-03
 
 ### Added
@@ -462,7 +493,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix build and release scripts for version detection and TOML prompts
 - Improve sync script compatibility and error handling
 
-[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.12.2...HEAD
+[unreleased]: https://github.com/FradSer/dotclaude/compare/v1.13.0...HEAD
+[v1.13.0]: https://github.com/FradSer/dotclaude/compare/v1.12.2...v1.13.0
 [v1.12.2]: https://github.com/FradSer/dotclaude/compare/v1.12.1...v1.12.2
 [v1.12.1]: https://github.com/FradSer/dotclaude/compare/v1.12.0...v1.12.1
 [v1.12.0]: https://github.com/FradSer/dotclaude/compare/v1.11.0...v1.12.0
