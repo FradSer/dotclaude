@@ -1,21 +1,21 @@
 scopes:
     - name: acpx
-      description: Agent communication, delegation, and research coordination in acpx/ and antigravity/; does not cover general automation.
+      description: Agent communication, task delegation, and cross-agent research in acpx/ and antigravity/; does not cover general automation.
     - name: as
-      description: Autonomous ML experimentation and rolling research in autoresearch/; does not cover general plugin development.
+      description: Autonomous ML experimentation, GAN-based research, and rolling workflows in autoresearch/; does not cover plugin development.
     - name: cctx
-      description: Code context research and environment analysis tools in code-context/; does not cover general documentation.
+      description: Code context research, environment mapping, and repository analysis in code-context/; does not cover general documentation.
     - name: fe
-      description: Frontend development skills, impeccable framework, and project sync scripts in frontend/; does not cover design-only documentation.
+      description: Frontend framework tools, impeccable sync, and design system compliance in frontend/; does not cover design-only documentation.
     - name: git
-      description: Git setup, configuration, and repository utility skills in git/; does not cover gitflow branch lifecycles.
+      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow lifecycles.
     - name: gf
-      description: Gitflow branch lifecycle and feature/hotfix management in gitflow/; does not cover basic git utilities.
+      description: Gitflow branch management, feature/hotfix workflows, and releases in gitflow/; does not cover general git utilities.
     - name: gh
-      description: GitHub PR monitoring, triage, and automation in github/; does not cover local repository configuration.
+      description: GitHub PR monitoring, triage, and automated feedback loops in github/; does not cover local repository configuration.
     - name: "off"
-      description: Office productivity and Lark suite integrations in office/; does not cover coding or developer-focused tooling.
+      description: Lark suite integration, media generation, and office productivity tools in office/; does not cover coding or dev-tooling.
     - name: po
-      description: Plugin optimizer framework for validation, optimization, and hooks in plugin-optimizer/; does not cover marketplace metadata.
+      description: Plugin optimizer framework for validation, optimization, and plugin hooks in plugin-optimizer/; does not cover marketplace metadata.
     - name: sp
-      description: Superpowers autonomous planning, evaluation, and execution loops in superpowers/; does not cover general office automation.
+      description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/; does not cover general office automation.
