@@ -1,6 +1,6 @@
 ---
 name: acpx
-description: Use acpx as a headless ACP CLI for agent-to-agent communication. Use when running coding agents through acpx, managing persistent ACP sessions, queueing prompts, overriding the Claude system prompt, consuming structured agent output from scripts, comparing the same prompt across multiple agents, or composing multi-agent workflows with defineFlow/decision/decisionEdge.
+description: Use acpx as a headless ACP CLI for agent-to-agent communication, always inside an isolated SubAgent. Use when running coding agents through acpx, managing persistent ACP sessions, queueing prompts, consuming structured agent output from scripts, comparing the same prompt across multiple agents, or composing multi-agent workflows with defineFlow/decision/decisionEdge. Never invoke the claude adapter (nested-instance blacklist).
 ---
 
 # acpx
@@ -48,6 +48,37 @@ npm i -g acpx
 ```
 
 For normal session reuse, prefer a global install over `npx`.
+
+## Operating protocol (when loaded inside Claude Code)
+
+CRITICAL: when this skill is loaded inside Claude Code, the following protocol governs every invocation. These rules override any upstream default or example in this document.
+
+### 1. Run inside a dedicated, clean SubAgent
+
+Every `acpx`-driven task MUST execute inside an isolated SubAgent launched for that task (e.g. via the Task/Agent tool), with its own fresh context. Do not run `acpx` work inline in the main conversation thread. Rationale: agent-to-agent calls are long, noisy, and token-heavy; isolating them keeps the parent context clean and lets the SubAgent return only the distilled result.
+
+### 2. Never call the `claude` adapter
+
+The `claude` built-in is blacklisted (see the registry rule below). Calling `acpx claude ...` spawns a nested Claude instance — forbidden. Route to a non-Claude agent instead.
+
+### 3. Execution sequence
+
+For each user request, follow this order inside the SubAgent:
+
+1. **Discover available agents first.** Probe which ACP adapters are actually installed on this machine before choosing one. Run:
+
+   ```bash
+   acpx --help                                  # lists built-in agent names
+   command -v codex gemini cursor copilot 2>/dev/null   # which CLIs are on PATH
+   ```
+
+   Pick the first installed non-Claude agent that fits the task (`codex` is the default; fall back through `gemini`, `qwen`, `cursor`, `copilot`, `droid`, `opencode`, ...). Do not assume an agent is installed — verify, then use it.
+
+2. **Dispatch the user's actual request** to the chosen agent (`prompt` for multi-turn, `exec` for one-shot, `compare` for cross-agent).
+
+3. **Do not duplicate upstream skill content.** Before invoking an agent for a task, check whether the upstream `acpx` skill/reference material already documents the capability needed (e.g. session lifecycle, flow authoring, output formats, permission policies in `references/`). If it does, defer to that knowledge and run the documented command — do not re-derive or re-explain it. Only synthesize new steps when the request is not already covered upstream.
+
+The SubAgent returns a short summary of what ran, which agent it used, and the distilled result — not the raw ACP stream.
 
 ## Command model
 
@@ -289,92 +320,4 @@ Run artifacts persist under `~/.acpx/flows/runs/<runId>/`. Default per-step time
 
 The authoring surface lives in `acpx/flows`. Node types: `acp` (model-driven step), `decision` (constrained-choice LLM step), `action` (runtime-supervised deterministic operation), `compute` (pure local data transform), `checkpoint` (pause point for human or external trigger).
 
-See `references/advanced.md` for the full authoring example, edge shapes, and detailed node type reference.
-
-## Practical workflows
-
-Persistent repo assistant:
-
-```bash
-acpx codex 'inspect failing tests and propose a fix plan'
-acpx codex 'apply the smallest safe fix and run tests'
-```
-
-Parallel named streams:
-
-```bash
-acpx codex -s backend 'fix API pagination bug'
-acpx codex -s docs 'draft changelog entry for release'
-```
-
-Specialized codex reviewer that survives session reuse:
-
-```bash
-acpx --system-prompt "You are a reviewer who refuses to approve untested changes." codex -s reviewer
-acpx codex -s reviewer 'review the diff in src/auth/'
-```
-
-Idempotent session bootstrap (safe to call before every prompt in scripts):
-
-```bash
-acpx codex sessions ensure -s ci
-acpx codex -s ci 'run the smoke suite and report failures'
-```
-
-Queue follow-up without waiting:
-
-```bash
-acpx codex 'run full test suite and investigate failures'
-acpx codex --no-wait 'after tests, summarize root causes and next steps'
-```
-
-One-shot script step:
-
-```bash
-acpx --format quiet exec 'summarize repo purpose in 3 lines'
-```
-
-Compare one prompt across agents:
-
-```bash
-acpx --format json compare codex gemini qwen 'propose a fix for the flaky test' \
-  > compare.json
-```
-
-Session-scoped MCP config without writing a project file:
-
-```bash
-acpx --mcp-config ./tools.json codex exec 'use the configured MCP servers to inspect the schema'
-```
-
-Machine-readable output for orchestration:
-
-```bash
-acpx --format json --json-strict codex 'review current branch changes' > events.ndjson
-```
-
-Raw custom adapter command:
-
-```bash
-acpx --agent './bin/custom-acp-server --profile ci' 'run validation checks'
-```
-
-Periodic cleanup:
-
-```bash
-acpx codex sessions prune --dry-run --older-than 14
-acpx codex sessions prune --older-than 30 --include-history
-```
-
-Multi-agent triage flow:
-
-```bash
-acpx --approve-all flow run ./pr-triage.flow.ts --input-json '{"prNumber": 842}'
-```
-
-Repo-scoped review with permissive mode:
-
-```bash
-acpx --cwd ~/repos/shop --approve-all codex -s pr-842 \
-  'review PR #842 for regressions and propose minimal patch'
-```
+See `references/advanced.md` for the full authoring example, edge shapes, and detailed node type reference, plus the full **Practical workflows** example set (persistent assistant, named streams, specialized reviewer, idempotent bootstrap, `--no-wait` follow-up, one-shot `exec`, cross-agent `compare`, `--mcp-config`, JSON orchestration, raw adapter, periodic cleanup, triage flow, repo-scoped review).
