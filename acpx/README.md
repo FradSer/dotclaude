@@ -1,6 +1,6 @@
 # ACPX Plugin
 
-**Version**: 0.1.2
+**Version**: 0.2.1
 
 A Claude Code plugin providing knowledge about `acpx` - a headless CLI client for the Agent Client Protocol (ACP).
 
@@ -15,9 +15,10 @@ This plugin helps Claude understand and guide users on using `acpx` for agent-to
 - Comprehensive knowledge of acpx commands and workflows
 - Session management guidance (persistent, named, parallel sessions)
 - Queue-aware prompt submission patterns
+- Multi-agent comparison (`compare`) guidance
 - Output format recommendations (text, json, quiet)
 - Permission mode best practices
-- Config file structure and usage
+- Config file structure and session-scoped MCP config (`--mcp-config`)
 
 ## Installation
 
