@@ -76,6 +76,7 @@ For independent multi-task batches:
 
 1. **Launch**: Spawn one Task sub-agent per task via the Agent tool, up to a **concurrency cap of 4 sub-agents per spawn round**
    - If the batch has more than 4 independent tasks, split into back-to-back spawn rounds (4 → wait → next 4) rather than spawning all at once. The cap exists because (a) more parallel sub-agents inflate the per-iteration token bill linearly and (b) the main agent's wait turn cannot meaningfully attend to >4 concurrent transcripts when a sub-agent reports a blocker.
+   - **Large-batch escalation**: when the batch has many independent tasks (>4) AND the user has opted into multi-agent orchestration, delegate the whole fan-out to Claude Code's native `Workflow` tool instead of hand-rolling spawn rounds — it schedules concurrency automatically (`min(16, cores-2)`) and keeps every sub-agent transcript out of context. Do NOT self-enable it silently under `/goal`; gate on the opt-in signal. See `../../references/workflow-orchestration.md` for the opt-in rules and the task→`agent()` mapping.
    - If sub-agents edit overlapping files, add `isolation: "worktree"` for isolation
 2. **Assign**: Give each sub-agent its task with full context and file boundaries
 3. **Wait**: Wait for all sub-agents in the current round to complete before launching the next round

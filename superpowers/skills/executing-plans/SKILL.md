@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
 ---
 
 # Executing Plans
@@ -113,6 +113,7 @@ All tasks executed and verified, evidence captured, no blockers, final verificat
 - `./references/phase-4-verification.md` - Evidence, handoff, and intra-plan learning
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared cross-skill resource)
+- `../../skills/references/workflow-orchestration.md` - native `Workflow` escalation for large parallel batches (opt-in rules + task mapping)
 - `./references/evaluation-file-formats.md` - Evaluation file format definitions (sprint contract, evaluation report, handoff summary)
 - `./references/sprint-contract-template.md` - Sprint contract template and negotiation protocol
 - `./references/handoff-template.md` - Handoff summary template for long plans
