@@ -1,7 +1,7 @@
 {
   "name": "acpx",
   "displayName": "ACPX",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
   "author": {
     "name": "Frad LEE",

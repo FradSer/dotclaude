@@ -80,6 +80,16 @@ For each user request, follow this order inside the SubAgent:
 
 The SubAgent returns a short summary of what ran, which agent it used, and the distilled result — not the raw ACP stream.
 
+### 4. Reflect on every result with a fresh blank SubAgent before acting
+
+CRITICAL: never accept an `acpx` SubAgent's result as final. Whatever the acpx SubAgent returns — a review, an evaluation, a diff, a recommendation, or a "done" — is a *proposal* from an outside agent, not a verdict. Before acting on it, spawn a SECOND, independent, blank SubAgent and have it reflect on that result; only after the reflection returns do you decide the next step.
+
+- The reflection SubAgent MUST be a brand-new agent (a fresh Task/Agent invocation) with no context of the acpx run, the original prompt, or the implementation. It is NOT the SubAgent that ran acpx, and it is NOT the main thread. Reusing the acpx SubAgent or judging inline destroys the independence that makes the reflection worth anything — producer and judge must be different agents.
+- Give the reflection SubAgent only the artifact under review (the acpx output plus the relevant files/diff), not the reasoning that produced it. It must reach its own conclusion.
+- The reflection drives the branch: **accept**, **rework** (re-dispatch to acpx with corrections), or **escalate** to the user. Example: after `acpx ... review`, the blank SubAgent critiques the review itself — which findings are real, which are noise, what it missed — and that critique, not the raw review, decides what you do next.
+
+This is the same GAN-evaluator / independent-audit pattern used elsewhere in this project: the agent that produces a result is never the agent that judges it.
+
 ## Command model
 
 `prompt` is the default verb.
