@@ -11,17 +11,23 @@ scopes:
       description: Frontend framework tools, impeccable design system, and react patterns in frontend/.
     - name: git
       description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow.
-    - name: gf
+    - name: gitflow
       description: Gitflow branch management, releases, and feature/hotfix workflows in gitflow/.
-    - name: gh
+    - name: github
       description: GitHub PR monitoring, triage, and feedback loops in github/.
     - name: hw
       description: KiCad CLI and EDA hardware tooling (use-kicad-cli skill) in hardware/.
-    - name: "off"
+    - name: office
       description: Lark suite integration and office productivity tools in office/; does not cover coding tools.
     - name: po
       description: Plugin optimizer framework for validation and metadata in plugin-optimizer/.
+    - name: refactor
+      description: Code simplification and refactoring agent and skills in refactor/.
     - name: sp
       description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/.
     - name: storm
       description: STORM article generation pipeline and researcher agents in storm/.
+    - name: swiftui
+      description: SwiftUI code review and modern API best practices in swiftui/.
+    - name: utils
+      description: Documentation, changelog, and project maintenance utilities in utils/.
