@@ -1,8 +1,8 @@
 # Code Context Plugin
 
-**Version:** 0.2.2
+**Version:** 0.3.0
 
-5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch.
+Retrieve code context for any repo, library, or natural-language query via 5 methods: DeepWiki, Context7, Exa, git clone, and web search+fetch.
 
 ## Installation
 
@@ -12,7 +12,7 @@ claude plugin install code-context@frad-dotclaude
 
 ## Overview
 
-Code Context provides 5 complementary methods for retrieving code context from different sources. It isolates external lookups in agent contexts to keep the main conversation clean, returning only synthesized summaries.
+Code Context accepts **arbitrary input** — a natural-language question, a repo slug, a library name, or several of these at once — and routes each target to the right method(s). It isolates external lookups in agent contexts to keep the main conversation clean, returning only synthesized summaries.
 
 ## Methods
 
@@ -109,22 +109,29 @@ Best for: Enriching clone findings with changelogs, issue discussions, migration
 
 ### Command: /get-context
 
-User-invoked command to retrieve code context.
+User-invoked command accepting arbitrary input — a natural-language question, a repo slug, a library name, or several targets at once.
 
 ```bash
-# Get context for a library
-/get-context react
+# Natural-language question (single quoted target)
+/get-context "对比 zustand vs jotai 状态管理"
+/get-context "React 19 server actions 错误处理"
 
-# Get context for a repository
+# Library or repo
+/get-context react
 /get-context facebook/react
 
-# Specify method
-/get-context react --method=context7
+# Multiple targets at once
+/get-context facebook/react zustand
+
+# Restrict methods (comma-separated; default: all)
+/get-context "React 19 server actions 错误处理" --method=context7,exa
 /get-context facebook/react --method=deepwiki
 
 # Auto-detect from local dependencies
 /get-context
 ```
+
+`--method=` accepts `deepwiki,context7,exa,clone,web,all` (comma-separated). The agent classifies each target (repo / library / natural-language) and routes it through the allowed methods, noting any gap when the allowed set can't cover a target.
 
 ### Agent: @context-researcher
 
@@ -151,6 +158,8 @@ Internal knowledge skill loaded by the context-researcher agent. Provides method
 | "What changed in v3?" | Context7 | Exa |
 | "How are modules connected?" | DeepWiki | Git Clone |
 | "Why was this design decision?" | Git Clone → Web Search | DeepWiki |
+| "Compare X vs Y" (natural-language) | Exa + Context7 | Web Search |
+| "Best practice for Z" (natural-language) | Web Search | Exa |
 
 ## Structure
 

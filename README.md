@@ -143,7 +143,7 @@ claude plugin install storm@frad-dotclaude
 
 ### [hardware](hardware/)
 
-Hardware and EDA toolkit. The `use-kicad-cli` skill drives KiCad 9.0's `kicad-cli` for schematic/PCB export, fabrication outputs (gerbers, drill, pick-and-place, BOM), 3D models, and ERC/DRC checks.
+Hardware and EDA toolkit. `use-kicad-cli` drives KiCad 9.0's `kicad-cli` for schematic/PCB export, fabrication outputs (gerbers, drill, pick-and-place, BOM), 3D models, and ERC/DRC checks. `use-openscad` writes OpenSCAD code and drives the `openscad` CLI for parametric 3D/2D part design and STL/DXF/PNG output.
 
 **Installation:**
 ```bash

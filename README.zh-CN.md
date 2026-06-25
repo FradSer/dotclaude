@@ -143,7 +143,7 @@ claude plugin install storm@frad-dotclaude
 
 ### [hardware](hardware/)
 
-硬件与 EDA 工具集。`use-kicad-cli` skill 驱动 KiCad 9.0 的 `kicad-cli`,完成原理图/PCB 导出、制造产物(gerber、钻孔、贴装坐标、BOM)、3D 模型及 ERC/DRC 检查。
+硬件与 EDA 工具集。`use-kicad-cli` skill 驱动 KiCad 9.0 的 `kicad-cli`,完成原理图/PCB 导出、制造产物(gerber、钻孔、贴装坐标、BOM)、3D 模型及 ERC/DRC 检查;`use-openscad` skill 编写 OpenSCAD 代码并驱动 `openscad` CLI,产出参数化 3D/2D 零件及 STL/DXF/PNG。
 
 **安装：**
 ```bash

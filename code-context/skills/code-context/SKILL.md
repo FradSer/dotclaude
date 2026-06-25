@@ -1,6 +1,6 @@
 ---
 name: code-context
-description: This skill should be used when the user asks to "understand a codebase", "get code context", "research a library", "explore a repository", "find code examples", "look up documentation", or wants to understand how a specific project or library works before making changes.
+description: This skill should be used when the user asks to "understand a codebase", "get code context", "research a library", "explore a repository", "find code examples", "look up documentation", asks a natural-language code/technology question (e.g. "how does X work", "X vs Y", "best practice for Z"), or wants to understand how a specific project, library, or concept works before making changes.
 user-invocable: false
 ---
 
@@ -92,19 +92,21 @@ Best for: Private repositories, detailed implementation review, running local an
 
 **Limitations**: Requires network access and disk space; slow for large repos; credentials needed for private repos.
 
-## Method 5: Web Search + Fetch (post-clone enrichment)
+## Method 5: Web Search + Fetch
 
-Best for: Enriching findings from a git clone with changelogs, issue discussions, blog posts, and migration guides that live outside the repository itself.
+Best for: Concepts, rationale, "best practice" questions, changelogs, issue discussions, blog posts, and migration guides that live outside source code. Two modes:
+- **Standalone** — primary method for natural-language targets that ask "why" / "best practice for Z" / "compare X vs Y" without needing a clone.
+- **Post-clone enrichment** — secondary, after Method 4: the clone gives the code, this gives the *why* and *what changed*.
 
 **Tools**: `WebSearch`, `WebFetch`
 
-**When to apply**: Use after completing Method 4. The clone gives you the code; this method gives you the *why* and *what changed*.
+**When to apply**: Standalone for concept / rationale / best-practice queries; post-clone when enriching a repo inspection with context not in the source.
 
 **Process**:
-1. Derive targeted queries from clone findings — use exact identifiers, error strings, or design patterns found in the source
+1. Derive targeted queries — from clone findings (use exact identifiers, error strings, or design patterns found in the source) for post-clone mode, or directly from the natural-language target for standalone mode
 2. Call `WebSearch` with `query` set to a precise, version-anchored string (e.g., `"<library> <version> breaking change <symbol>"`)
 3. For each high-signal result, call `WebFetch` with `url` (from search results) and a focused `prompt` to extract only the relevant section
-4. Cross-reference fetched content against the cloned code to validate accuracy
+4. Cross-reference fetched content against cloned code when available; against official docs otherwise
 5. Discard results older than 2 years unless the topic is stable/foundational
 
 **Query patterns**:
@@ -116,6 +118,16 @@ Best for: Enriching findings from a git clone with changelogs, issue discussions
 **Strengths**: Surfaces context that never appears in source code — deprecation notices, upstream issue threads, author blog posts, community migration experiences.
 
 **Limitations**: Results may be stale or inaccurate; always validate fetched claims against the actual cloned code. Rate-limited without API key.
+
+## Target Classification
+
+Each input target falls into one of three kinds. Classify before selecting a method:
+
+- **Repo target** — `owner/repo` slug or git URL. Use DeepWiki (public) or Git Clone (private / deeper detail).
+- **Library target** — bare package/framework name, optionally `name@version`. Use Context7; encode version into the libraryId path.
+- **Natural-language target** — a question, comparison, or concept ("how does X work", "X vs Y", "best practice for Z"). Use Exa for code patterns; Web Search+Fetch for rationale, changelogs, and "why" questions. If the query names a specific library, also run Context7 for the canonical API surface.
+
+When the caller passes `--method=`, only use the intersection of allowed methods and applicable methods. If the intersection is empty for a target, use the closest applicable allowed method and note the gap in the output.
 
 ## Method Selection Guide
 
@@ -129,6 +141,8 @@ Best for: Enriching findings from a git clone with changelogs, issue discussions
 | "How are modules connected?" | DeepWiki | Git Clone |
 | "Why was this design decision made?" | Git Clone → Web Search+Fetch | DeepWiki |
 | "What broke between versions?" | Web Search+Fetch | Context7 |
+| "Compare X vs Y" (natural-language) | Exa + Context7 | Web Search+Fetch |
+| "Best practice for Z" (natural-language) | Web Search+Fetch | Exa |
 
 ## Combining Methods
 
