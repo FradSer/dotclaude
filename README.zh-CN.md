@@ -1,11 +1,11 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-13-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-16-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 [English](README.md) | **简体中文**
 
-精心打造的 15 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 16 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -137,6 +137,17 @@ claude plugin install antigravity@frad-dotclaude
 **安装：**
 ```bash
 claude plugin install storm@frad-dotclaude
+```
+
+---
+
+### [hardware](hardware/)
+
+硬件与 EDA 工具集。`use-kicad-cli` skill 驱动 KiCad 9.0 的 `kicad-cli`,完成原理图/PCB 导出、制造产物(gerber、钻孔、贴装坐标、BOM)、3D 模型及 ERC/DRC 检查。
+
+**安装：**
+```bash
+claude plugin install hardware@frad-dotclaude
 ```
 
 ---

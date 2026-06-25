@@ -1,11 +1,11 @@
-# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-13-blue)
+# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-16-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 15 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 16 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -137,6 +137,17 @@ Wikipedia-style long-form article generation via multi-perspective question aski
 **Installation:**
 ```bash
 claude plugin install storm@frad-dotclaude
+```
+
+---
+
+### [hardware](hardware/)
+
+Hardware and EDA toolkit. The `use-kicad-cli` skill drives KiCad 9.0's `kicad-cli` for schematic/PCB export, fabrication outputs (gerbers, drill, pick-and-place, BOM), 3D models, and ERC/DRC checks.
+
+**Installation:**
+```bash
+claude plugin install hardware@frad-dotclaude
 ```
 
 ---

@@ -1,0 +1,23 @@
+{
+  "name": "hardware",
+  "displayName": "Hardware",
+  "version": "0.1.0",
+  "description": "Hardware and EDA toolkit. Drives the KiCad command-line interface for schematic/PCB export, fabrication outputs, and DRC/ERC checks.",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "keywords": [
+    "hardware",
+    "kicad",
+    "eda",
+    "pcb",
+    "gerber",
+    "cli",
+    "electronics"
+  ],
+  "license": "MIT",
+  "commands": [
+    "./skills/use-kicad-cli/"
+  ]
+}
