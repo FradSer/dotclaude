@@ -75,6 +75,8 @@ See `./references/phase-2-task-creation.md`.
 
 See `./references/phase-3-orchestration.md` and `./references/batch-execution-playbook.md`.
 
+> **CRITICAL — declare a model on every sub-agent dispatch.** When you spawn a batch coordinator or any reviewer via the Agent tool, always pass an explicit `model` (`sonnet` for ordinary implementation/verification, `opus` only for hard reasoning or final whole-branch review, `haiku` for mechanical sweeps). An unspecified `model` silently inherits the session's most expensive tier — left to choose, dispatches drift to top-tier and burn the budget. Pick the cheapest tier the work allows; never let it default.
+
 ## Phase 4: Verification & Feedback
 
 See `./references/phase-4-verification.md`.
