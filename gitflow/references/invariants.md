@@ -39,6 +39,19 @@ changes** since the previous version tag.
 
 See `changelog-generation.md` for complete mapping rules.
 
+## Cleanup
+
+After every `finish` operation, run the cleanup procedure in
+`cleanup.md`:
+
+- Prune stale remote-tracking branches (`git fetch --prune`)
+- Prune stale worktrees (`git worktree prune`)
+- Confirm the just-finished branch is gone locally and on origin
+- Sweep other already-merged `feature/*`, `hotfix/*`, `release/*` branches
+
+Never delete `main`, `develop`, `master`, `production`, or the current
+branch. Prefer `git branch -d` over `-D` for the merged-branch sweep.
+
 ## External References
 
 - [git-flow-next Documentation](https://git-flow.sh/docs/)

@@ -1,7 +1,7 @@
 ---
 name: finish-release
 allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Bash(gh:*)", "Read", "Write"]
-description: Finalizes a release and merges it into main and develop with a tag using git-flow. This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release.
+description: Finalizes a release and merges it into main and develop with a tag using git-flow, then prunes stale branches and worktrees. This skill should be used when the user asks to "finish a release", "merge release branch", "complete release", "git flow release finish", or wants to finalize a release.
 model: haiku
 argument-hint: [version]
 user-invocable: true
@@ -10,11 +10,11 @@ disable-model-invocation: true
 
 ## Workflow Execution
 
-**Launch a general-purpose agent** that executes all 6 phases in a single task.
+**Launch a general-purpose agent** that executes all 7 phases in a single task.
 
 **Prompt template**:
 ```
-Execute the finish-release workflow (6 phases).
+Execute the finish-release workflow (7 phases).
 
 CRITICAL:
 - Verify working tree is clean (`git status --porcelain` is empty) before finishing.
@@ -60,6 +60,14 @@ See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 1. Switch to develop: `git checkout develop`
 2. Pull latest: `git pull origin develop`
 3. Verify: `git branch --show-current` (should output "develop")
+
+## Phase 7: Cleanup
+**Goal**: Reclaim stale branches and worktrees after finish.
+Follow `${CLAUDE_PLUGIN_ROOT}/references/cleanup.md` in full. With `$BRANCH_PREFIX=release` and `$NAME=$VERSION`:
+1. `git fetch --prune`
+2. `git worktree prune` (then `git worktree list` to surface survivors)
+3. Confirm `release/$VERSION` is gone locally and on origin; delete explicitly if a ref survived
+4. Sweep other already-merged `feature/*`, `hotfix/*`, `release/*` branches (merged into `develop` or `main`)
 ```
 
 **Execute**: Launch a general-purpose agent using the prompt template above
