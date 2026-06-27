@@ -22,7 +22,7 @@ claude plugin install git@frad-dotclaude
 
 ### [gitflow](gitflow/)
 
-GitFlow 工作流自动化，支持功能分支、修复分支和发布分支的语义化版本管理。
+GitFlow 工作流自动化，支持功能分支、修复分支和发布分支的语义化版本管理，并在 finish 后清理过期分支与 worktree。
 
 **安装：**
 ```bash

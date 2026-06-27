@@ -22,7 +22,7 @@ claude plugin install git@frad-dotclaude
 
 ### [gitflow](gitflow/)
 
-GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning.
+GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning and post-finish cleanup.
 
 **Installation:**
 ```bash
