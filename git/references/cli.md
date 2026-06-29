@@ -69,6 +69,30 @@ Generate and create commit(s) with AI-generated messages. Auto-stages all change
 
 `--amend` and `--no-stage` are mutually exclusive (enforced at parse time by Cobra).
 
+### Co-author domain allowlist (when `require_model_co_author` is on)
+
+When the project/user config has `require_model_co_author: true`, git-agent rejects any `--co-author` whose email domain is not on its allowlist, exiting with code 1 before calling the LLM:
+
+```
+error: require_model_co_author is enabled — pass --co-author with an email from one of: anthropic.com, openai.com, google.com, ...
+```
+
+The allowlist is **not hardcoded** — it is the union of:
+
+1. Built-in `DefaultModelCoAuthorDomains` = `anthropic.com`, `openai.com`, `google.com` (`domain/project/config.go`).
+2. The `model_co_author_domains` config key (a `stringslice`, valid in `--user` / `--project` / `--local` scopes), which is **appended** to the built-ins, not replacing them.
+
+So to support a non-built-in provider (e.g. GLM, Qwen, DeepSeek, Moonshot), the executing agent must **both** derive the correct domain (see the model-prefix table in each `/git:commit*` skill) **and** that domain must be added to git-agent config:
+
+```bash
+# user scope = global, applies to all repos (preferred for cross-provider support)
+git-agent config set --user model_co_author_domains "zhipuai.cn,qwen.ai,deepseek.com,moonshot.ai"
+# verify
+git-agent config get model_co_author_domains
+```
+
+Note: `config set` for a `stringslice` is a **full overwrite** of that scope's value (comma-separated), not an append to existing values in the same scope. Re-issue the full desired list when modifying.
+
 ### Exit codes
 
 | Code | Meaning |
