@@ -4,7 +4,7 @@
 
 - **仓库**: [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)
 - **路径**: `skills/agent-browser/`
-- **上次同步**: 2026-04-16
+- **上次同步**: 2026-06-30
 
 ## 同步内容
 
