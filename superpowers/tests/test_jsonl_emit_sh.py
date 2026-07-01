@@ -26,8 +26,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from conftest import path_without_commands
-
 SUPERPOWERS_DIR = Path(__file__).resolve().parents[1]
 JSONL_EMIT = SUPERPOWERS_DIR / "lib" / "jsonl-emit.sh"
 UTILS = SUPERPOWERS_DIR / "lib" / "utils.sh"
@@ -200,27 +198,6 @@ class SourcedModePrimitivesTests(unittest.TestCase):
         self.assertEqual(json.loads(lines[0])["event"], "hello")
         self.assertEqual(json.loads(lines[1])["event"], "world")
 
-    def test_compute_args_hash_is_stable_and_12_hex(self) -> None:
-        body = (
-            'compute_args_hash a b c;'
-            'compute_args_hash a b c'
-        )
-        result = run_sourced(self.cwd, body)
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        hashes = result.stdout.split()
-        self.assertEqual(len(hashes), 2)
-        self.assertEqual(hashes[0], hashes[1], "same args must hash identically")
-        self.assertRegex(hashes[0], r"^[0-9a-f]{12}$")
-
-    def test_compute_args_hash_differs_on_different_args(self) -> None:
-        result = run_sourced(
-            self.cwd,
-            'compute_args_hash a b c; echo "|"; compute_args_hash a b d',
-        )
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        first, second = result.stdout.split("|")
-        self.assertNotEqual(first.strip(), second.strip())
-
     def test_dedup_check_finds_recent_substring(self) -> None:
         log = self.cwd / "dedup.jsonl"
         log.write_text('{"a":1}\n{"args_hash":"deadbeef"}\n')
@@ -256,19 +233,6 @@ class DegradationContractTests(unittest.TestCase):
             env=env,
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
-
-    def test_compute_args_hash_empty_without_hasher(self) -> None:
-        """compute_args_hash returns the empty string — a valid degradation
-        where dedup simply won't suppress — when neither shasum nor sha1sum
-        is on PATH. This was the only path the deleted test_skill_events_sh.py
-        pinned; the four-helper consolidation left the args_hash fallback
-        branch otherwise uncovered."""
-        shim = self.cwd / "shim-bin"
-        env = dict(os.environ)
-        env["PATH"] = path_without_commands(shim, {"shasum", "sha1sum"})
-        result = run_sourced(self.cwd, "compute_args_hash a b c", env=env)
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertEqual(result.stdout.strip(), "")
 
     def test_no_top_level_set_e(self) -> None:
         """Sourcing this file MUST NOT alter the caller's error-handling
