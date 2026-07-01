@@ -38,7 +38,6 @@ import re
 import sys
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional
 
 # Token budget thresholds (based on official Claude Code Skill authoring best practices)
 # Level 1: Metadata - Always loaded (~100 tokens for name + description)
@@ -65,10 +64,6 @@ KNOWN_MANIFEST_FIELDS = {
     "mcpServers", "outputStyles", "themes", "lspServers", "monitors",
     "userConfig", "channels", "dependencies",
 }
-
-# Manifest fields that accept a path (string), an array of paths, or an inline object/array
-PATH_FIELDS_STRING_OR_ARRAY = {"skills", "commands", "agents", "outputStyles", "themes"}
-PATH_FIELDS_WITH_INLINE = {"hooks", "mcpServers", "lspServers", "monitors"}
 
 # Agent frontmatter spec (per upstream plugins-reference#agents)
 # Upstream lists: name, description, model, effort, maxTurns, tools, disallowedTools,
@@ -778,7 +773,8 @@ def _validate_monitors_array(entries, result: ValidationResult, source_file: str
             seen_names.add(name)
         when = entry.get("when")
         if when is not None and isinstance(when, str):
-            if not (when == "always" or when.startswith("on-skill-invoke:")):
+            literal_prefix, pattern_prefix = MONITOR_WHEN_PREFIXES
+            if not (when == literal_prefix or when.startswith(pattern_prefix)):
                 result.should(
                     f"Unknown 'when' value: {when!r}",
                     file=loc,
@@ -1129,6 +1125,18 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                 suggestion='Only "worktree" is supported',
             )
 
+        # Warn on unknown agent frontmatter fields (catches typos); forbidden fields
+        # are already reported at "must" level above, so skip them here.
+        for key in fm.keys():
+            if key not in KNOWN_AGENT_FIELDS and key not in FORBIDDEN_AGENT_FIELDS:
+                result.should(
+                    f"Unknown agent field: {key!r}",
+                    file=rel_path,
+                    line=find_fm_key_line(key),
+                    source=f"{key}: ...",
+                    suggestion=f"Remove or fix typo. Known fields: {', '.join(sorted(KNOWN_AGENT_FIELDS))}",
+                )
+
     elif comp_type == "skill":
         # Allowed fields for skills (name, description are required for official best practices)
         # Additional fields like user-invocable, allowed-tools, argument-hint are supported
@@ -1342,6 +1350,9 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     """Validate token budgets for progressive disclosure."""
     result = ValidationResult("tokens")
 
+    if verbose:
+        result.ok(f"Token counting method: {TOKEN_METHOD}")
+
     skills_dir = plugin_dir / "skills"
     if not skills_dir.exists():
         result.may("No skills/ directory")
@@ -1373,6 +1384,21 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
             "refs": refs,
             "files": skill_result["files"]
         }
+
+        # Check metadata token count (official: ~100 tokens for name + description)
+        if meta >= METADATA_WARNING:
+            result.should(
+                f"Metadata (name + description) too long: {meta} tokens (target: {METADATA_TARGET})",
+                file=rel_path,
+                suggestion=f"Shorten name/description - always loaded at startup, keep near {METADATA_TARGET} tokens",
+                **details
+            )
+        elif meta > METADATA_TARGET and verbose:
+            result.ok(
+                f"Metadata: {meta} tokens (slightly above {METADATA_TARGET} target)",
+                file=rel_path,
+                **details
+            )
 
         # Check line count (official requirement: under 500 lines)
         if body_lines >= SKILL_LINE_CRITICAL:
