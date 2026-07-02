@@ -11,7 +11,7 @@
     {
       "name": "git",
       "displayName": "Git",
-      "version": "0.5.2",
+      "version": "0.5.3",
       "description": "Conventional Git automation and advanced repository management",
       "author": {
         "name": "Frad LEE",
@@ -24,7 +24,7 @@
     {
       "name": "gitflow",
       "displayName": "GitFlow",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "description": "GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup",
       "author": {
         "name": "Frad LEE",
@@ -37,7 +37,7 @@
     {
       "name": "github",
       "displayName": "GitHub",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -90,7 +90,7 @@
     {
       "name": "superpowers",
       "displayName": "Superpowers",
-      "version": "3.4.0",
+      "version": "3.4.1",
       "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
       "author": {
         "name": "Frad LEE",
