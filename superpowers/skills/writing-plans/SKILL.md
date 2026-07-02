@@ -213,10 +213,9 @@ The sub-agents above are the sole reviewer for plan quality. There is no separat
 Commit the plan folder using git-agent (with git fallback).
 
 **Actions**:
-1. Stage the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-plan/`
-2. Run: `git-agent commit --no-stage --intent "add implementation plan for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-3. On auth error, retry with `--free` flag
-4. **Fallback**: If git-agent is unavailable or fails, use `git commit -m "docs: add implementation plan for <topic> ..."` with conventional format
+1. Stage and commit the entire folder in ONE chained command — a standalone `git add` is denied by the git plugin's hook: `git add docs/plans/YYYY-MM-DD-<topic>-plan/ && git-agent commit --no-stage --intent "add implementation plan for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+2. On auth error, retry with `--free` flag
+3. **Fallback**: If git-agent is unavailable or fails, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
 
 See `../../skills/references/git-commit.md` for detailed patterns.
 

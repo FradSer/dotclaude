@@ -77,6 +77,8 @@ See `./references/phase-3-orchestration.md` and `./references/batch-execution-pl
 
 > **CRITICAL — declare a model on every sub-agent dispatch.** When you spawn a batch coordinator or any reviewer via the Agent tool, always pass an explicit `model` (`sonnet` for ordinary implementation/verification, `opus` only for hard reasoning or final whole-branch review, `haiku` for mechanical sweeps). An unspecified `model` silently inherits the session's most expensive tier — left to choose, dispatches drift to top-tier and burn the budget. Pick the cheapest tier the work allows; never let it default.
 
+> **CRITICAL — the native `Workflow` tool is opt-in only.** Never call `Workflow` unless the user has explicitly opted into multi-agent orchestration (said "use a workflow" / equivalent, or ultracode is on). A run under `/goal` must NOT silently fan out background agents. Without opt-in, use the default bounded Agent-tool spawn rounds and surface the option in one line. Opt-in rules and task mapping: `../../skills/references/workflow-orchestration.md`.
+
 ## Phase 4: Verification & Feedback
 
 See `./references/phase-4-verification.md`.
@@ -88,7 +90,7 @@ Commit the implementation changes using git-agent (with git fallback).
 **Actions**:
 1. Run: `git-agent commit --intent "<feature description>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 2. On auth error, retry with `--free` flag
-3. **Fallback**: If git-agent is unavailable or fails, stage files with `git add` and use `git commit` with conventional format
+3. **Fallback**: If git-agent is unavailable or fails, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
 
 See `../../skills/references/git-commit.md` for patterns, templates, and requirements. Commit only after all tasks are completed; use a meaningful feature scope.
 

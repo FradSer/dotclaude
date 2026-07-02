@@ -146,11 +146,10 @@ See `./references/evaluation-checklist-reference.md` for evaluator checklist cal
 Commit the design and transition to implementation planning.
 
 **Actions**:
-1. Stage the entire folder: `git add docs/plans/YYYY-MM-DD-<topic>-design/`
-2. Run: `git-agent commit --no-stage --intent "add design for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-3. On auth error, retry with `--free` flag
-4. **Fallback**: If git-agent is unavailable, use `git commit` with conventional format
-5. **Transition line** (output to user): "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
+1. Stage and commit the entire folder in ONE chained command — a standalone `git add` is denied by the git plugin's hook: `git add docs/plans/YYYY-MM-DD-<topic>-design/ && git-agent commit --no-stage --intent "add design for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+2. On auth error, retry with `--free` flag
+3. **Fallback**: If git-agent is unavailable, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
+4. **Transition line** (output to user): "Design complete. To create a detailed implementation plan, use `/superpowers:writing-plans`."
 
 Do NOT add a review/polish iteration after the commit. The four design files + evaluator PASS + commit are the complete exit conditions.
 
