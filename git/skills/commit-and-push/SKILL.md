@@ -26,7 +26,7 @@ CRITICAL:
    If the model name matches no row, default to `Claude <model-identifier> <noreply@anthropic.com>` (the host that runs this marketplace), using the raw model identifier as the display name, and proceed — do not block the commit on attribution ambiguity.
 3. Run: `git-agent commit --intent "<intent>" --co-author "<co-author>"`
 4. On auth error (401), retry the same command with `--free` appended; keep the `--co-author` flag.
-5. Fallback (binary unavailable): manual `git commit` with Conventional Commits format via HEREDOC, including a `Co-Authored-By: <co-author>` trailer in the message body.
+5. Fallback (binary unavailable): manual `git commit` with Conventional Commits format via HEREDOC, including a `Co-Authored-By: <co-author>` trailer in the message body. Prefix the command with the `GIT_SKILL_FALLBACK=1` marker (e.g. `GIT_SKILL_FALLBACK=1 git add -A && git commit -m "$(cat <<'EOF' ...)"`) — the plugin's PreToolUse hook denies raw `git add`/`git commit` without it.
 6. `git push` (add `-u origin <branch>` if upstream not set).
 
 CLI reference: `${CLAUDE_PLUGIN_ROOT}/references/cli.md`
