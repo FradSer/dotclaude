@@ -37,12 +37,11 @@ See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 1. Get previous tag: `git tag --sort=-v:refname | head -1`
 2. Collect commits per `${CLAUDE_PLUGIN_ROOT}/references/changelog-generation.md`
 3. Update CHANGELOG.md per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-4. Stage CHANGELOG.md: `git add CHANGELOG.md`
-5. Determine the Claude model name for co-author attribution
+4. Determine the Claude model name for co-author attribution
    - Derive it from your own runtime model identity (e.g. Claude Opus 4.8) so it never goes stale; do not hardcode a fixed version
-6. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for v$VERSION" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-7. On auth error (401), retry with `--free`
-8. **Fallback** (git-agent unavailable): `git commit -m "chore: update changelog for v$VERSION"` with conventional format and `Co-Authored-By` footer
+5. Stage and commit in ONE chained command — a standalone `git add` is denied (see invariants.md §Committing): `git add CHANGELOG.md && git-agent commit --no-stage --intent "update changelog for v$VERSION" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+6. On auth error (401), retry with `--free`
+7. **Fallback** (git-agent unavailable): invoke the `/git:commit` skill via the Skill tool; full ladder in invariants.md §Committing
 
 ## Phase 4: Finish Release
 **Goal**: Complete release using git-flow-next CLI.

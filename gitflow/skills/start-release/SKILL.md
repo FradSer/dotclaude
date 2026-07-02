@@ -43,13 +43,12 @@ See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 **Goal**: Create release branch and bump version. Use `TARGET` from Phase 0 everywhere below.
 1. Run `git flow release start <TARGET>`
 2. Update version in project files (package.json, Cargo.toml, VERSION, etc.) to `<TARGET>`
-3. Stage version files: `git add <modified version files>`
-4. Determine the Claude model name for co-author attribution
+3. Determine the Claude model name for co-author attribution
    - Derive it from your own runtime model identity (e.g. Claude Opus 4.8) so it never goes stale; do not hardcode a fixed version
-5. Commit with git-agent: `git-agent commit --no-stage --intent "bump version to <TARGET>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-6. On auth error (401), retry with `--free`
-7. **Fallback** (git-agent unavailable): `git commit -m "chore: bump version to <TARGET>"` with conventional format and `Co-Authored-By` footer
-8. Push the branch: `git push -u origin release/<TARGET>`
+4. Stage and commit in ONE chained command — a standalone `git add` is denied (see invariants.md §Committing): `git add <modified version files> && git-agent commit --no-stage --intent "bump version to <TARGET>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+5. On auth error (401), retry with `--free`
+6. **Fallback** (git-agent unavailable): invoke the `/git:commit` skill via the Skill tool; full ladder in invariants.md §Committing
+7. Push the branch: `git push -u origin release/<TARGET>`
 
 **Note**: CHANGELOG.md is updated during finish-release, not here.
 ```
