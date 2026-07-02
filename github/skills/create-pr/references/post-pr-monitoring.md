@@ -175,12 +175,9 @@ Be terse. One line per comment, verdict first.
 3. Send PushNotification for each `escalate` verdict with comment body + author + file context
 4. Commit and push all `fix` changes together in one round
 
-Apply the validated fixes, then acknowledge each:
+Apply the validated fixes, commit and push them via the `/git:commit-and-push` skill (Skill tool), then acknowledge each:
 
 ```bash
-git add -A
-git commit -m "fix(scope): address validated review feedback on <file>"
-git push origin <branch>
 # Reply to accepted inline review comment
 gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="Fixed in <commit-sha>."
 # Reply to rejected inline review comment
