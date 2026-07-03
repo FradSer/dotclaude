@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)"]
 ---
 
 # Executing Plans
@@ -56,6 +56,8 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
 **Core Principles**: Review before execution, batch verification, explicit blockers, evidence-driven approach.
 
 **MANDATORY SKILL**: `superpowers:behavior-driven-development` must be loaded regardless of execution mode.
+
+> **CRITICAL — two internal gate skills are load-bearing, not optional.** Every implementer sub-agent prompt MUST instruct loading `superpowers:verification-before-completion` before reporting any task done (no completion claims without fresh verification evidence pasted in the return), and the batch coordinator MUST load `superpowers:receiving-code-review` before acting on an evaluator REWORK verdict (verify each rework item against the codebase; no blind implementation). Omitting either from a coordinator prompt is a protocol violation. Details: `./references/batch-execution-playbook.md` (Agent Prompt Template + Rework Loop).
 
 ## Definition of Done
 
@@ -123,3 +125,5 @@ All tasks executed and verified, evidence captured, no blockers, final verificat
 - `./references/handoff-template.md` - Handoff summary template for long plans
 - `./references/intra-plan-learning.md` - Pattern scan, batch handoff, and checklist evolution formats
 - `./scripts/batch-progress.sh` - Filesystem-derived batch progress orientation (run as Step 1 of every iteration)
+- `../../lib/task-brief.sh` - Extract one task's text to a file the implementer reads from disk (diff/task-text-as-files)
+- `../../lib/review-package.sh` - Generate a net-diff review package file the evaluator reads from disk

@@ -64,7 +64,7 @@ If the context says `plan`, refuse with: "Plan-mode evaluation is handled inline
 ## Code Mode
 
 1. **Read sprint contract**: `sprint-contract-batch-{N}.md`. Missing -> blocker, stop.
-2. **Read produced artifacts**: full content of every file each task created or modified. For test tasks, also read the impl files they cover. A listed file that does not exist = immediate Correctness FAIL.
+2. **Read produced artifacts**: full content of every file each task created or modified. For test tasks, also read the impl files they cover. A listed file that does not exist = immediate Correctness FAIL. When the plan directory contains a `_reviews/` folder with a `review-<base>..<head>.diff` file (produced by `lib/review-package.sh`), you MAY read that diff file FIRST as a change overview — it shows the net change with ±10 lines of context. The diff is an overview ONLY, not a substitute for full-file reads: after skimming it, still read the full content of every produced file (a `git diff -U10` context window hides un-changed regions that may contain the defect). This is an optional convenience path; you may always read produced files directly.
 3. **Run verification commands**: each task's commands. Record exit code + last 30 lines of output. Exit 0 = PASS, non-zero = FAIL. Run them yourself; never trust prior reports.
 4. **Resolve code checklist**: Use the spawn-provided path when present. Otherwise pick the highest `docs/retros/checklists/code-v{N}.md` by numeric `N` (not `code-v1.md` when newer versions exist).
 5. **Apply code checklist**: each item against the produced files.

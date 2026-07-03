@@ -19,6 +19,7 @@
    - Resolved `docs/retros/checklists/code-v{N}.md` (highest N in repo when not passed explicitly)
    - Batch task IDs + Red-Green pair annotations; execution mode (see `./batch-execution-playbook.md`)
    - Full Agent Prompt Template + evaluator instruction + max 2 rework rounds + structured return format (below)
+   - Both gate-skill directives: implementer prompts load `superpowers:verification-before-completion` before reporting done; the coordinator loads `superpowers:receiving-code-review` before acting on an evaluator REWORK (see playbook Agent Prompt Template + Rework Loop)
 
 3. **Process Coordinator Result** — Parse structured return:
    ```

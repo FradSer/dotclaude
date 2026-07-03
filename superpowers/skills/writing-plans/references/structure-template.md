@@ -44,6 +44,15 @@ The plan must be split into multiple files: **ONE TASK PER FILE**
 |--------|--------------|--------------|
 | [Dimension] | [As-is] | [To-be] |
 
+## Global Constraints
+
+Cross-task invariants every batch and every task must respect. These shared guardrails make parallel batches safe — list them here so a downstream task or parallel batch cannot silently violate one. One invariant per bullet, no prose. Omit the section only when the design carries zero cross-cutting constraints (rare).
+
+- **Performance**: [e.g., p99 latency < 200ms on the auth hot path; no new blocking I/O in request handlers]
+- **Security**: [e.g., all new endpoints require auth; no raw SQL interpolation; secrets via env only]
+- **Compatibility**: [e.g., must run on Node 18+; preserve existing CLI flag names]
+- **Forbidden**: [e.g., no new lodash imports; no `any` casts; no `console.log` in production code]
+
 ## Execution Plan
 
 <!-- Inline task metadata for efficient execution by executing-plans skill -->
@@ -149,6 +158,19 @@ Scenario: [concise scenario title]
 
 **Spec Source**: `../YYYY-MM-DD-<topic>-design/bdd-specs.md` (for reference)
 
+## Interfaces
+
+Contracts this task exposes or consumes. Tasks linked via `depends-on` connect through these blocks — a downstream task's consumed interface must match an upstream task's exposed interface. This makes parallel-batch interface compatibility verifiable before merge. Signatures only, no implementation bodies (the "describe what, not how" rule still holds).
+
+**Exposes** (interfaces this task produces):
+- `def validate_credentials(username: str, password: str) -> bool: ...`
+- `class AuthError(Exception): ...`
+
+**Consumes** (interfaces from `depends-on` tasks this task relies on):
+- `get_user_by_email(email: str) -> User | None` (from task-002)
+
+**Global Constraints respected**: [name the constraint(s) from `_index.md` ## Global Constraints this task is bound by, e.g., "no raw SQL interpolation — uses the shared prepared-statement helper"]
+
 ## Files to Modify/Create
 
 - Create: `path/to/new/file.ext`
@@ -193,7 +215,9 @@ Scenario: [concise scenario title]
 
 **CRITICAL RULES FOR TASK FILES**:
 - **PROHIBITED**: Do not generate implementation bodies in task files — no function logic, no algorithm code
-- **ALLOWED**: Interface signatures, type definitions, and function signatures that define the contract (e.g., `async function maybeSpawnTeammate(params: {...}): Promise<Result>`)
+- **MANDATORY**: Each task file includes a `## Interfaces` section declaring exposed/consumed contracts (signatures only)
+- **ALLOWED**: Interface signatures, type definitions, and function signatures that define the contract (e.g., `async function maybeSpawnTeammate(params: {...}): Promise<Result>`) — placed in the `## Interfaces` block
 - Describe **what** to implement, not **how**
 - Focus on actions: "Create a function that X", "Modify Y to do Z"
 - One task = One file
+- **Right-sizing**: Fold setup/config/docs into the single feature task that consumes them; a standalone setup task is justified only when 2+ downstream tasks share its output

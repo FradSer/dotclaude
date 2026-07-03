@@ -71,13 +71,9 @@ This catches designs the maintainer or a prior brainstorming sub-agent has expli
 
 **Core Concept**: Explicit over implicit, granular tasks, verification-driven, context independence.
 
-- **MANDATORY**: Tasks must be driven by BDD scenarios (Given/When/Then).
-- **MANDATORY**: Test-First (Red-Green) workflow. Verification tasks must precede implementation tasks.
-- **MANDATORY**: When plans include unit tests, require external dependency isolation with test doubles (DB/network/third-party APIs).
-- **PROHIBITED**: Do not generate implementation bodies — no function logic, no algorithm code.
-- **ALLOWED**: Interface signatures, type definitions, and function signatures that define the contract (e.g., `async function improve(params: ImproveParams): Promise<Result>`).
-- **MANDATORY**: One task per file. Each task gets its own `.md` file.
-- **MANDATORY**: _index.md contains overview and references to all task files.
+- **MANDATORY**: Tasks driven by BDD scenarios (Given/When/Then); Test-First (Red→Green); one task per `.md` file; `_index.md` references all task files.
+- **MANDATORY**: Unit-test tasks require external dependency isolation with test doubles (DB/network/third-party APIs).
+- **PROHIBITED**: Implementation bodies in task files — no function logic, no algorithm code. Interface signatures belong in the task's `## Interfaces` block (Phase 2 step 6), not inline prose.
 
 ## Phase 1: Plan Structure
 
@@ -88,12 +84,13 @@ Define goal, architecture, constraints, and context.
 3. **Write Context Section**: Populate the `## Context` section in `_index.md`:
    - State why this work is needed (motivation, constraints, prior incidents).
    - If modifying existing code, add a current-state vs target-state comparison table covering key dimensions (module structure, API shape, behavior, etc.). Omit the table for greenfield work.
+4. **Write Global Constraints Section**: Populate the `## Global Constraints` section in `_index.md` — the cross-task invariants (performance budgets, security baselines, compatibility targets, forbidden dependencies/patterns) every batch and every task must respect. These shared guardrails make parallel batches safe. One invariant per bullet, no prose; omit the section only when the design carries zero cross-cutting constraints (rare). Categories and examples: `./references/structure-template.md` §Global Constraints.
 
 ## Phase 2: Task Decomposition
 
 Break into small tasks mapped to specific BDD scenarios.
 
-**PROHIBITED**: Do not ask the user to choose task granularity, approve decomposition, or confirm the plan mid-process. Apply the rules in steps 1-6 below plus these additions automatically; the Phase 4 sub-agent reflection is the quality gate and the post-commit `git show` diff is the user's audit surface. There is no in-skill approval step.
+**PROHIBITED**: Do not ask the user to choose task granularity, approve decomposition, or confirm the plan mid-process. Apply the rules in steps 1-7 below plus these additions automatically; the Phase 4 sub-agent reflection is the quality gate and the post-commit `git show` diff is the user's audit surface. There is no in-skill approval step.
 
 - Foundation tasks (setup, shared schema, types, config, storage) take lower `NNN` before feature pairs
 - Bundle all scenarios of a Feature into one test file; split only when the Feature crosses independent service boundaries (e.g., frontend vs backend)
@@ -124,7 +121,9 @@ Break into small tasks mapped to specific BDD scenarios.
    - `<feature>`: Feature identifier (e.g., auth-handler, user-profile)
    - `<type>`: Type (test, impl, config, refactor)
    - **Test and implementation tasks for the same feature share the same NN prefix**, e.g., `002-feature-test` and `002-feature-impl`
-6. **Describe What, Not How**: **PROHIBITED**: Do not generate implementation bodies. Describe what to implement (e.g., "Create a function that validates user credentials"). **ALLOWED**: Include interface signatures to define contracts (e.g., `def validate_credentials(username: str, password: str) -> bool: ...`), but never the body logic.
+   - **Right-sizing**: Do NOT manufacture standalone setup/config/docs tasks when their only consumer is a single feature task — fold setup/config/docs into the task that needs them. A standalone `task-001-setup` is justified only when 2+ downstream tasks share its output. Pseudo-independent setup tasks create false parallelism and inflate batch counts.
+6. **Declare Interfaces**: **MANDATORY**: Each task file includes a `## Interfaces` section (after `## BDD Scenario`) declaring the contracts this task exposes or consumes — function signatures, type definitions, API endpoints, event names, CLI flags. Tasks linked via `depends-on` connect through these Interfaces blocks, so parallel batches can verify interface compatibility before merge. This lifts the "ALLOWED interface signatures" rule from optional to required-in-this-block.
+7. **Describe What, Not How**: **PROHIBITED**: Do not generate implementation bodies. Describe what to implement (e.g., "Create a function that validates user credentials"). **ALLOWED**: Interface signatures in the `## Interfaces` block define contracts (e.g., `def validate_credentials(username: str, password: str) -> bool: ...`), but never the body logic.
 
 ## Phase 3: Validation & Documentation
 
