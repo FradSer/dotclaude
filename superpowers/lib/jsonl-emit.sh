@@ -33,7 +33,18 @@
 
 [[ -n "${_JSONL_EMIT_LOADED:-}" ]] && return 0
 
-_JSONL_EMIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+_JSONL_EMIT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+# Resolve to an absolute path without `cd ... && pwd` — the latter doubles
+# the path under some shells. If the dirname is relative, anchor it against
+# $PWD (stripped of any trailing duplicate) without invoking pwd.
+if [[ "$_JSONL_EMIT_DIR" != /* ]]; then
+  _base="${PWD}"
+  # Defensive: if PWD somehow contains a doubled path, take the first half.
+  case "$_base" in
+    *$'\n'*) _base="${_base%%$'\n'*}" ;;
+  esac
+  _JSONL_EMIT_DIR="${_base}/${_JSONL_EMIT_DIR}"
+fi
 # shellcheck source=./utils.sh
 source "${_JSONL_EMIT_DIR}/utils.sh"
 
