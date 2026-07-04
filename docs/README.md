@@ -14,6 +14,7 @@
 | docs/plans/2026-05-12-unified-retro-events-plan/ | plan | implemented:069f16b |  | 2026-07-04 |
 | docs/plans/2026-07-04-docs-index-design/ | design | active |  | 2026-07-04 |
 | docs/plans/2026-07-04-docs-index-plan/ | plan | implemented:e4bbd2b |  | 2026-07-04 |
+| docs/plans/2026-07-04-superpowers-memory-layer-design/ | design | active | kind=memory extends docs-index into a distilled-fact memory layer for a… | 2026-07-04 |
 | docs/retros/retro-2026-06-02-unified-retro-events.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-06-08-calibration-no-new-data.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-07-04-docs-index-plan.md | retro | active |  | 2026-07-04 |
