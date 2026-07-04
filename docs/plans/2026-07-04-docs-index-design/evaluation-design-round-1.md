@@ -1,6 +1,6 @@
 # Design Evaluation Report — Round 1
 
-**Design folder:** `/Users/FradSer/Developer/FradSer/dotclaude/superpowers/docs/plans/2026-07-04-docs-index-design/`
+**Design folder:** `/Users/FradSer/Developer/FradSer/dotclaude/docs/plans/2026-07-04-docs-index-design/`
 **Checklist:** `docs/retros/checklists/design-v1.md` (v1)
 **Mode:** design
 **Date:** 2026-07-04
