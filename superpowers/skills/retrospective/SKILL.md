@@ -3,7 +3,7 @@ name: retrospective
 description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective". For autonomous multi-turn runs, invoke wrapped in `/goal`.
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
 # Retrospective
@@ -92,7 +92,7 @@ The canonical v1 template content lives in `lib/seed-checklists.sh`. To inspect 
 
 ## Phase 1: Data Collection
 
-1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`.
+1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`. Consult the docs index to complement the completed-plans log: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind plan --status implemented` scopes plans whose index row says they shipped; also `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired` to surface prior expirations as calibration input (an expired plan is one a previous retro invalidated — read its retro report before re-proposing anything that touches it).
 2. **Resolve evals**: For each plan path, look for evaluation reports in the plan directory (`evaluation-round-*.md`, `evaluation-design-round-*.md`, `evaluation-plan-round-*.md`). If a sibling `*-evals/` directory exists, read from there instead.
 3. **Read checklists**: Scan `docs/retros/checklists/` for latest versions of each mode (`{mode}-v{N}.md`, highest N).
 4. **Read reports**: For each plan, read all evaluation report files. Extract per-item results (Item ID, Result, Evidence) and rework items.
@@ -166,6 +166,8 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
 3. Checklist versions updated (if any)
 4. Harness Health notes (5a post-plan corrections mined into ADD proposals; 5b informational recommendations)
 5. Summary: N proposals approved, M rejected, checklists updated to version X
+6. **Upsert retro report into the docs index**: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert retro <retro-report-path> --status active --summary "<one-line>"` (the one-line summary is the same string written into the report's summary line; this makes the retro discoverable from the index the next brainstorming/plan-writing pass consults).
+7. **CRITICAL — invalidate-after (do-not-defer, retrospective-only).** For each `invalidates: <path>` line in the just-written retro report, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <path> "expired:retro-<date>:<reason>"` (substitute the retro's date and a short reason). If `set-status` returns exit 3 (path not tracked in the index), log a warning and skip — do NOT upsert speculative entries just to mark them expired; expiry only applies to docs the index already tracks. **CRITICAL boundary — a Phase 3 REMOVE proposal on a checklist item does NOT invalidate a design.** REMOVE on a checklist item evolves the checklist, not the design folder; only an explicit `invalidates: <path>` line in the retro report triggers `set-status expired:` on a design or plan. Note: REMOVE does NOT invalidate — the checklist REMOVE and the design expiry are separate channels. Expiry is retrospective-only — the other three writer skills (brainstorming, writing-plans, executing-plans) may NOT set `expired:`; only this step 7 does.
 
 **Close the calibration loop** — **CRITICAL: do this before you stop, not after the report "feels done."** Append one `retrospective_run` row to `docs/retros/evolution-log.jsonl` via the canonical emit pattern in `./references/evolution-protocol.md` §"Canonical Emit Invocations", recording `proposals_approved` and `proposals_rejected`. This row is the closure marker the *next* run's auto-scope (Phase 1 step 1) reads to avoid re-analyzing these plans — skip it and the next retrospective silently re-analyzes already-analyzed plans, re-proposing the same changes. Do not skip it even when zero proposals were approved. The Stop hook (`hooks/stop-state-sync.sh`) backfills a minimal watermark from this run's `retro-*.md` report if you drop this, but only your emit carries `proposals_approved` / `proposals_rejected` / `plans_analyzed` — so write the rich row here.
 

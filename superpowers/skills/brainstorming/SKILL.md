@@ -2,7 +2,7 @@
 name: brainstorming
 description: Turns rough ideas into implementation-ready designs via autonomous codebase research and BDD specs, then commits the design for your review (it runs to completion without pausing for mid-design questions). This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
 user-invocable: true
-allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)"]
+allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
 # Brainstorming Ideas Into Designs
@@ -52,7 +52,7 @@ For Bucket A, output the bail-out response below and stop. For Bucket B (includi
 ## Initialization
 
 1. **Capture the problem statement**: Reduce `$ARGUMENTS` to a single declarative sentence under ~150 chars — the problem to brainstorm, in the user's own framing. Do NOT paraphrase, summarize away constraints, or introduce vocabulary the user did not use. Strip a leading `--force` token if present (already consumed by the bail-out check). If `$ARGUMENTS` is empty, use the open problem the user just described in conversation.
-2. **Read project context**: Read `CLAUDE.md` and `README.md` to understand project constraints.
+2. **Read project context**: Read `CLAUDE.md` and `README.md` to understand project constraints. Then consult the docs index — run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind design --status active` and `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired`. Treat any `expired:` design's conclusions as non-authoritative — create a fresh design rather than extending an expired one. If an `active` design on the same topic already exists, surface it in the Phase 1 sprint contract and either extend it (preferred) or supersede it via the Phase 3 wrap-up.
 3. **Proceed to Phase 1** in the same turn.
 
 ## Core Principles
@@ -94,7 +94,7 @@ Create design documents with integrated quality assurance, then reconcile cross-
 
 **Step 1: Create Design Documents**
 
-**Folder**: `docs/plans/YYYY-MM-DD-<topic>-design/` (the `-design` suffix is REQUIRED)
+**Folder**: `docs/plans/YYYY-MM-DD-<topic>-design/` (the `-design` suffix is REQUIRED). If committing a second distinct design for the same topic on the same day, disambiguate the folder name with a `-2` suffix: `docs/plans/YYYY-MM-DD-<topic>-design-2/` (then `-3/`, etc.). The docs index keys on the full folder path, so distinct suffixes keep each design addressable.
 
 **Required files (4)**:
 - `_index.md` -- Context, Discovery Results, Requirements, Rationale, Detailed Design, Design Documents (links to companions)
@@ -146,6 +146,7 @@ See `./references/evaluation-checklist-reference.md` for evaluator checklist cal
 Commit the design and transition to implementation planning.
 
 **Actions**:
+0. **CRITICAL — do not defer**: Upsert the design into the docs index so downstream writer skills can discover it. Run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert design docs/plans/YYYY-MM-DD-<topic>-design/ --status active --summary "<one-line summary>"`. If a prior `active` design on the same topic is being replaced, first run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status docs/plans/<prior-design-path>/ "superseded-by:docs/plans/YYYY-MM-DD-<topic>-design/"` to mark it superseded. This consult-before/upsert-after pairing is what keeps the index truthful across phases.
 1. Stage and commit the entire folder in ONE chained command — a standalone `git add` is denied by the git plugin's hook: `git add docs/plans/YYYY-MM-DD-<topic>-design/ && git-agent commit --no-stage --intent "add design for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 2. On auth error, retry with `--free` flag
 3. **Fallback**: If git-agent is unavailable, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`

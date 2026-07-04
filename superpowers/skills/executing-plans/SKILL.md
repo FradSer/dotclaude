@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
 # Executing Plans
@@ -48,7 +48,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
 
 ## Initialization (first turn only)
 
-1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
+1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section. Consult the docs index before spawning any batch: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <plan-path>`. If the row's status is `expired:`, REFUSE — the plan has been invalidated by a retro and is no longer authoritative; tell the user which retro invalidated it and stop. If the status is `implemented:<old-sha>` (rework after ship), run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "wip"` BEFORE spawning batch 1 so the index reflects that the plan is being worked again.
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
 
 ## Background Knowledge
@@ -93,6 +93,8 @@ Commit the implementation changes using git-agent (with git fallback).
 1. Run: `git-agent commit --intent "<feature description>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 2. On auth error, retry with `--free` flag
 3. **Fallback**: If git-agent is unavailable or fails, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
+
+**CRITICAL — flip the plan's docs-index row post-commit (do-not-defer).** After the implementation commit lands, flip the plan's index row to `implemented`: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "implemented:$(git rev-parse --short HEAD)"`. Then commit the index update as its own tiny commit: `git-agent commit --no-stage --intent "mark <plan> implemented in docs index"`. NEVER use `--amend` — it would rewrite history and confuse the Stop hook's `completion_commit` detection (the hook keys off the tip commit on the plan's modified-files set; an amended tip silently repoints it).
 
 See `../../skills/references/git-commit.md` for patterns, templates, and requirements. Commit only after all tasks are completed; use a meaningful feature scope.
 
