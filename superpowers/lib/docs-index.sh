@@ -27,6 +27,19 @@
 # target, so a crash leaves either the old or the new file, never a torn
 # half-table. See docs/plans/2026-07-04-docs-index-design/architecture.md
 # for the full design.
+#
+# Root resolution: `repo_root` (from lib/utils.sh) resolves in the order
+#   ${CLAUDE_PROJECT_DIR} -> `git rev-parse --show-toplevel` -> ${PWD}.
+# At skill runtime, CLAUDE_PROJECT_DIR points at the user's project, so the
+# index correctly lands at <user-project>/docs/README.md. When developing
+# the plugin itself (running this script by hand from within superpowers/),
+# CLAUDE_PROJECT_DIR is typically unset and `git rev-parse --show-toplevel`
+# resolves to the parent dotclaude/ repo — so a bare `bash lib/docs-index.sh
+# rebuild` writes to dotclaude/docs/README.md, NOT superpowers/docs/README.md.
+# To seed/maintain the plugin's OWN index, set the env var explicitly:
+#   CLAUDE_PROJECT_DIR="$(pwd)" bash lib/docs-index.sh rebuild
+# This is documented behavior, not a bug — the index belongs to whichever
+# project the skill is operating on.
 
 set -euo pipefail
 
