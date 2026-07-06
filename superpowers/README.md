@@ -67,6 +67,7 @@ Turn rough ideas into implementation-ready designs through autonomous, codebase-
 - Explores design alternatives grounded in codebase reality
 - Produces design documents with BDD specifications (Given-When-Then)
 - Prepares the project for planning and implementation
+- Consults and, on repeated rework, contributes to a shared project memory layer (`docs/README.md` `kind=memory`) of reusable facts/decisions/pitfalls
 
 **Workflow:** Phase 1 (Scope Alignment) → Phase 2 (Design with QA) → Phase 3 (Wrap-up)
 
@@ -80,6 +81,7 @@ Create executable implementation plans that reduce ambiguity for execution.
 - Maps each task to specific BDD scenarios
 - Enforces Test-First (Red-Green) ordering
 - Ensures compatibility with behavior-driven development practices
+- Consults and, on repeated rework, contributes to a shared project memory layer (`docs/README.md` `kind=memory`) of reusable facts/decisions/pitfalls
 
 **Prerequisites:** Output from `superpowers:brainstorming` skill (design folder with `bdd-specs.md`)
 
@@ -94,6 +96,7 @@ Execute written implementation plans in predictable batches.
 - Tracks task completion and captures evidence
 - Runs a per-batch evaluator against the sprint contract
 - Orients each turn via `scripts/batch-progress.sh` (filesystem-derived batch state, formerly part of the v2.x continuation runtime — Removed in v3.0.0 as a plugin-level hook, kept as a skill-local helper)
+- Consults and, on a variety-gap signal, contributes to a shared project memory layer (`docs/README.md` `kind=memory`) of reusable facts/decisions/pitfalls
 
 **Prerequisites:** Output from `superpowers:writing-plans` skill (plan folder with `_index.md`)
 
@@ -107,6 +110,7 @@ Analyze evaluation patterns across completed plans and evolve checklists.
 - Proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE); Phase 4 auto-applies approved proposals (review post-commit via `git show docs/retros/checklists/`)
 - Audits harness health (Phase 5, advisory): mines post-plan correction commits into ADD proposals and surfaces never-firing items as REMOVE candidates
 - Closes the calibration loop by appending to `docs/retros/evolution-log.jsonl`
+- The primary, highest-volume writer of the shared project memory layer (`docs/README.md` `kind=memory`) and the only skill that bridges a recalled private-memory prior into a project-local memory file
 
 **Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory. Invoke with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). When the plugin's single Stop hook (`hooks/stop-state-sync.sh`) can run (`git` + `jq` present, plan artifacts complete), `docs/retros/plans-completed.jsonl` is **appended automatically** on first completion and drives auto-scope plus post-plan-diff pre-check. The same hook also backfills the evolution-log's `retrospective_run` watermark and `item_added`/`item_removed` deltas from durable state if the retrospective skipped them. The log may be absent for plans finished outside `executing-plans`, bail-out inline runs, or hosts missing `jq`/`git` — retrospective still works with explicit plan paths but skips auto-scope.
 
@@ -120,6 +124,7 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 - Captures `$ARGUMENTS` as the symptom statement and starts at Phase 1 immediately
 - Deliverable is `the fix + a test that catches the regression`, not design folders
 - Refuses to propose fixes before completing Phase 1 (Iron Law: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST)
+- Its only `docs/` touchpoint: on 3+ failed fixes, contributes to the shared project memory layer (`docs/README.md` `kind=memory`) instead of opening a new phase
 
 **When to use**: bug reports, test failures, unexpected behavior, performance issues, build failures. Especially valuable when time pressure tempts you to guess.
 

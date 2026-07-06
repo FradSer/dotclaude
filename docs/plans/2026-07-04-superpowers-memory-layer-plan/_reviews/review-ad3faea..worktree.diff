@@ -1,0 +1,1175 @@
+diff --git a/.claude-plugin/marketplace.json b/.claude-plugin/marketplace.json
+index 4412355..8c5a6f9 100644
+--- a/.claude-plugin/marketplace.json
++++ b/.claude-plugin/marketplace.json
+@@ -90,7 +90,7 @@
+     {
+       "name": "superpowers",
+       "displayName": "Superpowers",
+-      "version": "3.5.0",
++      "version": "3.6.0",
+       "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
+       "author": {
+         "name": "Frad LEE",
+diff --git a/superpowers/.claude-plugin/plugin.json b/superpowers/.claude-plugin/plugin.json
+index 4714396..78bf5eb 100644
+--- a/superpowers/.claude-plugin/plugin.json
++++ b/superpowers/.claude-plugin/plugin.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "superpowers",
+   "displayName": "Superpowers",
+-  "version": "3.5.0",
++  "version": "3.6.0",
+   "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
+   "author": {
+     "name": "Frad LEE",
+diff --git a/superpowers/README.md b/superpowers/README.md
+index 14fd4c9..d0f326d 100644
+--- a/superpowers/README.md
++++ b/superpowers/README.md
+@@ -67,6 +67,7 @@ Turn rough ideas into implementation-ready designs through autonomous, codebase-
+ - Explores design alternatives grounded in codebase reality
+ - Produces design documents with BDD specifications (Given-When-Then)
+ - Prepares the project for planning and implementation
++- Consults and, on repeated rework, contributes to a shared project memory layer (`docs/README.md` `kind=memory`) of reusable facts/decisions/pitfalls
+ 
+ **Workflow:** Phase 1 (Scope Alignment) → Phase 2 (Design with QA) → Phase 3 (Wrap-up)
+ 
+@@ -80,6 +81,7 @@ Create executable implementation plans that reduce ambiguity for execution.
+ - Maps each task to specific BDD scenarios
+ - Enforces Test-First (Red-Green) ordering
+ - Ensures compatibility with behavior-driven development practices
++- Consults and, on repeated rework, contributes to a shared project memory layer (`docs/README.md` `kind=memory`) of reusable facts/decisions/pitfalls
+ 
+ **Prerequisites:** Output from `superpowers:brainstorming` skill (design folder with `bdd-specs.md`)
+ 
+@@ -94,6 +96,7 @@ Execute written implementation plans in predictable batches.
+ - Tracks task completion and captures evidence
+ - Runs a per-batch evaluator against the sprint contract
+ - Orients each turn via `scripts/batch-progress.sh` (filesystem-derived batch state, formerly part of the v2.x continuation runtime — Removed in v3.0.0 as a plugin-level hook, kept as a skill-local helper)
++- Consults and, on a variety-gap signal, contributes to a shared project memory layer (`docs/README.md` `kind=memory`) of reusable facts/decisions/pitfalls
+ 
+ **Prerequisites:** Output from `superpowers:writing-plans` skill (plan folder with `_index.md`)
+ 
+@@ -107,6 +110,7 @@ Analyze evaluation patterns across completed plans and evolve checklists.
+ - Proposes versioned checklist changes (ADD / REMOVE / MODIFY / PROMOTE); Phase 4 auto-applies approved proposals (review post-commit via `git show docs/retros/checklists/`)
+ - Audits harness health (Phase 5, advisory): mines post-plan correction commits into ADD proposals and surfaces never-firing items as REMOVE candidates
+ - Closes the calibration loop by appending to `docs/retros/evolution-log.jsonl`
++- The primary, highest-volume writer of the shared project memory layer (`docs/README.md` `kind=memory`) and the only skill that bridges a recalled private-memory prior into a project-local memory file
+ 
+ **Prerequisites:** Plans completed via `superpowers:executing-plans` with evaluation reports in the plan directory. Invoke with explicit plan paths (or `--across-all` to scope every plan with evaluation reports). When the plugin's single Stop hook (`hooks/stop-state-sync.sh`) can run (`git` + `jq` present, plan artifacts complete), `docs/retros/plans-completed.jsonl` is **appended automatically** on first completion and drives auto-scope plus post-plan-diff pre-check. The same hook also backfills the evolution-log's `retrospective_run` watermark and `item_added`/`item_removed` deltas from durable state if the retrospective skipped them. The log may be absent for plans finished outside `executing-plans`, bail-out inline runs, or hosts missing `jq`/`git` — retrospective still works with explicit plan paths but skips auto-scope.
+ 
+@@ -120,6 +124,7 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
+ - Captures `$ARGUMENTS` as the symptom statement and starts at Phase 1 immediately
+ - Deliverable is `the fix + a test that catches the regression`, not design folders
+ - Refuses to propose fixes before completing Phase 1 (Iron Law: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST)
++- Its only `docs/` touchpoint: on 3+ failed fixes, contributes to the shared project memory layer (`docs/README.md` `kind=memory`) instead of opening a new phase
+ 
+ **When to use**: bug reports, test failures, unexpected behavior, performance issues, build failures. Especially valuable when time pressure tempts you to guess.
+ 
+diff --git a/superpowers/lib/docs-index.sh b/superpowers/lib/docs-index.sh
+index e95ed71..ef8bd95 100755
+--- a/superpowers/lib/docs-index.sh
++++ b/superpowers/lib/docs-index.sh
+@@ -10,7 +10,7 @@
+ # index consulted at skill Initialization and updated at skill commit time.
+ #
+ # Usage:
+-#   docs-index.sh list   [--kind <design|plan|retro>] [--status <prefix>]
++#   docs-index.sh list   [--kind <design|plan|retro|memory>] [--status <prefix>]
+ #   docs-index.sh show   <path>
+ #   docs-index.sh upsert <kind> <path> [--status <status>] [--summary <summary>]
+ #   docs-index.sh set-status <path> <new-status>
+@@ -114,7 +114,7 @@ seed_header() {
+   cat <<'EOF'
+ # Docs Index
+ 
+-> Auto-maintained by `lib/docs-index.sh`. One row per design/plan/retro folder.
++> Auto-maintained by `lib/docs-index.sh`. One row per design/plan/retro folder, or memory fact file.
+ > Last rebuild: 2026-07-04
+ 
+ | path | kind | status | summary | updated |
+@@ -125,9 +125,9 @@ EOF
+ validate_kind() {
+   local kind="$1"
+   case "$kind" in
+-    design|plan|retro) printf '%s' "$kind"; return 0 ;;
++    design|plan|retro|memory) printf '%s' "$kind"; return 0 ;;
+     *)
+-      echo "upsert: unknown kind '$kind' (expected: design|plan|retro)" >&2
++      echo "upsert: unknown kind '$kind' (expected: design|plan|retro|memory)" >&2
+       exit 2 ;;
+   esac
+ }
+@@ -198,11 +198,43 @@ validate_status() {
+   exit 2
+ }
+ 
+-# Default status when --status is omitted: wip for design/plan, active for retro.
++# Kind-aware status restriction: kind=memory rows are restricted to
++# active/expired:<reason> — memory writes are atomic single-turn artifacts,
++# never partial (no wip), never "shipped" (no implemented), and never point at
++# a replacement (no superseded-by; consolidation drops the absorbed row
++# outright). No-op passthrough for every other kind — validate_status() alone
++# already governs design/plan/retro, unchanged.
++validate_status_for_kind() {
++  local kind="$1" status="$2"
++  if [[ "$kind" != "memory" ]]; then
++    return 0
++  fi
++  case "$(status_category "$status")" in
++    active|expired) return 0 ;;
++    *)
++      echo "upsert: status '$status' is not allowed for kind=memory (expected: active|expired:<reason>)" >&2
++      exit 2 ;;
++  esac
++}
++
++# Category enum for kind=memory rows. Frontmatter-only — never a 6th row
++# column. "type" and "kind" are reserved (collide with row-schema field
++# names); "reference" is reserved (collides with the existing status value).
++validate_category() {
++  local category="$1"
++  case "$category" in
++    convention|pitfall|decision|preference) printf '%s' "$category"; return 0 ;;
++    *)
++      echo "upsert: unknown category '$category' (expected: convention|pitfall|decision|preference)" >&2
++      exit 2 ;;
++  esac
++}
++
++# Default status when --status is omitted: wip for design/plan, active for retro/memory.
+ default_status_for_kind() {
+   case "$1" in
+-    retro) printf 'active' ;;
+-    *)     printf 'wip' ;;
++    retro|memory) printf 'active' ;;
++    *)            printf 'wip' ;;
+   esac
+ }
+ 
+@@ -232,8 +264,8 @@ cmd_list() {
+   # Validate --kind against the controlled vocabulary (no-op if empty).
+   if [[ -n "$kind_filter" ]]; then
+     case "$kind_filter" in
+-      design|plan|retro) : ;;
+-      *) echo "list: unknown kind '$kind_filter' (expected: design|plan|retro)" >&2; exit 2 ;;
++      design|plan|retro|memory) : ;;
++      *) echo "list: unknown kind '$kind_filter' (expected: design|plan|retro|memory)" >&2; exit 2 ;;
+     esac
+   fi
+   # --status is a prefix — any prefix is allowed; do NOT validate.
+@@ -286,24 +318,36 @@ cmd_show() {
+ }
+ 
+ cmd_upsert() {
+-  local root kind path status summary
++  local root kind path status summary category
+   root="$(repo_root)"
+   if [[ $# -lt 2 ]]; then
+-    echo "upsert: usage: upsert <kind> <path> [--status <status>] [--summary <summary>]" >&2
++    echo "upsert: usage: upsert <kind> <path> [--status <status>] [--summary <summary>] [--category <category>]" >&2
+     exit 2
+   fi
+   kind="$1"; shift
+   path="$1"; shift
+   status=""
+   summary=""
++  category=""
+   while [[ $# -gt 0 ]]; do
+     case "$1" in
+-      --status)  status="${2:-}"; shift 2 ;;
+-      --summary) summary="${2:-}"; shift 2 ;;
++      --status)   status="${2:-}"; shift 2 ;;
++      --summary)  summary="${2:-}"; shift 2 ;;
++      --category) category="${2:-}"; shift 2 ;;
+       *) echo "upsert: unknown argument '$1'" >&2; exit 2 ;;
+     esac
+   done
+   kind="$(validate_kind "$kind")"
++  if [[ "$kind" == "memory" ]]; then
++    if [[ -z "$category" ]]; then
++      echo "upsert: --category is required for kind=memory (expected: convention|pitfall|decision|preference)" >&2
++      exit 2
++    fi
++    category="$(validate_category "$category")"
++  elif [[ -n "$category" ]]; then
++    echo "upsert: --category is only valid for kind=memory" >&2
++    exit 2
++  fi
+   if [[ -z "$path" ]]; then
+     echo "upsert: <path> must be non-empty" >&2
+     exit 2
+@@ -315,6 +359,7 @@ cmd_upsert() {
+   else
+     status="$(default_status_for_kind "$kind")"
+   fi
++  validate_status_for_kind "$kind" "$status"
+   summary="$(truncate_summary "$summary")"
+   local today
+   today="$(date +%Y-%m-%d)"
+@@ -438,14 +483,17 @@ cmd_set_status() {
+       field_path="$(printf '%s' "$row" | awk -F' \\| ' '{print $1}')"
+       if [[ "$field_path" == "$target" && "$found" -eq 0 ]]; then
+         found=1
+-        # Extract current status (field 3) to check the transition.
++        # Extract current kind + status; kind gates the memory-only status
++        # restriction below, checked before the general transition matrix so
++        # a kind-restriction violation surfaces first.
++        field_kind="$(printf '%s' "$row" | awk -F' \\| ' '{print $2}')"
+         field_status="$(printf '%s' "$row" | awk -F' \\| ' '{print $3}')"
++        validate_status_for_kind "$field_kind" "$new_status"
+         if ! transition_allowed "$field_status" "$new_status"; then
+           echo "set-status: transition '${field_status}' → '${new_status}' is not allowed" >&2
+           exit 2
+         fi
+         # Preserve kind + summary; flip status + updated date.
+-        field_kind="$(printf '%s' "$row" | awk -F' \\| ' '{print $2}')"
+         field_summary="$(printf '%s' "$row" | awk -F' \\| ' '{print $4}')"
+         local today
+         today="$(date +%Y-%m-%d)"
+@@ -482,6 +530,17 @@ cmd_set_status() {
+ # implemented/expired design+plan rows are collapse candidates).
+ topic_of_path() {
+   local p="$1"
++  # docs/memory/<category>_<slug>.md paths carry no date-prefixed topic the
++  # way docs/plans/YYYY-MM-DD-* folders do — group by the leading category
++  # token instead, so this branch is checked first (and unconditionally wins
++  # for memory paths, which never match the docs/plans/ prefix below anyway).
++  case "$p" in
++    docs/memory/*)
++      local base="${p#docs/memory/}"
++      printf '%s' "${base%%_*}"
++      return 0
++      ;;
++  esac
+   # Strip docs/plans/YYYY-MM-DD- prefix if present.
+   local stripped="${p#docs/plans/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-}"
+   # If the prefix didn't match, stripped == p; fall back to the bare basename.
+@@ -495,10 +554,11 @@ topic_of_path() {
+   printf '%s' "$stripped"
+ }
+ 
+-# Scan the filesystem for design/plan/retro artifacts and emit one
++# Scan the filesystem for design/plan/retro/memory artifacts and emit one
+ # "<path>\t<kind>\t<default_status>" row per artifact. Default status is wip
+-# for design/plan, active for retro. docs/writing-skills/ (if present) is
+-# seeded as kind=retro status=reference. Output is NOT sorted — caller sorts.
++# for design/plan, active for retro/memory. docs/writing-skills/ (if present)
++# is seeded as kind=retro status=reference. Output is NOT sorted — caller
++# sorts.
+ scan_folders() {
+   local root="$1"
+   local d f
+@@ -517,6 +577,12 @@ scan_folders() {
+     [[ -f "$f" ]] || continue
+     printf '%s\t%s\t%s\n' "${f#${root}/}" "retro" "active"
+   done
++  # memory files (plain, non-recursive glob — this is what makes
++  # docs/memory/archive/ invisible with zero extra logic)
++  for f in "${root}/docs/memory/"*.md; do
++    [[ -f "$f" ]] || continue
++    printf '%s\t%s\t%s\n' "${f#${root}/}" "memory" "active"
++  done
+   # docs/writing-skills/ seeded as kind=retro status=reference
+   if [[ -d "${root}/docs/writing-skills" ]]; then
+     printf '%s\t%s\t%s\n' "docs/writing-skills/" "retro" "reference"
+@@ -720,6 +786,12 @@ cmd_rebuild() {
+       final_status="$default_status"
+       final_summary=""
+     fi
++    if [[ -z "$final_summary" && "$k" == "memory" ]]; then
++      # Unlike design/plan folders (which have no internal summary to read),
++      # a memory file carries its own summary in frontmatter — fall back to
++      # that instead of leaving a first-time rebuild's summary blank.
++      final_summary="$(grep -m1 '^summary:' "${root}/${p}" 2>/dev/null | sed 's/^summary: *//')"
++    fi
+     local today
+     today="$(date +%Y-%m-%d)"
+     merged+=("${p}"$'\t'"${k}"$'\t'"${final_status}"$'\t'"${final_summary}"$'\t'"${today}")
+@@ -739,6 +811,52 @@ cmd_rebuild() {
+       collapsed+="${line}"$'\n'
+     done
+   fi
++  # Archive-on-drop: a row present in `merged` (pre-collapse) but absent from
++  # `collapsed` (post-collapse) whose kind is memory and whose status was
++  # expired gets its backing file moved to docs/memory/archive/ — unlike a
++  # dropped design/plan/retro row (whose content stays discoverable via its
++  # docs/plans/ or docs/retros/ path regardless of the index), a lone memory
++  # .md file with no row pointing at it is easy to lose track of.
++  #
++  # A row can be absent from `collapsed` for two different reasons, and only
++  # one of them means "dropped": stage-1 folds a >=3-row group sharing a
++  # (topic, cat) key into a single synthetic summary row (path
++  # "docs/plans/(collapsed-<topic>)") — the row's *individual* path
++  # disappears, but its content is still represented, so it must NOT be
++  # archived. Stage-2 instead drops expired rows outright with no
++  # replacement — that's the only case that should archive. Distinguish the
++  # two by checking whether this row's own (topic, cat) synthetic summary row
++  # exists in `collapsed`; only archive when it does not.
++  if [[ "${#merged[@]}" -gt 0 ]]; then
++    local collapsed_paths
++    collapsed_paths="$(printf '%s\n' "$collapsed" | awk -F'\t' 'NF >= 1 { print $1 }')"
++    local archive_dir_made=0
++    for line in "${merged[@]}"; do
++      local p k s cat
++      p="$(printf '%s' "$line" | awk -F'\t' '{print $1}')"
++      k="$(printf '%s' "$line" | awk -F'\t' '{print $2}')"
++      s="$(printf '%s' "$line" | awk -F'\t' '{print $3}')"
++      [[ "$k" == "memory" ]] || continue
++      cat="$(status_category "$s")"
++      [[ "$cat" == "expired" ]] || continue
++      if printf '%s\n' "$collapsed_paths" | grep -qxF -- "$p"; then
++        continue
++      fi
++      local topic synth_prefix
++      topic="$(topic_of_path "$p")"
++      synth_prefix="docs/plans/(collapsed-${topic})"$'\t'"${k}"$'\t'"${cat}"$'\t'
++      if printf '%s' "$collapsed" | grep -qF -- "$synth_prefix"; then
++        continue
++      fi
++      if [[ "$archive_dir_made" -eq 0 ]]; then
++        mkdir -p "${root}/docs/memory/archive"
++        archive_dir_made=1
++      fi
++      if [[ -f "${root}/${p}" ]]; then
++        mv -f "${root}/${p}" "${root}/docs/memory/archive/$(basename "$p")"
++      fi
++    done
++  fi
+   # Sort by path lexicographically and write.
+   local sorted
+   sorted="$(printf '%s\n' "$collapsed" | awk -F'\t' 'NF >= 5 { print }' | LC_ALL=C sort)"
+diff --git a/superpowers/skills/brainstorming/SKILL.md b/superpowers/skills/brainstorming/SKILL.md
+index 195d8dd..a80fefd 100644
+--- a/superpowers/skills/brainstorming/SKILL.md
++++ b/superpowers/skills/brainstorming/SKILL.md
+@@ -52,7 +52,7 @@ For Bucket A, output the bail-out response below and stop. For Bucket B (includi
+ ## Initialization
+ 
+ 1. **Capture the problem statement**: Reduce `$ARGUMENTS` to a single declarative sentence under ~150 chars — the problem to brainstorm, in the user's own framing. Do NOT paraphrase, summarize away constraints, or introduce vocabulary the user did not use. Strip a leading `--force` token if present (already consumed by the bail-out check). If `$ARGUMENTS` is empty, use the open problem the user just described in conversation.
+-2. **Read project context**: Read `CLAUDE.md` and `README.md` to understand project constraints. Then consult the docs index — run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind design --status active` and `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired`. Treat any `expired:` design's conclusions as non-authoritative — create a fresh design rather than extending an expired one. If an `active` design on the same topic already exists, surface it in the Phase 1 sprint contract and either extend it (preferred) or supersede it via the Phase 3 wrap-up.
++2. **Read project context**: Read `CLAUDE.md` and `README.md` to understand project constraints. Then consult the docs index — run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind design --status active` and `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired`. Treat any `expired:` design's conclusions as non-authoritative — create a fresh design rather than extending an expired one. If an `active` design on the same topic already exists, surface it in the Phase 1 sprint contract and either extend it (preferred) or supersede it via the Phase 3 wrap-up. Then consult memory: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active` and Read the 3-5 topically-relevant rows' files before Phase 1 exploration.
+ 3. **Proceed to Phase 1** in the same turn.
+ 
+ ## Core Principles
+@@ -147,6 +147,7 @@ Commit the design and transition to implementation planning.
+ 
+ **Actions**:
+ 0. **CRITICAL — do not defer**: Upsert the design into the docs index so downstream writer skills can discover it. Run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert design docs/plans/YYYY-MM-DD-<topic>-design/ --status active --summary "<one-line summary>"`. If a prior `active` design on the same topic is being replaced, first run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status docs/plans/<prior-design-path>/ "superseded-by:docs/plans/YYYY-MM-DD-<topic>-design/"` to mark it superseded. This consult-before/upsert-after pairing is what keeps the index truthful across phases.
++0.5. **CRITICAL — do not defer**: Conditional memory-write step, gated on REWORK 2+ rounds (the Phase 2 trigger) — if 2+ REWORK rounds occurred on this design, capture the recurring cause: write `docs/memory/<category>_<slug>.md` (`category: decision` for a scope reversal, `category: pitfall` for a recurring evaluator-caught mistake), then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<category>_<slug>.md --status active --summary "<one-line>" --category <category>`. If fewer than 2 REWORK rounds occurred, this step is a no-op.
+ 1. Stage and commit the entire folder in ONE chained command — a standalone `git add` is denied by the git plugin's hook: `git add docs/plans/YYYY-MM-DD-<topic>-design/ && git-agent commit --no-stage --intent "add design for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+ 2. On auth error, retry with `--free` flag
+ 3. **Fallback**: If git-agent is unavailable, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
+diff --git a/superpowers/skills/executing-plans/SKILL.md b/superpowers/skills/executing-plans/SKILL.md
+index 9d0a1e3..117e005 100644
+--- a/superpowers/skills/executing-plans/SKILL.md
++++ b/superpowers/skills/executing-plans/SKILL.md
+@@ -48,7 +48,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
+ 
+ ## Initialization (first turn only)
+ 
+-1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section. Consult the docs index before spawning any batch: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <plan-path>`. If the row's status is `expired:`, REFUSE — the plan has been invalidated by a retro and is no longer authoritative; tell the user which retro invalidated it and stop. If the status is `implemented:<old-sha>` (rework after ship), run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "wip"` BEFORE spawning batch 1 so the index reflects that the plan is being worked again.
++1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section. Consult the docs index before spawning any batch: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <plan-path>`. If the row's status is `expired:`, REFUSE — the plan has been invalidated by a retro and is no longer authoritative; tell the user which retro invalidated it and stop. If the status is `implemented:<old-sha>` (rework after ship), run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "wip"` BEFORE spawning batch 1 so the index reflects that the plan is being worked again. Then consult memory: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active` and Read the top topically-relevant matches before Phase 1 "Plan Review."
+ 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
+ 
+ ## Background Knowledge
+@@ -96,6 +96,8 @@ Commit the implementation changes using git-agent (with git fallback).
+ 
+ **CRITICAL — flip the plan's docs-index row post-commit (do-not-defer).** After the implementation commit lands, flip the plan's index row to `implemented`: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "implemented:$(git rev-parse --short HEAD)"`. Then commit the index update as its own tiny commit: `git-agent commit --no-stage --intent "mark <plan> implemented in docs index"`. NEVER use `--amend` — it would rewrite history and confuse the Stop hook's `completion_commit` detection (the hook keys off the tip commit on the plan's modified-files set; an amended tip silently repoints it).
+ 
++**CRITICAL — conditional memory-write step, folded into the same follow-up commit above (do-not-defer).** Gated on the existing intra-plan-learning variety-gap signal (`references/intra-plan-learning.md:54` — all checklist items PASS for a batch but the batch required 2+ rework rounds before reaching PASS). If any batch this run hit that signal, also write `docs/memory/pitfall_<slug>.md` capturing the recurring rework cause, then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category pitfall`, staged into the same dedicated follow-up commit created above — do not create a separate commit for it. This variety-gap trigger is explicitly distinct from the separate hard-abort cap at batch-execution-playbook.md:165 (max 2 rework rounds before escalation), which is NOT a memory-write trigger — that cap governs the rework loop's hard stop, not memory capture. If no batch hit the variety-gap signal, this step is a no-op.
++
+ See `../../skills/references/git-commit.md` for patterns, templates, and requirements. Commit only after all tasks are completed; use a meaningful feature scope.
+ 
+ ## Phase 6: Completion
+diff --git a/superpowers/skills/retrospective/SKILL.md b/superpowers/skills/retrospective/SKILL.md
+index 71b7334..9336ccf 100644
+--- a/superpowers/skills/retrospective/SKILL.md
++++ b/superpowers/skills/retrospective/SKILL.md
+@@ -38,7 +38,7 @@ Claude Code injected the `MEMORY.md` index at session start, so its one-line hoo
+ - **Harness-design principles** — e.g. simplify-don't-add stance.
+ - **Working-style feedback** — e.g. "auto-produce, never pause", "L2 must carry CRITICAL".
+ 
+-Carry these forward as priors into Phase 1 step 5 (calibration history), Phase 3 (REMOVE-is-load-bearing suppression of weakly-justified ADDs), and Phase 4 (self-reject a proposal that contradicts a recalled prior, citing the memory entry). If no calibration-relevant hook exists, log `Pre-Check B: no calibration-relevant memory` and proceed. Never resolve a memory path, never read a topic file, never block, never ask, never read "to make sure" — the index hooks carry the signal on their own.
++Carry these forward as priors into Phase 1 step 5 (calibration history), Phase 3 (REMOVE-is-load-bearing suppression of weakly-justified ADDs), and Phase 4 (self-reject a proposal that contradicts a recalled prior, citing the memory entry). If no calibration-relevant hook exists, log `Pre-Check B: no calibration-relevant memory` and proceed. Never resolve a memory path, never read a topic file, never block, never ask, never read "to make sure" — the index hooks carry the signal on their own. When a recalled hook is cited as supporting evidence for an approved Phase 3 proposal and proves project-specific and durable (not a cross-project harness-design stance), the Phase 4 step 3.5 draft additionally records the promotion in its `## Why` section as `Promoted from private assistant memory hook: <hook-name>, <date>` — cross-project stances (e.g. the simplify-don't-add harness-design principle) are explicitly NOT promoted, and the private hook itself is never deleted or modified.
+ 
+ ## Phase 0: Bootstrap (run only when no checklists exist)
+ 
+@@ -92,7 +92,7 @@ The canonical v1 template content lives in `lib/seed-checklists.sh`. To inspect
+ 
+ ## Phase 1: Data Collection
+ 
+-1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`. Consult the docs index to complement the completed-plans log: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind plan --status implemented` scopes plans whose index row says they shipped; also `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired` to surface prior expirations as calibration input (an expired plan is one a previous retro invalidated — read its retro report before re-proposing anything that touches it).
++1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`. Consult the docs index to complement the completed-plans log: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind plan --status implemented` scopes plans whose index row says they shipped; also `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired` to surface prior expirations as calibration input (an expired plan is one a previous retro invalidated — read its retro report before re-proposing anything that touches it). Also consult persistent memory: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active`; fold matches into the Phase 2 failure-frequency/plateau analysis as calibration input.
+ 2. **Resolve evals**: For each plan path, look for evaluation reports in the plan directory (`evaluation-round-*.md`, `evaluation-design-round-*.md`, `evaluation-plan-round-*.md`). If a sibling `*-evals/` directory exists, read from there instead.
+ 3. **Read checklists**: Scan `docs/retros/checklists/` for latest versions of each mode (`{mode}-v{N}.md`, highest N).
+ 4. **Read reports**: For each plan, read all evaluation report files. Extract per-item results (Item ID, Result, Evidence) and rework items.
+@@ -127,6 +127,8 @@ Generate proposals from analysis results. See `./references/evolution-protocol.m
+ 
+ **Counter monotonic growth (REMOVE is load-bearing)**: ADD is cheap to trigger (even a 1-plan post-plan-diff override) while REMOVE used to require 10+ reports/item — a volume real single-project usage never reaches, so checklists only ever grew. The 3+ reports/item REMOVE threshold above is deliberately reachable. Each run, actively scan for never-firing items and propose REMOVE; a checklist that only grows is a calibration failure, not success.
+ 
++**Memory-file consolidation (reuses the MODIFY threshold, 2+ instances)**: when Phase 2 analysis surfaces 2+ active `kind=memory` files covering the same underlying concept, propose a memory-consolidation MODIFY merging them into one surviving file — this reapplies the existing MODIFY threshold above, no new threshold. When applied in Phase 4, fold the absorbed file's content into the surviving file's body, then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <absorbed-path> "expired:superseded-by-consolidation:<survivor-path>"` — the shipped collapse rule then drops the row once its `expired` status is set; no new subcommand is introduced.
++
+ Each proposal includes: type, target checklist, item ID, description, rationale with plan evidence.
+ 
+ ## Phase 4: Auto-Apply Proposals
+@@ -138,6 +140,7 @@ Apply steps:
+ 1. **Pre-edit snapshot**: Write current checklist content to the retrospective report under "Pre-Edit Snapshot" with rollback instructions
+ 2. **Create new version**: Write `{mode}-v{N+1}.md` with all applied changes. Version increments once per run (not per proposal). Original version preserved unchanged.
+ 3. **Log evolution** — **CRITICAL: a proposal is NOT "applied" until its evolution-log row exists.** Immediately after writing the new version file, append one row to `docs/retros/evolution-log.jsonl` per applied proposal via `lib/jsonl-emit.sh` with `<channel>=evolution-log` — emit per-proposal here, do NOT defer to the end of the run. The event arg is one of `item_added | item_removed | item_modified | item_promoted`. The full canonical bash invocation (every required field and `--arg` pair) lives in `./references/evolution-protocol.md` §"Canonical Emit Invocations" — substitute the event arg per applied proposal. These rows feed Phase 1 step 5's re-proposal guard; a dropped `item_removed` row silently re-adds the just-removed item next run. The Stop hook (`hooks/stop-state-sync.sh`) backfills `item_added`/`item_removed` from the checklist version diff only when *every* row for this version is missing (all-or-nothing) and carries no rationale — so the in-skill emit is authoritative and must run.
++3.5. **Draft memory files for applied ADD/MODIFY proposals**: for every ADD or MODIFY proposal actually applied this run (post-self-rejection), draft one `docs/memory/<category>_<slug>.md` file — `category: convention` for a generalized structural rule, `pitfall` for a recurring failure mode, `decision` for a rejected-vs-chosen call — using the proposal's own description and rationale as the file's `Fact`/`Why` content, with `source:` citing this run's retro report path. REMOVE and PROMOTE proposals, even if applied, do NOT trigger this step.
+ 4. **Verify the log** — **CRITICAL self-check, do NOT skip:** before leaving Phase 4, count evolution-log rows whose `checklist_version` equals the version(s) written this run and confirm the count equals `proposals_approved`. Emit any missing rows now. This is the guard against a *partial* drop the hook's all-or-nothing backfill will not catch.
+ 
+ ## Phase 5: Harness Health (advisory)
+@@ -168,6 +171,7 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
+ 5. Summary: N proposals approved, M rejected, checklists updated to version X
+ 6. **Upsert retro report into the docs index**: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert retro <retro-report-path> --status active --summary "<one-line>"` (the one-line summary is the same string written into the report's summary line; this makes the retro discoverable from the index the next brainstorming/plan-writing pass consults).
+ 7. **CRITICAL — invalidate-after (do-not-defer, retrospective-only).** For each `invalidates: <path>` line in the just-written retro report, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <path> "expired:retro-<date>:<reason>"` (substitute the retro's date and a short reason). If `set-status` returns exit 3 (path not tracked in the index), log a warning and skip — do NOT upsert speculative entries just to mark them expired; expiry only applies to docs the index already tracks. **CRITICAL boundary — a Phase 3 REMOVE proposal on a checklist item does NOT invalidate a design.** REMOVE on a checklist item evolves the checklist, not the design folder; only an explicit `invalidates: <path>` line in the retro report triggers `set-status expired:` on a design or plan. Note: REMOVE does NOT invalidate — the checklist REMOVE and the design expiry are separate channels. Expiry is retrospective-only — the other three writer skills (brainstorming, writing-plans, executing-plans) may NOT set `expired:`; only this step 7 does.
++8. **Upsert drafted memory files**: for each memory file drafted in Phase 4 step 3.5, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category <category>`.
+ 
+ **Close the calibration loop** — **CRITICAL: do this before you stop, not after the report "feels done."** Append one `retrospective_run` row to `docs/retros/evolution-log.jsonl` via the canonical emit pattern in `./references/evolution-protocol.md` §"Canonical Emit Invocations", recording `proposals_approved` and `proposals_rejected`. This row is the closure marker the *next* run's auto-scope (Phase 1 step 1) reads to avoid re-analyzing these plans — skip it and the next retrospective silently re-analyzes already-analyzed plans, re-proposing the same changes. Do not skip it even when zero proposals were approved. The Stop hook (`hooks/stop-state-sync.sh`) backfills a minimal watermark from this run's `retro-*.md` report if you drop this, but only your emit carries `proposals_approved` / `proposals_rejected` / `plans_analyzed` — so write the rich row here.
+ 
+diff --git a/superpowers/skills/systematic-debugging/SKILL.md b/superpowers/skills/systematic-debugging/SKILL.md
+index d6f7ea8..553aa5c 100644
+--- a/superpowers/skills/systematic-debugging/SKILL.md
++++ b/superpowers/skills/systematic-debugging/SKILL.md
+@@ -3,7 +3,7 @@ name: systematic-debugging
+ description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes. For autonomous multi-turn runs, invoke wrapped in `/goal`.
+ argument-hint: "<bug description or symptom>"
+ user-invocable: true
+-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)"]
++allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
+ ---
+ 
+ # Systematic Debugging
+@@ -100,6 +100,8 @@ Each phase must be completed before proceeding to the next.
+ 
+ **Before attempting any fix:**
+ 
++0. **Consult Memory** — this memory read-before step is skipped whenever the Bail-Out Check fires, symmetric with how the bail-out already skips every other Phase-1-onward step: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active`, filter by summary keywords matching the symptom, and Read the top 2-3 matches before step 1 below.
++
+ 1. **Read Error Messages Carefully**
+    - Error messages and warnings often contain solutions
+    - Read stack traces completely
+@@ -254,6 +256,12 @@ Each phase must be completed before proceeding to the next.
+ 
+    This is not a failed hypothesis - this is wrong architecture.
+ 
++6. **Capture Memory (conditional — this skill's only `docs/` touchpoint, not a new phase or commit)**
++
++   This step reuses the existing 3+ failed fixes trigger as its primary gate: firing that trigger runs upsert memory in the same commit as the fix, OR it fires independently on an explicit cross-cutting gotcha regardless of fix-attempt count; otherwise it is a no-op.
++
++   On fire: write `docs/memory/<category>_<slug>.md` (`category: pitfall` typically, `category: decision` if the architecture-questioning step above concluded a redesign is warranted), reusing the Inline Plan's six-line shape as `Fact`/`Why` material when one was recorded, with `source: commit:<short-sha>`. Then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category <category>`, staged into the same commit as the fix + regression test — no separate commit, no additional phase, no extra user-facing deliverable beyond the existing fix + regression test.
++
+ ## Complex Bugs: Inline Plan Summary (no file written)
+ 
+ **For complex bugs, record a compact plan inline before any code change.** This section is consistent with the Slash-command Usage rule at the top of this skill: do NOT create `docs/plans/` folders or `BUGFIX_PLAN.md` files — the deliverable is still `the fix + a regression test`, never a planning document. The inline plan is the contract the skill holds itself to during Phase 2-4 and the audit surface the user reviews post-fix.
+diff --git a/superpowers/skills/writing-plans/SKILL.md b/superpowers/skills/writing-plans/SKILL.md
+index 900672d..71f6052 100644
+--- a/superpowers/skills/writing-plans/SKILL.md
++++ b/superpowers/skills/writing-plans/SKILL.md
+@@ -64,7 +64,7 @@ This catches designs the maintainer or a prior brainstorming sub-agent has expli
+ 
+ ## Initialization
+ 
+-1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`. Consult the docs index before drafting: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <design-path>`. If the status is `expired:`, REFUSE to proceed — the design's conclusions are invalidated. Mirror the JUST-01 refusal: output a one-line note citing the expired status and exit; do not create a plan folder.
++1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`. Consult the docs index before drafting: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <design-path>`. If the status is `expired:`, REFUSE to proceed — the design's conclusions are invalidated. Mirror the JUST-01 refusal: output a one-line note citing the expired status and exit; do not create a plan folder. Then consult memory: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active` and Read the top topically-relevant matches before Phase 1's Read Specs step.
+ 2. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
+ 
+ ## Background Knowledge
+@@ -213,6 +213,7 @@ Commit the plan folder using git-agent (with git fallback).
+ 
+ **Actions**:
+ 0. **Upsert the plan into the docs index** (before `git add`): run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert plan <new-plan-path> --status active --summary "<one-line>"`. CRITICAL do-not-defer — the index update lands in the same commit-group as the plan folder.
++0.5. **CRITICAL do-not-defer**: Conditional memory-write step, gated on a Phase 4 sub-agent FAIL that required a fix-and-rerun (not a first-pass PASS) — if triggered, write `docs/memory/pitfall_<slug>.md` capturing the false-positive cause (typically `category: pitfall`), then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/pitfall_<slug>.md --status active --summary "<one-line>" --category pitfall`. No-op if every sub-agent passed first try.
+ 1. Stage and commit the entire folder in ONE chained command — a standalone `git add` is denied by the git plugin's hook: `git add docs/plans/YYYY-MM-DD-<topic>-plan/ && git-agent commit --no-stage --intent "add implementation plan for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+ 2. On auth error, retry with `--free` flag
+ 3. **Fallback**: If git-agent is unavailable or fails, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
+diff --git a/superpowers/tests/run-docs-index-tests.sh b/superpowers/tests/run-docs-index-tests.sh
+index fdcbf71..6d6beeb 100644
+--- a/superpowers/tests/run-docs-index-tests.sh
++++ b/superpowers/tests/run-docs-index-tests.sh
+@@ -655,6 +655,505 @@ test_rebuild_recovers_from_malformed_index() {
+   assert_file_contains docs/README.md "docs/plans/2026-07-04-X-design/"
+ }
+ 
++# ---------------------------------------------------------------------------
++# Task 001: memory kind vocabulary tests (RED — kind vocabulary is still
++# design|plan|retro only; `memory` is unknown until lib/docs-index.sh is
++# extended). test_memory_kind_accepted_by_upsert and
++# test_memory_default_status_is_active pass `--category pitfall` up front even
++# though the flag does not exist yet, so these two tests stay isolated to the
++# kind gate once the category gate (task 003/004) lands — until then they
++# fail on the (still correct, still exit-2) unrecognized-flag path rather than
++# the kind gate itself.
++# ---------------------------------------------------------------------------
++
++ROW_MEMORY_1="docs/memory/pitfall_x.md | memory | active | Some prior mistake | 2026-07-04"
++
++test_memory_kind_accepted_by_upsert() {
++  make_empty_index
++  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category pitfall
++  assert_file_contains docs/README.md "docs/memory/pitfall_x.md"
++  assert_file_contains docs/README.md "| memory |"
++}
++
++test_memory_kind_accepted_by_list_filter() {
++  make_index "$ROW_DESIGN_1" "$ROW_PLAN_1" "$ROW_RETRO_1" "$ROW_MEMORY_1"
++  assert_stdout_line_count 1 bash "$DOCS_INDEX_SH" list --kind memory
++  assert_stdout_contains "memory" bash "$DOCS_INDEX_SH" list --kind memory
++}
++
++test_memory_kind_rejected_message_mentions_memory() {
++  make_index "$ROW_DESIGN_1"
++  _run bash "$DOCS_INDEX_SH" upsert bogus-kind docs/plans/x-design/ --status active --summary "x"
++  if [[ "$LAST_EXIT" -eq 2 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected exit 2 for bogus kind, got $LAST_EXIT" >&2
++  fi
++  if printf '%s' "$LAST_STDERR" | grep -qF "design|plan|retro|memory"; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected stderr to enumerate design|plan|retro|memory, got: $LAST_STDERR" >&2
++  fi
++}
++
++test_memory_default_status_is_active() {
++  make_empty_index
++  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_y.md --summary "no status flag" --category pitfall
++  assert_file_contains docs/README.md "| active |"
++}
++
++# ---------------------------------------------------------------------------
++# Task 003: memory status restriction + category flag tests (RED — no
++# kind-aware status restriction and no --category flag exist yet). The
++# category-value tests (type/kind/reference, and the two upsert-time status
++# tests) additionally assert stderr does NOT say "unknown argument" — without
++# that check they would spuriously pass today for the wrong reason (the flag
++# being entirely unrecognized), rather than the real validation path task 004
++# is expected to add.
++# ---------------------------------------------------------------------------
++
++test_memory_upsert_rejects_wip_status() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status wip --summary "x" --category pitfall
++  assert_stderr_not_contains "unknown argument"
++}
++
++test_memory_upsert_rejects_implemented_status() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status implemented:abc1234 --summary "x" --category pitfall
++  assert_stderr_not_contains "unknown argument"
++}
++
++test_memory_setstatus_rejects_superseded_by() {
++  make_index "docs/memory/pitfall_x.md | memory | active | orig | 2026-07-01"
++  assert_exit 2 bash "$DOCS_INDEX_SH" set-status docs/memory/pitfall_x.md "superseded-by:docs/memory/pitfall_other.md"
++}
++
++test_memory_setstatus_rejects_reference() {
++  make_index "docs/memory/pitfall_x.md | memory | active | orig | 2026-07-01"
++  assert_exit 2 bash "$DOCS_INDEX_SH" set-status docs/memory/pitfall_x.md "reference"
++}
++
++test_memory_setstatus_allows_expired() {
++  make_index "docs/memory/pitfall_x.md | memory | active | orig | 2026-07-01"
++  assert_exit 0 bash "$DOCS_INDEX_SH" set-status docs/memory/pitfall_x.md "expired:retro-2026-07-04:superseded"
++}
++
++test_memory_upsert_requires_category_flag() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x"
++}
++
++test_memory_upsert_rejects_category_type() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category type
++  assert_stderr_not_contains "unknown argument"
++}
++
++test_memory_upsert_rejects_category_kind() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category kind
++  assert_stderr_not_contains "unknown argument"
++}
++
++test_memory_upsert_rejects_category_reference() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category reference
++  assert_stderr_not_contains "unknown argument"
++}
++
++test_memory_upsert_accepts_all_four_categories() {
++  make_empty_index
++  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/convention_x.md --status active --summary "x" --category convention
++  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category pitfall
++  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/decision_x.md --status active --summary "x" --category decision
++  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/preference_x.md --status active --summary "x" --category preference
++}
++
++test_design_upsert_rejects_category_flag() {
++  make_empty_index
++  assert_exit 2 bash "$DOCS_INDEX_SH" upsert design docs/plans/2026-07-04-x-design/ --status active --summary "x" --category pitfall
++  assert_stderr_not_contains "unknown argument"
++}
++
++# ---------------------------------------------------------------------------
++# Task 005: memory scan + rebuild tests (RED — scan_folders() has no memory
++# loop yet, so rebuild produces zero memory rows regardless of what's on disk
++# under docs/memory/).
++# ---------------------------------------------------------------------------
++
++test_rebuild_discovers_memory_files() {
++  mkdir -p docs/memory
++  cat > docs/memory/pitfall_x.md <<'EOF'
++---
++name: x
++category: pitfall
++summary: some prior mistake
++---
++EOF
++  make_empty_index
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  local data_rows
++  data_rows=$(grep -c '^| docs/' docs/README.md || true)
++  if [[ "$data_rows" -eq 1 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild produced $data_rows data rows, expected 1 for a single memory file" >&2
++  fi
++  if grep -q "docs/memory/pitfall_x.md | memory | active |" docs/README.md; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild did not produce a kind=memory status=active row for docs/memory/pitfall_x.md" >&2
++  fi
++}
++
++test_rebuild_extracts_summary_from_memory_frontmatter() {
++  mkdir -p docs/memory
++  cat > docs/memory/pitfall_x.md <<'EOF'
++---
++name: x
++category: pitfall
++summary: foo bar
++---
++EOF
++  make_empty_index
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  if grep -q "docs/memory/pitfall_x.md | memory | active | foo bar |" docs/README.md; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild did not extract 'foo bar' as the summary from the memory file's frontmatter" >&2
++  fi
++}
++
++test_rebuild_ignores_memory_archive_subdir() {
++  # A live file and an archived sibling — the non-recursive docs/memory/*.md
++  # glob must pick up the former and never descend into archive/ for the
++  # latter.
++  mkdir -p docs/memory/archive
++  cat > docs/memory/pitfall_x.md <<'EOF'
++---
++name: x
++category: pitfall
++summary: a live mistake
++---
++EOF
++  cat > docs/memory/archive/pitfall_old.md <<'EOF'
++---
++name: old
++category: pitfall
++summary: an archived mistake
++---
++EOF
++  make_empty_index
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  assert_file_contains docs/README.md "docs/memory/pitfall_x.md"
++  assert_file_not_contains docs/README.md "docs/memory/archive/pitfall_old.md"
++  local data_rows
++  data_rows=$(grep -c '^| docs/' docs/README.md || true)
++  if [[ "$data_rows" -eq 1 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild produced $data_rows data rows, expected exactly 1 (the archived file must not produce a row)" >&2
++  fi
++}
++
++test_rebuild_preserves_existing_memory_status() {
++  # Reuses the existing existing_status_map merge behavior (no memory-specific
++  # change needed there) — but only once scan_folders() actually includes the
++  # path in the scanned set; asserted here so a future edit can't silently
++  # break it.
++  mkdir -p docs/memory
++  cat > docs/memory/pitfall_x.md <<'EOF'
++---
++name: x
++category: pitfall
++summary: some prior mistake
++---
++EOF
++  make_index "docs/memory/pitfall_x.md | memory | expired:retro-2026-07-04:superseded | orig | 2026-07-01"
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  if grep -q "expired:retro-2026-07-04:superseded" docs/README.md; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild did not preserve the existing expired status for the memory row" >&2
++  fi
++}
++
++# ---------------------------------------------------------------------------
++# Task 007: memory collapse grouping + archive tests (RED — topic_of_path()
++# has no memory branch yet, so 3+ memory rows never share a (topic, cat) key
++# and never collapse; no archive-move logic exists anywhere yet).
++# ---------------------------------------------------------------------------
++
++test_topic_of_path_groups_memory_by_category() {
++  # Direct unit test of the bare function: source the script (via a no-op
++  # `list` subcommand so the unconditional CLI dispatch at the bottom of the
++  # file completes without exiting) into a subshell, then call topic_of_path
++  # directly. The path is passed via an env var, not a positional argument,
++  # since `source file arg...` would otherwise clobber $1 for the sourced
++  # dispatch itself.
++  local out1 out2
++  out1="$(TOPIC_TEST_PATH="docs/memory/pitfall_foo.md" bash -c 'source "$DOCS_INDEX_SH" list >/dev/null 2>&1; topic_of_path "$TOPIC_TEST_PATH"')"
++  out2="$(TOPIC_TEST_PATH="docs/memory/pitfall_bar.md" bash -c 'source "$DOCS_INDEX_SH" list >/dev/null 2>&1; topic_of_path "$TOPIC_TEST_PATH"')"
++  if [[ "$out1" == "pitfall" && "$out2" == "pitfall" ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected topic_of_path to return 'pitfall' for both memory paths, got '$out1' and '$out2'" >&2
++  fi
++}
++
++test_collapse_groups_three_expired_memory_rows_by_category() {
++  # 58 boilerplate design folders (implemented, sharing topic "topic") plus 3
++  # real memory files (expired, category=pitfall) — 61 total scanned rows,
++  # exceeding the 60-row ceiling so stage-1 collapse fires.
++  make_folders 58 design
++  local rows=() i name m
++  for ((i = 1; i <= 58; i++)); do
++    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
++    rows+=("${name}/ | design | implemented:abc1234 | orig | 2026-07-01")
++  done
++  mkdir -p docs/memory
++  for m in a b c; do
++    cat > "docs/memory/pitfall_${m}.md" <<EOF
++---
++name: ${m}
++category: pitfall
++summary: mistake ${m}
++---
++EOF
++    rows+=("docs/memory/pitfall_${m}.md | memory | expired:retro-2026-07-04:superseded | mistake ${m} | 2026-07-01")
++  done
++  make_index "${rows[@]}"
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  # The 3 expired pitfall memory rows collapse into exactly one summary row.
++  local memory_rows
++  memory_rows=$(grep -c '^| docs/memory/pitfall_' docs/README.md || true)
++  if [[ "$memory_rows" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected the 3 individual pitfall memory rows to collapse away, found $memory_rows" >&2
++  fi
++  if grep -q "and 3 prior expired entries (topic: pitfall)" docs/README.md; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected a collapsed summary line for 3 prior expired pitfall memory entries" >&2
++  fi
++  # Stage-1 collapse folds the row into a summary line — it must NOT trigger
++  # the stage-2 archive-on-drop side effect. The 3 backing files stay at
++  # their original path, not docs/memory/archive/.
++  local files_at_original files_archived
++  files_at_original=$(ls docs/memory/pitfall_a.md docs/memory/pitfall_b.md docs/memory/pitfall_c.md 2>/dev/null | wc -l | tr -d ' ')
++  if [[ "$files_at_original" -eq 3 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected all 3 stage-1-collapsed memory files to remain at their original path, found $files_at_original" >&2
++  fi
++  files_archived=$(ls docs/memory/archive/ 2>/dev/null | wc -l | tr -d ' ')
++  if [[ "$files_archived" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: stage-1-collapsed memory files must not be archived, found $files_archived file(s) in docs/memory/archive/" >&2
++  fi
++}
++
++test_collapse_never_collapses_active_memory_rows() {
++  # 55 boilerplate design folders (implemented, sharing topic "topic") plus 3
++  # active + 3 expired memory rows sharing category=pitfall — 61 total
++  # scanned rows, exceeding the ceiling so stage-1 collapse fires. Active
++  # memory rows must never enter the collapse candidate set (same rule
++  # already applies to active design/plan/retro rows), even while the
++  # sibling expired group does collapse.
++  make_folders 55 design
++  local rows=() i name m
++  for ((i = 1; i <= 55; i++)); do
++    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
++    rows+=("${name}/ | design | implemented:abc1234 | orig | 2026-07-01")
++  done
++  mkdir -p docs/memory
++  for m in 1 2 3; do
++    cat > "docs/memory/pitfall_active${m}.md" <<EOF
++---
++name: active${m}
++category: pitfall
++summary: active memory ${m}
++---
++EOF
++    rows+=("docs/memory/pitfall_active${m}.md | memory | active | active memory ${m} | 2026-07-01")
++  done
++  for m in 1 2 3; do
++    cat > "docs/memory/pitfall_exp${m}.md" <<EOF
++---
++name: exp${m}
++category: pitfall
++summary: expired memory ${m}
++---
++EOF
++    rows+=("docs/memory/pitfall_exp${m}.md | memory | expired:retro-2026-07-04:superseded | expired memory ${m} | 2026-07-01")
++  done
++  make_index "${rows[@]}"
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  # The 3 active rows survive individually (never collapse candidates).
++  local active_rows
++  active_rows=$(grep -c '^| docs/memory/pitfall_active[0-9]*\.md | memory | active |' docs/README.md || true)
++  if [[ "$active_rows" -eq 3 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected 3 individual active memory rows to survive, found $active_rows" >&2
++  fi
++  # The 3 sibling expired rows collapse into one summary line — proves the
++  # active exclusion is isolated from the sibling expired group's grouping.
++  local expired_rows
++  expired_rows=$(grep -c '^| docs/memory/pitfall_exp[0-9]*\.md ' docs/README.md || true)
++  if [[ "$expired_rows" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected the 3 expired pitfall memory rows to collapse away, found $expired_rows" >&2
++  fi
++}
++
++test_rebuild_archives_dropped_expired_memory_file() {
++  # 60 active design folders (never collapse candidates, holding the count at
++  # 60) plus 1 expired memory file — 61 total scanned rows. Stage 1 leaves
++  # the lone expired memory row ungrouped (count=1 < 3); stage 2's "drop
++  # expired entirely" rule then fires because the index is still over 60,
++  # dropping that row — and its backing file must be archived, not left
++  # orphaned with no index row pointing at it.
++  make_folders 60 design
++  local rows=() i name
++  for ((i = 1; i <= 60; i++)); do
++    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
++    rows+=("${name}/ | design | active | a | 2026-07-01")
++  done
++  mkdir -p docs/memory
++  cat > docs/memory/pitfall_stale.md <<'EOF'
++---
++name: stale
++category: pitfall
++summary: a stale mistake
++---
++EOF
++  rows+=("docs/memory/pitfall_stale.md | memory | expired:retro-2026-07-04:superseded | a stale mistake | 2026-07-01")
++  make_index "${rows[@]}"
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  assert_file_not_contains docs/README.md "docs/memory/pitfall_stale.md"
++  if [[ -f docs/memory/archive/pitfall_stale.md ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: expected docs/memory/pitfall_stale.md to be moved to docs/memory/archive/" >&2
++  fi
++  if [[ -f docs/memory/pitfall_stale.md ]]; then
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: docs/memory/pitfall_stale.md still present at its original location" >&2
++  else
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  fi
++}
++
++test_rebuild_does_not_archive_kept_rows() {
++  # 59 active design folders plus 1 implemented design folder (the lone
++  # implemented row keeps collapse_rows()'s candidate set non-empty without
++  # reaching the >=3 grouping threshold, so it stays an individual row) plus
++  # 1 active memory row — none are drop candidates (active is never dropped;
++  # a singleton candidate is under the collapse threshold), so the memory
++  # row's file must never be moved to docs/memory/archive/.
++  make_folders 59 design
++  local rows=() i name
++  for ((i = 1; i <= 59; i++)); do
++    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
++    rows+=("${name}/ | design | active | a | 2026-07-01")
++  done
++  mkdir -p docs/plans/2026-01-99-topic-design
++  : > docs/plans/2026-01-99-topic-design/_index.md
++  rows+=("docs/plans/2026-01-99-topic-design/ | design | implemented:abc1234 | orig | 2026-07-01")
++  mkdir -p docs/memory
++  cat > docs/memory/pitfall_kept.md <<'EOF'
++---
++name: kept
++category: pitfall
++summary: a kept fact
++---
++EOF
++  rows+=("docs/memory/pitfall_kept.md | memory | active | a kept fact | 2026-07-01")
++  make_index "${rows[@]}"
++  _run bash "$DOCS_INDEX_SH" rebuild
++  if [[ "$LAST_EXIT" -eq 0 ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
++  fi
++  assert_file_contains docs/README.md "docs/memory/pitfall_kept.md"
++  if [[ -f docs/memory/pitfall_kept.md ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: docs/memory/pitfall_kept.md was moved away from its original location" >&2
++  fi
++  if [[ ! -f docs/memory/archive/pitfall_kept.md ]]; then
++    TESTS_PASSED=$((TESTS_PASSED + 1))
++  else
++    TESTS_FAILED=$((TESTS_FAILED + 1))
++    echo "FAIL: docs/memory/pitfall_kept.md was unexpectedly archived" >&2
++  fi
++}
++
+ # ---------------------------------------------------------------------------
+ # Run all tests
+ # ---------------------------------------------------------------------------
+@@ -722,4 +1221,36 @@ run_test "upsert_rejects_leading_slash_path"           test_upsert_rejects_leadi
+ run_test "upsert_rejects_parent_traversal_path"        test_upsert_rejects_parent_traversal_path
+ run_test "rebuild_recovers_from_malformed_index"       test_rebuild_recovers_from_malformed_index
+ 
++echo "== Memory-layer task 001: kind vocabulary (RED expected) =="
++run_test "memory_kind_accepted_by_upsert"              test_memory_kind_accepted_by_upsert
++run_test "memory_kind_accepted_by_list_filter"         test_memory_kind_accepted_by_list_filter
++run_test "memory_kind_rejected_message_mentions_memory" test_memory_kind_rejected_message_mentions_memory
++run_test "memory_default_status_is_active"             test_memory_default_status_is_active
++
++echo "== Memory-layer task 003: status restriction + category flag (RED expected) =="
++run_test "memory_upsert_rejects_wip_status"            test_memory_upsert_rejects_wip_status
++run_test "memory_upsert_rejects_implemented_status"    test_memory_upsert_rejects_implemented_status
++run_test "memory_setstatus_rejects_superseded_by"      test_memory_setstatus_rejects_superseded_by
++run_test "memory_setstatus_rejects_reference"          test_memory_setstatus_rejects_reference
++run_test "memory_setstatus_allows_expired"             test_memory_setstatus_allows_expired
++run_test "memory_upsert_requires_category_flag"        test_memory_upsert_requires_category_flag
++run_test "memory_upsert_rejects_category_type"         test_memory_upsert_rejects_category_type
++run_test "memory_upsert_rejects_category_kind"         test_memory_upsert_rejects_category_kind
++run_test "memory_upsert_rejects_category_reference"    test_memory_upsert_rejects_category_reference
++run_test "memory_upsert_accepts_all_four_categories"   test_memory_upsert_accepts_all_four_categories
++run_test "design_upsert_rejects_category_flag"         test_design_upsert_rejects_category_flag
++
++echo "== Memory-layer task 005: memory scan + rebuild (RED expected) =="
++run_test "rebuild_discovers_memory_files"                     test_rebuild_discovers_memory_files
++run_test "rebuild_extracts_summary_from_memory_frontmatter"   test_rebuild_extracts_summary_from_memory_frontmatter
++run_test "rebuild_ignores_memory_archive_subdir"              test_rebuild_ignores_memory_archive_subdir
++run_test "rebuild_preserves_existing_memory_status"           test_rebuild_preserves_existing_memory_status
++
++echo "== Memory-layer task 007: collapse grouping + archive-on-drop (RED expected) =="
++run_test "topic_of_path_groups_memory_by_category"           test_topic_of_path_groups_memory_by_category
++run_test "collapse_groups_three_expired_memory_rows_by_category" test_collapse_groups_three_expired_memory_rows_by_category
++run_test "collapse_never_collapses_active_memory_rows"       test_collapse_never_collapses_active_memory_rows
++run_test "rebuild_archives_dropped_expired_memory_file"      test_rebuild_archives_dropped_expired_memory_file
++run_test "rebuild_does_not_archive_kept_rows"                test_rebuild_does_not_archive_kept_rows
++
+ summarize
+diff --git a/superpowers/tests/test-skill-touchpoints.sh b/superpowers/tests/test-skill-touchpoints.sh
+index b629789..e8c92cf 100644
+--- a/superpowers/tests/test-skill-touchpoints.sh
++++ b/superpowers/tests/test-skill-touchpoints.sh
+@@ -70,6 +70,23 @@ assert_grep "$BS_SKILL" \
+   "brainstorming documents -design-2/ disambiguation rule" \
+   "-design-2/"
+ 
++echo "== Brainstorming memory touchpoints =="
++
++# (a) memory read-before step in Initialization
++assert_grep "$BS_SKILL" \
++  "brainstorming Initialization consults list --kind memory" \
++  "list --kind memory --status active"
++
++# (b) conditional memory-write step in Phase 3 Wrap-up
++assert_grep "$BS_SKILL" \
++  "brainstorming Phase 3 has a conditional memory-write step gated on REWORK 2+ rounds" \
++  "upsert memory docs/memory/"
++
++# (c) the gate language is explicit, not unconditional
++assert_grep "$BS_SKILL" \
++  "brainstorming's memory-write step is explicitly conditional, not unconditional" \
++  "Conditional memory-write step, gated on REWORK 2+ rounds"
++
+ echo "== Writing-Plans touchpoints =="
+ 
+ WP_SKILL="${SKILLS_DIR}/writing-plans/SKILL.md"
+@@ -94,6 +111,23 @@ assert_grep "$WP_SKILL" \
+   "writing-plans Phase 5 upserts plan" \
+   "upsert plan"
+ 
++echo "== Writing-Plans memory touchpoints =="
++
++# (a) memory read-before step in Initialization
++assert_grep "$WP_SKILL" \
++  "writing-plans Initialization consults list --kind memory" \
++  "list --kind memory --status active"
++
++# (b) conditional memory-write step in Phase 5
++assert_grep "$WP_SKILL" \
++  "writing-plans Phase 5 has a conditional memory-write step gated on Phase 4 FAIL" \
++  "upsert memory docs/memory/"
++
++# (c) the gate condition names the FAIL/rework trigger
++assert_grep "$WP_SKILL" \
++  "writing-plans's memory-write step names the FAIL/rework gate" \
++  "Conditional memory-write step, gated on a Phase 4 sub-agent FAIL"
++
+ echo "== Executing-Plans touchpoints =="
+ 
+ EP_SKILL="${SKILLS_DIR}/executing-plans/SKILL.md"
+@@ -132,6 +166,23 @@ assert_grep "$EP_SKILL" \
+   "executing-plans forbids --amend for index commit" \
+   "--amend"
+ 
++echo "== Executing-Plans memory touchpoints =="
++
++# (a) memory read-before step in Initialization
++assert_grep "$EP_SKILL" \
++  "executing-plans Initialization consults list --kind memory" \
++  "list --kind memory --status active"
++
++# (b) conditional memory-write step in Phase 5, gated on the variety-gap signal
++assert_grep "$EP_SKILL" \
++  "executing-plans Phase 5 has a conditional memory-write step gated on the variety-gap signal" \
++  "intra-plan-learning.md:54"
++
++# (c) the variety-gap trigger is explicitly distinguished from the hard-abort cap
++assert_grep "$EP_SKILL" \
++  "executing-plans distinguishes the variety-gap trigger from the batch-execution-playbook hard-abort cap" \
++  "batch-execution-playbook.md:165 (max 2 rework rounds before escalation), which is NOT a memory-write trigger"
++
+ echo "== Retrospective touchpoints =="
+ 
+ RT_SKILL="${SKILLS_DIR}/retrospective/SKILL.md"
+@@ -166,6 +217,62 @@ assert_grep "$RT_SKILL" \
+   "retrospective handles exit 3 as skip-with-warning" \
+   "exit 3"
+ 
++echo "== Retrospective memory touchpoints =="
++
++# (a) memory read-before step in Phase 1 Data Collection
++assert_grep "$RT_SKILL" \
++  "retrospective Phase 1 consults list --kind memory" \
++  "list --kind memory --status active"
++
++# (b) Phase 4 step 3.5 drafts a memory file for applied ADD/MODIFY proposals
++assert_grep "$RT_SKILL" \
++  "retrospective Phase 4 drafts a memory file for applied ADD/MODIFY proposals" \
++  "upsert memory docs/memory/"
++
++# (c) REMOVE/PROMOTE are explicitly excluded from the memory write-gate
++assert_grep "$RT_SKILL" \
++  "retrospective explicitly excludes REMOVE/PROMOTE from the memory write-gate" \
++  "REMOVE and PROMOTE proposals, even if applied, do NOT trigger this step"
++
++# (d) Pre-Check B promotion bridge
++assert_grep "$RT_SKILL" \
++  "retrospective documents the Pre-Check-B promotion bridge" \
++  "Promoted from private assistant memory hook"
++
++# (e) memory-file consolidation via set-status expired:superseded-by-consolidation
++assert_grep "$RT_SKILL" \
++  "retrospective documents memory-file consolidation via set-status expired:superseded-by-consolidation" \
++  "expired:superseded-by-consolidation"
++
++echo "== Systematic-Debugging touchpoints =="
++
++SD_SKILL="${SKILLS_DIR}/systematic-debugging/SKILL.md"
++
++# (a) allowed-tools entry for docs-index.sh
++assert_grep "$SD_SKILL" \
++  "systematic-debugging allowed-tools includes docs-index.sh scope" \
++  "Bash(\${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"
++
++# (b) new step 0 in Phase 1 consults list --kind memory
++assert_grep "$SD_SKILL" \
++  "systematic-debugging new step 0 consults list --kind memory before Phase 1" \
++  "list --kind memory --status active"
++
++# (c) the memory read is skipped on the bail-out path
++assert_grep "$SD_SKILL" \
++  "systematic-debugging's memory read is skipped on the bail-out path" \
++  "memory read-before step is skipped whenever the Bail-Out Check fires"
++
++# (d) the memory-write step reuses the existing 3+ failed-fixes trigger
++assert_grep "$SD_SKILL" \
++  "systematic-debugging's memory-write step reuses the existing 3+ failed-fixes trigger" \
++  "3+ failed fixes trigger as its primary gate: firing that trigger runs upsert memory"
++
++# (e) the memory-write is the ONLY docs/ touchpoint, not a new phase
++assert_grep "$SD_SKILL" \
++  "systematic-debugging's memory-write is its ONLY docs/ touchpoint, not a new phase" \
++  "not a new phase"
++
+ echo "---"
+ echo "passed: $TESTS_PASSED"
+ echo "failed: $TESTS_FAILED"

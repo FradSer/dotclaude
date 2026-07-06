@@ -64,7 +64,7 @@ This catches designs the maintainer or a prior brainstorming sub-agent has expli
 
 ## Initialization
 
-1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`. Consult the docs index before drafting: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <design-path>`. If the status is `expired:`, REFUSE to proceed — the design's conclusions are invalidated. Mirror the JUST-01 refusal: output a one-line note citing the expired status and exit; do not create a plan folder.
+1. **Design Check**: Verify the folder contains `_index.md` and `bdd-specs.md`. Consult the docs index before drafting: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <design-path>`. If the status is `expired:`, REFUSE to proceed — the design's conclusions are invalidated. Mirror the JUST-01 refusal: output a one-line note citing the expired status and exit; do not create a plan folder. Then consult memory: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active` and Read the top topically-relevant matches before Phase 1's Read Specs step.
 2. **Context**: Read `bdd-specs.md` completely. This is the source of truth for your tasks.
 
 ## Background Knowledge
@@ -213,6 +213,7 @@ Commit the plan folder using git-agent (with git fallback).
 
 **Actions**:
 0. **Upsert the plan into the docs index** (before `git add`): run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert plan <new-plan-path> --status active --summary "<one-line>"`. CRITICAL do-not-defer — the index update lands in the same commit-group as the plan folder.
+0.5. **CRITICAL do-not-defer**: Conditional memory-write step, gated on a Phase 4 sub-agent FAIL that required a fix-and-rerun (not a first-pass PASS) — if triggered, write `docs/memory/pitfall_<slug>.md` capturing the false-positive cause (typically `category: pitfall`), then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/pitfall_<slug>.md --status active --summary "<one-line>" --category pitfall`. No-op if every sub-agent passed first try.
 1. Stage and commit the entire folder in ONE chained command — a standalone `git add` is denied by the git plugin's hook: `git add docs/plans/YYYY-MM-DD-<topic>-plan/ && git-agent commit --no-stage --intent "add implementation plan for <topic>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 2. On auth error, retry with `--free` flag
 3. **Fallback**: If git-agent is unavailable or fails, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`

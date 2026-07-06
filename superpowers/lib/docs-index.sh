@@ -10,7 +10,7 @@
 # index consulted at skill Initialization and updated at skill commit time.
 #
 # Usage:
-#   docs-index.sh list   [--kind <design|plan|retro>] [--status <prefix>]
+#   docs-index.sh list   [--kind <design|plan|retro|memory>] [--status <prefix>]
 #   docs-index.sh show   <path>
 #   docs-index.sh upsert <kind> <path> [--status <status>] [--summary <summary>]
 #   docs-index.sh set-status <path> <new-status>
@@ -114,7 +114,7 @@ seed_header() {
   cat <<'EOF'
 # Docs Index
 
-> Auto-maintained by `lib/docs-index.sh`. One row per design/plan/retro folder.
+> Auto-maintained by `lib/docs-index.sh`. One row per design/plan/retro folder, or memory fact file.
 > Last rebuild: 2026-07-04
 
 | path | kind | status | summary | updated |
@@ -125,9 +125,9 @@ EOF
 validate_kind() {
   local kind="$1"
   case "$kind" in
-    design|plan|retro) printf '%s' "$kind"; return 0 ;;
+    design|plan|retro|memory) printf '%s' "$kind"; return 0 ;;
     *)
-      echo "upsert: unknown kind '$kind' (expected: design|plan|retro)" >&2
+      echo "upsert: unknown kind '$kind' (expected: design|plan|retro|memory)" >&2
       exit 2 ;;
   esac
 }
@@ -198,11 +198,43 @@ validate_status() {
   exit 2
 }
 
-# Default status when --status is omitted: wip for design/plan, active for retro.
+# Kind-aware status restriction: kind=memory rows are restricted to
+# active/expired:<reason> — memory writes are atomic single-turn artifacts,
+# never partial (no wip), never "shipped" (no implemented), and never point at
+# a replacement (no superseded-by; consolidation drops the absorbed row
+# outright). No-op passthrough for every other kind — validate_status() alone
+# already governs design/plan/retro, unchanged.
+validate_status_for_kind() {
+  local kind="$1" status="$2"
+  if [[ "$kind" != "memory" ]]; then
+    return 0
+  fi
+  case "$(status_category "$status")" in
+    active|expired) return 0 ;;
+    *)
+      echo "upsert: status '$status' is not allowed for kind=memory (expected: active|expired:<reason>)" >&2
+      exit 2 ;;
+  esac
+}
+
+# Category enum for kind=memory rows. Frontmatter-only — never a 6th row
+# column. "type" and "kind" are reserved (collide with row-schema field
+# names); "reference" is reserved (collides with the existing status value).
+validate_category() {
+  local category="$1"
+  case "$category" in
+    convention|pitfall|decision|preference) printf '%s' "$category"; return 0 ;;
+    *)
+      echo "upsert: unknown category '$category' (expected: convention|pitfall|decision|preference)" >&2
+      exit 2 ;;
+  esac
+}
+
+# Default status when --status is omitted: wip for design/plan, active for retro/memory.
 default_status_for_kind() {
   case "$1" in
-    retro) printf 'active' ;;
-    *)     printf 'wip' ;;
+    retro|memory) printf 'active' ;;
+    *)            printf 'wip' ;;
   esac
 }
 
@@ -232,8 +264,8 @@ cmd_list() {
   # Validate --kind against the controlled vocabulary (no-op if empty).
   if [[ -n "$kind_filter" ]]; then
     case "$kind_filter" in
-      design|plan|retro) : ;;
-      *) echo "list: unknown kind '$kind_filter' (expected: design|plan|retro)" >&2; exit 2 ;;
+      design|plan|retro|memory) : ;;
+      *) echo "list: unknown kind '$kind_filter' (expected: design|plan|retro|memory)" >&2; exit 2 ;;
     esac
   fi
   # --status is a prefix — any prefix is allowed; do NOT validate.
@@ -286,24 +318,36 @@ cmd_show() {
 }
 
 cmd_upsert() {
-  local root kind path status summary
+  local root kind path status summary category
   root="$(repo_root)"
   if [[ $# -lt 2 ]]; then
-    echo "upsert: usage: upsert <kind> <path> [--status <status>] [--summary <summary>]" >&2
+    echo "upsert: usage: upsert <kind> <path> [--status <status>] [--summary <summary>] [--category <category>]" >&2
     exit 2
   fi
   kind="$1"; shift
   path="$1"; shift
   status=""
   summary=""
+  category=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --status)  status="${2:-}"; shift 2 ;;
-      --summary) summary="${2:-}"; shift 2 ;;
+      --status)   status="${2:-}"; shift 2 ;;
+      --summary)  summary="${2:-}"; shift 2 ;;
+      --category) category="${2:-}"; shift 2 ;;
       *) echo "upsert: unknown argument '$1'" >&2; exit 2 ;;
     esac
   done
   kind="$(validate_kind "$kind")"
+  if [[ "$kind" == "memory" ]]; then
+    if [[ -z "$category" ]]; then
+      echo "upsert: --category is required for kind=memory (expected: convention|pitfall|decision|preference)" >&2
+      exit 2
+    fi
+    category="$(validate_category "$category")"
+  elif [[ -n "$category" ]]; then
+    echo "upsert: --category is only valid for kind=memory" >&2
+    exit 2
+  fi
   if [[ -z "$path" ]]; then
     echo "upsert: <path> must be non-empty" >&2
     exit 2
@@ -315,6 +359,7 @@ cmd_upsert() {
   else
     status="$(default_status_for_kind "$kind")"
   fi
+  validate_status_for_kind "$kind" "$status"
   summary="$(truncate_summary "$summary")"
   local today
   today="$(date +%Y-%m-%d)"
@@ -438,14 +483,17 @@ cmd_set_status() {
       field_path="$(printf '%s' "$row" | awk -F' \\| ' '{print $1}')"
       if [[ "$field_path" == "$target" && "$found" -eq 0 ]]; then
         found=1
-        # Extract current status (field 3) to check the transition.
+        # Extract current kind + status; kind gates the memory-only status
+        # restriction below, checked before the general transition matrix so
+        # a kind-restriction violation surfaces first.
+        field_kind="$(printf '%s' "$row" | awk -F' \\| ' '{print $2}')"
         field_status="$(printf '%s' "$row" | awk -F' \\| ' '{print $3}')"
+        validate_status_for_kind "$field_kind" "$new_status"
         if ! transition_allowed "$field_status" "$new_status"; then
           echo "set-status: transition '${field_status}' → '${new_status}' is not allowed" >&2
           exit 2
         fi
         # Preserve kind + summary; flip status + updated date.
-        field_kind="$(printf '%s' "$row" | awk -F' \\| ' '{print $2}')"
         field_summary="$(printf '%s' "$row" | awk -F' \\| ' '{print $4}')"
         local today
         today="$(date +%Y-%m-%d)"
@@ -482,6 +530,17 @@ cmd_set_status() {
 # implemented/expired design+plan rows are collapse candidates).
 topic_of_path() {
   local p="$1"
+  # docs/memory/<category>_<slug>.md paths carry no date-prefixed topic the
+  # way docs/plans/YYYY-MM-DD-* folders do — group by the leading category
+  # token instead, so this branch is checked first (and unconditionally wins
+  # for memory paths, which never match the docs/plans/ prefix below anyway).
+  case "$p" in
+    docs/memory/*)
+      local base="${p#docs/memory/}"
+      printf '%s' "${base%%_*}"
+      return 0
+      ;;
+  esac
   # Strip docs/plans/YYYY-MM-DD- prefix if present.
   local stripped="${p#docs/plans/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-}"
   # If the prefix didn't match, stripped == p; fall back to the bare basename.
@@ -495,10 +554,11 @@ topic_of_path() {
   printf '%s' "$stripped"
 }
 
-# Scan the filesystem for design/plan/retro artifacts and emit one
+# Scan the filesystem for design/plan/retro/memory artifacts and emit one
 # "<path>\t<kind>\t<default_status>" row per artifact. Default status is wip
-# for design/plan, active for retro. docs/writing-skills/ (if present) is
-# seeded as kind=retro status=reference. Output is NOT sorted — caller sorts.
+# for design/plan, active for retro/memory. docs/writing-skills/ (if present)
+# is seeded as kind=retro status=reference. Output is NOT sorted — caller
+# sorts.
 scan_folders() {
   local root="$1"
   local d f
@@ -516,6 +576,12 @@ scan_folders() {
   for f in "${root}/docs/retros/"retro-*.md; do
     [[ -f "$f" ]] || continue
     printf '%s\t%s\t%s\n' "${f#${root}/}" "retro" "active"
+  done
+  # memory files (plain, non-recursive glob — this is what makes
+  # docs/memory/archive/ invisible with zero extra logic)
+  for f in "${root}/docs/memory/"*.md; do
+    [[ -f "$f" ]] || continue
+    printf '%s\t%s\t%s\n' "${f#${root}/}" "memory" "active"
   done
   # docs/writing-skills/ seeded as kind=retro status=reference
   if [[ -d "${root}/docs/writing-skills" ]]; then
@@ -720,6 +786,12 @@ cmd_rebuild() {
       final_status="$default_status"
       final_summary=""
     fi
+    if [[ -z "$final_summary" && "$k" == "memory" ]]; then
+      # Unlike design/plan folders (which have no internal summary to read),
+      # a memory file carries its own summary in frontmatter — fall back to
+      # that instead of leaving a first-time rebuild's summary blank.
+      final_summary="$(grep -m1 '^summary:' "${root}/${p}" 2>/dev/null | sed 's/^summary: *//')"
+    fi
     local today
     today="$(date +%Y-%m-%d)"
     merged+=("${p}"$'\t'"${k}"$'\t'"${final_status}"$'\t'"${final_summary}"$'\t'"${today}")
@@ -737,6 +809,52 @@ cmd_rebuild() {
   else
     for line in "${merged[@]}"; do
       collapsed+="${line}"$'\n'
+    done
+  fi
+  # Archive-on-drop: a row present in `merged` (pre-collapse) but absent from
+  # `collapsed` (post-collapse) whose kind is memory and whose status was
+  # expired gets its backing file moved to docs/memory/archive/ — unlike a
+  # dropped design/plan/retro row (whose content stays discoverable via its
+  # docs/plans/ or docs/retros/ path regardless of the index), a lone memory
+  # .md file with no row pointing at it is easy to lose track of.
+  #
+  # A row can be absent from `collapsed` for two different reasons, and only
+  # one of them means "dropped": stage-1 folds a >=3-row group sharing a
+  # (topic, cat) key into a single synthetic summary row (path
+  # "docs/plans/(collapsed-<topic>)") — the row's *individual* path
+  # disappears, but its content is still represented, so it must NOT be
+  # archived. Stage-2 instead drops expired rows outright with no
+  # replacement — that's the only case that should archive. Distinguish the
+  # two by checking whether this row's own (topic, cat) synthetic summary row
+  # exists in `collapsed`; only archive when it does not.
+  if [[ "${#merged[@]}" -gt 0 ]]; then
+    local collapsed_paths
+    collapsed_paths="$(printf '%s\n' "$collapsed" | awk -F'\t' 'NF >= 1 { print $1 }')"
+    local archive_dir_made=0
+    for line in "${merged[@]}"; do
+      local p k s cat
+      p="$(printf '%s' "$line" | awk -F'\t' '{print $1}')"
+      k="$(printf '%s' "$line" | awk -F'\t' '{print $2}')"
+      s="$(printf '%s' "$line" | awk -F'\t' '{print $3}')"
+      [[ "$k" == "memory" ]] || continue
+      cat="$(status_category "$s")"
+      [[ "$cat" == "expired" ]] || continue
+      if printf '%s\n' "$collapsed_paths" | grep -qxF -- "$p"; then
+        continue
+      fi
+      local topic synth_prefix
+      topic="$(topic_of_path "$p")"
+      synth_prefix="docs/plans/(collapsed-${topic})"$'\t'"${k}"$'\t'"${cat}"$'\t'
+      if printf '%s' "$collapsed" | grep -qF -- "$synth_prefix"; then
+        continue
+      fi
+      if [[ "$archive_dir_made" -eq 0 ]]; then
+        mkdir -p "${root}/docs/memory/archive"
+        archive_dir_made=1
+      fi
+      if [[ -f "${root}/${p}" ]]; then
+        mv -f "${root}/${p}" "${root}/docs/memory/archive/$(basename "$p")"
+      fi
     done
   fi
   # Sort by path lexicographically and write.

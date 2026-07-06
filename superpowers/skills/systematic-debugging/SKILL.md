@@ -3,7 +3,7 @@ name: systematic-debugging
 description: This skill should be used when the user reports a bug, error, test failure, or unexpected behavior, or invokes /superpowers:systematic-debugging. Provides a 4-phase root cause analysis process, ensuring thorough investigation precedes any code changes. For autonomous multi-turn runs, invoke wrapped in `/goal`.
 argument-hint: "<bug description or symptom>"
 user-invocable: true
-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)"]
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)", "Bash(npm:*)", "Bash(pnpm:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(pytest:*)", "Bash(python:*)", "Bash(python3:*)", "Bash(go:*)", "Bash(cargo:*)", "Bash(mvn:*)", "Bash(gradle:*)", "Bash(rspec:*)", "Bash(bundle:*)", "Bash(test:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/systematic-debugging/find-polluter.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
 # Systematic Debugging
@@ -99,6 +99,8 @@ Each phase must be completed before proceeding to the next.
 ### Phase 1: Root Cause Investigation
 
 **Before attempting any fix:**
+
+0. **Consult Memory** — this memory read-before step is skipped whenever the Bail-Out Check fires, symmetric with how the bail-out already skips every other Phase-1-onward step: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active`, filter by summary keywords matching the symptom, and Read the top 2-3 matches before step 1 below.
 
 1. **Read Error Messages Carefully**
    - Error messages and warnings often contain solutions
@@ -253,6 +255,12 @@ Each phase must be completed before proceeding to the next.
    **Discuss with human partner before attempting more fixes**
 
    This is not a failed hypothesis - this is wrong architecture.
+
+6. **Capture Memory (conditional — this skill's only `docs/` touchpoint, not a new phase or commit)**
+
+   This step reuses the existing 3+ failed fixes trigger as its primary gate: firing that trigger runs upsert memory in the same commit as the fix, OR it fires independently on an explicit cross-cutting gotcha regardless of fix-attempt count; otherwise it is a no-op.
+
+   On fire: write `docs/memory/<category>_<slug>.md` (`category: pitfall` typically, `category: decision` if the architecture-questioning step above concluded a redesign is warranted), reusing the Inline Plan's six-line shape as `Fact`/`Why` material when one was recorded, with `source: commit:<short-sha>`. Then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category <category>`, staged into the same commit as the fix + regression test — no separate commit, no additional phase, no extra user-facing deliverable beyond the existing fix + regression test.
 
 ## Complex Bugs: Inline Plan Summary (no file written)
 

@@ -656,6 +656,505 @@ test_rebuild_recovers_from_malformed_index() {
 }
 
 # ---------------------------------------------------------------------------
+# Task 001: memory kind vocabulary tests (RED — kind vocabulary is still
+# design|plan|retro only; `memory` is unknown until lib/docs-index.sh is
+# extended). test_memory_kind_accepted_by_upsert and
+# test_memory_default_status_is_active pass `--category pitfall` up front even
+# though the flag does not exist yet, so these two tests stay isolated to the
+# kind gate once the category gate (task 003/004) lands — until then they
+# fail on the (still correct, still exit-2) unrecognized-flag path rather than
+# the kind gate itself.
+# ---------------------------------------------------------------------------
+
+ROW_MEMORY_1="docs/memory/pitfall_x.md | memory | active | Some prior mistake | 2026-07-04"
+
+test_memory_kind_accepted_by_upsert() {
+  make_empty_index
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category pitfall
+  assert_file_contains docs/README.md "docs/memory/pitfall_x.md"
+  assert_file_contains docs/README.md "| memory |"
+}
+
+test_memory_kind_accepted_by_list_filter() {
+  make_index "$ROW_DESIGN_1" "$ROW_PLAN_1" "$ROW_RETRO_1" "$ROW_MEMORY_1"
+  assert_stdout_line_count 1 bash "$DOCS_INDEX_SH" list --kind memory
+  assert_stdout_contains "memory" bash "$DOCS_INDEX_SH" list --kind memory
+}
+
+test_memory_kind_rejected_message_mentions_memory() {
+  make_index "$ROW_DESIGN_1"
+  _run bash "$DOCS_INDEX_SH" upsert bogus-kind docs/plans/x-design/ --status active --summary "x"
+  if [[ "$LAST_EXIT" -eq 2 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected exit 2 for bogus kind, got $LAST_EXIT" >&2
+  fi
+  if printf '%s' "$LAST_STDERR" | grep -qF "design|plan|retro|memory"; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected stderr to enumerate design|plan|retro|memory, got: $LAST_STDERR" >&2
+  fi
+}
+
+test_memory_default_status_is_active() {
+  make_empty_index
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_y.md --summary "no status flag" --category pitfall
+  assert_file_contains docs/README.md "| active |"
+}
+
+# ---------------------------------------------------------------------------
+# Task 003: memory status restriction + category flag tests (RED — no
+# kind-aware status restriction and no --category flag exist yet). The
+# category-value tests (type/kind/reference, and the two upsert-time status
+# tests) additionally assert stderr does NOT say "unknown argument" — without
+# that check they would spuriously pass today for the wrong reason (the flag
+# being entirely unrecognized), rather than the real validation path task 004
+# is expected to add.
+# ---------------------------------------------------------------------------
+
+test_memory_upsert_rejects_wip_status() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status wip --summary "x" --category pitfall
+  assert_stderr_not_contains "unknown argument"
+}
+
+test_memory_upsert_rejects_implemented_status() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status implemented:abc1234 --summary "x" --category pitfall
+  assert_stderr_not_contains "unknown argument"
+}
+
+test_memory_setstatus_rejects_superseded_by() {
+  make_index "docs/memory/pitfall_x.md | memory | active | orig | 2026-07-01"
+  assert_exit 2 bash "$DOCS_INDEX_SH" set-status docs/memory/pitfall_x.md "superseded-by:docs/memory/pitfall_other.md"
+}
+
+test_memory_setstatus_rejects_reference() {
+  make_index "docs/memory/pitfall_x.md | memory | active | orig | 2026-07-01"
+  assert_exit 2 bash "$DOCS_INDEX_SH" set-status docs/memory/pitfall_x.md "reference"
+}
+
+test_memory_setstatus_allows_expired() {
+  make_index "docs/memory/pitfall_x.md | memory | active | orig | 2026-07-01"
+  assert_exit 0 bash "$DOCS_INDEX_SH" set-status docs/memory/pitfall_x.md "expired:retro-2026-07-04:superseded"
+}
+
+test_memory_upsert_requires_category_flag() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x"
+}
+
+test_memory_upsert_rejects_category_type() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category type
+  assert_stderr_not_contains "unknown argument"
+}
+
+test_memory_upsert_rejects_category_kind() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category kind
+  assert_stderr_not_contains "unknown argument"
+}
+
+test_memory_upsert_rejects_category_reference() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category reference
+  assert_stderr_not_contains "unknown argument"
+}
+
+test_memory_upsert_accepts_all_four_categories() {
+  make_empty_index
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/convention_x.md --status active --summary "x" --category convention
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "x" --category pitfall
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/decision_x.md --status active --summary "x" --category decision
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/preference_x.md --status active --summary "x" --category preference
+}
+
+test_design_upsert_rejects_category_flag() {
+  make_empty_index
+  assert_exit 2 bash "$DOCS_INDEX_SH" upsert design docs/plans/2026-07-04-x-design/ --status active --summary "x" --category pitfall
+  assert_stderr_not_contains "unknown argument"
+}
+
+# ---------------------------------------------------------------------------
+# Task 005: memory scan + rebuild tests (RED — scan_folders() has no memory
+# loop yet, so rebuild produces zero memory rows regardless of what's on disk
+# under docs/memory/).
+# ---------------------------------------------------------------------------
+
+test_rebuild_discovers_memory_files() {
+  mkdir -p docs/memory
+  cat > docs/memory/pitfall_x.md <<'EOF'
+---
+name: x
+category: pitfall
+summary: some prior mistake
+---
+EOF
+  make_empty_index
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  local data_rows
+  data_rows=$(grep -c '^| docs/' docs/README.md || true)
+  if [[ "$data_rows" -eq 1 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild produced $data_rows data rows, expected 1 for a single memory file" >&2
+  fi
+  if grep -q "docs/memory/pitfall_x.md | memory | active |" docs/README.md; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild did not produce a kind=memory status=active row for docs/memory/pitfall_x.md" >&2
+  fi
+}
+
+test_rebuild_extracts_summary_from_memory_frontmatter() {
+  mkdir -p docs/memory
+  cat > docs/memory/pitfall_x.md <<'EOF'
+---
+name: x
+category: pitfall
+summary: foo bar
+---
+EOF
+  make_empty_index
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  if grep -q "docs/memory/pitfall_x.md | memory | active | foo bar |" docs/README.md; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild did not extract 'foo bar' as the summary from the memory file's frontmatter" >&2
+  fi
+}
+
+test_rebuild_ignores_memory_archive_subdir() {
+  # A live file and an archived sibling — the non-recursive docs/memory/*.md
+  # glob must pick up the former and never descend into archive/ for the
+  # latter.
+  mkdir -p docs/memory/archive
+  cat > docs/memory/pitfall_x.md <<'EOF'
+---
+name: x
+category: pitfall
+summary: a live mistake
+---
+EOF
+  cat > docs/memory/archive/pitfall_old.md <<'EOF'
+---
+name: old
+category: pitfall
+summary: an archived mistake
+---
+EOF
+  make_empty_index
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  assert_file_contains docs/README.md "docs/memory/pitfall_x.md"
+  assert_file_not_contains docs/README.md "docs/memory/archive/pitfall_old.md"
+  local data_rows
+  data_rows=$(grep -c '^| docs/' docs/README.md || true)
+  if [[ "$data_rows" -eq 1 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild produced $data_rows data rows, expected exactly 1 (the archived file must not produce a row)" >&2
+  fi
+}
+
+test_rebuild_preserves_existing_memory_status() {
+  # Reuses the existing existing_status_map merge behavior (no memory-specific
+  # change needed there) — but only once scan_folders() actually includes the
+  # path in the scanned set; asserted here so a future edit can't silently
+  # break it.
+  mkdir -p docs/memory
+  cat > docs/memory/pitfall_x.md <<'EOF'
+---
+name: x
+category: pitfall
+summary: some prior mistake
+---
+EOF
+  make_index "docs/memory/pitfall_x.md | memory | expired:retro-2026-07-04:superseded | orig | 2026-07-01"
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  if grep -q "expired:retro-2026-07-04:superseded" docs/README.md; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild did not preserve the existing expired status for the memory row" >&2
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Task 007: memory collapse grouping + archive tests (RED — topic_of_path()
+# has no memory branch yet, so 3+ memory rows never share a (topic, cat) key
+# and never collapse; no archive-move logic exists anywhere yet).
+# ---------------------------------------------------------------------------
+
+test_topic_of_path_groups_memory_by_category() {
+  # Direct unit test of the bare function: source the script (via a no-op
+  # `list` subcommand so the unconditional CLI dispatch at the bottom of the
+  # file completes without exiting) into a subshell, then call topic_of_path
+  # directly. The path is passed via an env var, not a positional argument,
+  # since `source file arg...` would otherwise clobber $1 for the sourced
+  # dispatch itself.
+  local out1 out2
+  out1="$(TOPIC_TEST_PATH="docs/memory/pitfall_foo.md" bash -c 'source "$DOCS_INDEX_SH" list >/dev/null 2>&1; topic_of_path "$TOPIC_TEST_PATH"')"
+  out2="$(TOPIC_TEST_PATH="docs/memory/pitfall_bar.md" bash -c 'source "$DOCS_INDEX_SH" list >/dev/null 2>&1; topic_of_path "$TOPIC_TEST_PATH"')"
+  if [[ "$out1" == "pitfall" && "$out2" == "pitfall" ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected topic_of_path to return 'pitfall' for both memory paths, got '$out1' and '$out2'" >&2
+  fi
+}
+
+test_collapse_groups_three_expired_memory_rows_by_category() {
+  # 58 boilerplate design folders (implemented, sharing topic "topic") plus 3
+  # real memory files (expired, category=pitfall) — 61 total scanned rows,
+  # exceeding the 60-row ceiling so stage-1 collapse fires.
+  make_folders 58 design
+  local rows=() i name m
+  for ((i = 1; i <= 58; i++)); do
+    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
+    rows+=("${name}/ | design | implemented:abc1234 | orig | 2026-07-01")
+  done
+  mkdir -p docs/memory
+  for m in a b c; do
+    cat > "docs/memory/pitfall_${m}.md" <<EOF
+---
+name: ${m}
+category: pitfall
+summary: mistake ${m}
+---
+EOF
+    rows+=("docs/memory/pitfall_${m}.md | memory | expired:retro-2026-07-04:superseded | mistake ${m} | 2026-07-01")
+  done
+  make_index "${rows[@]}"
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  # The 3 expired pitfall memory rows collapse into exactly one summary row.
+  local memory_rows
+  memory_rows=$(grep -c '^| docs/memory/pitfall_' docs/README.md || true)
+  if [[ "$memory_rows" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected the 3 individual pitfall memory rows to collapse away, found $memory_rows" >&2
+  fi
+  if grep -q "and 3 prior expired entries (topic: pitfall)" docs/README.md; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected a collapsed summary line for 3 prior expired pitfall memory entries" >&2
+  fi
+  # Stage-1 collapse folds the row into a summary line — it must NOT trigger
+  # the stage-2 archive-on-drop side effect. The 3 backing files stay at
+  # their original path, not docs/memory/archive/.
+  local files_at_original files_archived
+  files_at_original=$(ls docs/memory/pitfall_a.md docs/memory/pitfall_b.md docs/memory/pitfall_c.md 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$files_at_original" -eq 3 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected all 3 stage-1-collapsed memory files to remain at their original path, found $files_at_original" >&2
+  fi
+  files_archived=$(ls docs/memory/archive/ 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$files_archived" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: stage-1-collapsed memory files must not be archived, found $files_archived file(s) in docs/memory/archive/" >&2
+  fi
+}
+
+test_collapse_never_collapses_active_memory_rows() {
+  # 55 boilerplate design folders (implemented, sharing topic "topic") plus 3
+  # active + 3 expired memory rows sharing category=pitfall — 61 total
+  # scanned rows, exceeding the ceiling so stage-1 collapse fires. Active
+  # memory rows must never enter the collapse candidate set (same rule
+  # already applies to active design/plan/retro rows), even while the
+  # sibling expired group does collapse.
+  make_folders 55 design
+  local rows=() i name m
+  for ((i = 1; i <= 55; i++)); do
+    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
+    rows+=("${name}/ | design | implemented:abc1234 | orig | 2026-07-01")
+  done
+  mkdir -p docs/memory
+  for m in 1 2 3; do
+    cat > "docs/memory/pitfall_active${m}.md" <<EOF
+---
+name: active${m}
+category: pitfall
+summary: active memory ${m}
+---
+EOF
+    rows+=("docs/memory/pitfall_active${m}.md | memory | active | active memory ${m} | 2026-07-01")
+  done
+  for m in 1 2 3; do
+    cat > "docs/memory/pitfall_exp${m}.md" <<EOF
+---
+name: exp${m}
+category: pitfall
+summary: expired memory ${m}
+---
+EOF
+    rows+=("docs/memory/pitfall_exp${m}.md | memory | expired:retro-2026-07-04:superseded | expired memory ${m} | 2026-07-01")
+  done
+  make_index "${rows[@]}"
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  # The 3 active rows survive individually (never collapse candidates).
+  local active_rows
+  active_rows=$(grep -c '^| docs/memory/pitfall_active[0-9]*\.md | memory | active |' docs/README.md || true)
+  if [[ "$active_rows" -eq 3 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected 3 individual active memory rows to survive, found $active_rows" >&2
+  fi
+  # The 3 sibling expired rows collapse into one summary line — proves the
+  # active exclusion is isolated from the sibling expired group's grouping.
+  local expired_rows
+  expired_rows=$(grep -c '^| docs/memory/pitfall_exp[0-9]*\.md ' docs/README.md || true)
+  if [[ "$expired_rows" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected the 3 expired pitfall memory rows to collapse away, found $expired_rows" >&2
+  fi
+}
+
+test_rebuild_archives_dropped_expired_memory_file() {
+  # 60 active design folders (never collapse candidates, holding the count at
+  # 60) plus 1 expired memory file — 61 total scanned rows. Stage 1 leaves
+  # the lone expired memory row ungrouped (count=1 < 3); stage 2's "drop
+  # expired entirely" rule then fires because the index is still over 60,
+  # dropping that row — and its backing file must be archived, not left
+  # orphaned with no index row pointing at it.
+  make_folders 60 design
+  local rows=() i name
+  for ((i = 1; i <= 60; i++)); do
+    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
+    rows+=("${name}/ | design | active | a | 2026-07-01")
+  done
+  mkdir -p docs/memory
+  cat > docs/memory/pitfall_stale.md <<'EOF'
+---
+name: stale
+category: pitfall
+summary: a stale mistake
+---
+EOF
+  rows+=("docs/memory/pitfall_stale.md | memory | expired:retro-2026-07-04:superseded | a stale mistake | 2026-07-01")
+  make_index "${rows[@]}"
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  assert_file_not_contains docs/README.md "docs/memory/pitfall_stale.md"
+  if [[ -f docs/memory/archive/pitfall_stale.md ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: expected docs/memory/pitfall_stale.md to be moved to docs/memory/archive/" >&2
+  fi
+  if [[ -f docs/memory/pitfall_stale.md ]]; then
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: docs/memory/pitfall_stale.md still present at its original location" >&2
+  else
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  fi
+}
+
+test_rebuild_does_not_archive_kept_rows() {
+  # 59 active design folders plus 1 implemented design folder (the lone
+  # implemented row keeps collapse_rows()'s candidate set non-empty without
+  # reaching the >=3 grouping threshold, so it stays an individual row) plus
+  # 1 active memory row — none are drop candidates (active is never dropped;
+  # a singleton candidate is under the collapse threshold), so the memory
+  # row's file must never be moved to docs/memory/archive/.
+  make_folders 59 design
+  local rows=() i name
+  for ((i = 1; i <= 59; i++)); do
+    name="$(printf 'docs/plans/2026-01-%02d-topic-design' "$i")"
+    rows+=("${name}/ | design | active | a | 2026-07-01")
+  done
+  mkdir -p docs/plans/2026-01-99-topic-design
+  : > docs/plans/2026-01-99-topic-design/_index.md
+  rows+=("docs/plans/2026-01-99-topic-design/ | design | implemented:abc1234 | orig | 2026-07-01")
+  mkdir -p docs/memory
+  cat > docs/memory/pitfall_kept.md <<'EOF'
+---
+name: kept
+category: pitfall
+summary: a kept fact
+---
+EOF
+  rows+=("docs/memory/pitfall_kept.md | memory | active | a kept fact | 2026-07-01")
+  make_index "${rows[@]}"
+  _run bash "$DOCS_INDEX_SH" rebuild
+  if [[ "$LAST_EXIT" -eq 0 ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: rebuild expected exit 0, got $LAST_EXIT" >&2
+  fi
+  assert_file_contains docs/README.md "docs/memory/pitfall_kept.md"
+  if [[ -f docs/memory/pitfall_kept.md ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: docs/memory/pitfall_kept.md was moved away from its original location" >&2
+  fi
+  if [[ ! -f docs/memory/archive/pitfall_kept.md ]]; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: docs/memory/pitfall_kept.md was unexpectedly archived" >&2
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Run all tests
 # ---------------------------------------------------------------------------
 
@@ -721,5 +1220,37 @@ run_test "list_on_malformed_index_exits_2"             test_list_on_malformed_in
 run_test "upsert_rejects_leading_slash_path"           test_upsert_rejects_leading_slash_path
 run_test "upsert_rejects_parent_traversal_path"        test_upsert_rejects_parent_traversal_path
 run_test "rebuild_recovers_from_malformed_index"       test_rebuild_recovers_from_malformed_index
+
+echo "== Memory-layer task 001: kind vocabulary (RED expected) =="
+run_test "memory_kind_accepted_by_upsert"              test_memory_kind_accepted_by_upsert
+run_test "memory_kind_accepted_by_list_filter"         test_memory_kind_accepted_by_list_filter
+run_test "memory_kind_rejected_message_mentions_memory" test_memory_kind_rejected_message_mentions_memory
+run_test "memory_default_status_is_active"             test_memory_default_status_is_active
+
+echo "== Memory-layer task 003: status restriction + category flag (RED expected) =="
+run_test "memory_upsert_rejects_wip_status"            test_memory_upsert_rejects_wip_status
+run_test "memory_upsert_rejects_implemented_status"    test_memory_upsert_rejects_implemented_status
+run_test "memory_setstatus_rejects_superseded_by"      test_memory_setstatus_rejects_superseded_by
+run_test "memory_setstatus_rejects_reference"          test_memory_setstatus_rejects_reference
+run_test "memory_setstatus_allows_expired"             test_memory_setstatus_allows_expired
+run_test "memory_upsert_requires_category_flag"        test_memory_upsert_requires_category_flag
+run_test "memory_upsert_rejects_category_type"         test_memory_upsert_rejects_category_type
+run_test "memory_upsert_rejects_category_kind"         test_memory_upsert_rejects_category_kind
+run_test "memory_upsert_rejects_category_reference"    test_memory_upsert_rejects_category_reference
+run_test "memory_upsert_accepts_all_four_categories"   test_memory_upsert_accepts_all_four_categories
+run_test "design_upsert_rejects_category_flag"         test_design_upsert_rejects_category_flag
+
+echo "== Memory-layer task 005: memory scan + rebuild (RED expected) =="
+run_test "rebuild_discovers_memory_files"                     test_rebuild_discovers_memory_files
+run_test "rebuild_extracts_summary_from_memory_frontmatter"   test_rebuild_extracts_summary_from_memory_frontmatter
+run_test "rebuild_ignores_memory_archive_subdir"              test_rebuild_ignores_memory_archive_subdir
+run_test "rebuild_preserves_existing_memory_status"           test_rebuild_preserves_existing_memory_status
+
+echo "== Memory-layer task 007: collapse grouping + archive-on-drop (RED expected) =="
+run_test "topic_of_path_groups_memory_by_category"           test_topic_of_path_groups_memory_by_category
+run_test "collapse_groups_three_expired_memory_rows_by_category" test_collapse_groups_three_expired_memory_rows_by_category
+run_test "collapse_never_collapses_active_memory_rows"       test_collapse_never_collapses_active_memory_rows
+run_test "rebuild_archives_dropped_expired_memory_file"      test_rebuild_archives_dropped_expired_memory_file
+run_test "rebuild_does_not_archive_kept_rows"                test_rebuild_does_not_archive_kept_rows
 
 summarize
