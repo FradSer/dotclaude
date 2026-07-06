@@ -19,7 +19,7 @@ jobs:
     outputs:
       plugins: ${{ steps.discover.outputs.plugins }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: discover
         run: |
           plugins=()
@@ -39,8 +39,8 @@ jobs:
       matrix:
         plugin: ${{ fromJson(needs.discover-plugins.outputs.plugins) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Validate ${{ matrix.plugin }}
@@ -58,8 +58,8 @@ jobs:
       matrix:
         plugin: ${{ fromJson(needs.discover-plugins.outputs.plugins) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install test dependencies
