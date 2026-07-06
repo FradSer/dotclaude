@@ -158,10 +158,10 @@ def run_gemini(args) -> int:
 # --------------------------------------------------------------------------- #
 # OpenAI-compatible backend (openai SDK)
 # --------------------------------------------------------------------------- #
-def save_images_openai(data_items, out_base: Path, count: int) -> list[Path]:
+def save_images_openai(data_items, out_base: Path) -> list[Path]:
     """Write each returned image to disk. Handles both `b64_json` (decoded
     inline) and `url` (downloaded) response formats. One file per item; when
-    multiple are expected, names are suffixed `_1`, `_2`, ..."""
+    multiple are returned, names are suffixed `_1`, `_2`, ..."""
     saved: list[Path] = []
     items = list(data_items)
     for i, item in enumerate(items):
@@ -175,7 +175,7 @@ def save_images_openai(data_items, out_base: Path, count: int) -> list[Path]:
                 data = r.read()
         else:
             continue
-        if count == 1:
+        if len(items) == 1:
             dest = out_base
         else:
             dest = out_base.with_name(f"{out_base.stem}_{i + 1}{out_base.suffix}")
@@ -288,7 +288,7 @@ def run_openai(args) -> int:
                 f"not be enabled at this base URL): {e}"
             ) or 1
 
-    saved = save_images_openai(getattr(resp, "data", None) or [], out_base, count)
+    saved = save_images_openai(getattr(resp, "data", None) or [], out_base)
 
     if not saved:
         return fail("no image returned (the prompt may have been blocked by safety filters, or the endpoint rejected the request)") or 1
