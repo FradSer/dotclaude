@@ -1,6 +1,6 @@
 # ACPX Plugin
 
-**Version**: 0.2.1
+**Version**: 0.3.0
 
 A Claude Code plugin providing knowledge about `acpx` - a headless CLI client for the Agent Client Protocol (ACP).
 

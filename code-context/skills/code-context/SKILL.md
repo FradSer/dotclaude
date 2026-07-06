@@ -127,7 +127,7 @@ Each input target falls into one of three kinds. Classify before selecting a met
 - **Library target** — bare package/framework name, optionally `name@version`. Use Context7; encode version into the libraryId path.
 - **Natural-language target** — a question, comparison, or concept ("how does X work", "X vs Y", "best practice for Z"). Use Exa for code patterns; Web Search+Fetch for rationale, changelogs, and "why" questions. If the query names a specific library, also run Context7 for the canonical API surface.
 
-When the caller passes `--method=`, only use the intersection of allowed methods and applicable methods. If the intersection is empty for a target, use the closest applicable allowed method and note the gap in the output.
+When the caller passes `--method=`, only use the intersection of allowed methods and applicable methods. If the intersection is empty for a target, skip external lookups for that target and report that no allowed method applies.
 
 ## Method Selection Guide
 

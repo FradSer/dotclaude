@@ -174,10 +174,12 @@ Runs a single prompt in a temporary ACP session. Does not reuse or save persiste
 ```bash
 acpx compare codex gemini qwen 'summarize this repo in 3 lines'
 acpx compare codex gemini --file ./prompt.md
-acpx compare codex gemini -- -- delimiter for prompt words after the agent list
+acpx compare codex gemini -- '--looks-like-a-flag'
 ```
 
 Runs the same prompt across multiple agents, each in a temporary `exec`-style session. Honors the same global execution controls as `exec` (`--cwd`, `--timeout`, permission flags, `--policy`, auth, terminal advertising, retries, model/system options, `--format`).
+
+- Use `--` after the agent list when prompt words might be parsed as flags (see the third example).
 
 - `--format text` prints one summary-table row per agent (timing, token usage, stop reason, permissions, final output)
 - `--format json` or command-local `--json` prints a `CompareRow[]` summary payload

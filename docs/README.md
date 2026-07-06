@@ -7,11 +7,11 @@
 |---|---|---|---|---|
 | docs/memory/pitfall_review-package-cd-pwd-corruption.md | memory | active | review-package.sh cd+pwd substitution corrupts PLAN_DIR resolution | 2026-07-06 |
 | docs/plans/2026-04-01-harness-optimizations-plan/ | plan | implemented:cd29fd7 |  | 2026-07-04 |
-| docs/plans/2026-04-03-eval-harness-design/ | design | implemented:d73e2f6 |  | 2026-07-04 |
+| docs/plans/2026-04-03-eval-harness-design/ | design | active |  | 2026-07-04 |
 | docs/plans/2026-04-04-eval-harness-plan/ | plan | implemented:d73e2f6 |  | 2026-07-04 |
 | docs/plans/2026-05-01-notification-system-design/ | design | expired:retro-2026-05-09-v3-considered-deferred.md:superseded by harness-evidence channel |  | 2026-07-04 |
-| docs/plans/2026-05-09-harness-evidence-channel-design/ | design | implemented:6830433 |  | 2026-07-04 |
-| docs/plans/2026-05-12-unified-retro-events-design/ | design | implemented:1791ac5 |  | 2026-07-04 |
+| docs/plans/2026-05-09-harness-evidence-channel-design/ | design | active |  | 2026-07-04 |
+| docs/plans/2026-05-12-unified-retro-events-design/ | design | active |  | 2026-07-04 |
 | docs/plans/2026-05-12-unified-retro-events-plan/ | plan | implemented:069f16b |  | 2026-07-04 |
 | docs/plans/2026-07-04-docs-index-design/ | design | active |  | 2026-07-04 |
 | docs/plans/2026-07-04-docs-index-plan/ | plan | implemented:e4bbd2b |  | 2026-07-04 |

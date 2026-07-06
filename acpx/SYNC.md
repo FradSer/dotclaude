@@ -101,6 +101,6 @@ Also self-check:
 ## Last synced
 
 - **Upstream version**: v0.11.2 (2026-06-23)
-- **Plugin version**: 0.2.1
+- **Plugin version**: 0.3.0
 - **Deltas applied**: `compare` subcommand (v0.11.0), `mux` built-in agent (v0.11.0), `--mcp-config` global option (v0.11.1), `factory-droid`/`factorydroid` alias, `authPolicy` config key, `ACPX_CLAUDE_INCLUDE_USER_SETTINGS` env var.
 - **Local constraints**: `claude` adapter blacklisted (runs inside Claude Code).
