@@ -328,6 +328,14 @@ def main() -> int:
             "No backend selected. Pass --backend gemini or --backend openai "
             "(or `export IMAGE_BACKEND=gemini|openai`)."
         ) or 1
+    if backend not in ("gemini", "openai"):
+        # --backend is constrained by argparse's `choices`, but IMAGE_BACKEND
+        # is a free-form env var — validate it explicitly so a typo (e.g.
+        # `gemni`) fails loudly instead of silently falling through to openai.
+        return fail(
+            f"Invalid IMAGE_BACKEND/--backend value {backend!r}. Must be "
+            "'gemini' or 'openai'."
+        ) or 1
 
     if backend == "gemini":
         return run_gemini(args)

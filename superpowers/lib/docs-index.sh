@@ -240,13 +240,16 @@ default_status_for_kind() {
 
 # Truncate summary to 72 chars; if longer, append "…" (so the visible width
 # stays readable). Bash substring slicing is used to avoid awk for this step.
+# Escapes literal "|" (GFM's own table-cell escape) after truncating — rows
+# are stored as a pipe-delimited markdown table and downstream readers
+# (existing_status_map, cmd_show, cmd_list) split on " | ", so an unescaped
+# pipe in the summary would misalign every field after it.
 truncate_summary() {
   local s="$1"
   if [[ "${#s}" -gt 72 ]]; then
-    printf '%s…' "${s:0:71}"
-  else
-    printf '%s' "$s"
+    s="${s:0:71}…"
   fi
+  printf '%s' "${s//|/\\|}"
 }
 
 cmd_list() {
@@ -791,6 +794,7 @@ cmd_rebuild() {
       # a memory file carries its own summary in frontmatter — fall back to
       # that instead of leaving a first-time rebuild's summary blank.
       final_summary="$(grep -m1 '^summary:' "${root}/${p}" 2>/dev/null | sed 's/^summary: *//')"
+      final_summary="${final_summary//|/\\|}"
     fi
     local today
     today="$(date +%Y-%m-%d)"

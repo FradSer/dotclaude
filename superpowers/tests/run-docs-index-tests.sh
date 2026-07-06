@@ -778,6 +778,18 @@ test_design_upsert_rejects_category_flag() {
   assert_stderr_not_contains "unknown argument"
 }
 
+# Regression test (PR #20 review): a literal " | " in a --summary value must
+# not be able to shift the status/updated columns when downstream readers
+# split the row on " | " (existing_status_map, cmd_show, cmd_list all do
+# this). truncate_summary() escapes "|" to "\|" (GFM's own table-cell
+# escape) before the row is written.
+test_upsert_escapes_pipe_in_summary() {
+  make_empty_index
+  assert_exit 0 bash "$DOCS_INDEX_SH" upsert memory docs/memory/pitfall_x.md --status active --summary "alpha | beta gamma" --category pitfall
+  assert_file_contains docs/README.md "alpha \\| beta gamma"
+  assert_stdout_contains "memory | active | alpha \\| beta gamma" bash "$DOCS_INDEX_SH" show docs/memory/pitfall_x.md
+}
+
 # ---------------------------------------------------------------------------
 # Task 005: memory scan + rebuild tests (RED — scan_folders() has no memory
 # loop yet, so rebuild produces zero memory rows regardless of what's on disk
@@ -840,6 +852,23 @@ EOF
     TESTS_FAILED=$((TESTS_FAILED + 1))
     echo "FAIL: rebuild did not extract 'foo bar' as the summary from the memory file's frontmatter" >&2
   fi
+}
+
+# Regression test (PR #20 review): the rebuild path's frontmatter-extracted
+# summary (a separate injection point from cmd_upsert's truncate_summary())
+# must also escape a literal "|" before it enters a row.
+test_rebuild_escapes_pipe_in_memory_frontmatter_summary() {
+  mkdir -p docs/memory
+  cat > docs/memory/pitfall_x.md <<'EOF'
+---
+name: x
+category: pitfall
+summary: alpha | beta gamma
+---
+EOF
+  make_empty_index
+  assert_exit 0 bash "$DOCS_INDEX_SH" rebuild
+  assert_file_contains docs/README.md "alpha \\| beta gamma"
 }
 
 test_rebuild_ignores_memory_archive_subdir() {
@@ -1239,10 +1268,12 @@ run_test "memory_upsert_rejects_category_kind"         test_memory_upsert_reject
 run_test "memory_upsert_rejects_category_reference"    test_memory_upsert_rejects_category_reference
 run_test "memory_upsert_accepts_all_four_categories"   test_memory_upsert_accepts_all_four_categories
 run_test "design_upsert_rejects_category_flag"         test_design_upsert_rejects_category_flag
+run_test "upsert_escapes_pipe_in_summary"              test_upsert_escapes_pipe_in_summary
 
 echo "== Memory-layer task 005: memory scan + rebuild (RED expected) =="
 run_test "rebuild_discovers_memory_files"                     test_rebuild_discovers_memory_files
 run_test "rebuild_extracts_summary_from_memory_frontmatter"   test_rebuild_extracts_summary_from_memory_frontmatter
+run_test "rebuild_escapes_pipe_in_memory_frontmatter_summary" test_rebuild_escapes_pipe_in_memory_frontmatter_summary
 run_test "rebuild_ignores_memory_archive_subdir"              test_rebuild_ignores_memory_archive_subdir
 run_test "rebuild_preserves_existing_memory_status"           test_rebuild_preserves_existing_memory_status
 
