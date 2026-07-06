@@ -242,11 +242,17 @@ def run_openai(args) -> int:
         if len(args.input) > 1:
             print("  Note: OpenAI /images/edits accepts a single image; using the first of "
                   f"{len(args.input)} supplied.", file=sys.stderr)
-        image_bytes = Path(args.input[0]).read_bytes()
+        input_path = Path(args.input[0])
+        image_bytes = input_path.read_bytes()
+        image_mime = mimetypes.guess_type(input_path.name)[0] or "image/png"
         try:
             resp = client.images.edit(
                 model=model,
-                image=image_bytes,
+                # Pass an explicit (filename, bytes, content-type) tuple, not
+                # bare bytes — the SDK's multipart encoder otherwise defaults
+                # to filename="upload" + application/octet-stream, which
+                # some edit endpoints reject as an unrecognized file type.
+                image=(input_path.name, image_bytes, image_mime),
                 prompt=args.prompt,
                 n=count,
                 size=size,
