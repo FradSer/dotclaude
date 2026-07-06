@@ -13,7 +13,7 @@ Evaluate open issues from context and prioritize the next actionable item:
 Create an isolated worktree session using the EnterWorktree tool:
 
 1. **Create worktree session**:
-   Use the EnterWorktree tool with a descriptive name (e.g., `fix-456-auth-redirect`). This creates a worktree in `.claude/worktrees/` and switches the session into it automatically.
+   Use the EnterWorktree tool with a descriptive name (e.g., `fix-456-auth-redirect`). This creates a worktree in `.claude/worktrees/` and switches the session into it automatically. `.claude/worktrees/` must be ignored in the repo's tracked `.gitignore` (not only a local `.git/info/exclude` entry) so a fresh clone doesn't show the worktree directory as untracked — verify with `git check-ignore -v .claude/worktrees` before relying on it.
 
 2. **Rename branch to match conventions**:
    EnterWorktree generates a branch named `worktree-<name>`. Rename it before committing:

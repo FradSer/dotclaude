@@ -303,3 +303,9 @@ uv.lock
 Thumbs.db
 *.orig
 .worktrees
+
+# Claude Code worktree sessions (EnterWorktree tool, used by github:resolve-issues).
+# Was previously ignored only via this machine's local .git/info/exclude — that
+# doesn't survive a fresh clone, so a worktree directory would show as untracked
+# on any other machine. Tracked here instead.
+**/.claude/worktrees/

@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-ledger.sh:*)"]
 ---
 
 # Executing Plans
@@ -68,6 +68,7 @@ See `./references/definition-of-done.md` (non-negotiable; overrides all other gu
 1. **Read Plan**: Read `_index.md` to understand scope, architecture decisions, and extract inline YAML task metadata from the "Execution Plan" section.
 2. **Understand Project**: Explore codebase structure, key files, and patterns relevant to the plan.
 3. **Check Blockers**: See `./references/blocker-and-escalation.md`.
+4. **Pre-Flight Conflict Scan** (once, before Phase 2): Check every task's explicit instructions against the resolved `code-v{N}.md` checklist for contradictions (e.g. a task mandating a stub or duplicated logic the checklist forbids). No-op if none found. See `./references/preflight-conflict-scan.md`.
 
 ## Phase 2: Task Creation (MANDATORY)
 
@@ -116,6 +117,7 @@ All tasks executed and verified, evidence captured, no blockers, final verificat
 ## References
 
 - `./references/blocker-and-escalation.md` - Guide for identifying and handling blockers
+- `./references/preflight-conflict-scan.md` - Phase 1 scan for task-vs-checklist contradictions before Phase 2
 - `./references/batch-execution-playbook.md` - Pattern for batch execution
 - `./references/definition-of-done.md` - Non-negotiable completion rules
 - `./references/phase-2-task-creation.md` - TaskCreate / dependency tier workflow
@@ -131,3 +133,4 @@ All tasks executed and verified, evidence captured, no blockers, final verificat
 - `./scripts/batch-progress.sh` - Filesystem-derived batch progress orientation (run as Step 1 of every iteration)
 - `../../lib/task-brief.sh` - Extract one task's text to a file the implementer reads from disk (diff/task-text-as-files)
 - `../../lib/review-package.sh` - Generate a net-diff review package file the evaluator reads from disk
+- `../../lib/task-ledger.sh` - Durable per-task completion ledger; check before dispatch, append after PASS

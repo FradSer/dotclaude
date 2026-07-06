@@ -11,7 +11,17 @@ Claude Code's built-in multi-agent orchestration runtime. A JS script (`agent()`
 - **Structured returns** — pass a JSON Schema and `agent()` returns a validated object, no parsing.
 - A single `parallel()`/`pipeline()` call accepts up to 4096 items; lifetime cap is 1000 agents.
 
-## Rule 1 — user must opt in (platform requirement)
+## Rule 1 — some batches should never fan out, `Workflow` or not
+
+The independent-tasks assumption behind both the default Parallel Mode and the `Workflow` escalation path can be wrong even when a batch has 2+ tasks. Before choosing either fan-out path, rule out:
+
+- **The tasks' failures are interrelated.** If fixing one task's root cause plausibly fixes or changes another's, they are not independent — dispatching them in parallel risks two sub-agents converging on conflicting fixes for the same underlying issue. Run them serially (Linear Mode) or merge them into one task.
+- **Root cause is unknown (exploratory work).** Parallel fan-out requires the coordinator to already know each task's scope well enough to write a focused, self-contained brief. If the batch exists to find out *what's wrong* rather than to implement a known fix, fan-out produces N sub-agents guessing at N overlapping hypotheses instead of one focused investigation.
+- **Tasks would edit the same file or shared resource.** Even with per-task `isolation: "worktree"`, two sub-agents converging on the same file produce a merge conflict the coordinator now has to resolve by hand — often more expensive than just running them serially. Prefer Linear Mode or re-scope the tasks to non-overlapping files.
+
+Any of these apply → use Linear Mode (or re-split the batch) regardless of task count; do not escalate to `Workflow` to make an unsuitable parallel batch "fit." These are the same disqualifiers whether the default Agent-tool spawn rounds or `Workflow` would otherwise be used — see `../executing-plans/references/batch-execution-playbook.md` Execution Mode Decision Tree.
+
+## Rule 2 — user must opt in (platform requirement)
 
 `Workflow` may be called **only when the user has explicitly opted into multi-agent orchestration**. A skill running silently under `/goal` must NOT quietly fan out dozens of background agents — that burns tokens at a scale the user did not ask for. Treat opt-in as present when any of these hold:
 
@@ -21,7 +31,7 @@ Claude Code's built-in multi-agent orchestration runtime. A JS script (`agent()`
 
 If none hold, **do NOT escalate** — run the default bounded spawn-round path in `batch-execution-playbook.md` Parallel Mode. Surface the option in one line ("this batch has N independent tasks; reply 'use a workflow' to fan them out in the background") and move on. This mirrors the `/goal` constraint (see `./goal-wrapper.md`): the platform feature is recommended in docs, never silently self-enabled.
 
-## Rule 2 — when escalation is worth it
+## Rule 3 — when escalation is worth it
 
 Escalate to `Workflow` only when **both**:
 

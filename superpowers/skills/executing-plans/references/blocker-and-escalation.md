@@ -8,6 +8,7 @@
 - Between batches: report progress and proceed directly to the next batch — never pause for user confirmation
 - On blocker: log a HARD BLOCKER entry and abort that batch, do NOT guess and do NOT prompt the user
 - **Sub-agent Blocker:** If a spawned sub-agent hangs or returns an error, log the failure and abort the batch — do NOT retry in the main agent's context.
+- **Sub-agent BLOCKED report:** Triage per `./batch-execution-playbook.md` §Handling Sub-Agent Report States before logging a HARD BLOCKER — supply missing context, escalate model tier, or split the task first. Never re-dispatch the identical prompt to the identical model expecting a different result; that is not triage, it is a wasted turn.
 - Never start implementation on main/master branch — if the current branch is main/master, abort immediately with a HARD BLOCKER log entry
 - **Autonomous mode:** This skill never prompts the user. On any blocker, log a HARD BLOCKER entry (with full evidence) to the plan directory, then abort that batch and continue with batches that are not affected. Only emit the Phase 6 human summary (`Plan execution complete. All N tasks verified and committed.`) when all non-blocked tasks are done and Phase 5 has committed. `/goal` continuation (if used) must phrase its condition against transcript narration (completion message + final commit hash), not filesystem state — see `executing-plans/SKILL.md` §For unattended multi-batch runs. The `plans-completed.jsonl` row is written by the plugin Stop hook from on-disk state, not from that summary string.
 

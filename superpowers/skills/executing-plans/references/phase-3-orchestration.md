@@ -27,11 +27,12 @@
    Completed task IDs: [...]
    Evidence blocks: [...]
    Modified files: [...]
+   Commit range: <BASE_SHA>..<HEAD>
    Evaluation report path: evaluation-round-{N}-batch-{M}.md
    Recurring patterns detected: [...]
    Pivot recommendation: <text or null>
    ```
-   - **PASS**: TaskUpdate tasks to `completed`
+   - **PASS**: TaskUpdate tasks to `completed`. For each completed task ID, also run `bash "${CLAUDE_PLUGIN_ROOT}/lib/task-ledger.sh" append <plan-dir> <task-id> <N> "<commit-range>" PASS` — this is the durable, disk-based record the coordinator's Step 1 checks before re-dispatching a task on a resumed run (see `./batch-execution-playbook.md` §Load Context).
    - **PIVOT**: apply plan modifications, continue autonomously
    - **REWORK_ESCALATED**: HARD BLOCKER per `./blocker-and-escalation.md`; do NOT retry in main context
 
