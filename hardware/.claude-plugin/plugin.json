@@ -1,0 +1,27 @@
+{
+  "name": "hardware",
+  "displayName": "Hardware",
+  "version": "0.2.0",
+  "description": "Hardware and EDA toolkit. Drives the KiCad CLI for schematic/PCB export and checks, and OpenSCAD for parametric 3D/2D part design and STL/DXF/PNG output.",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "keywords": [
+    "hardware",
+    "kicad",
+    "openscad",
+    "eda",
+    "pcb",
+    "gerber",
+    "3d-printing",
+    "laser-cutting",
+    "cli",
+    "electronics"
+  ],
+  "license": "MIT",
+  "commands": [
+    "./skills/use-kicad-cli/",
+    "./skills/use-openscad/"
+  ]
+}

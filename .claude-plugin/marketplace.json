@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "frad-dotclaude",
-  "version": "1.13.0",
+  "version": "1.15.0",
   "description": "Frad's Claude Code plugin marketplace featuring specialized agents and workflow automation",
   "owner": {
     "name": "Frad LEE",
@@ -11,7 +11,7 @@
     {
       "name": "git",
       "displayName": "Git",
-      "version": "0.5.2",
+      "version": "0.5.3",
       "description": "Conventional Git automation and advanced repository management",
       "author": {
         "name": "Frad LEE",
@@ -24,8 +24,8 @@
     {
       "name": "gitflow",
       "displayName": "GitFlow",
-      "version": "1.1.1",
-      "description": "GitFlow workflow automation for feature, hotfix, and release branches",
+      "version": "1.3.1",
+      "description": "GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -37,7 +37,7 @@
     {
       "name": "github",
       "displayName": "GitHub",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -90,7 +90,7 @@
     {
       "name": "superpowers",
       "displayName": "Superpowers",
-      "version": "3.3.0",
+      "version": "3.6.0",
       "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
       "author": {
         "name": "Frad LEE",
@@ -129,7 +129,7 @@
     {
       "name": "acpx",
       "displayName": "ACPX",
-      "version": "0.1.2",
+      "version": "0.3.0",
       "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
       "author": {
         "name": "Frad LEE",
@@ -142,8 +142,8 @@
     {
       "name": "code-context",
       "displayName": "Code Context",
-      "version": "0.2.2",
-      "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
+      "version": "0.3.0",
+      "description": "Retrieve code context for any repo, library, or natural-language query via DeepWiki, Context7, Exa, git clone, and web search+fetch",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
@@ -203,6 +203,19 @@
       "source": "./storm",
       "category": "productivity",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/storm"
+    },
+    {
+      "name": "hardware",
+      "displayName": "Hardware",
+      "version": "0.2.0",
+      "description": "Hardware and EDA toolkit. Drives the KiCad CLI for schematic/PCB export and checks, and OpenSCAD for parametric 3D/2D part design and STL/DXF/PNG output.",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./hardware",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/hardware"
     }
   ]
 }

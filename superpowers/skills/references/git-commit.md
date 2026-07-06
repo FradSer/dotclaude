@@ -18,13 +18,13 @@ This guide applies to three phases of the development workflow:
 
 ### 1. Commit with git-agent (Primary)
 
-**CRITICAL: For design/plan folders, stage the entire folder first, then use `--no-stage`**
+**CRITICAL: For design/plan folders, stage the entire folder and commit as ONE chained command with `--no-stage`.** The marketplace git plugin's PreToolUse hook denies a standalone `git add`; only the chained `git add ... && git-agent commit` form passes.
 
 **Commit Pattern for Design and Plan Folders**:
 
 ```bash
-git add docs/plans/${date}-${folder-type}-${topic}/
-git-agent commit --no-stage --intent "add ${type} for ${topic}" \
+git add docs/plans/${date}-${folder-type}-${topic}/ && \
+  git-agent commit --no-stage --intent "add ${type} for ${topic}" \
   --co-author "Claude <Model> <Version> <noreply@anthropic.com>"
 ```
 
@@ -46,7 +46,9 @@ git-agent commit --intent "${description}" \
 
 ### 2. Fallback to git (when git-agent is unavailable or fails)
 
-If git-agent is not installed or all retries fail, fall back to manual git commit:
+If git-agent is not installed or all retries fail, fall back to manual git commit.
+
+**Note**: when the marketplace git plugin is enabled, its PreToolUse hook denies raw `git add` / `git commit` — invoke the `/git:commit` skill via the Skill tool instead. The patterns below apply only when that hook is absent:
 
 **Commit Pattern for Design and Plan Folders**:
 
@@ -88,7 +90,7 @@ Co-Authored-By: <Model Name> <noreply@anthropic.com>"
   - Context (user request, feature description, or project background)
   - Specific actions taken (as a bulleted list)
   - Brief summary of the approach
-- **Footer**: `Co-Authored-By: <Model Name> <noreply@anthropic.com>` (valid: `Claude Sonnet 4.6`, `Claude Opus 4.6`, `Claude Haiku 4.5`)
+- **Footer**: `Co-Authored-By: <Model Name> <noreply@anthropic.com>` (use the executing model's actual runtime identity, e.g. `Claude Opus 4.8`, `Claude Haiku 4.5`)
 
 ### 3. Verify Commit
 
@@ -114,7 +116,7 @@ Tell the user:
 ## Best Practices
 
 **Commit Quality**:
-- Always stage entire folders for design/plan docs before using `--no-stage`
+- Always stage entire folders for design/plan docs in the same chained command as `git-agent commit --no-stage`
 - Use `--intent` to keep git-agent focused on the right message
 - Keep fallback subject lines under 50 characters
 - Include Co-Authored-By footer with model name
@@ -137,11 +139,10 @@ git-agent commit --intent "add auth module"
 git-agent commit --intent "add auth module"
 ```
 
-**Do stage manually for design/plan folders** (git-agent needs `--no-stage`):
+**Do stage manually for design/plan folders** (git-agent needs `--no-stage`; keep it ONE chained command):
 ```bash
-# Correct: Stage folder, then commit with --no-stage
-git add docs/plans/2026-03-26-auth-design/
-git-agent commit --no-stage --intent "add design for auth"
+# Correct: Stage folder and commit in one chained command
+git add docs/plans/2026-03-26-auth-design/ && git-agent commit --no-stage --intent "add design for auth"
 ```
 
 **Don't skip verification**:

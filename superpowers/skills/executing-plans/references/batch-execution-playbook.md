@@ -76,12 +76,15 @@ For independent multi-task batches:
 
 1. **Launch**: Spawn one Task sub-agent per task via the Agent tool, up to a **concurrency cap of 4 sub-agents per spawn round**
    - If the batch has more than 4 independent tasks, split into back-to-back spawn rounds (4 → wait → next 4) rather than spawning all at once. The cap exists because (a) more parallel sub-agents inflate the per-iteration token bill linearly and (b) the main agent's wait turn cannot meaningfully attend to >4 concurrent transcripts when a sub-agent reports a blocker.
+   - **Large-batch escalation**: when the batch has many independent tasks (>4) AND the user has opted into multi-agent orchestration, delegate the whole fan-out to Claude Code's native `Workflow` tool instead of hand-rolling spawn rounds — it schedules concurrency automatically (`min(16, cores-2)`) and keeps every sub-agent transcript out of context. Do NOT self-enable it silently under `/goal`; gate on the opt-in signal. See `../../references/workflow-orchestration.md` for the opt-in rules and the task→`agent()` mapping.
    - If sub-agents edit overlapping files, add `isolation: "worktree"` for isolation
-2. **Assign**: Give each sub-agent its task with full context and file boundaries
-3. **Wait**: Wait for all sub-agents in the current round to complete before launching the next round
-4. **Verify**: Run verification commands for all tasks (after the final round)
-5. **Evaluate**: Spawn superpowers-evaluator after all tasks pass verification
-6. **Complete**: Use `TaskUpdate` to mark tasks completed only after evaluator verdict is PASS
+2. **Brief each task (diff/task-text-as-files)**: For each task in the batch, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh" <plan-dir>/task-<NNN>-<feature>-<type>.md <NNN>` against the task's own file (NOT `_index.md` — `_index.md` lists tasks as YAML + links, not as `## Task NNN:` headings, so the extractor would find nothing). The script writes `<plan-dir>/_briefs/task-<NNN>-brief.md`. The sub-agent prompt's `## Task Assignment` section then points to this brief file ("Read `<brief-path>` for your task assignment") instead of pasting the full task text inline — keeping task text out of the coordinator's context. See `lib/task-brief.sh`.
+3. **Assign**: Give each sub-agent its brief file path with full context and file boundaries (per the Agent Prompt Template below)
+4. **Wait**: Wait for all sub-agents in the current round to complete before launching the next round
+5. **Verify**: Run verification commands for all tasks (after the final round)
+6. **Package the diff for the evaluator**: After all tasks pass verification, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh" <BASE> <HEAD> <plan-dir>` where BASE is the commit before this batch's changes and HEAD is the current commit. The script writes `<plan-dir>/_reviews/review-<base7>..<head7>.diff`. Pass this file's path to the superpowers-evaluator so it reads the net diff from disk instead of the coordinator pasting it.
+7. **Evaluate**: Spawn superpowers-evaluator after all tasks pass verification, pointing it at the review package + produced artifacts
+8. **Complete**: Use `TaskUpdate` to mark tasks completed only after evaluator verdict is PASS
 
 The cap is advisory — the harness does not yet enforce it programmatically. The coordinator is the contract holder: exceed it only with an explicit one-line note in the spawn turn naming the reason (e.g., "5 trivial test-only tasks, sub-agent context per task <2k").
 
@@ -155,22 +158,22 @@ After the superpowers-evaluator completes:
 
 | Round | Action |
 |-------|--------|
-| 1 | Fix rework items, re-verify, re-evaluate |
-| 2 | Fix remaining items, re-verify, re-evaluate |
+| 1 | **Load `superpowers:receiving-code-review` skill** → handle each rework item per its Response Pattern (READ → UNDERSTAND → VERIFY → EVALUATE → RESPOND → IMPLEMENT), re-verify per `verification-before-completion`, re-evaluate |
+| 2 | Same protocol; fix remaining items one at a time with verification, re-evaluate |
 | 3+ | Log a HARD BLOCKER entry per `blocker-and-escalation.md` and abort this batch (do NOT prompt the user) |
 
-Maximum 2 evaluation-rework rounds before escalation. The superpowers-evaluator assesses independently each round -- it does not inherit previous round results.
+Maximum 2 evaluation-rework rounds before escalation. The superpowers-evaluator assesses independently each round -- it does not inherit previous round results. The receiving-code-review skill constrains the **implementer side** (how rework items are triaged and fixed); the evaluator remains the independent red-team reviewer on the other side.
 
 See `evaluation-file-formats.md` for report format details.
 
 ## Agent Prompt Template
 
-Every sub-agent prompt MUST include all three sections:
+Every sub-agent prompt MUST include all four sections:
 
 ```
 ## Task Assignment
 
-[Full task file content]
+Read <task-brief-path> for your full task assignment.  <!-- generated by lib/task-brief.sh; do NOT paste task text inline -->
 
 ## Quality Requirements (MANDATORY)
 
@@ -180,11 +183,13 @@ If you cannot implement something completely, stop and report a blocker; do NOT 
 
 ## Verification (MANDATORY BEFORE REPORTING DONE)
 
+**Load `superpowers:verification-before-completion` skill using the Skill tool before reporting any task done.**
+
 After implementation, run the following verification commands and confirm they all pass (exit code 0, no test failures):
 
 [Verification commands from task file]
 
-Report the actual command output. Do not report completion until all verification commands pass.
+Report the actual command output (command + exit code + last 20-30 lines). Do not report completion until all verification commands pass THIS TURN. "Should pass" is not evidence — the Iron Law is no completion claims without fresh verification evidence.
 ```
 
 Omitting any section is a protocol violation.

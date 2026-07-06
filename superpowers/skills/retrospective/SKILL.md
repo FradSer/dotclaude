@@ -3,7 +3,7 @@ name: retrospective
 description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective". For autonomous multi-turn runs, invoke wrapped in `/goal`.
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
-allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
+allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
 # Retrospective
@@ -38,61 +38,17 @@ Claude Code injected the `MEMORY.md` index at session start, so its one-line hoo
 - **Harness-design principles** — e.g. simplify-don't-add stance.
 - **Working-style feedback** — e.g. "auto-produce, never pause", "L2 must carry CRITICAL".
 
-Carry these forward as priors into Phase 1 step 5 (calibration history), Phase 3 (REMOVE-is-load-bearing suppression of weakly-justified ADDs), and Phase 4 (self-reject a proposal that contradicts a recalled prior, citing the memory entry). If no calibration-relevant hook exists, log `Pre-Check B: no calibration-relevant memory` and proceed. Never resolve a memory path, never read a topic file, never block, never ask, never read "to make sure" — the index hooks carry the signal on their own.
+Carry these forward as priors into Phase 1 step 5 (calibration history), Phase 3 (REMOVE-is-load-bearing suppression of weakly-justified ADDs), and Phase 4 (self-reject a proposal that contradicts a recalled prior, citing the memory entry). If no calibration-relevant hook exists, log `Pre-Check B: no calibration-relevant memory` and proceed. Never resolve a memory path, never read a topic file, never block, never ask, never read "to make sure" — the index hooks carry the signal on their own. When a recalled hook is cited as supporting evidence for an approved Phase 3 proposal and proves project-specific and durable (not a cross-project harness-design stance), the Phase 4 step 3.5 draft additionally records the promotion in its `## Why` section as `Promoted from private assistant memory hook: <hook-name>, <date>` — cross-project stances (e.g. the simplify-don't-add harness-design principle) are explicitly NOT promoted, and the private hook itself is never deleted or modified.
 
 ## Phase 0: Bootstrap (run only when no checklists exist)
 
-Before Phase 1, check whether `docs/retros/checklists/` contains `{mode}-v1.md` for each mode (design / plan / code).
+Before Phase 1, check whether `docs/retros/checklists/` contains `{mode}-v1.md` for each mode (design / plan / code). If all three modes already have a v1 file, log `Phase 0: all checklists present, skipping seed` and proceed to Phase 1. Phase 0 runs per-mode independently — only modes missing a v{N} file are seeded, do not skip the whole phase because one mode already has a checklist.
 
-If all three modes already have a v1 file, log `Phase 0: all checklists present, skipping seed` and proceed to Phase 1.
-
-Phase 0 runs per-mode independently — only modes missing a v{N} file are seeded. Do not skip the entire phase because one mode already has a checklist.
-
-### Path A — Completed plans or evaluation reports exist
-
-Seed the generic template and proceed to Phase 1:
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" <mode> docs/retros/checklists/<mode>-v1.md
-```
-
-Log `Seeded initial checklist: {mode}-v1.md`. Skip the Full History Analysis below — Phase 1 has real evaluation data to work with.
-
-### Path B — Cold start (no completed plans, no evaluation reports)
-
-When `docs/retros/plans-completed.jsonl` is absent or empty AND no `evaluation-round-*.md` files exist anywhere under `docs/plans/`, the retrospective has no evaluation data. Instead of producing a zero-signal run, perform a **Full History Bootstrap**: analyze the project's entire git history to extract project-specific failure patterns and augment the generic template with tailored checklist items.
-
-**Step 1 — Seed the generic template** (same command as Path A):
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh" <mode> docs/retros/checklists/<mode>-v1.md
-```
-
-**Step 2 — Git history gate**: count commits via `git rev-list --count HEAD`. If < 50, log `Phase 0: insufficient git history ({N} commits, need 50+) for bootstrap analysis`, skip Step 3, and proceed to Phase 1 with the generic template only.
-
-**Step 3 — Full History Analysis** (see `./references/analysis-patterns.md` §Bootstrap Analysis for the detailed methodology):
-
-1. `git log --oneline --all` — collect all commits
-2. Classify each commit by conventional-commit prefix into **feedback** (`fix:`, `refactor:`, `style:`, `perf:`) or **evolution** (`feat:`, `docs:`, `chore:`, `build:`, `ci:`, `test:`)
-3. Group feedback commits by scope+type combination, rank by frequency
-4. For the top clusters, `git show <sha>` the diffs and extract recurring failure patterns
-5. Classify each pattern into a mode layer:
-   - **code**: dead code, lint violations, i18n gaps, duplicate definitions, stub implementations
-   - **design**: stale references, missing BDD scenarios, references to deleted features
-   - **plan**: oversized tasks, missing cleanup tasks, batch ordering violations
-6. Generate one checklist item per failure pattern using the `evolution-protocol.md` New Item Template format (ID + description + check method + evidence format + rework format)
-
-**Step 4 — Append project-specific items**: for each mode that received items, insert a new `## Project-Specific Items (Bootstrap Analysis)` section into the seeded `{mode}-v1.md` immediately before the existing `## Evaluation Protocol` section. Each item gets a unique ID following `{MODE}-{CATEGORY}-{NN}` naming (e.g., `CODE-I18N-01`, `DESIGN-STALE-01`, `PLAN-SCOPE-01`).
-
-**Step 5 — Report**: log the analysis statistics (total commits, feedback/evolution split, top clusters, items generated per mode) in the retrospective report.
-
-**Exit code handling**: the seed script refuses to clobber an existing checklist (exit code 3) — treat that as "already seeded, proceed". Real failures (exit 1 = unknown mode, exit 2 = usage error) abort the phase. To genuinely reset an existing checklist (e.g., after a major harness change), append `--force` after the output path.
-
-The canonical v1 template content lives in `lib/seed-checklists.sh`. To inspect or modify the seed bodies, edit that script — do NOT re-inline templates here.
+See `./references/bootstrap.md` for the full procedure: Path A (completed plans/evaluation reports exist — seed the generic template and proceed) vs. Path B (cold start — a Full History Bootstrap that mines git history for project-specific checklist items), plus exit-code handling and the `--force` reset flag.
 
 ## Phase 1: Data Collection
 
-1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`.
+1. **Resolve inputs**: Parse `$ARGUMENTS` for plan paths. If `--across-all`, scan `docs/plans/` for all `*-plan/` directories with evaluation reports. If no argument is given, read `docs/retros/plans-completed.jsonl` and auto-scope to plans completed after the most recent `retrospective_run` event in `docs/retros/evolution-log.jsonl`. Consult the docs index to complement the completed-plans log: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind plan --status implemented` scopes plans whose index row says they shipped; also `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --status expired` to surface prior expirations as calibration input (an expired plan is one a previous retro invalidated — read its retro report before re-proposing anything that touches it). Also consult persistent memory: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active`; fold matches into the Phase 2 failure-frequency/plateau analysis as calibration input.
 2. **Resolve evals**: For each plan path, look for evaluation reports in the plan directory (`evaluation-round-*.md`, `evaluation-design-round-*.md`, `evaluation-plan-round-*.md`). If a sibling `*-evals/` directory exists, read from there instead.
 3. **Read checklists**: Scan `docs/retros/checklists/` for latest versions of each mode (`{mode}-v{N}.md`, highest N).
 4. **Read reports**: For each plan, read all evaluation report files. Extract per-item results (Item ID, Result, Evidence) and rework items.
@@ -127,6 +83,8 @@ Generate proposals from analysis results. See `./references/evolution-protocol.m
 
 **Counter monotonic growth (REMOVE is load-bearing)**: ADD is cheap to trigger (even a 1-plan post-plan-diff override) while REMOVE used to require 10+ reports/item — a volume real single-project usage never reaches, so checklists only ever grew. The 3+ reports/item REMOVE threshold above is deliberately reachable. Each run, actively scan for never-firing items and propose REMOVE; a checklist that only grows is a calibration failure, not success.
 
+**Memory-file consolidation (reuses the MODIFY threshold, 2+ instances)**: when Phase 2 analysis surfaces 2+ active `kind=memory` files covering the same underlying concept, propose a memory-consolidation MODIFY merging them into one surviving file — this reapplies the existing MODIFY threshold above, no new threshold. When applied in Phase 4, fold the absorbed file's content into the surviving file's body, then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <absorbed-path> "expired:superseded-by-consolidation:<survivor-path>"` — the shipped collapse rule then drops the row once its `expired` status is set; no new subcommand is introduced.
+
 Each proposal includes: type, target checklist, item ID, description, rationale with plan evidence.
 
 ## Phase 4: Auto-Apply Proposals
@@ -138,6 +96,7 @@ Apply steps:
 1. **Pre-edit snapshot**: Write current checklist content to the retrospective report under "Pre-Edit Snapshot" with rollback instructions
 2. **Create new version**: Write `{mode}-v{N+1}.md` with all applied changes. Version increments once per run (not per proposal). Original version preserved unchanged.
 3. **Log evolution** — **CRITICAL: a proposal is NOT "applied" until its evolution-log row exists.** Immediately after writing the new version file, append one row to `docs/retros/evolution-log.jsonl` per applied proposal via `lib/jsonl-emit.sh` with `<channel>=evolution-log` — emit per-proposal here, do NOT defer to the end of the run. The event arg is one of `item_added | item_removed | item_modified | item_promoted`. The full canonical bash invocation (every required field and `--arg` pair) lives in `./references/evolution-protocol.md` §"Canonical Emit Invocations" — substitute the event arg per applied proposal. These rows feed Phase 1 step 5's re-proposal guard; a dropped `item_removed` row silently re-adds the just-removed item next run. The Stop hook (`hooks/stop-state-sync.sh`) backfills `item_added`/`item_removed` from the checklist version diff only when *every* row for this version is missing (all-or-nothing) and carries no rationale — so the in-skill emit is authoritative and must run.
+3.5. **Draft memory files for applied ADD/MODIFY proposals**: for every ADD or MODIFY proposal actually applied this run (post-self-rejection), draft one `docs/memory/<category>_<slug>.md` file — `category: convention` for a generalized structural rule, `pitfall` for a recurring failure mode, `decision` for a rejected-vs-chosen call — using the proposal's own description and rationale as the file's `Fact`/`Why` content, with `source:` citing this run's retro report path. REMOVE and PROMOTE proposals, even if applied, do NOT trigger this step.
 4. **Verify the log** — **CRITICAL self-check, do NOT skip:** before leaving Phase 4, count evolution-log rows whose `checklist_version` equals the version(s) written this run and confirm the count equals `proposals_approved`. Emit any missing rows now. This is the guard against a *partial* drop the hook's all-or-nothing backfill will not catch.
 
 ## Phase 5: Harness Health (advisory)
@@ -166,11 +125,15 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
 3. Checklist versions updated (if any)
 4. Harness Health notes (5a post-plan corrections mined into ADD proposals; 5b informational recommendations)
 5. Summary: N proposals approved, M rejected, checklists updated to version X
+6. **Upsert retro report into the docs index**: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert retro <retro-report-path> --status active --summary "<one-line>"` (the one-line summary is the same string written into the report's summary line; this makes the retro discoverable from the index the next brainstorming/plan-writing pass consults).
+7. **CRITICAL — invalidate-after (do-not-defer, retrospective-only).** For each `invalidates: <path>` line in the just-written retro report, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <path> "expired:retro-<date>:<reason>"` (substitute the retro's date and a short reason). If `set-status` returns exit 3 (path not tracked in the index), log a warning and skip — do NOT upsert speculative entries just to mark them expired; expiry only applies to docs the index already tracks. **CRITICAL boundary — a Phase 3 REMOVE proposal on a checklist item does NOT invalidate a design.** REMOVE on a checklist item evolves the checklist, not the design folder; only an explicit `invalidates: <path>` line in the retro report triggers `set-status expired:` on a design or plan. Note: REMOVE does NOT invalidate — the checklist REMOVE and the design expiry are separate channels. Expiry is retrospective-only — the other three writer skills (brainstorming, writing-plans, executing-plans) may NOT set `expired:`; only this step 7 does.
+8. **Upsert drafted memory files**: for each memory file drafted in Phase 4 step 3.5, run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category <category>`.
 
 **Close the calibration loop** — **CRITICAL: do this before you stop, not after the report "feels done."** Append one `retrospective_run` row to `docs/retros/evolution-log.jsonl` via the canonical emit pattern in `./references/evolution-protocol.md` §"Canonical Emit Invocations", recording `proposals_approved` and `proposals_rejected`. This row is the closure marker the *next* run's auto-scope (Phase 1 step 1) reads to avoid re-analyzing these plans — skip it and the next retrospective silently re-analyzes already-analyzed plans, re-proposing the same changes. Do not skip it even when zero proposals were approved. The Stop hook (`hooks/stop-state-sync.sh`) backfills a minimal watermark from this run's `retro-*.md` report if you drop this, but only your emit carries `proposals_approved` / `proposals_rejected` / `plans_analyzed` — so write the rich row here.
 
 ## References
 
+- `./references/bootstrap.md` - Phase 0 full procedure: Path A/B, Full History Bootstrap analysis, exit codes
 - `./references/analysis-patterns.md` - Failure frequency, plateau detection, never-failing analysis
 - `./references/evolution-protocol.md` - Proposal types, thresholds, version management, evolution log schema, pre-edit snapshot
 - `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared)

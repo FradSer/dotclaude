@@ -9,3 +9,4 @@
 {"timestamp":"2026-06-08T03:01:00Z","event":"item_added","provenance":"hook_backfill","mode":"design","item_id":"N0-NFR-01","checklist_version":"design-v2.md","rationale":"backfilled from checklist version diff"}
 {"timestamp":"2026-06-08T03:01:00Z","event":"item_added","provenance":"hook_backfill","mode":"design","item_id":"PERF-01","checklist_version":"design-v2.md","rationale":"backfilled from checklist version diff"}
 {"timestamp":"2026-06-08T03:01:00Z","event":"item_added","provenance":"hook_backfill","mode":"design","item_id":"SCOPE-CREEP-01","checklist_version":"design-v2.md","rationale":"backfilled from checklist version diff"}
+{"event":"retrospective_run","timestamp":"2026-07-04T11:13:30Z","plans_analyzed":["docs/plans/2026-07-04-docs-index-plan/"],"report":"docs/retros/retro-2026-07-04-docs-index-plan.md","proposals_approved":0,"proposals_rejected":2}

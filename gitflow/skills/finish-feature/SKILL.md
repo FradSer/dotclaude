@@ -1,7 +1,7 @@
 ---
 name: finish-feature
 allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)", "Read", "Write"]
-description: Finalizes and merges a feature branch into develop using git-flow. This skill should be used when the user asks to "finish a feature", "merge feature branch", "complete feature", "git flow feature finish", or wants to finalize a feature branch.
+description: Finalizes and merges a feature branch into develop using git-flow, then prunes stale branches and worktrees. This skill should be used when the user asks to "finish a feature", "merge feature branch", "complete feature", "git flow feature finish", or wants to finalize a feature branch.
 model: haiku
 argument-hint: [feature-name]
 user-invocable: true
@@ -10,11 +10,11 @@ disable-model-invocation: true
 
 ## Workflow Execution
 
-**Launch a general-purpose agent** that executes all 4 phases in a single task.
+**Launch a general-purpose agent** that executes all 5 phases in a single task.
 
 **Prompt template**:
 ```
-Execute the finish-feature workflow (4 phases).
+Execute the finish-feature workflow (5 phases).
 
 CRITICAL:
 - Verify working tree is clean (`git status --porcelain` is empty) before finishing.
@@ -34,18 +34,25 @@ See `${CLAUDE_PLUGIN_ROOT}/references/invariants.md` for details.
 ## Phase 3: Update Changelog
 **Goal**: Document changes in CHANGELOG.md.
 1. Ensure changes are in `[Unreleased]` section per `${CLAUDE_PLUGIN_ROOT}/examples/changelog.md`
-2. Stage CHANGELOG.md: `git add CHANGELOG.md`
-3. Determine the Claude model name for co-author attribution
+2. Determine the Claude model name for co-author attribution
    - Derive it from your own runtime model identity (e.g. Claude Opus 4.8) so it never goes stale; do not hardcode a fixed version
-4. Commit with git-agent: `git-agent commit --no-stage --intent "update changelog for feature $FEATURE_NAME" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
-5. On auth error (401), retry with `--free`
-6. **Fallback** (git-agent unavailable): `git commit -m "chore: update changelog for feature $FEATURE_NAME"` with conventional format and `Co-Authored-By` footer
+3. Stage and commit in ONE chained command — a standalone `git add` is denied (see invariants.md §Committing): `git add CHANGELOG.md && git-agent commit --no-stage --intent "update changelog for feature $FEATURE_NAME" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
+4. On auth error (401), retry with `--free`
+5. **Fallback** (git-agent unavailable): invoke the `/git:commit` skill via the Skill tool; full ladder in invariants.md §Committing
 
 ## Phase 4: Finish Feature
 **Goal**: Complete feature using git-flow-next CLI.
 1. Run `git flow feature finish $FEATURE_NAME`
 2. Verify current branch: `git branch --show-current` (should be on develop)
 3. Push develop: `git push origin develop`
+
+## Phase 5: Cleanup
+**Goal**: Reclaim stale branches and worktrees after finish.
+Follow `${CLAUDE_PLUGIN_ROOT}/references/cleanup.md` in full. With `$BRANCH_PREFIX=feature` and `$NAME=$FEATURE_NAME`:
+1. `git fetch --prune`
+2. `git worktree prune` (then `git worktree list` to surface survivors)
+3. Confirm `feature/$FEATURE_NAME` is gone locally and on origin; delete explicitly if a ref survived
+4. Sweep other already-merged `feature/*`, `hotfix/*`, `release/*` branches (merged into `develop` or `main`)
 ```
 
 **Execute**: Launch a general-purpose agent using the prompt template above

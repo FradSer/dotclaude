@@ -1,13 +1,13 @@
 ---
 name: acpx
-description: Use acpx as a headless ACP CLI for agent-to-agent communication. Use when running coding agents through acpx, managing persistent ACP sessions, queueing prompts, overriding the Claude system prompt, consuming structured agent output from scripts, or composing multi-agent workflows with defineFlow/decision/decisionEdge.
+description: Use acpx as a headless ACP CLI for agent-to-agent communication, always inside an isolated SubAgent. Use when running coding agents through acpx, managing persistent ACP sessions, queueing prompts, consuming structured agent output from scripts, comparing the same prompt across multiple agents, or composing multi-agent workflows with defineFlow/decision/decisionEdge. Never invoke the claude adapter (nested-instance blacklist).
 ---
 
 # acpx
 
 ## When to use this skill
 
-Use this skill when you need to run coding agents through `acpx`, manage persistent ACP sessions, queue prompts, override the Claude system prompt, prune stale sessions, consume structured agent output from scripts, or compose multi-agent workflows declaratively with `acpx/flows`.
+Use this skill when you need to run coding agents through `acpx`, manage persistent ACP sessions, queue prompts, override the Claude system prompt, prune stale sessions, consume structured agent output from scripts, compare one prompt across multiple agents, or compose multi-agent workflows declaratively with `acpx/flows`.
 
 ## What acpx is
 
@@ -17,6 +17,7 @@ Core capabilities:
 
 - Persistent multi-turn sessions per repo/cwd
 - One-shot execution mode (`exec`)
+- Multi-agent comparison (`compare`)
 - Named parallel sessions (`-s/--session`)
 - Idempotent session creation (`sessions ensure`)
 - Session retention controls (`sessions prune` with age filters and history cleanup)
@@ -28,6 +29,7 @@ Core capabilities:
 - Agent reconnect/resume after dead subprocess detection
 - Prompt input via stdin or `--file`
 - Config files with global+project merge and `config show|init`
+- Session-scoped MCP servers from an external file (`--mcp-config`)
 - Session metadata/history inspection (`sessions show`, `sessions history`)
 - Local agent process checks via `status`
 - Stable ACP client methods for filesystem and terminal requests
@@ -47,6 +49,47 @@ npm i -g acpx
 
 For normal session reuse, prefer a global install over `npx`.
 
+## Operating protocol (when loaded inside Claude Code)
+
+CRITICAL: when this skill is loaded inside Claude Code, the following protocol governs every invocation. These rules override any upstream default or example in this document.
+
+### 1. Run inside a dedicated, clean SubAgent
+
+Every `acpx`-driven task MUST execute inside an isolated SubAgent launched for that task (e.g. via the Task/Agent tool), with its own fresh context. Do not run `acpx` work inline in the main conversation thread. Rationale: agent-to-agent calls are long, noisy, and token-heavy; isolating them keeps the parent context clean and lets the SubAgent return only the distilled result.
+
+### 2. Never call the `claude` adapter
+
+The `claude` built-in is blacklisted (see the registry rule below). Calling `acpx claude ...` spawns a nested Claude instance — forbidden. Route to a non-Claude agent instead.
+
+### 3. Execution sequence
+
+For each user request, follow this order inside the SubAgent:
+
+1. **Discover available agents first.** Probe which ACP adapters are actually installed on this machine before choosing one. Run:
+
+   ```bash
+   acpx --help                                  # lists built-in agent names
+   command -v codex gemini cursor copilot 2>/dev/null   # which CLIs are on PATH
+   ```
+
+   Pick the first installed non-Claude agent that fits the task (`codex` is the default; fall back through `gemini`, `qwen`, `cursor`, `copilot`, `droid`, `opencode`, ...). Do not assume an agent is installed — verify, then use it.
+
+2. **Dispatch the user's actual request** to the chosen agent (`prompt` for multi-turn, `exec` for one-shot, `compare` for cross-agent).
+
+3. **Do not duplicate upstream skill content.** Before invoking an agent for a task, check whether the upstream `acpx` skill/reference material already documents the capability needed (e.g. session lifecycle, flow authoring, output formats, permission policies in `references/`). If it does, defer to that knowledge and run the documented command — do not re-derive or re-explain it. Only synthesize new steps when the request is not already covered upstream.
+
+The SubAgent returns a short summary of what ran, which agent it used, and the distilled result — not the raw ACP stream.
+
+### 4. Reflect on every result with a fresh blank SubAgent before acting
+
+CRITICAL: never accept an `acpx` SubAgent's result as final. Whatever the acpx SubAgent returns — a review, an evaluation, a diff, a recommendation, or a "done" — is a *proposal* from an outside agent, not a verdict. Before acting on it, spawn a SECOND, independent, blank SubAgent and have it reflect on that result; only after the reflection returns do you decide the next step.
+
+- The reflection SubAgent MUST be a brand-new agent (a fresh Task/Agent invocation) with no context of the acpx run, the original prompt, or the implementation. It is NOT the SubAgent that ran acpx, and it is NOT the main thread. Reusing the acpx SubAgent or judging inline destroys the independence that makes the reflection worth anything — producer and judge must be different agents.
+- Give the reflection SubAgent only the artifact under review (the acpx output plus the relevant files/diff), not the reasoning that produced it. It must reach its own conclusion.
+- The reflection drives the branch: **accept**, **rework** (re-dispatch to acpx with corrections), or **escalate** to the user. Example: after `acpx ... review`, the blank SubAgent critiques the review itself — which findings are real, which are noise, what it missed — and that critique, not the raw review, decides what you do next.
+
+This is the same GAN-evaluator / independent-audit pattern used elsewhere in this project: the agent that produces a result is never the agent that judges it.
+
 ## Command model
 
 `prompt` is the default verb.
@@ -55,6 +98,8 @@ For normal session reuse, prefer a global install over `npx`.
 acpx [global_options] [prompt_text...]
 acpx [global_options] prompt [prompt_options] [prompt_text...]
 acpx [global_options] exec [prompt_options] [prompt_text...]
+acpx [global_options] compare <agent>... '<prompt_text>'
+acpx [global_options] compare <agent>... --file <path>
 acpx [global_options] cancel [-s <name>]
 acpx [global_options] set-mode <mode> [-s <name>]
 acpx [global_options] set <key> <value> [-s <name>]
@@ -83,6 +128,7 @@ Friendly agent names resolve to commands:
 - `kilocode` -> `npx -y @kilocode/cli acp`
 - `kimi` -> `kimi acp`
 - `kiro` -> `kiro-cli-chat acp`
+- `mux` -> `npx -y mux@^0.27.0 acp`
 - `opencode` -> `npx -y opencode-ai acp`
 - `qoder` -> `qodercli --acp`
 - `qwen` -> `qwen --acp`
@@ -90,10 +136,12 @@ Friendly agent names resolve to commands:
 
 Rules:
 
-- Default agent is `codex` for top-level `prompt`, `exec`, and `sessions`.
+- Default agent is `codex` for top-level `prompt`, `exec`, `compare`, and `sessions`.
+- `factory-droid` and `factorydroid` also resolve to the built-in `droid` adapter.
 - Unknown positional agent tokens are treated as raw agent commands.
 - `--agent <command>` explicitly sets a raw ACP adapter command.
 - Do not combine a positional agent and `--agent` in the same command.
+- CRITICAL: never invoke the `claude` adapter. This skill runs inside Claude Code, so `acpx claude` would spawn a nested Claude instance — redundant, slower, and it adds no model diversity. Prefer `codex` (default), `gemini`, `qwen`, or another non-Claude agent. Only call `claude` if the user explicitly requests a second Claude instance by name.
 
 ## Key commands
 
@@ -120,6 +168,24 @@ acpx codex exec 'summarize this repo'
 ```
 
 Runs a single prompt in a temporary ACP session. Does not reuse or save persistent session state.
+
+### Compare (multi-agent, one-shot)
+
+```bash
+acpx compare codex gemini qwen 'summarize this repo in 3 lines'
+acpx compare codex gemini --file ./prompt.md
+acpx compare codex gemini -- '--looks-like-a-flag'
+```
+
+Runs the same prompt across multiple agents, each in a temporary `exec`-style session. Honors the same global execution controls as `exec` (`--cwd`, `--timeout`, permission flags, `--policy`, auth, terminal advertising, retries, model/system options, `--format`).
+
+- Use `--` after the agent list when prompt words might be parsed as flags (see the third example).
+
+- `--format text` prints one summary-table row per agent (timing, token usage, stop reason, permissions, final output)
+- `--format json` or command-local `--json` prints a `CompareRow[]` summary payload
+- `--format quiet` prints `<agent>\t<status>` per row
+- `CompareRow.status` is `ok`, `cancelled`, `permission_denied`, or `error`
+- Agents run serially in the requested workspace; no saved sessions or separate transcript directories are created
 
 ### Cancel / Mode / Config / Model
 
@@ -157,6 +223,7 @@ Prefix any command with an agent name: `acpx codex sessions ensure --name backen
 
 - `--agent <command>`: raw ACP agent command (escape hatch)
 - `--cwd <dir>`: working directory for session scope (default: current directory)
+- `--mcp-config <path>`: load `mcpServers` from an external JSON file for the invocation, replacing project/global MCP config. Relative paths resolve from `--cwd`. A live persistent session rejects MCP config changes until it is closed.
 - `--approve-all`: auto-approve all permission requests
 - `--approve-reads`: auto-approve reads/searches, prompt for writes (default mode)
 - `--deny-all`: deny all permission requests
@@ -178,7 +245,9 @@ Prefix any command with an agent name: `acpx codex sessions ensure --name backen
 
 Permission flags are mutually exclusive.
 
-## System prompt override (Claude)
+## System prompt override (Claude-specific mechanism)
+
+Note: per the agent-registry rule above, the `claude` adapter is blocked from normal use. The override mechanism itself is only honored by the Claude adapter, so the examples below show the Claude form for reference. Only use them when the user explicitly asks for a nested Claude instance.
 
 ```bash
 # Replace the system prompt for a named session, persisted across reuse
@@ -197,11 +266,17 @@ Config files are merged in this order (later wins):
 - global: `~/.acpx/config.json`
 - project: `<cwd>/.acpxrc.json`
 
-Supported keys: `defaultAgent`, `defaultPermissions`, `nonInteractivePermissions`, `ttl`, `timeout`, `format`, `agents` map, `auth` map.
+Supported keys: `defaultAgent`, `defaultPermissions`, `nonInteractivePermissions`, `authPolicy`, `ttl`, `timeout`, `format`, `agents` map, `auth` map.
 
 Use `acpx config show` to inspect the resolved config and `acpx config init` to create the global template.
 
-For ACP `authenticate` handshakes, use either config `auth` entries or explicit `ACPX_AUTH_<METHOD_ID>` environment variables such as `ACPX_AUTH_OPENAI_API_KEY`.
+For ACP `authenticate` handshakes, use either config `auth` entries or explicit `ACPX_AUTH_<METHOD_ID>` environment variables such as `ACPX_AUTH_OPENAI_API_KEY`. Ambient provider env vars like `OPENAI_API_KEY` pass through to child agents but do not trigger ACP auth-method selection on their own.
+
+## Environment variables
+
+- `ACPX_CLAUDE_INCLUDE_USER_SETTINGS=1`: opt in to loading Claude Code user settings for built-in `claude` sessions. By default only project/local settings load, so globally enabled channel or daemon plugins cannot interfere with spawned ACP sessions.
+- `ACPX_AUTH_<METHOD_ID>`: explicit credential for an ACP `authenticate` method.
+- Session storage path is derived from the OS home directory (`~/.acpx/sessions`); child processes inherit the current environment by default.
 
 ## Session behavior
 
@@ -250,86 +325,11 @@ acpx flow run ./my-flow.flow.ts --input-file ./flow-input.json
 acpx flow run ./my-flow.flow.ts --input-json '{"task":"FIX: add a regression test"}'
 acpx --approve-all flow run examples/flows/pr-triage/pr-triage.flow.ts \
   --input-json '{"repo":"openclaw/acpx","prNumber":150}'
-acpx flow run ./my-flow.flow.ts --default-agent claude
+acpx flow run ./my-flow.flow.ts --default-agent codex
 ```
 
 Run artifacts persist under `~/.acpx/flows/runs/<runId>/`. Default per-step timeout is 15 minutes when `--timeout` is unset.
 
 The authoring surface lives in `acpx/flows`. Node types: `acp` (model-driven step), `decision` (constrained-choice LLM step), `action` (runtime-supervised deterministic operation), `compute` (pure local data transform), `checkpoint` (pause point for human or external trigger).
 
-See `references/advanced.md` for the full authoring example, edge shapes, and detailed node type reference.
-
-## Practical workflows
-
-Persistent repo assistant:
-
-```bash
-acpx codex 'inspect failing tests and propose a fix plan'
-acpx codex 'apply the smallest safe fix and run tests'
-```
-
-Parallel named streams:
-
-```bash
-acpx codex -s backend 'fix API pagination bug'
-acpx codex -s docs 'draft changelog entry for release'
-```
-
-Specialized Claude reviewer that survives session reuse:
-
-```bash
-acpx --system-prompt "You are a reviewer who refuses to approve untested changes." claude -s reviewer
-acpx claude -s reviewer 'review the diff in src/auth/'
-```
-
-Idempotent session bootstrap (safe to call before every prompt in scripts):
-
-```bash
-acpx codex sessions ensure -s ci
-acpx codex -s ci 'run the smoke suite and report failures'
-```
-
-Queue follow-up without waiting:
-
-```bash
-acpx codex 'run full test suite and investigate failures'
-acpx codex --no-wait 'after tests, summarize root causes and next steps'
-```
-
-One-shot script step:
-
-```bash
-acpx --format quiet exec 'summarize repo purpose in 3 lines'
-```
-
-Machine-readable output for orchestration:
-
-```bash
-acpx --format json --json-strict codex 'review current branch changes' > events.ndjson
-```
-
-Raw custom adapter command:
-
-```bash
-acpx --agent './bin/custom-acp-server --profile ci' 'run validation checks'
-```
-
-Periodic cleanup:
-
-```bash
-acpx codex sessions prune --dry-run --older-than 14
-acpx codex sessions prune --older-than 30 --include-history
-```
-
-Multi-agent triage flow:
-
-```bash
-acpx --approve-all flow run ./pr-triage.flow.ts --input-json '{"prNumber": 842}'
-```
-
-Repo-scoped review with permissive mode:
-
-```bash
-acpx --cwd ~/repos/shop --approve-all codex -s pr-842 \
-  'review PR #842 for regressions and propose minimal patch'
-```
+See `references/advanced.md` for the full authoring example, edge shapes, and detailed node type reference, plus the full **Practical workflows** example set (persistent assistant, named streams, specialized reviewer, idempotent bootstrap, `--no-wait` follow-up, one-shot `exec`, cross-agent `compare`, `--mcp-config`, JSON orchestration, raw adapter, periodic cleanup, triage flow, repo-scoped review).

@@ -1,7 +1,7 @@
 {
   "name": "git",
   "displayName": "Git",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Conventional Git automation and advanced repository management",
   "author": {
     "name": "Frad LEE",

@@ -1,23 +1,33 @@
 scopes:
     - name: acpx
-      description: Agent communication, task delegation, and cross-agent research in acpx/ and antigravity/; does not cover general automation.
+      description: Agent communication, task delegation, and cross-agent research in acpx/; does not cover antigravity/.
+    - name: ag
+      description: Antigravity managed agent plugin and delegate workers in antigravity/; does not cover acpx/.
     - name: as
-      description: Autonomous ML experimentation, GAN-based research, and rolling workflows in autoresearch/; does not cover plugin development.
+      description: Autonomous ML experimentation, GAN workflows, and rolling research in autoresearch/; does not cover plugins.
     - name: cctx
-      description: Code context research, environment mapping, and repository analysis in code-context/; does not cover general documentation.
+      description: Code context research, environment mapping, and repository analysis in code-context/.
     - name: fe
-      description: Frontend framework tools, impeccable sync, and design system compliance in frontend/; does not cover design-only documentation.
+      description: Frontend framework tools, impeccable design system, and react patterns in frontend/.
     - name: git
-      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow lifecycles.
-    - name: gf
-      description: Gitflow branch management, feature/hotfix workflows, and releases in gitflow/; does not cover general git utilities.
-    - name: gh
-      description: GitHub PR monitoring, triage, and automated feedback loops in github/; does not cover local repository configuration.
-    - name: "off"
-      description: Lark suite integration, media generation, and office productivity tools in office/; does not cover coding or dev-tooling.
+      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow.
+    - name: gitflow
+      description: Gitflow branch management, releases, and feature/hotfix workflows in gitflow/.
+    - name: github
+      description: GitHub PR monitoring, triage, and feedback loops in github/.
+    - name: hw
+      description: KiCad CLI and EDA hardware tooling (use-kicad-cli skill) in hardware/.
+    - name: office
+      description: Lark suite integration and office productivity tools in office/; does not cover coding tools.
     - name: po
-      description: Plugin optimizer framework for validation, optimization, and plugin hooks in plugin-optimizer/; does not cover marketplace metadata.
+      description: Plugin optimizer framework for validation and metadata in plugin-optimizer/.
+    - name: refactor
+      description: Code simplification and refactoring agent and skills in refactor/.
     - name: sp
-      description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/; does not cover general office automation.
+      description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/.
     - name: storm
-      description: STORM two-stage article generation pipeline, persona research, and citation hygiene in storm/; does not cover general web search.
+      description: STORM article generation pipeline and researcher agents in storm/.
+    - name: swiftui
+      description: SwiftUI code review and modern API best practices in swiftui/.
+    - name: utils
+      description: Documentation, changelog, and project maintenance utilities in utils/.

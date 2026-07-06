@@ -1,8 +1,8 @@
 {
   "name": "code-context",
   "displayName": "Code Context",
-  "version": "0.2.2",
-  "description": "5 methods to retrieve code context: DeepWiki, Context7, Exa, git clone, and web search+fetch",
+  "version": "0.3.0",
+  "description": "Retrieve code context for any repo, library, or natural-language query via DeepWiki, Context7, Exa, git clone, and web search+fetch",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"

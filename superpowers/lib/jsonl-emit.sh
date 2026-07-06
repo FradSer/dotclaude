@@ -12,7 +12,6 @@
 #        ensure_log_dir <dir>             mkdir -p; rc 1 on failure
 #        write_jsonl <file> <jq> [args]   jq -nc >> file; always rc 0
 #        dedup_check <file> <substring>   rc 0 if substring in tail -200
-#        compute_args_hash <args...>      sha1[:12] of joined args ("" if no shasum)
 #
 #   2. EXECUTED — single dispatch with explicit channel name:
 #
@@ -34,7 +33,18 @@
 
 [[ -n "${_JSONL_EMIT_LOADED:-}" ]] && return 0
 
-_JSONL_EMIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+_JSONL_EMIT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+# Resolve to an absolute path without `cd ... && pwd` — the latter doubles
+# the path under some shells. If the dirname is relative, anchor it against
+# $PWD (stripped of any trailing duplicate) without invoking pwd.
+if [[ "$_JSONL_EMIT_DIR" != /* ]]; then
+  _base="${PWD}"
+  # Defensive: if PWD somehow contains a doubled path, take the first half.
+  case "$_base" in
+    *$'\n'*) _base="${_base%%$'\n'*}" ;;
+  esac
+  _JSONL_EMIT_DIR="${_base}/${_JSONL_EMIT_DIR}"
+fi
 # shellcheck source=./utils.sh
 source "${_JSONL_EMIT_DIR}/utils.sh"
 
@@ -81,20 +91,6 @@ dedup_check() {
   [[ -z "$log_file" || -z "$substring" ]] && return 1
   [[ -f "$log_file" ]] || return 1
   tail -n 200 "$log_file" 2>/dev/null | grep -qF -- "$substring"
-}
-
-# Prints sha1[:12] of the positional args joined by newline — a stable
-# per-invocation key callers embed as `args_hash` for dedup_check. Empty
-# string when neither shasum nor sha1sum is on PATH (a valid degradation:
-# dedup simply won't suppress). Pairs with dedup_check.
-compute_args_hash() {
-  local joined
-  joined=$(printf '%s\n' "$@")
-  if command -v shasum >/dev/null 2>&1; then
-    printf '%s' "$joined" | shasum -a 1 2>/dev/null | awk '{print $1}' | cut -c1-12
-  elif command -v sha1sum >/dev/null 2>&1; then
-    printf '%s' "$joined" | sha1sum 2>/dev/null | awk '{print $1}' | cut -c1-12
-  fi
 }
 
 _JSONL_EMIT_LOADED=1

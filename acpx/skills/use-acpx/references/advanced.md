@@ -432,9 +432,97 @@ If a `decisionEdge` omits a case from `choices`, the TypeScript compiler refuses
 
 ### Why use flows
 
-- **Cross-vendor by construction**: classify with `codex`, write code with `claude`, summarize with `gemini` — same flow file, no glue.
+- **Cross-vendor by construction**: classify with `codex`, write code with `opencode`, summarize with `gemini` — same flow file, no glue.
 - **Persistence and replay**: every run streams events to disk, replayable via the flow viewer under `~/.acpx/flows/runs/`.
 - **Permission preflight**: flows declaring permission requirements fail before any agent starts, instead of mid-run.
 - **Typed routing**: the LLM is constrained to a literal union, the compiler verifies exhaustivity, the runtime validates the reply.
 
 See `examples/flows/` in the repo for working samples (`branch.flow.ts`, `pr-triage/`, `two-turn.flow.ts`, `shell.flow.ts`, `workdir.flow.ts`).
+
+## Practical workflows
+
+Persistent repo assistant:
+
+```bash
+acpx codex 'inspect failing tests and propose a fix plan'
+acpx codex 'apply the smallest safe fix and run tests'
+```
+
+Parallel named streams:
+
+```bash
+acpx codex -s backend 'fix API pagination bug'
+acpx codex -s docs 'draft changelog entry for release'
+```
+
+Specialized codex reviewer that survives session reuse:
+
+```bash
+acpx --system-prompt "You are a reviewer who refuses to approve untested changes." codex -s reviewer
+acpx codex -s reviewer 'review the diff in src/auth/'
+```
+
+Idempotent session bootstrap (safe to call before every prompt in scripts):
+
+```bash
+acpx codex sessions ensure -s ci
+acpx codex -s ci 'run the smoke suite and report failures'
+```
+
+Queue follow-up without waiting:
+
+```bash
+acpx codex 'run full test suite and investigate failures'
+acpx codex --no-wait 'after tests, summarize root causes and next steps'
+```
+
+One-shot script step:
+
+```bash
+acpx --format quiet exec 'summarize repo purpose in 3 lines'
+```
+
+Compare one prompt across agents:
+
+```bash
+acpx --format json compare codex gemini qwen 'propose a fix for the flaky test' \
+  > compare.json
+```
+
+Session-scoped MCP config without writing a project file:
+
+```bash
+acpx --mcp-config ./tools.json codex exec 'use the configured MCP servers to inspect the schema'
+```
+
+Machine-readable output for orchestration:
+
+```bash
+acpx --format json --json-strict codex 'review current branch changes' > events.ndjson
+```
+
+Raw custom adapter command:
+
+```bash
+acpx --agent './bin/custom-acp-server --profile ci' 'run validation checks'
+```
+
+Periodic cleanup:
+
+```bash
+acpx codex sessions prune --dry-run --older-than 14
+acpx codex sessions prune --older-than 30 --include-history
+```
+
+Multi-agent triage flow:
+
+```bash
+acpx --approve-all flow run ./pr-triage.flow.ts --input-json '{"prNumber": 842}'
+```
+
+Repo-scoped review with permissive mode:
+
+```bash
+acpx --cwd ~/repos/shop --approve-all codex -s pr-842 \
+  'review PR #842 for regressions and propose minimal patch'
+```

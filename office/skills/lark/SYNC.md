@@ -1,9 +1,9 @@
 # Lark CLI Skills Sync
 
 **Upstream**: [larksuite/cli](https://github.com/larksuite/cli) `skills/` (main branch)
-**Last sync**: 2026-06-17
-**lark-cli version**: 1.0.55
-**Synced commit**: 4a4c334
+**Last sync**: 2026-06-30
+**lark-cli version**: 1.0.59
+**Synced commit**: 22108c3
 
 ## Sync Strategy
 

@@ -39,6 +39,35 @@ changes** since the previous version tag.
 
 See `changelog-generation.md` for complete mapping rules.
 
+## Committing
+
+All plugin commits go through git-agent. When specific files must be staged
+(CHANGELOG.md, version files), stage and commit in ONE chained command:
+
+```bash
+git add <files> && git-agent commit --no-stage --intent "<intent>" --co-author "<co-author>"
+```
+
+The git plugin's PreToolUse hook denies any raw `git commit` and a standalone
+`git add`; only the chained `git add ... && git-agent commit` form passes.
+
+Fallback ladder when git-agent is unavailable: invoke the `/git:commit` skill
+via the Skill tool; when the git plugin is not installed either, a manual
+`git commit` with conventional format and a `Co-Authored-By` footer.
+
+## Cleanup
+
+After every `finish` operation, run the cleanup procedure in
+`cleanup.md`:
+
+- Prune stale remote-tracking branches (`git fetch --prune`)
+- Prune stale worktrees (`git worktree prune`)
+- Confirm the just-finished branch is gone locally and on origin
+- Sweep other already-merged `feature/*`, `hotfix/*`, `release/*` branches
+
+Never delete `main`, `develop`, `master`, `production`, or the current
+branch. Prefer `git branch -d` over `-D` for the merged-branch sweep.
+
 ## External References
 
 - [git-flow-next Documentation](https://git-flow.sh/docs/)

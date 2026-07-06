@@ -3,7 +3,7 @@ name: executing-plans
 description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
 argument-hint: [plan-folder-path]
 user-invocable: true
-allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)"]
+allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
 # Executing Plans
@@ -48,7 +48,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
 
 ## Initialization (first turn only)
 
-1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section.
+1. **Plan Check**: Verify the folder contains `_index.md` with "Execution Plan" section. Consult the docs index before spawning any batch: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" show <plan-path>`. If the row's status is `expired:`, REFUSE — the plan has been invalidated by a retro and is no longer authoritative; tell the user which retro invalidated it and stop. If the status is `implemented:<old-sha>` (rework after ship), run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "wip"` BEFORE spawning batch 1 so the index reflects that the plan is being worked again. Then consult memory: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active` and Read the top topically-relevant matches before Phase 1 "Plan Review."
 2. **Context**: Read `_index.md` completely. This is the source of truth for your execution.
 
 ## Background Knowledge
@@ -56,6 +56,8 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
 **Core Principles**: Review before execution, batch verification, explicit blockers, evidence-driven approach.
 
 **MANDATORY SKILL**: `superpowers:behavior-driven-development` must be loaded regardless of execution mode.
+
+> **CRITICAL — two internal gate skills are load-bearing, not optional.** Every implementer sub-agent prompt MUST instruct loading `superpowers:verification-before-completion` before reporting any task done (no completion claims without fresh verification evidence pasted in the return), and the batch coordinator MUST load `superpowers:receiving-code-review` before acting on an evaluator REWORK verdict (verify each rework item against the codebase; no blind implementation). Omitting either from a coordinator prompt is a protocol violation. Details: `./references/batch-execution-playbook.md` (Agent Prompt Template + Rework Loop).
 
 ## Definition of Done
 
@@ -75,6 +77,10 @@ See `./references/phase-2-task-creation.md`.
 
 See `./references/phase-3-orchestration.md` and `./references/batch-execution-playbook.md`.
 
+> **CRITICAL — declare a model on every sub-agent dispatch.** When you spawn a batch coordinator or any reviewer via the Agent tool, always pass an explicit `model` (`sonnet` for ordinary implementation/verification, `opus` only for hard reasoning or final whole-branch review, `haiku` for mechanical sweeps). An unspecified `model` silently inherits the session's most expensive tier — left to choose, dispatches drift to top-tier and burn the budget. Pick the cheapest tier the work allows; never let it default.
+
+> **CRITICAL — the native `Workflow` tool is opt-in only.** Never call `Workflow` unless the user has explicitly opted into multi-agent orchestration (said "use a workflow" / equivalent, or ultracode is on). A run under `/goal` must NOT silently fan out background agents. Without opt-in, use the default bounded Agent-tool spawn rounds and surface the option in one line. Opt-in rules and task mapping: `../../skills/references/workflow-orchestration.md`.
+
 ## Phase 4: Verification & Feedback
 
 See `./references/phase-4-verification.md`.
@@ -86,7 +92,11 @@ Commit the implementation changes using git-agent (with git fallback).
 **Actions**:
 1. Run: `git-agent commit --intent "<feature description>" --co-author "Claude <Model> <Version> <noreply@anthropic.com>"`
 2. On auth error, retry with `--free` flag
-3. **Fallback**: If git-agent is unavailable or fails, stage files with `git add` and use `git commit` with conventional format
+3. **Fallback**: If git-agent is unavailable or fails, invoke the `/git:commit` skill via the Skill tool; full ladder in `../../skills/references/git-commit.md`
+
+**CRITICAL — flip the plan's docs-index row post-commit (do-not-defer).** After the implementation commit lands, flip the plan's index row to `implemented`: `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" set-status <plan-path> "implemented:$(git rev-parse --short HEAD)"`. Then commit the index update as its own tiny commit: `git-agent commit --no-stage --intent "mark <plan> implemented in docs index"`. NEVER use `--amend` — it would rewrite history and confuse the Stop hook's `completion_commit` detection (the hook keys off the tip commit on the plan's modified-files set; an amended tip silently repoints it).
+
+**CRITICAL — conditional memory-write step, folded into the same follow-up commit above (do-not-defer).** Gated on the existing intra-plan-learning variety-gap signal (`references/intra-plan-learning.md:54` — all checklist items PASS for a batch but the batch required 2+ rework rounds before reaching PASS). If any batch this run hit that signal, also write `docs/memory/pitfall_<slug>.md` capturing the recurring rework cause, then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category pitfall`, staged into the same dedicated follow-up commit created above — do not create a separate commit for it. This variety-gap trigger is explicitly distinct from the separate hard-abort cap at batch-execution-playbook.md:165 (max 2 rework rounds before escalation), which is NOT a memory-write trigger — that cap governs the rework loop's hard stop, not memory capture. If no batch hit the variety-gap signal, this step is a no-op.
 
 See `../../skills/references/git-commit.md` for patterns, templates, and requirements. Commit only after all tasks are completed; use a meaningful feature scope.
 
@@ -113,8 +123,11 @@ All tasks executed and verified, evidence captured, no blockers, final verificat
 - `./references/phase-4-verification.md` - Evidence, handoff, and intra-plan learning
 - `../../skills/references/git-commit.md` - Git commit patterns and requirements (shared cross-skill resource)
 - `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared cross-skill resource)
+- `../../skills/references/workflow-orchestration.md` - native `Workflow` escalation for large parallel batches (opt-in rules + task mapping)
 - `./references/evaluation-file-formats.md` - Evaluation file format definitions (sprint contract, evaluation report, handoff summary)
 - `./references/sprint-contract-template.md` - Sprint contract template and negotiation protocol
 - `./references/handoff-template.md` - Handoff summary template for long plans
 - `./references/intra-plan-learning.md` - Pattern scan, batch handoff, and checklist evolution formats
 - `./scripts/batch-progress.sh` - Filesystem-derived batch progress orientation (run as Step 1 of every iteration)
+- `../../lib/task-brief.sh` - Extract one task's text to a file the implementer reads from disk (diff/task-text-as-files)
+- `../../lib/review-package.sh` - Generate a net-diff review package file the evaluator reads from disk
