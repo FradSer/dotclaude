@@ -5,6 +5,7 @@
 
 | path | kind | status | summary | updated |
 |---|---|---|---|---|
+| docs/memory/pitfall_review-package-cd-pwd-corruption.md | memory | active | review-package.sh cd+pwd substitution corrupts PLAN_DIR resolution | 2026-07-06 |
 | docs/plans/2026-04-01-harness-optimizations-plan/ | plan | implemented:cd29fd7 |  | 2026-07-04 |
 | docs/plans/2026-04-03-eval-harness-design/ | design | implemented:d73e2f6 |  | 2026-07-04 |
 | docs/plans/2026-04-04-eval-harness-plan/ | plan | implemented:d73e2f6 |  | 2026-07-04 |
