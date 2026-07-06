@@ -1,6 +1,6 @@
 # Docs Index
 
-> Auto-maintained by `lib/docs-index.sh`. One row per design/plan/retro folder.
+> Auto-maintained by `lib/docs-index.sh`. One row per design/plan/retro folder, or memory fact file.
 > Last rebuild: 2026-07-04
 
 | path | kind | status | summary | updated |
@@ -15,7 +15,7 @@
 | docs/plans/2026-07-04-docs-index-design/ | design | active |  | 2026-07-04 |
 | docs/plans/2026-07-04-docs-index-plan/ | plan | implemented:e4bbd2b |  | 2026-07-04 |
 | docs/plans/2026-07-04-superpowers-memory-layer-design/ | design | active | kind=memory extends docs-index into a distilled-fact memory layer for a… | 2026-07-04 |
-| docs/plans/2026-07-04-superpowers-memory-layer-plan/ | plan | active | 20-task plan: kind=memory in docs-index + 5-skill touchpoints (write-ga… | 2026-07-05 |
+| docs/plans/2026-07-04-superpowers-memory-layer-plan/ | plan | implemented:57d3738 | 20-task plan: kind=memory in docs-index + 5-skill touchpoints (write-ga… | 2026-07-06 |
 | docs/retros/retro-2026-06-02-unified-retro-events.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-06-08-calibration-no-new-data.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-07-04-docs-index-plan.md | retro | active |  | 2026-07-04 |
