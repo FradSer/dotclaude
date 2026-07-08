@@ -63,7 +63,7 @@
     {
       "name": "office",
       "displayName": "Office",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
       "author": {
         "name": "Frad LEE",
@@ -77,7 +77,7 @@
     {
       "name": "refactor",
       "displayName": "Refactor",
-      "version": "1.5.5",
+      "version": "1.5.6",
       "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
@@ -103,7 +103,7 @@
     {
       "name": "plugin-optimizer",
       "displayName": "Plugin Optimizer",
-      "version": "0.13.0",
+      "version": "0.13.1",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
@@ -116,7 +116,7 @@
     {
       "name": "frontend",
       "displayName": "Frontend",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills",
       "author": {
         "name": "Frad LEE",

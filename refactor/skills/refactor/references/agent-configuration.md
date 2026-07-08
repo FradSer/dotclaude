@@ -180,7 +180,7 @@ Opus provides superior:
 ### Allowed Tools
 
 ```yaml
-allowed-tools:
+tools:
   - Read       # Read target files
   - Edit       # Apply refactoring changes
   - Glob       # Discover related files

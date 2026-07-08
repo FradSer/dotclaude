@@ -42,7 +42,7 @@ model: opus
 color: blue
 skills:
   - refactor:best-practices
-allowed-tools: ["Read", "Edit", "Glob", "Grep", "Bash(git:*)", "Skill"]
+tools: ["Read", "Edit", "Glob", "Grep", "Bash(git:*)", "Skill"]
 ---
 
 You are an expert code simplification specialist focused on clarity, consistency, and maintainability while preserving behavior.

@@ -28,6 +28,8 @@ Execute automated refactoring for $ARGUMENTS using `refactor:code-simplifier` ag
 4. If no arguments: run `git diff --name-only` to find recently modified code files
 5. If no recent changes found: inform user and exit without refactoring
 
+CRITICAL: Never include `node_modules/`, `.git/`, `dist/`, `build/`, lock files, or compiled artifacts in refactoring scope — use Grep `--glob` exclusions to enforce.
+
 See `references/scope-determination.md` for search strategies and edge cases.
 
 ## Phase 2: Launch Refactoring Agent

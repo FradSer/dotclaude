@@ -31,7 +31,7 @@ Provide a comprehensive summary after refactoring completes. Use this exact stru
 
 ### Rollback Command
 
-git checkout -- <file1> <file2> ...
+git restore --worktree --staged <file1> <file2> ...
 ```
 
 ## Detailed Section Requirements
@@ -172,7 +172,7 @@ npm run test:integration     # Full integration suite
 If needed, revert all changes:
 
 \`\`\`bash
-git checkout -- src/auth/login.ts src/utils/validator.ts src/components/Button.tsx src/services/user.ts src/middleware/auth.ts
+git restore --worktree --staged src/auth/login.ts src/utils/validator.ts src/components/Button.tsx src/services/user.ts src/middleware/auth.ts
 \`\`\`
 ```
 

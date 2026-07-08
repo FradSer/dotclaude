@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.3.0
+**Version**: 3.7.0
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 **Runtime** (state-sync hook): `git` and `jq` on `PATH` — without them the single Stop hook exits silently and neither `docs/retros/plans-completed.jsonl` nor the evolution-log backfill is written
 
@@ -139,6 +139,14 @@ Reintroduced in v3.0.0. The keystone that makes the rest of the library actually
 ### Behavior-Driven Development
 
 Loaded when implementing features or bugfixes during execution. Enforces the Red-Green-Refactor cycle driven by BDD scenarios in Gherkin format (Given-When-Then).
+
+### Verification Before Completion
+
+Added in v3.5.0. The implementer-side pre-gate: no completion claims without fresh verification evidence run and read in the same turn. Loaded by every implementer sub-agent before reporting a task done; complements (does not replace) the independent superpowers-evaluator post-gate.
+
+### Receiving Code Review
+
+Added in v3.5.0. Constrains how evaluator REWORK verdicts are handled: verify each rework item against the codebase before implementing, push back with technical reasoning when a finding is wrong, never respond with performative agreement. Loaded by the batch coordinator before acting on any REWORK.
 
 (The `systematic-debugging` skill was promoted to user-invocable in 2.4.0 — see `/superpowers:systematic-debugging` above.)
 
