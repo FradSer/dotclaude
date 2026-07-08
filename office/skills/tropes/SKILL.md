@@ -87,7 +87,13 @@ After revision:
 
 ### 5. Preference Sync (Optional)
 
-After the detection run, offer to save preferences to either `~/.claude/office.local.json` (global) or `.claude/office.local.json` (project):
+After the detection run, offer to save preferences to one of the four files (default `~/.claude/office.local.json`):
+- `~/.claude/office.local.json` — global personal defaults
+- `~/.claude/office.json` — global shared baseline
+- `.claude/office.local.json` — project personal (gitignore this)
+- `.claude/office.json` — project shared (commit this for the team)
+
+When the user wants a rule shared with a team, suggest a `.json` (shared) file; for personal preferences, a `.local.json` file. Then:
 - Newly flagged words → `banned_words` / `banned_phrases` / `zh.banned_words` / `en.banned_words`
 - Repeated correction patterns → `preferred_terms`
 - New dead metaphors → `dead_metaphors.entries` (with `word`, `replacement`, `cap`)
