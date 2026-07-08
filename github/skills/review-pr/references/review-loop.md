@@ -29,9 +29,12 @@ Launch one Monitor with `persistent: true` (PR reviews arrive on no fixed schedu
 The command below emits:
 
 - `[ci] <name>: <bucket>` once per check reaching a terminal bucket (pass/fail/cancel/skipping)
-- `[comment] issue @<user>: <body>` for new issue-level comments
-- `[comment] inline @<user> <path>:<line>: <body>` for new inline review comments
-- `[comment] review @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
+- `[comment] issue node=<id> @<user>: <body>` for new issue-level comments
+- `[comment] inline node=<id> @<user> <path>:<line>: <body>` for new inline review comments
+- `[comment] review node=<id> @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
+
+Every `[comment]` line carries a `node=<id>` token (the comment's GitHub `node_id`) so the
+hide/resolve/closeout steps in Phase 3 — and the PR body rewrite in Phase 5 — can key on it.
 
 The script lives at `scripts/review-loop.sh` (executable, `#!/usr/bin/env bash`).
 Run it via the Monitor tool — it reads `PR`, `REPO`, and `INTERVAL` from env
@@ -159,6 +162,11 @@ Be terse. One line per comment, verdict first.
 2. Reply to each `reject` comment explaining why it was declined
 3. Send PushNotification for each `escalate` verdict with comment body + author + file context
 4. Commit and push all `fix` changes together in one round
+5. **Close out resolved comments** — for each comment that is now fully addressed (a `fix`
+   that you applied and pushed, OR a `reject` you replied to with a reason), hide it as
+   `OUTDATED` and resolve its thread. This keeps the PR review clean: only genuinely open
+   comments stay visible. See "Closing out resolved comments" below for the exact commands.
+   `escalate` comments stay open until the user decides.
 
 Apply the validated fixes, commit and push them via the `/git:commit-and-push` skill (Skill tool), then acknowledge each:
 
@@ -168,6 +176,46 @@ gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="Fixed in <co
 # Reply to rejected inline review comment
 gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="<rejection reason from triage agent>"
 ```
+
+### Closing out resolved comments
+
+When a comment is fully addressed (fixed-and-pushed, or rejected with a reply), hide and
+resolve it so the PR review only shows what is still open. Both use GraphQL via `gh api graphql`,
+keyed on the comment's `node_id` (GitHub's `node_id`, NOT the REST numeric id).
+
+**Minimize (hide) a comment** — works on issue-level AND inline review comments:
+
+```bash
+# $NODE_ID = the comment's node_id (from .node_id in the REST responses above)
+gh api graphql -f query="mutation { minimizeComment(input: {subjectId: \"$NODE_ID\", classifier: OUTDATED}) { minimizedComment { isMinimized } } }"
+```
+
+**Resolve an inline review comment's thread** — inline comments only; issue-level comments
+have no thread. Resolving requires the **thread node ID**, which is NOT the comment node_id.
+Resolve only the thread containing each *top-level* inline comment you addressed (skip reply
+comments — their thread is the parent's). Look up the thread IDs once per PR, then resolve:
+
+```bash
+# 1. Fetch every review thread with its node ID, line, path, and the first comment's
+#    GraphQL `id` — which equals the REST `node_id` you just triaged on, so you can match
+#    each thread to the comment node_ids from the [comment] batch.
+gh api graphql -f query='query($pr:Int!, $owner:String!, $name:String!) {
+  repository(owner:$owner, name:$name) {
+    pullRequest(number:$pr) {
+      reviewThreads(first:100) {
+        nodes { id isResolved line path comments(first:1) { nodes { id fullDatabaseId } } }
+      }
+    }
+  }
+}' -F owner="${REPO%/*}" -F name="${REPO#*/}" -F pr="$PR"
+# 2. For each thread whose first comment you fully addressed, resolve it:
+gh api graphql -f query="mutation { resolveReviewThread(input: {threadId: \"$THREAD_ID\"}) { thread { isResolved } } }"
+```
+
+Order per comment: for inline comments, reply first, then resolve the thread, then minimize
+the comment (minimize-after-resolve is fine; minimizing a comment does not resolve its thread).
+For issue-level comments, reply then minimize (no thread to resolve). Do NOT hide or resolve
+`escalate` comments — they stay open for the user.
 
 ### `[comment]` ambiguous — PushNotification and report
 
@@ -189,7 +237,8 @@ body + author + file context, and let the user decide. Do NOT reply to or guess 
 - Stop with **TaskStop** ONLY when ALL hold:
   1. Every `[ci]` check is terminal AND passing.
   2. Every review comment received so far has been reflected on (triaged, replied to,
-     or fixed) — none remain that still need to be adopted.
+     or fixed) AND every fully-resolved one is hidden + its thread resolved. The only
+     comments left visible on the PR are unresolved `escalate` items awaiting the user.
   3. The user signals they are done with live coverage, or the ~2-hour max wall-clock
      is reached (in which case surface the unsettled state to the user first).
 - If the user wants ongoing review coverage, leave it persistent and stop on their signal.

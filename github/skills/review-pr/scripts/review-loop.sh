@@ -77,16 +77,17 @@ while true; do
   fi
 
   # --- Issue-level comments (?since= is inclusive; dedup by node_id).
+  # node=<id> is carried on the emitted line so hide/resolve can key on it.
   while IFS=$'\t' read -r id line; do
     emit_comment "$id" "$line"
   done < <(gh api "repos/$REPO/issues/$PR/comments?since=$since" \
-      --jq '.[] | "\(.node_id)\t[comment] issue @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null)
+      --jq '.[] | "\(.node_id)\t[comment] issue node=\(.node_id) @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null)
 
   # --- Inline review comments.
   while IFS=$'\t' read -r id line; do
     emit_comment "$id" "$line"
   done < <(gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
-      --jq '.[] | "\(.node_id)\t[comment] inline @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null)
+      --jq '.[] | "\(.node_id)\t[comment] inline node=\(.node_id) @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null)
 
   # --- Review summaries. Fetch all non-PENDING and dedup by node_id client-side,
   # which avoids the fragile `submitted_at > since` string compare (that dropped
@@ -94,7 +95,7 @@ while true; do
   while IFS=$'\t' read -r id line; do
     emit_comment "$id" "$line"
   done < <(gh api "repos/$REPO/pulls/$PR/reviews" \
-      --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null)
+      --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review node=\(.node_id) @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null)
 
   since=$now
   sleep "$INTERVAL"
