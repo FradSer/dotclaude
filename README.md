@@ -33,7 +33,7 @@ claude plugin install gitflow@frad-dotclaude
 
 ### [github](github/)
 
-GitHub project operations with quality gates, TDD workflows, and comprehensive validation.
+GitHub project operations with quality gates, TDD workflows, comprehensive validation, and persistent PR review monitoring (/github:review-pr watches CI and triages reviewer comments).
 
 **Installation:**
 ```bash

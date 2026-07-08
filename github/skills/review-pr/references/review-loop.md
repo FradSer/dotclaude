@@ -1,4 +1,4 @@
-# Post-PR Monitoring and Auto-Fix
+# Review Loop: Monitor, Triage, Auto-Fix
 
 Monitoring uses the **Monitor tool** — a single persistent background watch that emits
 one tagged stdout line per new event for BOTH CI checks and PR comments. Each line
@@ -33,45 +33,30 @@ The command below emits:
 - `[comment] inline @<user> <path>:<line>: <body>` for new inline review comments
 - `[comment] review @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
 
+The script lives at `scripts/review-loop.sh` (executable, `#!/usr/bin/env bash`).
+Run it via the Monitor tool — it reads `PR`, `REPO`, and `INTERVAL` from env
+(or `--pr`/`--repo`/`--interval` flags) and emits the tagged lines above.
+
 ```bash
-PR=<pr-number>
-REPO=<owner>/<repo>
-INTERVAL="${INTERVAL:-300}"             # seconds; size-based — see table above
-since=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # server-side dedup for comments
-seen_ci=" "                            # space-padded set of emitted "name=bucket" keys
-
-while true; do
-  now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-  # --- CI: emit each check that newly reached a terminal bucket (covers failures, not just passes)
-  checks=$(gh pr checks "$PR" --repo "$REPO" --json name,bucket 2>/dev/null || true)
-  if [ -n "$checks" ]; then
-    while IFS=$'\t' read -r name bucket; do
-      [ -z "$name" ] && continue
-      case "$seen_ci" in
-        *" $name=$bucket "*) ;;
-        *) echo "[ci] $name: $bucket"; seen_ci="$seen_ci$name=$bucket " ;;
-      esac
-    done <<< "$(jq -r '.[] | select(.bucket!="pending") | "\(.name)\t\(.bucket)"' <<< "$checks" 2>/dev/null)"
-  fi
-
-  # --- Comments: issue-level, inline review, and review summaries (?since handles dedup)
-  gh api "repos/$REPO/issues/$PR/comments?since=$since" \
-    --jq '.[] | "[comment] issue @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null || true
-  gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
-    --jq '.[] | "[comment] inline @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null || true
-  gh api "repos/$REPO/pulls/$PR/reviews" \
-    --jq ".[] | select(.state != \"PENDING\" and .submitted_at > \"$since\") | \"[comment] review @\(.user.login) [\(.state)]: \(.body | gsub(\"\n\";\" \"))\"" 2>/dev/null || true
-
-  since=$now
-  sleep "$INTERVAL"
-done
+# From the skill, launch under a persistent Monitor:
+PR=<pr-number> REPO=<owner>/<repo> INTERVAL=<sec> \
+  bash ${CLAUDE_SKILL_DIR}/scripts/review-loop.sh
 ```
+
+Behavior notes:
+- `since` is seeded to the PR's **creation time** (not launch time), so comments posted
+  before the skill started are surfaced on poll 1. It advances to `now` after each poll.
+- Comments dedup client-side by `node_id` (GitHub's `?since=` is inclusive, so a comment
+  posted in the boundary second could otherwise re-emit).
+- Reviews are fetched without a `submitted_at` filter and deduped by `node_id` — the old
+  client-side `submitted_at > since` string compare dropped reviews posted in the launch
+  second.
+- `|| true` / `2>/dev/null` on every API call keeps one transient failure from killing
+  the watch; `INTERVAL` is floored at 60s.
 
 Run via the Monitor tool with `persistent: true` and a specific `description`
 (e.g. `"CI + new comments on PR #<n> (5m poll)"`). Stop it with TaskStop when done — never
-leave it running once the PR is settled. `|| true` on every poll keeps one transient
-API failure from killing the watch.
+leave it running once the PR is settled.
 
 ## You do not have to adopt review comments
 

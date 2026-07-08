@@ -10,9 +10,9 @@ The requirements below are architecture decisions or blanket non-functional cons
 - **Req #3** (bundled `.mcp.json` with env-var-interpolated credential) — a static file-shape requirement, not an observable runtime behavior; see `architecture.md` §Bundled `.mcp.json` for the exact contents, and Req #21 below for its credential-hygiene testing strategy.
 - **Req #11** (MUST NOT add a `kind=agentbook` value to `docs-index.sh`) — an explicit non-addition; there is no positive runtime behavior to assert, only the absence of a docs-index row for agentbook records, which the "Tier B/Tier C provenance bridge" Feature's final assertion below directly confirms ("no `docs/README.md` index row is added, changed, or requires a `kind` change"). See `_index.md` Rationale §"Not a docs-index `kind`" for the full argument.
 - **Req #16** — see the comment immediately above the "Cross-plugin dependency declaration" Feature below.
-- **Req #18** (SHOULD log every recall/report outcome at the call site) — already implicit in every touchpoint Feature below: the autoresearch Feature's report scenario is explicitly "a parallel write next to the existing `results.tsv` line," the github:create-pr Feature's report scenario fires "at exactly the moment the Monitor already detects the pass" (i.e., alongside its own existing log), and systematic-debugging's report scenario is independent of, not a replacement for, the existing Tier B capture. No separate scenario is needed since this SHOULD is a property of how each existing scenario's report call is placed, not a distinct behavior.
+- **Req #18** (SHOULD log every recall/report outcome at the call site) — already implicit in every touchpoint Feature below: the autoresearch Feature's report scenario is explicitly "a parallel write next to the existing `results.tsv` line," the github:review-pr Feature's report scenario fires "at exactly the moment the Monitor already detects the pass" (i.e., alongside its own existing log), and systematic-debugging's report scenario is independent of, not a replacement for, the existing Tier B capture. No separate scenario is needed since this SHOULD is a property of how each existing scenario's report call is placed, not a distinct behavior.
 - **Req #19** (SHOULD default recall to explicit, skill-documented invocation points, never automatic background calls) — satisfied by construction: every scenario in this file names an explicit call site (a specific phase/step/loop-iteration in an existing skill), and none describes a hook-triggered or scheduled background call. See Req #21's sibling non-functional note below and `architecture.md`'s Consumer Touchpoints diagrams, which show every arrow originating from an existing, already-documented step.
-- **Req #20** (MUST NOT introduce a hard dependency in `executing-plans`' autonomous execution path) — confirmed by omission: `executing-plans` is not among the three consumer plugins/touchpoints in this file (autoresearch, systematic-debugging, github:create-pr) and does not declare `"dependencies": ["commons-bridge"]` anywhere in this design. The "Public commons MCP server unreachable" Scenario's closing assertion ("this holds without exception inside `executing-plans`' fully autonomous execution path") documents the guarantee explicitly, even though `executing-plans` has no direct touchpoint of its own — the only path by which agentbook could affect it is transitively through `systematic-debugging`, which that same scenario's degrade-silently guarantee already covers.
+- **Req #20** (MUST NOT introduce a hard dependency in `executing-plans`' autonomous execution path) — confirmed by omission: `executing-plans` is not among the three consumer plugins/touchpoints in this file (autoresearch, systematic-debugging, github:review-pr) and does not declare `"dependencies": ["commons-bridge"]` anywhere in this design. The "Public commons MCP server unreachable" Scenario's closing assertion ("this holds without exception inside `executing-plans`' fully autonomous execution path") documents the guarantee explicitly, even though `executing-plans` has no direct touchpoint of its own — the only path by which agentbook could affect it is transitively through `systematic-debugging`, which that same scenario's degrade-silently guarantee already covers.
 - **Req #21** — see the comment immediately after this Feature's Background below.
 
 ```gherkin
@@ -366,8 +366,8 @@ Feature: Agentbook commons bridge — systematic-debugging touchpoint (Req #15)
     And no `docs/memory/*.md` file is written for this fix, since the Tier B
       threshold was not met — Tier B and Tier C write decisions are decoupled
 
-Feature: Agentbook commons bridge — github:create-pr touchpoint (Req #15)
-  As the github create-pr skill's post-PR CI monitoring loop
+Feature: Agentbook commons bridge — github:review-pr touchpoint (Req #15)
+  As the github review-pr skill's CI monitoring loop
   I want to recall a previously-successful fix for a recurring CI failure signature
   and report the outcome once resolved
   So that repeated CI failures with the same root cause don't require re-deriving
@@ -377,12 +377,12 @@ Feature: Agentbook commons bridge — github:create-pr touchpoint (Req #15)
   Scenario: Recall before applying a fix for a recurring CI failure
   # ---------------------------------------------------------------------------
     Given `github/.claude-plugin/plugin.json` lists `"dependencies": ["commons-bridge"]`
-    And the post-PR Monitor has detected a `[ci]` failure (lint, type, test, or build error)
-    When the create-pr skill loads `commons-bridge:recall` and calls `recall` with
+    And the review-pr Monitor has detected a `[ci]` failure (lint, type, test, or build error)
+    When the review-pr skill loads `commons-bridge:recall` and calls `recall` with
       the CI error signature before consulting the reaction table's default action
     Then a hit surfaces a previously-successful fix for the same or a materially
       similar error signature, applied as a hint alongside the existing reaction
-      table entry (e.g. "apply type fix" from `post-pr-monitoring.md`)
+      table entry (e.g. "apply type fix" from `review-loop.md`)
     And a miss or unreachable public commons falls back to the existing reaction
       table behavior unchanged — the recall step never replaces or blocks it
 
@@ -391,7 +391,7 @@ Feature: Agentbook commons bridge — github:create-pr touchpoint (Req #15)
   # ---------------------------------------------------------------------------
     Given a fix was applied and pushed for a `[ci]` failure
     And the Monitor subsequently detects `[ci] <name>: pass`
-    When the create-pr skill calls the `commons-bridge:recall` skill's report path
+    When the review-pr skill calls the `commons-bridge:recall` skill's report path
     Then `report(success: true)` fires at exactly the moment the Monitor already
       detects the pass — no new polling or decision point is introduced
     And if the same failure recurs after push instead, `report(success: false)`

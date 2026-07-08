@@ -33,7 +33,7 @@ claude plugin install gitflow@frad-dotclaude
 
 ### [github](github/)
 
-GitHub 项目操作，包含质量门控、TDD 工作流和全面验证。
+GitHub 项目操作，包含质量门控、TDD 工作流、全面验证，以及持久的 PR review 监控（/github:review-pr 监控 CI 并对 reviewer 评论做分诊）。
 
 **安装：**
 ```bash

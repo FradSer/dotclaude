@@ -1,7 +1,7 @@
 ---
 name: create-pr
-allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop
-description: Creates comprehensive GitHub pull requests with automated quality validation and security scanning, then by default monitors CI and incoming review comments (from other agents/humans) until all comments have been reflected on and none remain to adopt. This skill should be used when the user asks to "create a PR", "submit a pull request", or needs to merge completed work with full compliance checks.
+allowed-tools: Task, Bash(gh:*), Bash(git:*), Skill
+description: Creates comprehensive GitHub pull requests with automated quality validation and security scanning, then hands off to /github:review-pr for CI monitoring and reviewer-comment triage. This skill should be used when the user asks to "create a PR", "submit a pull request", or needs to merge completed work with full compliance checks.
 argument-hint: [optional description or issue reference] [--no-monitor]
 user-invocable: true
 ---
@@ -62,32 +62,16 @@ See `references/repository-templates.md` for template detection and compliance d
    - Use `--draft` if the PR requires early feedback or is not fully complete
    - Set reviewers with `--reviewer` and assignees with `--assignee` when requested
    - Fill title/body automatically using `--fill` for simple changes
-7. Check remote CI status with `gh pr checks <pr-number> --watch` to ensure all checks pass remotely
-8. Report final PR URL and status to user
-9. Proceed to Phase 4 by default. Skip Phase 4 only if `$ARGUMENTS` contains `--no-monitor` or the user explicitly opts out.
+7. Report final PR URL and status to user. Do NOT run a foreground `gh pr checks --watch` here — Phase 4 hands off to `/github:review-pr`, which owns the persistent CI watch; a blocking `--watch` would stall the turn and duplicate that watch.
+8. Proceed to Phase 4 by default. Skip Phase 4 only if `$ARGUMENTS` contains `--no-monitor` or the user explicitly opts out.
 
-## Phase 4: Post-PR Monitoring and Auto-Fix (default on)
+## Phase 4: Post-PR Handoff (default on)
 
-**Trigger**: Default behavior — always monitor unless `$ARGUMENTS` contains `--no-monitor`.
+**Trigger**: Default behavior — hand off unless `$ARGUMENTS` contains `--no-monitor` or the user opts out.
 
-**Goal**: Use the Monitor tool to watch BOTH CI checks and new PR comments in one persistent background watch, auto-fix what is actionable, and surface ambiguous items to the user — without busy-polling in the foreground. Keep watching until every review comment (typically from other agents or human reviewers) has been **reflected on**, and none remain that need to be adopted.
+**Goal**: Delegate CI monitoring and reviewer-comment triage to the dedicated skill.
 
-**CRITICAL mindset on review comments**: Comments arriving on the PR are mostly from **other agents** (automated linters, code-review bots) and human reviewers. **You do NOT have to adopt them.** Each comment is a suggestion to *consider*, never an order to apply. Your default stance is a skeptical gatekeeper: read every comment, verify its correctness against the diff independently, and adopt only the ones that are demonstrably correct and safe. The watch only ends when every comment has been reflected on and zero remain worth adopting — not when the comment queue is merely empty.
-
-**Actions**:
-1. Determine the poll interval based on PR size (lines changed via `gh pr view --json additions,deletions`):
-   - Small PR (<200 lines): ~3 minutes
-   - Medium PR (200–1000 lines): ~5 minutes (recommended default)
-   - Large PR (>1000 lines): ~8 minutes
-   Never poll faster than once per minute; never leave the watch unbounded — set a max wall-clock of ~2 hours, after which surface to the user that the PR is still unsettled.
-2. Launch a single Monitor with `persistent: true` whose command emits one tagged stdout line per new event: `[ci] <name>: <bucket>` for checks reaching a terminal bucket, and `[comment] ...` for new issue comments, inline review comments, and review summaries. Use the consolidated script in `references/post-pr-monitoring.md` — do not run a foreground `while` loop. Pass the chosen interval as the `INTERVAL` env var to the script.
-3. React as each Monitor event arrives (the watch runs across turns):
-   - `[ci]` failure → analyze logs via `gh run view --log-failed`, apply the fix, commit, push. The push triggers a fresh CI run that the same Monitor re-emits — no relaunch needed.
-   - `[comment]` batch arrives → **CRITICAL: Spawn an independent review-triage agent** to evaluate every comment. The main conversation context is biased by the PR creation flow — it authored the code and tends to either defend or over-correct. The triage agent starts with a **clean context**, reads the diff and each comment independently, and returns a verdict per comment: `fix` / `reject` (with reason) / `escalate`. Apply ONLY the `fix` verdicts. Remember: most comments come from other agents; many will be noise, false positives, or context misunderstandings — rejecting them is the correct, expected outcome. See `references/post-pr-monitoring.md` for the agent prompt template and verdict format.
-   - `[comment]` escalated (design disagreement, scope change, unclear intent) → send a PushNotification and report the comment body, author, and file context to the user; do not guess.
-4. Stop the Monitor with TaskStop ONLY when ALL of these hold: every `[ci]` check is terminal AND passing, AND every review comment received so far has been reflected on (triaged, replied to, or fixed) with none left to adopt, AND the user no longer wants live coverage. If a PR has no CI and no reviewers (terminal immediately), report that and skip launching the watch rather than polling an empty signal. A temporarily empty comment queue is NOT a stop signal — new comments may still arrive from other agents; only stop once the user signals they are done or the max wall-clock is reached.
-
-See `references/post-pr-monitoring.md` for the consolidated Monitor script, comment parsing rules, triage agent prompt, and verdict format.
+**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, and the fix→commit→push loop.
 
 ## References
 
@@ -96,5 +80,4 @@ See `references/post-pr-monitoring.md` for the consolidated Monitor script, comm
 - **Quality Validation**: `references/quality-validation.md` - Node.js/Python validation commands
 - **PR Structure**: `references/pr-structure.md` - Title guidelines, body template, labels
 - **Failure Resolution**: `references/failure-resolution.md` - Agent collaboration for fixing failures
-- **Post-PR Monitoring**: `references/post-pr-monitoring.md` - Monitor commands, comment parsing, auto-fix rules
 - **Examples**: `references/examples.md` - Commit message examples
