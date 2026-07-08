@@ -27,9 +27,9 @@ description: |
   </commentary>
   </example>
   
-  Note: Examples are completely optional and can be omitted if not needed.
-color: [blue|green|purple|orange|red]
-allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion", ...]
+  Note: Include 2-4 <example> blocks — they are required for reliable agent routing.
+color: [blue|cyan|green|yellow|magenta|red]
+tools: ["Read", "Glob", "Grep", "AskUserQuestion", ...]
 ---
 ```
 
@@ -69,9 +69,9 @@ description: |
   </commentary>
   </example>
   
-  Note: Examples are completely optional and can be omitted if not needed.
-color: [blue|green|purple|orange|red]
-allowed-tools: ["Read", "Glob", "Grep", "AskUserQuestion", ...]
+  Note: Include 2-4 <example> blocks — they are required for reliable agent routing.
+color: [blue|cyan|green|yellow|magenta|red]
+tools: ["Read", "Glob", "Grep", "AskUserQuestion", ...]
 ---
 
 You are an expert [specialist role] for [primary domain or task].

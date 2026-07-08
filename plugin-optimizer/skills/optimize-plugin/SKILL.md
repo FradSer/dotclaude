@@ -110,9 +110,9 @@ Version: [old] -> [new]
 
 ### Token Budget Analysis
 - Skills analyzed: [count]
-- Tier 1 (Metadata ~50): [OK count], [WARNING count]
-- Tier 2 (SKILL.md ~500): [OK count], [WARNING count], [CRITICAL count]
-- Tier 3 (References 2000+ typical): [total tokens]
+- Tier 1 (Metadata ~100): [OK count], [WARNING count]
+- Tier 2 (SKILL.md under 5k): [OK count], [WARNING count], [CRITICAL count]
+- Tier 3 (References, effectively unlimited): [total tokens]
 
 ### Component Inventory
 - Commands: [count] found, [count] valid

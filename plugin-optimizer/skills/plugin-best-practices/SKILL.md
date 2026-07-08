@@ -13,12 +13,12 @@ Validates Claude Code plugins against architectural standards. This file is a na
 Run validation on a plugin:
 
 ```bash
-python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path>
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py <plugin-path>
 ```
 
 For specific checks only:
 ```bash
-python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> --check=manifest,frontmatter
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py <plugin-path> --check=manifest,frontmatter
 ```
 
 ## Component Selection Guide
@@ -131,7 +131,7 @@ See `./references/components/skills.md` for complete frontmatter specification.
 
 **Forbidden fields** in plugin agents (security): `hooks`, `mcpServers`, `permissionMode`.
 
-**Field order**: `name` → `description` → other YAML fields → `<example>` blocks → closing `---`. Fields placed after `<example>` blocks are not parsed as YAML.
+**Field order**: `name` → `description` (a `|` block scalar containing trigger conditions and the `<example>` blocks) → other YAML fields → closing `---`. Bare `<example>` blocks outside the description break YAML parsing.
 
 See `./references/components/agents.md` for complete agent design guidelines including CO-STAR framework.
 

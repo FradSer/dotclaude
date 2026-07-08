@@ -26,10 +26,10 @@ isolation: worktree  # optional
 
 **Field ordering rules**:
 - `name` and `description` MUST come first
-- All other YAML fields MUST appear immediately after `description`, before any `<example>` blocks
-- `<example>` blocks MUST appear after all YAML fields and before the closing `---`
+- `<example>` blocks MUST be nested inside the `description: |` block scalar — bare `<example>` blocks in the frontmatter break YAML parsing
+- All other YAML fields MUST appear immediately after the `description` block, before the closing `---`
 
-**Anti-pattern** — fields after `<example>` blocks are parsed as body text, not YAML:
+**Anti-pattern** — bare `<example>` blocks outside `description` break YAML parsing; fields after them are parsed as body text, not YAML:
 
 ```yaml
 ---
