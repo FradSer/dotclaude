@@ -20,7 +20,7 @@ When in doubt, invoke. The `## CRITICAL: Bail-Out Check` section in each skill (
 
 | Trigger signal | Invoke |
 |---|---|
-| "brainstorm", "design", "I have an idea", new feature with ambiguous shape, multi-component design | `superpowers:brainstorming` |
+| "brainstorm", "design", "I have an idea", new software feature with ambiguous shape, multi-component design (incl. features not yet referencing code) — NOT hardware/physical-system design (sensors/devices/firmware-to-app), questions outside this repo, or "how does X work" | `superpowers:brainstorming` |
 | "write a plan", "decompose into tasks", "implementation plan" — a completed design folder under `docs/plans/*-design/` exists | `superpowers:writing-plans` |
 | "execute the plan", "run the plan", "implement", a completed plan folder under `docs/plans/*-plan/` exists | `superpowers:executing-plans` |
 | Bug report, "fix this error", test failure, unexpected behavior, "why does X happen" | `superpowers:systematic-debugging` |

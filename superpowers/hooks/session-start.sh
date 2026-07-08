@@ -29,7 +29,7 @@ if [ -f "$USING_SKILL" ]; then
 fi
 
 if [ -z "$routing_table" ]; then
-  routing_table='| "brainstorm"/"design"/new feature idea | `superpowers:brainstorming` |
+  routing_table='| "brainstorm"/"design"/new software feature idea (not hardware/physical-system) | `superpowers:brainstorming` |
 | "write a plan"/"decompose into tasks" | `superpowers:writing-plans` |
 | "execute the plan"/"implement" | `superpowers:executing-plans` |
 | Bug, error, test failure, "why does X happen" | `superpowers:systematic-debugging` |
