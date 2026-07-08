@@ -107,5 +107,7 @@ The complete trope catalog is organized into seven categories. Load specific ref
 7. **Professional Balance** - `references/professional-balance.md`
    Avoiding both overly colloquial "humanisms" and obscure AI-isms.
 
-8. **User Preferences** - `references/preferences-schema.md`
-   Two-tier overrides: global `~/.claude/office.local.md` + project `.claude/office.local.md`. Custom banned words, sensitivity, tone, skip categories.
+Plus one supporting schema (not a trope category):
+
+- **User Preferences** - `references/preferences-schema.md`
+  Two-tier overrides: global `~/.claude/office.local.md` + project `.claude/office.local.md`. Custom banned words, sensitivity, tone, skip categories.

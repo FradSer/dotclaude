@@ -2,7 +2,7 @@
 
 Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection.
 
-**Version**: 0.4.4
+**Version**: 0.5.2
 **Display Name**: Office
 
 ## Installation
@@ -88,20 +88,21 @@ Generate comprehensive Chinese Product Requirements Documents (PRD) following 20
 
 ### `/office:generate-image` (Command)
 
-Generate or edit images from a text prompt using Google's `gemini-3-pro-image` model.
+Generate or edit images from a text prompt via one of two backends — Google Gemini (`gemini-3-pro-image`) or any OpenAI-compatible endpoint (`gpt-image-2`, `dall-e-3`, ...).
 
 **Usage:**
 ```bash
-/office:generate-image "RayNeo AR glasses product hero shot" -o hero.png --aspect-ratio 16:9 --size 2K
-/office:generate-image "swap the sky to a sunset, keep everything else" -i street.png -o street_sunset.png
+/office:generate-image "RayNeo AR glasses product hero shot" --backend gemini -o hero.png --aspect-ratio 16:9 --size 2K
+/office:generate-image "swap the sky to a sunset, keep everything else" --backend gemini -i street.png -o street_sunset.png
 ```
 
 **Features:**
+- Two explicit backends (`--backend gemini|openai`) — native Gemini API or any OpenAI-compatible endpoint
 - Text-to-image and image editing/composition (one or more `-i` reference images)
 - Aspect ratio (`1:1` … `21:9`), resolution tier (`1K`/`2K`/`4K`), multiple candidates
 - Progressive configuration — key/model resolved via flag → env → `.env` → default
 
-**Prerequisites:** `uv`, and `GEMINI_API_KEY` ([aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)).
+**Prerequisites:** `uv`, and the API key for the chosen backend — `GEMINI_API_KEY` ([aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)) or `OPENAI_API_KEY`.
 
 ### `/office:generate-video` (Command)
 
@@ -126,7 +127,7 @@ Generate short videos from text or stills using ByteDance Seedance on Volcengine
 
 Browser automation command reference for agents and workflows.
 
-**Source**: Synced from [browser-use/agent-browser](https://github.com/browser-use/agent-browser)
+**Source**: Synced from [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)
 
 **Purpose**: Provides browser automation command reference for agents that need to interact with web pages.
 
@@ -214,10 +215,6 @@ Helper script for patent search with argument parsing.
 office/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin metadata (displayName: Office)
-├── hooks/
-│   ├── hooks.json           # Hook configuration
-│   └── scripts/
-│       └── check-keys.sh    # API key validation
 ├── lib/
 │   ├── utils.sh             # Shared shell utilities
 │   └── progressive_env.py   # Progressive config resolver (flag → env → .env → default)
@@ -233,7 +230,7 @@ office/
     │   └── examples.md
     ├── create-prd/            # PRD generation (command)
     │   └── SKILL.md
-    ├── generate-image/        # Image generation (command, gemini-3-pro-image)
+    ├── generate-image/        # Image generation (command, gemini / openai backends)
     │   ├── SKILL.md
     │   ├── scripts/generate_image.py
     │   └── references/prompting.md
@@ -266,17 +263,6 @@ office/
 ```
 
 ## Troubleshooting
-
-### API Keys Not Set
-
-**Symptoms**: Error message "Missing API Keys for Office Plugin"
-
-**Solution**:
-```bash
-export SERPAPI_KEY="your_key_here"
-export EXA_API_KEY="your_key_here"
-source ~/.zshrc
-```
 
 ### Search Returns No Results
 
