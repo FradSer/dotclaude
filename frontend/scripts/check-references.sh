@@ -35,7 +35,7 @@ while IFS= read -r -d '' skill; do
         if [ ! -f "$dir/$ref" ]; then
             dead_list+="  ${skill#$SKILLS_DIR/} -> $ref"$'\n'
         fi
-    done < <(grep -oE '(\.\./[a-z0-9-]+/)?reference/[a-z0-9_-]+\.md' "$skill" 2>/dev/null | sort -u)
+    done < <(grep -oE '(\.\./[a-z0-9-]+/)?references?/[a-z0-9_-]+\.md' "$skill" 2>/dev/null | sort -u)
 done < <(find "$SKILLS_DIR" -name "SKILL.md" -print0)
 
 if [ -n "$dead_list" ]; then

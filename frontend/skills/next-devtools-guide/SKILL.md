@@ -10,7 +10,7 @@ user-invocable: false
 
 **Total capabilities**: 7 Tools + 2 Prompts + 17 Resources = 26 available features.
 
-**Tool naming**: All tools follow `mcp__plugin_next-devtools_next-devtools__<tool-name>`. This file uses abbreviated names for brevity.
+**Tool naming**: All tools follow `mcp__plugin_frontend_next-devtools__<tool-name>`. This file uses abbreviated names for brevity.
 
 See `references/tools-reference.md` for the complete tools table and `nextjs_call` tool names.
 

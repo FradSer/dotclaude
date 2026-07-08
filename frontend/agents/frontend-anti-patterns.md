@@ -47,7 +47,7 @@ Note: `hero-metric` and `glassmorphism-as-default` are text-only bans with no co
 
 ### Running the executable detector
 
-The registry is driven by `scripts/detector/detect.mjs`, which you CAN run — prefer it over eyeballing the rules, it emits exact `file:line` + snippet for ~40 rules with no network. In a plugin install the skill dir is not at the project's `.claude/skills/`, so resolve it first (per `skills/impeccable/PLUGIN-INSTALL-NOTES.local.md`):
+The registry is driven by `scripts/detect.mjs`, which you CAN run — prefer it over eyeballing the rules, it emits exact `file:line` + snippet for ~40 rules with no network. In a plugin install the skill dir is not at the project's `.claude/skills/`, so resolve it first (per `skills/impeccable/PLUGIN-INSTALL-NOTES.local.md`):
 
 ```bash
 SKILL_DIR="$(find ~/.claude -path '*/frontend/skills/impeccable/SKILL.md' 2>/dev/null | head -1 | xargs dirname)"

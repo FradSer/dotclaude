@@ -5,7 +5,7 @@ Sync script: `scripts/sync-vercel-skills.sh`
 
 Each `## Add` block below is a new rule file that the sync script will delete.
 After sync, recreate each file with the exact `Content` block, then re-apply
-the SKILL.md Quick Reference edits in the `## Edit` blocks.
+the SKILL.md edits in the `## Edit` blocks.
 
 ---
 
@@ -519,6 +519,25 @@ Reference: [TanStack Query — Advanced Server Rendering](https://tanstack.com/q
 ````
 
 **Added**: 2026-04-19
+
+---
+
+## Edit: SKILL.md intro — rule count
+
+**Target**: `skills/react-best-practices/SKILL.md`
+
+**Intent**: Correct the rule count in the intro paragraph — the seven `## Add`
+blocks above bring the total to 77 (70 upstream + 7 local). Without this edit
+the synced intro undercounts the catalog.
+
+**Content**: In the intro paragraph under "# Vercel React Best Practices",
+replace "Contains 70 rules across 8 categories" with:
+
+```
+Contains 77 rules (70 upstream + 7 local) across 8 categories
+```
+
+**Added**: 2026-07-08
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## MCP Tools (7)
 
-All tools follow the naming pattern `mcp__plugin_next-devtools_next-devtools__<tool-name>`:
+All tools follow the naming pattern `mcp__plugin_frontend_next-devtools__<tool-name>`:
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
