@@ -20,6 +20,7 @@
 | docs/plans/2026-07-04-superpowers-memory-layer-plan/ | plan | implemented:57d3738 | 20-task plan: kind=memory in docs-index + 5-skill touchpoints (write-ga… | 2026-07-06 |
 | docs/plans/2026-07-06-agentbook-memory-design/ | design | active | commons-bridge plugin bridges agentbook's live MCP service as a cross-p… | 2026-07-07 |
 | docs/plans/2026-07-08-designing-loops-design/ | design | active | loop-types.md reference (pivoted from skill shape): 4 loop types -> pri… | 2026-07-08 |
+| docs/plans/2026-07-08-designing-loops-plan | plan | active | designing-loops reference-file plan: loop-types.md + goal-wrapper Rule … | 2026-07-08 |
 | docs/retros/retro-2026-06-02-unified-retro-events.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-06-08-calibration-no-new-data.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-07-04-docs-index-plan.md | retro | active |  | 2026-07-04 |
