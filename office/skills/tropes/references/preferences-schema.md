@@ -1,63 +1,58 @@
 # User Preferences Schema
 
-Writing preferences for the tropes skill, stored as `.local.md` files. The tropes skill loads preferences at the start of each detection workflow and applies them as overrides or supplements to the default trope rules.
+Writing preferences for the tropes skill, stored as `office.local.json`. The tropes skill loads and merges preferences at the start of each detection workflow via `office/scripts/load-preferences.sh`, then applies them as overrides or supplements to the default trope rules.
+
+**CRITICAL**: These are the office plugin's own preference files, following the official `.claude/plugin-name.local.*` convention with `.json` carriers. They are NOT Claude Code's `settings.json` and do NOT participate in the harness four-layer settings merge. The merge is implemented by `load-preferences.sh`, not by Claude Code.
 
 ---
 
-## Two-Tier Configuration
+## Four-Tier Configuration
 
-Preferences support global and project-level scopes, following the same pattern as the git plugin:
+Mirrors Claude Code's `settings.local.json` (personal/gitignored) overlaying `settings.json` (shared/committed), split across global and project scopes.
 
-| Scope | Path | Use case |
-|-------|------|----------|
-| Global (user-level) | `~/.claude/office.local.md` | Personal defaults across all projects |
-| Project-level | `.claude/office.local.md` (in repo root) | Team or project-specific overrides |
+| Precedence | Scope | Path | Use case |
+|------------|-------|------|----------|
+| 1 (highest) | Project, personal | `.claude/office.local.json` | Per-project personal overrides (gitignore this) |
+| 2 | Project, shared | `.claude/office.json` | Team/project shared defaults (commit this) |
+| 3 | Global, personal | `~/.claude/office.local.json` | Personal defaults across all projects |
+| 4 (lowest) | Global, shared | `~/.claude/office.json` | Shared global baseline |
 
-**Precedence**: Project-level settings override global settings field-by-field. Lists (e.g., `banned_words`) are merged; scalar values (e.g., `tone`, `sensitivity`) are replaced by the project-level value.
-
-Example: Global sets `sensitivity: standard` and bans `["delve"]`. Project sets `sensitivity: strict` and bans `["leverage"]`. Effective result: `sensitivity: strict`, banned words: `["delve", "leverage"]`.
+**Precedence**: Higher layer overlays lower. Scalars are replaced; lists are concatenated and deduplicated; objects are deep-merged. `.local` overrides shared at each scope; project overrides global. See Merge Rules below.
 
 ## File Format
 
-Both files use YAML frontmatter for structured settings and markdown body for freeform rules. The format is identical; only the path determines scope.
+Both files are plain JSON. The format is identical; only the path determines scope.
 
-```markdown
----
-# Writing tone: formal | neutral | conversational
-tone: neutral
+```json
+{
+  "tone": "neutral",
+  "sensitivity": "standard",
+  "banned_words": [],
+  "preferred_terms": {},
+  "zh": { "banned_words": [], "preferred_terms": {} },
+  "en": { "banned_words": [], "preferred_terms": {} },
+  "skip_categories": [],
+  "formatting": { "max_em_dashes": 5, "allow_bold_first_bullets": false },
 
-# Check strictness: strict (catch more) | standard (default) | relaxed (fewer flags)
-sensitivity: standard
-
-# Custom word/phrase lists
-banned_words: []        # Always flag these, on top of default trope words
-preferred_terms: {}     # key = avoid, value = use instead
-
-# Language-specific rules
-zh:
-  banned_words: []      # e.g. ["赋能", "抓手", "底层逻辑"]
-  preferred_terms: {}   # e.g. {"助力": "支持"}
-en:
-  banned_words: []      # e.g. ["delve", "tapestry"]
-  preferred_terms: {}   # e.g. {"utilize": "use"}
-
-# Category toggles — skip entire trope categories
-skip_categories: []     # e.g. ["formatting", "paragraph-structure"]
-
-# Formatting preferences
-formatting:
-  max_em_dashes: 5      # Override default em-dash threshold
-  allow_bold_first_bullets: false
----
-
-# Freeform Writing Rules
-
-Add any custom rules here in plain markdown. These are applied alongside
-the structured settings above.
-
-- Use active voice by default
-- Keep paragraphs under 5 sentences
-- Prefer "we" over "I" in team documentation
+  "dead_metaphors": {
+    "default_cap": 1,
+    "quote_exception": true,
+    "entries": [
+      { "word": "护城河", "replacement": "壁垒 / 结构性优势 / 我们守住的位置", "cap": 3 },
+      { "word": "楔子", "replacement": "切入原型 / 验证场景", "cap": 1 }
+    ]
+  },
+  "pattern_caps": [
+    { "id": "reversal_sentence", "max": 1, "forbidden_in": ["title"] },
+    { "id": "parallelism_triple", "max": 1 },
+    { "id": "arrow_flow", "max_nodes": 3, "exception": ["state_machine", "transition_diagram"] },
+    { "id": "numbered_bold_sections", "max": 1, "scope": "chat_reply" }
+  ],
+  "banned_phrases": ["一句话讲完", "收敛成一句话", "改动点："],
+  "rhetorical_bans": ["self_qa", "self_eval_summary", "parallel_antithesis_subheading", "process_meta_narration"],
+  "principles": ["关键数字必须可溯源：口头转述的金额/百分比/用户量发布前须核实"],
+  "source_notes": ["源自 2026-06-12 雷鸟战略长文复盘"]
+}
 ```
 
 ## Field Reference
@@ -72,38 +67,69 @@ the structured settings above.
 | `zh.preferred_terms` | `map<string, string>` | `{}` | Chinese term replacements |
 | `en.banned_words` | `string[]` | `[]` | English-specific banned words, checked only in English text |
 | `en.preferred_terms` | `map<string, string>` | `{}` | English term replacements |
-| `skip_categories` | `string[]` | `[]` | Valid values: `word-choice`, `sentence-structure`, `paragraph-structure`, `tone`, `formatting`, `composition`, `professional-balance` |
+| `skip_categories` | `enum[]` | `[]` | Valid values: `word-choice`, `sentence-structure`, `paragraph-structure`, `tone`, `formatting`, `composition`, `professional-balance` |
 | `formatting.max_em_dashes` | `number` | `5` | Override the em-dash cluster threshold |
 | `formatting.allow_bold_first_bullets` | `boolean` | `false` | When `true`, skip bold-first-bullet detection |
+| `dead_metaphors.default_cap` | `number` | `1` | Default max occurrences per dead metaphor |
+| `dead_metaphors.quote_exception` | `boolean` | `true` | When `true`, quoted speech (meetings/others' words) does not count toward cap |
+| `dead_metaphors.entries` | `object[]` | `[]` | Each: `{word, replacement, cap}`; `cap` overrides `default_cap`; `replacement` may be empty |
+| `pattern_caps` | `object[]` | `[]` | Each: `{id, max \| max_nodes, forbidden_in?, scope?, exception?}`. Caps a sentence pattern |
+| `banned_phrases` | `string[]` | `[]` | Phrases always flagged (e.g. self-evaluation declarations, summary labels) |
+| `rhetorical_bans` | `string[]` | `[]` | Stable IDs of banned rhetorical patterns (see IDs table below) |
+| `principles` | `string[]` | `[]` | Judgmental free-text rules, applied as additional checks (not pattern-matched) |
+| `source_notes` | `string[]` | `[]` | Retrospective provenance metadata; not used in detection, for editing traceability only |
+
+### `pattern_caps` IDs
+
+| ID | Caps | Optional constraints |
+|----|------|----------------------|
+| `reversal_sentence` | "不是 X，是 Y" reversal pattern | `forbidden_in: ["title"]` |
+| `parallelism_triple` | 排比三连 ("承认 A，承认 B，承认 C") | — |
+| `arrow_flow` | `X → Y → Z` arrow chains | `max_nodes`, `exception: ["state_machine", "transition_diagram"]` |
+| `numbered_bold_sections` | `**N. xxx**` numbered bold subsections | `scope: "chat_reply"` (docs exempt) |
+
+### `rhetorical_bans` IDs
+
+- `self_qa` — self-Q&A rhetorical questioning ("为什么？因为……")
+- `self_eval_summary` — self-evaluation summary labels at reply end ("改动点："/"优化点：")
+- `parallel_antithesis_subheading` — "去 X / 改 Y / 删 Z" antithesis subheadings
+- `process_meta_narration` — operation-step meta-narration ("先取 block id…再…然后…") in user-facing replies
 
 ## Preference Precedence
 
 When preferences conflict with default trope rules:
 
-1. `banned_words` / `preferred_terms` — **additive**: extend defaults, never remove them
+1. `banned_words` / `banned_phrases` / `preferred_terms` — **additive**: extend defaults, never remove them
 2. `skip_categories` — **subtractive**: disables the named category entirely
 3. `sensitivity` — **global override**: changes the threshold for all categories
 4. `tone` — **baseline shift**: adjusts the professional-balance reference point
-5. Freeform rules — **supplementary**: applied as additional checks after structured rules
+5. `dead_metaphors` / `pattern_caps` / `rhetorical_bans` / `principles` — **supplementary**: applied as additional checks after structured rules
 
 ## Merge Rules
 
-When both global and project-level files exist:
+Implemented by `office/scripts/load-preferences.sh` (jq deep merge). When both global and project files exist:
 
 | Field type | Merge strategy |
 |------------|----------------|
-| Scalar (`tone`, `sensitivity`) | Project value replaces global value |
-| List (`banned_words`, `skip_categories`) | Lists are concatenated, deduplicated |
-| Map (`preferred_terms`) | Project entries override global entries for the same key; non-conflicting keys are merged |
-| Nested map (`zh.banned_words`, `formatting.max_em_dashes`) | Same rules applied per sub-field |
-| Freeform markdown body | Project body is appended after global body |
+| Scalar (`tone`, `sensitivity`, `dead_metaphors.default_cap`, `formatting.*`) | Project value replaces global value; null in project keeps global |
+| Plain string list (`banned_words`, `banned_phrases`, `skip_categories`, `zh.banned_words`, `en.banned_words`, `rhetorical_bans`, `principles`, `source_notes`) | Concatenated, deduplicated (note: `unique` reorders entries alphabetically; order is not preserved) |
+| Object map (`preferred_terms`, `zh.preferred_terms`, `en.preferred_terms`) | Same key: project overrides global; non-conflicting keys merged |
+| Nested object (`zh`, `en`, `formatting`, `dead_metaphors`) | Recursive deep merge per sub-field |
+| Object array keyed by `id` (`pattern_caps`) | Concatenated, deduplicated by `id`, project entry wins on conflict |
+| Object array keyed by `word` (`dead_metaphors.entries`) | Concatenated, deduplicated by `word`, project entry wins on conflict |
+
+If jq is unavailable or a file is missing/invalid JSON, the loader fails open (warns on stderr, treats the input as `{}`) so detection still runs with defaults.
 
 ## How to Manage
 
 The tropes skill handles preference management during the detection workflow:
 
-- **Create**: If neither file exists, offer to generate the global file (`~/.claude/office.local.md`) with defaults. If only the global file exists and the user wants project-specific rules, offer to create the project-level file (`.claude/office.local.md`).
-- **Update**: After a detection run, offer to save newly discovered preferences. Default target is the global file unless the user specifies otherwise.
-- **Read**: Load and merge at the start of each detection run (global first, then project overlay).
+- **Create**: If no file exists, offer to generate `~/.claude/office.local.json` (global personal) with defaults. For team-shared rules, suggest `.claude/office.json` (committed); for personal project overrides, `.claude/office.local.json` (gitignored).
+- **Update**: After a detection run, offer to save newly discovered preferences. Default target is `~/.claude/office.local.json` unless the user specifies otherwise. Present a diff preview (file, field, merged JSON) before writing.
+- **Read**: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/load-preferences.sh` returns the merged JSON across all four layers.
 
 Users may also edit either file directly with any text editor.
+
+### Migration from `office.local.md` (v0.5.x → v0.6.0)
+
+If `~/.claude/office.local.md` still exists and `office.local.json` does not, the old YAML-frontmatter + markdown-body format is in use. Migrate by structuring each body rule into the JSON fields above (dead-metaphor registry → `dead_metaphors.entries`; sentence-pattern limits → `pattern_caps`; banned self-evaluation phrases → `banned_phrases`; rhetorical bans → `rhetorical_bans`; judgmental rules → `principles`; retrospective provenance → `source_notes`), then delete the `.local.md` file.
