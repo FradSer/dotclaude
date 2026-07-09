@@ -21,7 +21,7 @@ set -u
 
 PR="${PR:-}"
 REPO="${REPO:-}"
-INTERVAL="${INTERVAL:-300}"
+INTERVAL="${INTERVAL:-}"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -38,6 +38,10 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+# Apply the INTERVAL default AFTER flag parsing — initializing it to 300 above
+# the loop would make `[ -z "$INTERVAL" ]` false and silently ignore --interval.
+INTERVAL="${INTERVAL:-300}"
 
 if [ -z "$PR" ] || [ -z "$REPO" ]; then
   echo "review-loop.sh: --pr and --repo (or PR/REPO env) are required" >&2
