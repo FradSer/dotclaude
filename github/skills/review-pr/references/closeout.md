@@ -138,12 +138,41 @@ gh pr merge "$PR" --repo "$REPO" --rebase
 ```
 
 Never add `--auto` — that delegates the merge to CI status and silently merges without the
-user's explicit confirmation, which defeats the AskUserQuestion gate. If the merge command
-fails (branch protection, required reviews, stale base), surface the error to the user; do
-not retry with different flags or force-push.
+user's explicit confirmation, which defeats the AskUserQuestion gate. Never add
+`--delete-branch` either — branch deletion is out of scope for this skill; leave both the
+local and remote head branches for the user to clean up. If the merge command fails
+(branch protection, required reviews, stale base), surface the error to the user; do not
+retry with different flags or force-push.
 
-On "Don't merge": skip the merge entirely and fall through to `TaskStop`. The PR is already
-in a clean, merge-ready state for the user to merge later by hand.
+On "Don't merge": skip the merge and the sync, fall through to `TaskStop`. The PR is
+already in a clean, merge-ready state for the user to merge later by hand.
+
+## Sync the local base branch after merge
+
+After a successful merge (not on "don't merge", and not if `gh pr merge` failed), bring the
+local base branch up to date so the working repo reflects the merge. The sync target is the
+PR's `baseRefName` — read from the PR, not hardcoded. This covers both flows without coupling
+this skill to `/gitflow`: a gitflow repo merges into `develop`, a trunk-based repo into
+`main`, and `baseRefName` reports whichever it was.
+
+```bash
+# 1. Read the branch the PR merged INTO (gitflow: develop; trunk: main).
+BASE=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q .baseRefName)
+
+# 2. Switch to it and fast-forward to the remote. --ff-only refuses to create a merge
+#    commit, so if the local base has diverged it fails safely instead of papering over
+#    a divergence the user should investigate.
+git switch "$BASE" && git pull --ff-only
+```
+
+Do NOT delete branches (`git branch -d` on the head, or `--delete-branch` on the merge) —
+the user opted out of branch cleanup. If the working tree is on the head branch, `git switch
+"$BASE"` moves it before the pull. If there are uncommitted changes left from earlier in the
+session, stash them or report rather than aborting the pull — the merge already landed on the
+remote, so a clean sync is the priority.
+
+If the local repo's `origin` does not point at `$REPO`, the pull may target a different
+remote — surface that to the user rather than silently pulling from the wrong place.
 
 ## Order and idempotency
 
@@ -154,13 +183,16 @@ in a clean, merge-ready state for the user to merge later by hand.
 3. Rewrite the title/body.
 4. Ask the user via `AskUserQuestion` whether to merge; on a merge choice, run
    `gh pr merge` with the selected strategy.
-5. `TaskStop` the Monitor.
+5. Sync the local base branch (`git switch <baseRefName> && git pull --ff-only`) — only
+   after a successful merge.
+6. `TaskStop` the Monitor.
 
 Steps 1–3 are idempotent: re-running `gh pr edit` with the same title/body is a no-op, and
-`gh pr comment --edit-last` updates rather than duplicates. Step 4 (the merge) is NOT
-idempotent — only run it once, after the user's explicit choice. If the user interrupts and
-you resume, skip steps already completed rather than re-posting; if the user already chose
-"don't merge" or the merge already succeeded, do not ask again.
+`gh pr comment --edit-last` updates rather than duplicates. Steps 4 and 5 are NOT
+idempotent — only run them once, after the user's explicit merge choice. If the user
+interrupts and you resume, skip steps already completed rather than re-posting; if the user
+already chose "don't merge", or the merge and sync already succeeded, do not ask again or
+re-pull.
 
 ## Do not
 
