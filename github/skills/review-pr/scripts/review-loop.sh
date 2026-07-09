@@ -6,9 +6,9 @@
 #
 # Output format:
 #   [ci] <name>: <bucket>                  — CI check reaching a terminal bucket
-#   [comment] issue  node=<id> @<user>: <body>       — new issue-level comment
-#   [comment] inline node=<id> @<user> <path>:<line>: <body>  — new inline review comment
-#   [comment] review node=<id> @<user> [<STATE>]: <body>      — new review summary
+#   [comment] issue  node=<id> id=<n> @<user>: <body>       — new issue-level comment
+#   [comment] inline node=<id> id=<n> @<user> <path>:<line>: <body>  — new inline review comment
+#   [comment] review node=<id> id=<n> @<user> [<STATE>]: <body>      — new review summary
 #
 # Usage:
 #   PR=<n> REPO=<owner>/<repo> INTERVAL=<sec> bash review-loop.sh
@@ -120,9 +120,11 @@ while true; do
   api_ok=true
 
   # --- Issue-level comments (?since= is inclusive; dedup by node_id).
-  # node=<id> is carried on the emitted line so hide/resolve can key on it.
+  # node=<id> (GraphQL node_id, for hide/resolve) and id=<n> (REST numeric id,
+  # for the /comments/<id>/replies endpoint) are both carried on the emitted
+  # line so the closeout steps can key on either without a second API fetch.
   if issue_comments=$(gh api "repos/$REPO/issues/$PR/comments?since=$since" \
-      --jq '.[] | "\(.node_id)\t[comment] issue node=\(.node_id) @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null); then
+      --jq '.[] | "\(.node_id)\t[comment] issue node=\(.node_id) id=\(.id) @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null); then
     while IFS=$'\t' read -r id line; do
       emit_comment "$id" "$line"
     done <<<"$issue_comments"
@@ -132,7 +134,7 @@ while true; do
 
   # --- Inline review comments.
   if inline_comments=$(gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
-      --jq '.[] | "\(.node_id)\t[comment] inline node=\(.node_id) @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null); then
+      --jq '.[] | "\(.node_id)\t[comment] inline node=\(.node_id) id=\(.id) @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null); then
     while IFS=$'\t' read -r id line; do
       emit_comment "$id" "$line"
     done <<<"$inline_comments"
@@ -146,7 +148,7 @@ while true; do
   # default page size is 30) so a long-lived PR with >30 reviews doesn't silently
   # drop the tail; node_id dedup handles the repeats across polls.
   if review_summaries=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
-      --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review node=\(.node_id) @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null); then
+      --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review node=\(.node_id) id=\(.id) @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null); then
     while IFS=$'\t' read -r id line; do
       emit_comment "$id" "$line"
     done <<<"$review_summaries"

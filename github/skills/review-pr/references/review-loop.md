@@ -29,12 +29,16 @@ Launch one Monitor with `persistent: true` (PR reviews arrive on no fixed schedu
 The command below emits:
 
 - `[ci] <name>: <bucket>` once per check reaching a terminal bucket (pass/fail/cancel/skipping)
-- `[comment] issue node=<id> @<user>: <body>` for new issue-level comments
-- `[comment] inline node=<id> @<user> <path>:<line>: <body>` for new inline review comments
-- `[comment] review node=<id> @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
+- `[comment] issue node=<id> id=<n> @<user>: <body>` for new issue-level comments
+- `[comment] inline node=<id> id=<n> @<user> <path>:<line>: <body>` for new inline review comments
+- `[comment] review node=<id> id=<n> @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
 
-Every `[comment]` line carries a `node=<id>` token (the comment's GitHub `node_id`) so the
-hide/resolve/closeout steps in Phase 3 — and the PR body rewrite in Phase 5 — can key on it.
+Every `[comment]` line carries two IDs so the closeout steps never need a second API fetch:
+- `node=<id>` — the comment's GraphQL `node_id`, used by `minimizeComment` (hide) and to match
+  review threads for `resolveReviewThread`.
+- `id=<n>` — the REST numeric id, used by the `/pulls/$PR/comments/<id>/replies` endpoint to
+  reply to accepted/rejected inline comments. (For review summaries, `id` is the review's id,
+  not a comment id — it does not feed the replies endpoint.)
 
 The script lives at `scripts/review-loop.sh` (executable, `#!/usr/bin/env bash`).
 Run it via the Monitor tool — it reads `PR`, `REPO`, and `INTERVAL` from env
