@@ -59,30 +59,29 @@ since=$(gh pr view "$PR" --repo "$REPO" --json createdAt --jq '.createdAt' 2>/de
 # Dedup sets, space-padded so `case *" $key "*` substring-match works.
 seen_comments=" "
 
-# CI dedup: track the last-seen bucket per check name as a space-padded string of
-# `name=bucket` entries, so a regression (fail→pass→fail after a fix push) re-emits.
-# A plain append-only `seen_ci` set would suppress the recurring fail because the
-# name=bucket key was already recorded from the first failure — breaking the loop's
-# job of re-surfacing failures after fix pushes. Only suppress when the bucket is
-# UNCHANGED from the last poll. (Plain string, not `declare -A` — macOS /bin/bash
-# is 3.2 and has no associative arrays. Entries are space-delimited so `* name=bucket *`
-# matches whole words, not substrings: `build=fail` won't match `rebuild=fail`.)
-last_ci=" "
+# CI dedup: track the last-seen bucket per check name so a regression
+# (fail→pass→fail after a fix push) re-emits. A plain append-only `seen_ci` set
+# would suppress the recurring fail because name=bucket was already recorded from
+# the first failure — breaking the loop's job of re-surfacing failures after fix
+# pushes. Only suppress when the bucket is UNCHANGED from the last poll.
+#
+# `last_ci` holds one `name=bucket` entry per line (newline-delimited). Newlines
+# never appear in GitHub check names (which routinely contain spaces, e.g.
+# `test (git)`), so a line is a whole name=bucket pair — a space-delimited scheme
+# would split `test (git)=pass` into junk tokens. Plain string, not `declare -A`:
+# macOS /bin/bash is 3.2 and has no associative arrays.
+last_ci=$'\n'
 
 # Replace any existing entry for `name` with `name=bucket` (or append if new),
-# so only the latest bucket per check is remembered. Tokens are space-separated
-# on a leading/trailing-space-padded string; the `case ${name}=*` pattern is
-# unquoted so `*` globs (a quoted pattern would treat `*` as literal).
+# so only the latest bucket per check is remembered. `case ${name}=$bucket` is
+# unquoted so `*` globs; lines are newline-delimited so the match is whole-entry.
 set_ci_bucket() {  # args: name  bucket
-  local name="$1" bucket="$2" tmp=" " tok rest="$last_ci"
-  while [ -n "$rest" ]; do
-    rest="${rest# }"                       # trim one leading space
-    [ -z "$rest" ] && break
-    tok="${rest%% *}"                      # first token: name=bucket
-    rest="${rest#"$tok"}"                  # consume it
-    case "$tok" in ${name}=*) ;; *) tmp="$tmp$tok " ;; esac
-  done
-  last_ci="$tmp${name}=${bucket} "
+  local name="$1" bucket="$2" line tmp=$'\n'
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    case "$line" in ${name}=*) ;; *) tmp="$tmp$line"$'\n' ;; esac
+  done <<<"$last_ci"
+  last_ci="${tmp}${name}=${bucket}"$'\n'
 }
 
 emit_comment() {  # args: id  line
@@ -103,10 +102,11 @@ while true; do
   if [ -n "$checks" ]; then
     while IFS=$'\t' read -r name bucket; do
       [ -z "$name" ] && continue
-      # Suppress only when the bucket is UNCHANGED from last poll (whole-word
-      # match on ` name=bucket `); a changed bucket — including a regression
-      # back to a previously-seen bucket — re-emits.
-      case "$last_ci" in *" ${name}=${bucket} "*) continue ;; esac
+      # Suppress only when an exact `name=bucket` line is already present (bucket
+      # UNCHANGED from last poll); a changed bucket — including a regression back
+      # to a previously-seen bucket — re-emits. Newline boundaries let names
+      # containing spaces (e.g. `test (git)`) match as a whole entry.
+      case "$last_ci" in *$'\n'"${name}=${bucket}"$'\n'*) continue ;; esac
       echo "[ci] $name: $bucket"
       set_ci_bucket "$name" "$bucket"
     done < <(jq -r '.[] | select(.bucket!="pending") | "\(.name)\t\(.bucket)"' <<<"$checks" 2>/dev/null)
@@ -142,8 +142,10 @@ while true; do
 
   # --- Review summaries. Fetch all non-PENDING and dedup by node_id client-side,
   # which avoids the fragile `submitted_at > since` string compare (that dropped
-  # reviews posted in the launch second).
-  if review_summaries=$(gh api "repos/$REPO/pulls/$PR/reviews" \
+  # reviews posted in the launch second). `--paginate` walks every page (GitHub's
+  # default page size is 30) so a long-lived PR with >30 reviews doesn't silently
+  # drop the tail; node_id dedup handles the repeats across polls.
+  if review_summaries=$(gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
       --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review node=\(.node_id) @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null); then
     while IFS=$'\t' read -r id line; do
       emit_comment "$id" "$line"
