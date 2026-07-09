@@ -63,7 +63,7 @@ Loaded by a consumer skill immediately before it would otherwise commit to solvi
 
 ### `commons-bridge:publish`
 
-Loaded only by `retrospective`'s promotion pathway (never by autoresearch/systematic-debugging/github:create-pr directly — those consume `recall` only). Content teaches:
+Loaded only by `retrospective`'s promotion pathway (never by autoresearch/systematic-debugging/github:review-pr directly — those consume `recall` only). Content teaches:
 
 1. Apply the four-criterion promotion gate from `_index.md` req #13 (category=pitfall, cross-project recurrence evidence, stricter public content bar, not a fast-follow of a Tier A→B promotion).
 2. Run the mandatory redaction step — strip secrets/PII/internal paths/hostnames/project names — before constructing the `remember` payload.
@@ -101,7 +101,7 @@ superpowers/skills/systematic-debugging/SKILL.md
                      confirmed fix, independent of the heavier Tier B 3-strikes
                      write gate at step 6
 
-github/skills/create-pr/references/post-pr-monitoring.md
+github/skills/review-pr/references/review-loop.md
   [ci] failure reaction table (lint/type/test/build) ──┐
                                                           ├─ [NEW] commons-bridge:recall
                                                           ▼

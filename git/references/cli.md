@@ -74,19 +74,19 @@ Generate and create commit(s) with AI-generated messages. Auto-stages all change
 When the project/user config has `require_model_co_author: true`, git-agent rejects any `--co-author` whose email domain is not on its allowlist, exiting with code 1 before calling the LLM:
 
 ```
-error: require_model_co_author is enabled — pass --co-author with an email from one of: anthropic.com, openai.com, google.com, ...
+error: require_model_co_author is enabled — pass --co-author with an email from one of: anthropic.com, openai.com, google.com, x.ai, ...
 ```
 
-The allowlist is **not hardcoded** — it is the union of:
+The allowlist is the union of:
 
-1. Built-in `DefaultModelCoAuthorDomains` = `anthropic.com`, `openai.com`, `google.com` (`domain/project/config.go`).
-2. The `model_co_author_domains` config key (a `stringslice`, valid in `--user` / `--project` / `--local` scopes), which is **appended** to the built-ins, not replacing them.
-
-So to support a non-built-in provider (e.g. GLM, Qwen, DeepSeek, Moonshot), the executing agent must **both** derive the correct domain (see the model-prefix table in each `/git:commit*` skill) **and** that domain must be added to git-agent config:
+1. Built-in `DefaultModelCoAuthorDomains` covering common AI providers — no config needed for these:
+   `anthropic.com`, `openai.com`, `google.com`, `x.ai`, `zhipuai.cn`, `qwen.ai`, `deepseek.com`, `moonshot.ai`
+   (see the model-prefix table in each `/git:commit*` skill — every row maps to a built-in domain).
+2. Optional `model_co_author_domains` config (a `stringslice`, valid in `--user` / `--project` / `--local` scopes), **appended** for custom / lesser-known providers only.
 
 ```bash
-# user scope = global, applies to all repos (preferred for cross-provider support)
-git-agent config set --user model_co_author_domains "zhipuai.cn,qwen.ai,deepseek.com,moonshot.ai"
+# only needed for a provider not already in the built-in list
+git-agent config set --user model_co_author_domains "acme.ai"
 # verify
 git-agent config get model_co_author_domains
 ```

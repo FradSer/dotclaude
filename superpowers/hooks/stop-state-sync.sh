@@ -23,6 +23,15 @@
 #          git rather than guessed from HEAD)
 #   C4  it is not already in plans-completed.jsonl       (first completion only)
 #
+# Handoff-state file extraction accepts BOTH historical and current templates:
+#   files:  "## Modified Files (cumulative)" backtick list
+#        OR "## File Ownership" table (first column of data rows)
+#   tasks:  "## Completed Task IDs" bullet list
+#        OR "## Completed Tasks" table (numeric-ID data rows)
+# The current handoff-template.md / evaluation-file-formats.md ship the File
+# Ownership + Completed Tasks form; the older unified-retro-events plan used
+# the Modified Files / Completed Task IDs form. Both must log.
+#
 # Responsibility 2 — evolution-log.jsonl backfill. The retrospective skill
 # writes these rows as model-instructed steps; the two whose absence is
 # self-reinforcing or guard-defeating get a state-based net:
@@ -62,6 +71,68 @@ PLANS_DIR="${ROOT%/}/docs/plans"
 
 EMIT="${SCRIPT_DIR}/../lib/jsonl-emit.sh"
 DEDUP_ANCHOR=','  # prefix for dedup_check substring below
+
+# Extract modified-file paths from handoff-state.md.
+# Accepts either:
+#   - "## Modified Files (cumulative)" section with `backtick` paths (legacy)
+#   - "## File Ownership" markdown table, first column of data rows (current
+#     handoff-template.md / evaluation-file-formats.md)
+# Prefers Modified Files when both exist (legacy explicit list).
+_extract_modified_files() {
+  local hs="$1"
+  awk '
+    /^## Modified Files \(cumulative\)/ { mod=1; own=0; next }
+    /^## File Ownership/                { if (!mod_seen) own=1; mod=0; next }
+    /^## / {
+      if (mod) mod_seen=1
+      mod=0; own=0; next
+    }
+    mod {
+      line=$0
+      while (match(line, /`[^`]+`/)) {
+        print substr(line, RSTART+1, RLENGTH-2)
+        line=substr(line, RSTART+RLENGTH)
+      }
+      mod_seen=1
+    }
+    own {
+      # Skip header / separator rows: "| File Path |" or "|---|"
+      if ($0 ~ /^\|[[:space:]]*[-:]+/) next
+      if ($0 ~ /^\|[[:space:]]*[Ff]ile [Pp]ath/) next
+      if ($0 ~ /^\|/) {
+        # First cell between leading | and next |
+        line=$0
+        sub(/^\|[[:space:]]*/, "", line)
+        sub(/[[:space:]]*\|.*/, "", line)
+        if (line != "" && line !~ /^-+$/) print line
+      }
+    }
+  ' "$hs" 2>/dev/null
+}
+
+# Count completed tasks from handoff-state.md.
+# Accepts either:
+#   - "## Completed Task IDs" bullet list (legacy)
+#   - "## Completed Tasks" markdown table with numeric-ID data rows (current)
+_extract_task_count() {
+  local hs="$1"
+  awk '
+    /^## Completed Task IDs/ { ids=1; tbl=0; next }
+    /^## Completed Tasks/    { if (!ids_seen) tbl=1; ids=0; next }
+    /^## / {
+      if (ids) ids_seen=1
+      ids=0; tbl=0; next
+    }
+    ids && /^[[:space:]]*-[[:space:]]/ { n++; ids_seen=1 }
+    tbl {
+      if ($0 ~ /^\|[[:space:]]*[-:| ]+$/) next
+      if ($0 ~ /^\|[[:space:]]*ID[[:space:]]*\|/) next
+      # Data row whose first cell is a task id (digits, optional -suffix)
+      if ($0 ~ /^\|[[:space:]]*[0-9]+([.-][A-Za-z0-9_-]+)?[[:space:]]*\|/) n++
+    }
+    END { print n+0 }
+  ' "$hs" 2>/dev/null
+}
 
 # =========================================================================
 # Responsibility 1: plans-completed.jsonl (only when plans exist)
@@ -103,22 +174,12 @@ if [[ -d "$PLANS_DIR" ]]; then
       fi
     fi
 
-    # Modified-files set (backtick items under "## Modified Files (cumulative)").
+    # Modified-files set — dual-format (see _extract_modified_files).
     # bash 3.2-compatible read loop (no mapfile).
     FILES=()
     while IFS= read -r _line; do
       [[ -n "$_line" ]] && FILES+=("$_line")
-    done < <(awk '
-      /^## Modified Files \(cumulative\)/ { inblk=1; next }
-      inblk && /^## / { inblk=0 }
-      inblk {
-        line=$0
-        while (match(line, /`[^`]+`/)) {
-          print substr(line, RSTART+1, RLENGTH-2)
-          line=substr(line, RSTART+RLENGTH)
-        }
-      }
-    ' "$HS" 2>/dev/null)
+    done < <(_extract_modified_files "$HS")
     [[ "${#FILES[@]}" -ge 1 ]] || continue
 
     # C3: a commit touches those files — confirms Phase 5 ran AND yields the
@@ -126,13 +187,8 @@ if [[ -d "$PLANS_DIR" ]]; then
     COMMIT=$(git -C "$ROOT" log -1 --format=%h -- "${FILES[@]}" 2>/dev/null)
     [[ "$COMMIT" =~ ^[a-f0-9]{7,40}$ ]] || continue
 
-    # Enrichment: task count = bullets under "## Completed Task IDs".
-    TASK_COUNT=$(awk '
-      /^## Completed Task IDs/ { inblk=1; next }
-      inblk && /^## / { inblk=0 }
-      inblk && /^[[:space:]]*-[[:space:]]/ { n++ }
-      END { print n+0 }
-    ' "$HS" 2>/dev/null)
+    # Enrichment: task count from dual-format completed-tasks section.
+    TASK_COUNT=$(_extract_task_count "$HS")
     [[ "$TASK_COUNT" =~ ^[0-9]+$ ]] || TASK_COUNT=0
 
     FILES_JSON=$(printf '%s\n' "${FILES[@]}" | jq -R . 2>/dev/null | jq -cs . 2>/dev/null)

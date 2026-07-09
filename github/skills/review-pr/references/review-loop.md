@@ -1,4 +1,4 @@
-# Post-PR Monitoring and Auto-Fix
+# Review Loop: Monitor, Triage, Auto-Fix
 
 Monitoring uses the **Monitor tool** — a single persistent background watch that emits
 one tagged stdout line per new event for BOTH CI checks and PR comments. Each line
@@ -29,49 +29,41 @@ Launch one Monitor with `persistent: true` (PR reviews arrive on no fixed schedu
 The command below emits:
 
 - `[ci] <name>: <bucket>` once per check reaching a terminal bucket (pass/fail/cancel/skipping)
-- `[comment] issue @<user>: <body>` for new issue-level comments
-- `[comment] inline @<user> <path>:<line>: <body>` for new inline review comments
-- `[comment] review @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
+- `[comment] issue node=<id> id=<n> @<user>: <body>` for new issue-level comments
+- `[comment] inline node=<id> id=<n> @<user> <path>:<line>: <body>` for new inline review comments
+- `[comment] review node=<id> id=<n> @<user> [<STATE>]: <body>` for new review summaries (approve / request-changes / comment)
+
+Every `[comment]` line carries two IDs so the closeout steps never need a second API fetch:
+- `node=<id>` — the comment's GraphQL `node_id`, used by `minimizeComment` (hide) and to match
+  review threads for `resolveReviewThread`.
+- `id=<n>` — the REST numeric id, used by the `/pulls/$PR/comments/<id>/replies` endpoint to
+  reply to accepted/rejected inline comments. (For review summaries, `id` is the review's id,
+  not a comment id — it does not feed the replies endpoint.)
+
+The script lives at `scripts/review-loop.sh` (executable, `#!/usr/bin/env bash`).
+Run it via the Monitor tool — it reads `PR`, `REPO`, and `INTERVAL` from env
+(or `--pr`/`--repo`/`--interval` flags) and emits the tagged lines above.
 
 ```bash
-PR=<pr-number>
-REPO=<owner>/<repo>
-INTERVAL="${INTERVAL:-300}"             # seconds; size-based — see table above
-since=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # server-side dedup for comments
-seen_ci=" "                            # space-padded set of emitted "name=bucket" keys
-
-while true; do
-  now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-  # --- CI: emit each check that newly reached a terminal bucket (covers failures, not just passes)
-  checks=$(gh pr checks "$PR" --repo "$REPO" --json name,bucket 2>/dev/null || true)
-  if [ -n "$checks" ]; then
-    while IFS=$'\t' read -r name bucket; do
-      [ -z "$name" ] && continue
-      case "$seen_ci" in
-        *" $name=$bucket "*) ;;
-        *) echo "[ci] $name: $bucket"; seen_ci="$seen_ci$name=$bucket " ;;
-      esac
-    done <<< "$(jq -r '.[] | select(.bucket!="pending") | "\(.name)\t\(.bucket)"' <<< "$checks" 2>/dev/null)"
-  fi
-
-  # --- Comments: issue-level, inline review, and review summaries (?since handles dedup)
-  gh api "repos/$REPO/issues/$PR/comments?since=$since" \
-    --jq '.[] | "[comment] issue @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null || true
-  gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
-    --jq '.[] | "[comment] inline @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null || true
-  gh api "repos/$REPO/pulls/$PR/reviews" \
-    --jq ".[] | select(.state != \"PENDING\" and .submitted_at > \"$since\") | \"[comment] review @\(.user.login) [\(.state)]: \(.body | gsub(\"\n\";\" \"))\"" 2>/dev/null || true
-
-  since=$now
-  sleep "$INTERVAL"
-done
+# From the skill, launch under a persistent Monitor:
+PR=<pr-number> REPO=<owner>/<repo> INTERVAL=<sec> \
+  bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/review-loop.sh
 ```
+
+Behavior notes:
+- `since` is seeded to the PR's **creation time** (not launch time), so comments posted
+  before the skill started are surfaced on poll 1. It advances to `now` after each poll.
+- Comments dedup client-side by `node_id` (GitHub's `?since=` is inclusive, so a comment
+  posted in the boundary second could otherwise re-emit).
+- Reviews are fetched without a `submitted_at` filter and deduped by `node_id` — the old
+  client-side `submitted_at > since` string compare dropped reviews posted in the launch
+  second.
+- `|| true` / `2>/dev/null` on every API call keeps one transient failure from killing
+  the watch; `INTERVAL` is floored at 60s.
 
 Run via the Monitor tool with `persistent: true` and a specific `description`
 (e.g. `"CI + new comments on PR #<n> (5m poll)"`). Stop it with TaskStop when done — never
-leave it running once the PR is settled. `|| true` on every poll keeps one transient
-API failure from killing the watch.
+leave it running once the PR is settled.
 
 ## You do not have to adopt review comments
 
@@ -174,15 +166,80 @@ Be terse. One line per comment, verdict first.
 2. Reply to each `reject` comment explaining why it was declined
 3. Send PushNotification for each `escalate` verdict with comment body + author + file context
 4. Commit and push all `fix` changes together in one round
+5. **Close out resolved comments** — for each comment that is now fully addressed (a `fix`
+   that you applied and pushed, OR a `reject` you replied to with a reason), hide it as
+   `OUTDATED` and resolve its thread. This keeps the PR review clean: only genuinely open
+   comments stay visible. See "Closing out resolved comments" below for the exact commands.
+   `escalate` comments stay open until the user decides.
 
-Apply the validated fixes, commit and push them via the `/git:commit-and-push` skill (Skill tool), then acknowledge each:
+Apply the validated fixes, commit and push them via the `/git:commit-and-push` skill (Skill tool), then acknowledge each. **The reply endpoint depends on comment type** — the `/pulls/$PR/comments/<id>/replies` endpoint ONLY accepts inline review-comment ids; using it for an issue-level comment or a review summary hits the wrong resource and fails:
 
 ```bash
-# Reply to accepted inline review comment
-gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="Fixed in <commit-sha>."
-# Reply to rejected inline review comment
-gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="<rejection reason from triage agent>"
+# Reply to an accepted/rejected INLINE review comment (id=<n> from the emitted line).
+gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="Fixed in <commit-sha>."     # accepted
+gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="<rejection reason>"        # rejected
+
+# Reply to an ISSUE-LEVEL comment — there is no reply endpoint; post a new PR
+# issue comment (the `id=<n>` from the emitted line can be referenced in the body
+# but is not used in the URL).
+gh pr comment "$PR" --repo "$REPO" --body="Re: <rejection reason or fix summary>"
+
+# REVIEW SUMMARIES have no reply endpoint at all — skip the reply. If a summary
+# raises a point worth addressing, reply to its inline sub-comments (handled as
+# inline above) or post a single summary issue comment via `gh pr comment`.
 ```
+
+### Closing out resolved comments
+
+When a comment is fully addressed (fixed-and-pushed, or rejected with a reply), hide and
+resolve it so the PR review only shows what is still open. Both use GraphQL via `gh api graphql`,
+keyed on the comment's `node_id` (GitHub's `node_id`, NOT the REST numeric id).
+
+**Minimize (hide) a comment** — works on issue-level AND inline review comments:
+
+```bash
+# $NODE_ID = the comment's node_id (from .node_id in the REST responses above)
+gh api graphql -f query="mutation { minimizeComment(input: {subjectId: \"$NODE_ID\", classifier: OUTDATED}) { minimizedComment { isMinimized } } }"
+```
+
+**Resolve an inline review comment's thread** — inline comments only; issue-level comments
+have no thread. Resolving requires the **thread node ID**, which is NOT the comment node_id.
+Resolve only the thread containing each *top-level* inline comment you addressed (skip reply
+comments — their thread is the parent's). Look up the thread IDs once per PR, then resolve:
+
+```bash
+# 1. Fetch every review thread with its node ID, line, path, and the first comment's
+#    GraphQL `id` — which equals the REST `node_id` you just triaged on, so you can match
+#    each thread to the comment node_ids from the [comment] batch. Loop on the cursor:
+#    `first:100` alone would truncate at 100 threads (bot-heavy PRs can exceed that),
+#    leaving addressed comments beyond the first page unresolvable.
+threads=""
+cursor=""
+while :; do
+  page=$(gh api graphql -f query='query($pr:Int!, $owner:String!, $name:String!, $c:String!) {
+    repository(owner:$owner, name:$name) {
+      pullRequest(number:$pr) {
+        reviewThreads(first:100, after:$c) {
+          nodes { id isResolved line path comments(first:1) { nodes { id fullDatabaseId } } }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    }
+  }' -F owner="${REPO%/*}" -F name="${REPO#*/}" -F pr="$PR" -F c="$cursor" 2>/dev/null || true)
+  [ -z "$page" ] && break
+  threads="$threads$(printf '%s' "$page" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]')"
+  has_next=$(printf '%s' "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  [ "$has_next" = "true" ] && cursor=$(printf '%s' "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor') || break
+done
+# `threads` now holds one JSON thread object per line; match by comments[0].id (== node_id).
+# 2. For each thread whose first comment you fully addressed, resolve it:
+gh api graphql -f query="mutation { resolveReviewThread(input: {threadId: \"$THREAD_ID\"}) { thread { isResolved } } }"
+```
+
+Order per comment: for inline comments, reply first, then resolve the thread, then minimize
+the comment (minimize-after-resolve is fine; minimizing a comment does not resolve its thread).
+For issue-level comments, reply then minimize (no thread to resolve). Do NOT hide or resolve
+`escalate` comments — they stay open for the user.
 
 ### `[comment]` ambiguous — PushNotification and report
 
@@ -204,7 +261,8 @@ body + author + file context, and let the user decide. Do NOT reply to or guess 
 - Stop with **TaskStop** ONLY when ALL hold:
   1. Every `[ci]` check is terminal AND passing.
   2. Every review comment received so far has been reflected on (triaged, replied to,
-     or fixed) — none remain that still need to be adopted.
+     or fixed) AND every fully-resolved one is hidden + its thread resolved. The only
+     comments left visible on the PR are unresolved `escalate` items awaiting the user.
   3. The user signals they are done with live coverage, or the ~2-hour max wall-clock
      is reached (in which case surface the unsettled state to the user first).
 - If the user wants ongoing review coverage, leave it persistent and stop on their signal.

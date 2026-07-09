@@ -1,6 +1,6 @@
 ---
 name: commit-and-push
-description: Creates conventional git commits using git-agent and pushes to the remote repository. This skill should be used when the user asks to "commit and push", "push my changes", or wants to commit and immediately push to remote. The executing AI auto-derives its own co-author string from its runtime model identity (e.g., `Claude Opus 4.7 <noreply@anthropic.com>`, `GLM-4.5 <noreply@zhipuai.cn>`) and passes it to `--co-author`. `$ARGUMENTS`, if provided, overrides the auto-derived value.
+description: Creates conventional git commits using git-agent and pushes to the remote repository. This skill should be used when the user asks to "commit and push", "push my changes", or wants to commit and immediately push to remote. The executing AI auto-derives its own co-author string from its runtime model identity (e.g., `Claude Opus 4.7 <noreply@anthropic.com>`, `Grok 4.5 <noreply@x.ai>`, `GLM-4.5 <noreply@zhipuai.cn>`) and passes it to `--co-author`. `$ARGUMENTS`, if provided, overrides the auto-derived value.
 user-invocable: true
 argument-hint: <co-author>
 allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)"]
@@ -11,13 +11,14 @@ CRITICAL:
 - Always pass `--co-author` to `git-agent commit`. If `$ARGUMENTS` is non-empty, use it verbatim. Otherwise self-derive from your own runtime model identity: take the model identifier from your own system prompt, map it to a provider domain via the table below, and build `<Display Name> <noreply@<domain>>`. Never run a commit without `--co-author`.
 
 1. Derive a one-sentence intent from the conversation.
-2. Resolve `<co-author>`: if `$ARGUMENTS` is non-empty use it verbatim; otherwise pick the row below whose model-prefix matches the model named in your own system prompt, and build `<Display Name> <noreply@<domain>>` (e.g. `Claude Opus 4.7 <noreply@anthropic.com>`, `GLM-4.5 <noreply@zhipuai.cn>`).
+2. Resolve `<co-author>`: if `$ARGUMENTS` is non-empty use it verbatim; otherwise pick the row below whose model-prefix matches the model named in your own system prompt, and build `<Display Name> <noreply@<domain>>` (e.g. `Claude Opus 4.7 <noreply@anthropic.com>`, `Grok 4.5 <noreply@x.ai>`, `GLM-4.5 <noreply@zhipuai.cn>`).
 
    | Model prefix | Display Name | noreply domain |
    |---|---|---|
    | `claude-` / `Claude` (Fable/Opus/Sonnet/Haiku) | Claude <variant> | anthropic.com |
    | `gpt-` / `o1-` / `o3-` / `openai` | GPT <variant> | openai.com |
    | `gemini-` / `Gemini` | Gemini <variant> | google.com |
+   | `grok` / `Grok` / `xai` / `xAI` | Grok <variant> | x.ai |
    | `glm-` / `GLM` / `chatglm` | GLM <variant> | zhipuai.cn |
    | `qwen` | Qwen <variant> | qwen.ai |
    | `deepseek` | DeepSeek <variant> | deepseek.com |

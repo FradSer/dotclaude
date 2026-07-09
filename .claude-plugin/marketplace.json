@@ -37,7 +37,7 @@
     {
       "name": "github",
       "displayName": "GitHub",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -63,7 +63,7 @@
     {
       "name": "office",
       "displayName": "Office",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection",
       "author": {
         "name": "Frad LEE",

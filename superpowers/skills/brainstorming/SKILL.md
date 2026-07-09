@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: Turns rough ideas into implementation-ready designs via autonomous codebase research and BDD specs, then commits the design for your review (it runs to completion without pausing for mid-design questions). This skill should be used when the user has a new idea, feature request, ambiguous requirement, or asks to "brainstorm a solution" before implementation begins.
+description: Turns rough ideas into implementation-ready designs for the current repository via autonomous codebase research and BDD specs, then commits the design for your review (it runs to completion without pausing for mid-design questions). This skill should be used when the user wants to design a new software feature or multi-component change to be built in the current repo before implementation begins — including new features that do not yet reference existing code. NOT for hardware or physical-system design (sensors, devices, firmware-to-app communication, embedded behavior), questions outside this repo's codebase, single-file refactors, known-root-cause bug fixes, or "how does X work" questions (those route to systematic-debugging or direct code reading instead).
 user-invocable: true
 allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---

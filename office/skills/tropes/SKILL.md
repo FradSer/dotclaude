@@ -1,6 +1,6 @@
 ---
 name: tropes
-description: Detects and eliminates AI writing tropes that make text sound artificial or formulaic. Use when generating text content, writing documentation, creating code comments, or reviewing writing style. Supports two-tier preference overrides (global ~/.claude/office.local.md + project .claude/office.local.md).
+description: Detects and eliminates AI writing tropes that make text sound artificial or formulaic. Use when generating text content, writing documentation, creating code comments, or reviewing writing style. Supports four-tier JSON preferences (global/project x shared/local office.json) read via load-preferences.sh.
 ---
 
 # AI Writing Tropes Detection
@@ -27,19 +27,31 @@ Scan for tropes when:
 
 ### 0. Load User Preferences
 
-Check for preference files in order (project overrides global):
-1. `.claude/office.local.md` (project-level, in the current working directory)
-2. `~/.claude/office.local.md` (user-level, global)
+CRITICAL: User preferences live in `office.*.json` files (NOT Claude Code's `settings.json`). These are the office plugin's own preference files following the `.claude/plugin-name.local.*` convention with `.json` carriers. They do NOT participate in the harness four-layer settings merge — the merge is done by `load-preferences.sh`.
 
-If either exists:
-- Parse YAML frontmatter for structured settings (sensitivity, tone, banned words, skip categories)
-- Read markdown body for freeform rules
-- Merge: project-level settings override global settings field-by-field
-- Apply merged preferences as overrides to the default detection behavior below
+Run the loader script to get the merged preferences as a single JSON object:
 
-If neither exists, offer to create the global file with default values after the detection run completes.
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/load-preferences.sh
+```
 
-See `references/preferences-schema.md` for the full field reference and precedence rules.
+The script reads up to four files in precedence order (highest first): `.claude/office.local.json` (project, personal) > `.claude/office.json` (project, shared) > `~/.claude/office.local.json` (global, personal) > `~/.claude/office.json` (global, shared). It deep-merges them (scalars replaced by higher layer, lists concatenated and deduped, pattern_caps deduped by `id`, dead_metaphors.entries by `word`), and prints the merged JSON to stdout. If jq is missing or all files are absent, it fails open to `{}` and default rules apply.
+
+Apply the merged preferences as overrides/supplements to the default detection below:
+- `banned_words` / `banned_phrases` / `zh.*` / `en.*` — additive to default trope words
+- `preferred_terms` — suggested replacements during revision
+- `skip_categories` — disables the named category entirely (enum: `word-choice`, `sentence-structure`, `paragraph-structure`, `tone`, `formatting`, `composition`, `professional-balance`)
+- `sensitivity` — threshold override (`strict` flags single occurrences; `relaxed` only 3+)
+- `tone` — baseline shift for professional-balance
+- `formatting.max_em_dashes` / `formatting.allow_bold_first_bullets` — formatting thresholds
+- `dead_metaphors` — enforce per-word caps (default 1; `quote_exception` skips quoted speech); suggest `replacement`
+- `pattern_caps` — enforce per-pattern caps (`reversal_sentence`, `parallelism_triple`, `arrow_flow`, `numbered_bold_sections`), honoring `forbidden_in` / `scope` / `exception`
+- `rhetorical_bans` — ban rhetorical patterns by stable ID (`self_qa`, `self_eval_summary`, `parallel_antithesis_subheading`, `process_meta_narration`)
+- `principles` — judgmental free-text rules applied as additional checks
+
+If both files are absent, after the detection run, offer to create the global file with default values.
+
+See `references/preferences-schema.md` for the full field reference and merge rules.
 
 ### 1. Pattern Scan
 
@@ -75,12 +87,22 @@ After revision:
 
 ### 5. Preference Sync (Optional)
 
-After the detection run, offer to save preferences to either `~/.claude/office.local.md` (global) or `.claude/office.local.md` (project):
-- Newly flagged words the user wants to permanently ban → add to `banned_words`
-- Repeated correction patterns → add to `preferred_terms`
-- Sensitivity adjustments based on false positives → update `sensitivity`
+After the detection run, offer to save preferences to one of the four files (default `~/.claude/office.local.json`):
+- `~/.claude/office.local.json` — global personal defaults
+- `~/.claude/office.json` — global shared baseline
+- `.claude/office.local.json` — project personal (gitignore this)
+- `.claude/office.json` — project shared (commit this for the team)
 
-Default target is the global file unless the user specifies project-level. Do not auto-write preferences. Present the proposed changes and let the user confirm.
+When the user wants a rule shared with a team, suggest a `.json` (shared) file; for personal preferences, a `.local.json` file. Then:
+- Newly flagged words → `banned_words` / `banned_phrases` / `zh.banned_words` / `en.banned_words`
+- Repeated correction patterns → `preferred_terms`
+- New dead metaphors → `dead_metaphors.entries` (with `word`, `replacement`, `cap`)
+- New sentence-pattern caps → `pattern_caps` (with `id`, `max`/`max_nodes`, optional `forbidden_in`/`scope`/`exception`)
+- Rhetorical pattern bans → `rhetorical_bans` (stable ID)
+- Judgmental rules → `principles`
+- Sensitivity adjustments → `sensitivity`
+
+Default target is the global file unless the user specifies project-level. Do not auto-write. Present a diff preview: which file, which field, and what the merged JSON will look like. Let the user confirm before writing.
 
 ## Pattern Categories
 
@@ -110,4 +132,4 @@ The complete trope catalog is organized into seven categories. Load specific ref
 Plus one supporting schema (not a trope category):
 
 - **User Preferences** - `references/preferences-schema.md`
-  Two-tier overrides: global `~/.claude/office.local.md` + project `.claude/office.local.md`. Custom banned words, sensitivity, tone, skip categories.
+  Two-tier JSON config: global `~/.claude/office.local.json` + project `.claude/office.local.json`, read and merged by `load-preferences.sh`. Custom banned words/phrases, dead metaphors, pattern caps, sensitivity, tone, skip categories.
