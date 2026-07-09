@@ -35,9 +35,37 @@ def _jsonl_line(obj: dict) -> str:
 
 
 def _handoff(task_ids: list[str], files: list[str]) -> str:
+    """Legacy handoff form: Completed Task IDs bullets + Modified Files backticks."""
     tasks = "\n".join(f"- {t}" for t in task_ids)
     mods = "\n".join(f"- `{f}`" for f in files)
     return f"# Handoff State\n\n## Completed Task IDs\n\n{tasks}\n\n## Modified Files (cumulative)\n\n{mods}\n"
+
+
+def _handoff_current_template(task_rows: list[tuple[str, str]], files: list[str]) -> str:
+    """Current handoff-template.md form: Completed Tasks table + File Ownership table.
+
+    This is what memory-layer (2026-07-04) and later plans actually write. The hook
+    must accept it; previously only the legacy form was parsed, so plans-completed
+    stayed empty after those plans finished.
+    """
+    task_lines = "\n".join(
+        f"| {tid} | {subject} | PASS (all items) | 1 |" for tid, subject in task_rows
+    )
+    file_lines = "\n".join(f"| {f} | 001 |" for f in files)
+    return (
+        "# Handoff State\n\n"
+        "## Completed Tasks\n\n"
+        "| ID | Subject | Checklist Result | Batch |\n"
+        "|----|---------|------------------|-------|\n"
+        f"{task_lines}\n\n"
+        "## Remaining Tasks\n\nNone.\n\n"
+        "## Key Decisions\n\n- none\n\n"
+        "## File Ownership\n\n"
+        "| File Path | Last Modified By Task |\n"
+        "|-----------|------------------------|\n"
+        f"{file_lines}\n\n"
+        "## Blockers\n\nNone.\n"
+    )
 
 
 class StopStateSyncPlanCompletionTests(unittest.TestCase):
@@ -59,10 +87,12 @@ class StopStateSyncPlanCompletionTests(unittest.TestCase):
         summaries: int,
         files: list[str],
         tasks: list[str],
+        handoff_body: str | None = None,
     ) -> Path:
         plan = self.root / "docs" / "plans" / name
         plan.mkdir(parents=True)
-        plan.joinpath("handoff-state.md").write_text(_handoff(tasks, files))
+        body = handoff_body if handoff_body is not None else _handoff(tasks, files)
+        plan.joinpath("handoff-state.md").write_text(body)
         for n in range(1, batches + 1):
             plan.joinpath(f"sprint-contract-batch-{n}.md").write_text(f"batch {n}")
         for n in range(1, summaries + 1):
@@ -108,6 +138,36 @@ class StopStateSyncPlanCompletionTests(unittest.TestCase):
         self.assertEqual(row["completion_modified_files"], files)
         self.assertEqual(row["repo_root"], str(self.root))
         self.assertIn("timestamp", row)
+
+    def test_complete_committed_plan_current_template_is_logged(self) -> None:
+        """File Ownership table + Completed Tasks table (handoff-template.md form)."""
+        files = ["src/auth.py", "tests/test_auth.py", "src/config.yml"]
+        task_rows = [
+            ("001", "Set up scaffolding"),
+            ("002", "Write auth tests"),
+            ("003", "Implement auth"),
+        ]
+        body = _handoff_current_template(task_rows, files)
+        self._make_plan(
+            "2026-07-04-current-template-plan",
+            batches=1,
+            summaries=1,
+            files=files,
+            tasks=[],  # unused — body supplied
+            handoff_body=body,
+        )
+        sha = commit(self.root, "feat: current template done", {f: "x" for f in files})
+        r = self._run()
+        self.assertEqual(r.returncode, 0, msg=r.stderr)
+        rows = self._log()
+        self.assertEqual(len(rows), 1, msg=f"expected 1 row, got {rows}")
+        row = rows[0]
+        self.assertEqual(row["event"], "plan_completed")
+        self.assertEqual(row["plan"], "docs/plans/2026-07-04-current-template-plan")
+        self.assertEqual(row["batch_count"], 1)
+        self.assertEqual(row["task_count"], 3)
+        self.assertEqual(row["completion_commit"], sha[:7])
+        self.assertEqual(row["completion_modified_files"], files)
 
     def test_incomplete_plan_not_logged(self) -> None:
         files = ["src/a.py"]
