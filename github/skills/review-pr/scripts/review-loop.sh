@@ -82,13 +82,16 @@ seen_comments=" "
 last_ci=$'\n'
 
 # Replace any existing entry for `name` with `name=bucket` (or append if new),
-# so only the latest bucket per check is remembered. `case ${name}=$bucket` is
-# unquoted so `*` globs; lines are newline-delimited so the match is whole-entry.
+# so only the latest bucket per check is remembered. The drop test uses
+# `[[ "$line" == "${name}="* ]]`: `${name}=` is QUOTED so any glob metacharacters
+# in the check name (e.g. `test [linux]` from a GitHub Actions matrix) are treated
+# as literals, with only the trailing `*` globbing the bucket value. (An unquoted
+# `case ${name}=*` would let `[`/`]`/`*`/`?` in the name match unrelated entries.)
 set_ci_bucket() {  # args: name  bucket
   local name="$1" bucket="$2" line tmp=$'\n'
   while IFS= read -r line; do
     [ -z "$line" ] && continue
-    case "$line" in ${name}=*) ;; *) tmp="$tmp$line"$'\n' ;; esac
+    [[ "$line" == "${name}="* ]] || tmp="$tmp$line"$'\n'
   done <<<"$last_ci"
   last_ci="${tmp}${name}=${bucket}"$'\n'
 }

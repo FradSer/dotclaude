@@ -210,16 +210,28 @@ comments — their thread is the parent's). Look up the thread IDs once per PR, 
 ```bash
 # 1. Fetch every review thread with its node ID, line, path, and the first comment's
 #    GraphQL `id` — which equals the REST `node_id` you just triaged on, so you can match
-#    each thread to the comment node_ids from the [comment] batch.
-gh api graphql -f query='query($pr:Int!, $owner:String!, $name:String!) {
-  repository(owner:$owner, name:$name) {
-    pullRequest(number:$pr) {
-      reviewThreads(first:100) {
-        nodes { id isResolved line path comments(first:1) { nodes { id fullDatabaseId } } }
+#    each thread to the comment node_ids from the [comment] batch. Loop on the cursor:
+#    `first:100` alone would truncate at 100 threads (bot-heavy PRs can exceed that),
+#    leaving addressed comments beyond the first page unresolvable.
+threads=""
+cursor=""
+while :; do
+  page=$(gh api graphql -f query='query($pr:Int!, $owner:String!, $name:String!, $c:String!) {
+    repository(owner:$owner, name:$name) {
+      pullRequest(number:$pr) {
+        reviewThreads(first:100, after:$c) {
+          nodes { id isResolved line path comments(first:1) { nodes { id fullDatabaseId } } }
+          pageInfo { hasNextPage endCursor }
+        }
       }
     }
-  }
-}' -F owner="${REPO%/*}" -F name="${REPO#*/}" -F pr="$PR"
+  }' -F owner="${REPO%/*}" -F name="${REPO#*/}" -F pr="$PR" -F c="$cursor" 2>/dev/null || true)
+  [ -z "$page" ] && break
+  threads="$threads$(printf '%s' "$page" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]')"
+  has_next=$(printf '%s' "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  [ "$has_next" = "true" ] && cursor=$(printf '%s' "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor') || break
+done
+# `threads` now holds one JSON thread object per line; match by comments[0].id (== node_id).
 # 2. For each thread whose first comment you fully addressed, resolve it:
 gh api graphql -f query="mutation { resolveReviewThread(input: {threadId: \"$THREAD_ID\"}) { thread { isResolved } } }"
 ```
