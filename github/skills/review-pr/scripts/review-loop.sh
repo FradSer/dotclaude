@@ -39,8 +39,15 @@ if [ -z "$PR" ] || [ -z "$REPO" ]; then
   exit 2
 fi
 
-# INTERVAL sanity: never faster than once per minute (GitHub + token cost).
-if [ "$INTERVAL" -lt 60 ] 2>/dev/null; then INTERVAL=60; fi
+# INTERVAL sanity: must be a positive integer; never faster than once per
+# minute (GitHub + token cost). A non-integer would make the `-lt` test fail
+# and `sleep` return non-zero, spinning the loop without sleeping and flooding
+# the API — so fall back to the default instead.
+if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]]; then
+  INTERVAL=300
+elif [ "$INTERVAL" -lt 60 ]; then
+  INTERVAL=60
+fi
 
 # Seed `since` to the PR's creation time (not launch time) so pre-existing
 # comments posted before the skill started surface on poll 1. GitHub's ?since=
@@ -76,27 +83,46 @@ while true; do
     done < <(jq -r '.[] | select(.bucket!="pending") | "\(.name)\t\(.bucket)"' <<<"$checks" 2>/dev/null)
   fi
 
+  # Only advance `since` when the comment-fetching API calls all succeeded.
+  # If a transient failure (rate limit, network) dropped a call, reusing the
+  # old `since` next poll re-fetches that window — `seen_comments` dedups any
+  # repeats, so no comment is permanently missed. Failing forward to `now`
+  # would silently drop every comment posted during the failed window.
+  api_ok=true
+
   # --- Issue-level comments (?since= is inclusive; dedup by node_id).
   # node=<id> is carried on the emitted line so hide/resolve can key on it.
-  while IFS=$'\t' read -r id line; do
-    emit_comment "$id" "$line"
-  done < <(gh api "repos/$REPO/issues/$PR/comments?since=$since" \
-      --jq '.[] | "\(.node_id)\t[comment] issue node=\(.node_id) @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null)
+  if issue_comments=$(gh api "repos/$REPO/issues/$PR/comments?since=$since" \
+      --jq '.[] | "\(.node_id)\t[comment] issue node=\(.node_id) @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null); then
+    while IFS=$'\t' read -r id line; do
+      emit_comment "$id" "$line"
+    done <<<"$issue_comments"
+  else
+    api_ok=false
+  fi
 
   # --- Inline review comments.
-  while IFS=$'\t' read -r id line; do
-    emit_comment "$id" "$line"
-  done < <(gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
-      --jq '.[] | "\(.node_id)\t[comment] inline node=\(.node_id) @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null)
+  if inline_comments=$(gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
+      --jq '.[] | "\(.node_id)\t[comment] inline node=\(.node_id) @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null); then
+    while IFS=$'\t' read -r id line; do
+      emit_comment "$id" "$line"
+    done <<<"$inline_comments"
+  else
+    api_ok=false
+  fi
 
   # --- Review summaries. Fetch all non-PENDING and dedup by node_id client-side,
   # which avoids the fragile `submitted_at > since` string compare (that dropped
   # reviews posted in the launch second).
-  while IFS=$'\t' read -r id line; do
-    emit_comment "$id" "$line"
-  done < <(gh api "repos/$REPO/pulls/$PR/reviews" \
-      --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review node=\(.node_id) @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null)
+  if review_summaries=$(gh api "repos/$REPO/pulls/$PR/reviews" \
+      --jq '.[] | select(.state != "PENDING") | "\(.node_id)\t[comment] review node=\(.node_id) @\(.user.login) [\(.state)]: \(.body | gsub("\n";" "))"' 2>/dev/null); then
+    while IFS=$'\t' read -r id line; do
+      emit_comment "$id" "$line"
+    done <<<"$review_summaries"
+  else
+    api_ok=false
+  fi
 
-  since=$now
+  [ "$api_ok" = true ] && since=$now
   sleep "$INTERVAL"
 done

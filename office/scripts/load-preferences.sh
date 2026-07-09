@@ -84,7 +84,7 @@ def dedup:
 def merge(a;b):
   if (a | type) == "object" and (b | type) == "object" then
     reduce (a,b | keys | unique[]) as $k
-      ({}; .[$k] = merge(a[$k] // null; b[$k] // null))
+      ({}; .[$k] = merge(a[$k]; b[$k]))
   elif (a | type) == "array" and (b | type) == "array" then
     (a + b) | dedup
   elif b == null then a
