@@ -129,10 +129,14 @@ while true; do
   api_ok=true
 
   # --- Issue-level comments (?since= is inclusive; dedup by node_id).
+  # `--paginate` walks every page: poll 1 seeds `since` to the PR creation time,
+  # so the whole comment history is in scope and a PR with >30 comments (GitHub's
+  # default page size) would otherwise have its tail silently dropped before
+  # `since` advances to `now`. node_id dedup handles repeats across polls.
   # node=<id> (GraphQL node_id, for hide/resolve) and id=<n> (REST numeric id,
   # for the /comments/<id>/replies endpoint) are both carried on the emitted
   # line so the closeout steps can key on either without a second API fetch.
-  if issue_comments=$(gh api "repos/$REPO/issues/$PR/comments?since=$since" \
+  if issue_comments=$(gh api --paginate "repos/$REPO/issues/$PR/comments?since=$since" \
       --jq '.[] | "\(.node_id)\t[comment] issue node=\(.node_id) id=\(.id) @\(.user.login): \(.body | gsub("\n";" "))"' 2>/dev/null); then
     while IFS=$'\t' read -r id line; do
       emit_comment "$id" "$line"
@@ -142,7 +146,7 @@ while true; do
   fi
 
   # --- Inline review comments.
-  if inline_comments=$(gh api "repos/$REPO/pulls/$PR/comments?since=$since" \
+  if inline_comments=$(gh api --paginate "repos/$REPO/pulls/$PR/comments?since=$since" \
       --jq '.[] | "\(.node_id)\t[comment] inline node=\(.node_id) id=\(.id) @\(.user.login) \(.path):\(.line // .original_line): \(.body | gsub("\n";" "))"' 2>/dev/null); then
     while IFS=$'\t' read -r id line; do
       emit_comment "$id" "$line"
