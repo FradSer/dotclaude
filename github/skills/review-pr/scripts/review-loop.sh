@@ -26,11 +26,13 @@ INTERVAL="${INTERVAL:-300}"
 while [ $# -gt 0 ]; do
   case "$1" in
     # Flags fill in only when the env var is unset, so env vars keep precedence
-    # over flags (as the header above documents). `shift 2` always runs so a
-    # flag missing its value still advances instead of looping forever.
-    --pr)        [ -z "${PR:-}" ] && PR="$2"; shift 2 ;;
-    --repo)      [ -z "${REPO:-}" ] && REPO="$2"; shift 2 ;;
-    --interval)  [ -z "${INTERVAL:-}" ] && INTERVAL="$2"; shift 2 ;;
+    # over flags (as the header above documents). Guard `$# -ge 2` BEFORE
+    # touching `$2` — under `set -u` an absent `$2` would crash the watch, and
+    # `shift 2` with too few args would spin forever. A flag missing its value
+    # errors out cleanly instead.
+    --pr)        if [ $# -ge 2 ]; then [ -z "${PR:-}" ] && PR="$2"; shift 2; else echo "review-loop.sh: $1 requires a value" >&2; exit 2; fi ;;
+    --repo)      if [ $# -ge 2 ]; then [ -z "${REPO:-}" ] && REPO="$2"; shift 2; else echo "review-loop.sh: $1 requires a value" >&2; exit 2; fi ;;
+    --interval)  if [ $# -ge 2 ]; then [ -z "${INTERVAL:-}" ] && INTERVAL="$2"; shift 2; else echo "review-loop.sh: $1 requires a value" >&2; exit 2; fi ;;
     -h|--help)
       sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
