@@ -25,9 +25,12 @@ INTERVAL="${INTERVAL:-300}"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --pr)        PR="$2"; shift 2 ;;
-    --repo)      REPO="$2"; shift 2 ;;
-    --interval)  INTERVAL="$2"; shift 2 ;;
+    # Flags fill in only when the env var is unset, so env vars keep precedence
+    # over flags (as the header above documents). `shift 2` always runs so a
+    # flag missing its value still advances instead of looping forever.
+    --pr)        [ -z "${PR:-}" ] && PR="$2"; shift 2 ;;
+    --repo)      [ -z "${REPO:-}" ] && REPO="$2"; shift 2 ;;
+    --interval)  [ -z "${INTERVAL:-}" ] && INTERVAL="$2"; shift 2 ;;
     -h|--help)
       sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;

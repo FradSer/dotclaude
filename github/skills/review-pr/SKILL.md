@@ -13,7 +13,7 @@ Run a baseline review with the built-in `/review`, then keep a persistent watch 
 ## Context
 
 - PR argument: `$ARGUMENTS`
-- PR metadata: !`gh pr view $ARGUMENTS --json number,title,headRepository,headRepositoryOwner,additions,deletions,headRefName 2>/dev/null || echo "set $ARGUMENTS to a PR number or URL"`
+- PR metadata: !`gh pr view "$ARGUMENTS" --json number,title,headRepository,headRepositoryOwner,additions,deletions,headRefName 2>/dev/null || printf 'set %s to a PR number or URL\n' "$ARGUMENTS"`
 - Remote: !`git remote -v 2>/dev/null | head -2`
 - Auth: !`gh auth status 2>&1 | head -3`
 
