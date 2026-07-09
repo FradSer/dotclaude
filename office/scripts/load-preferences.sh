@@ -47,6 +47,21 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
+# v0.5.x -> v0.6.0 upgrade guard: preferences moved from office.local.md (YAML
+# frontmatter + markdown body) to office.*.json. Warn (not fail) when an old
+# .md file exists alongside a missing .json, so upgraders don't silently lose
+# their preferences. The script still fails open to '{}' (defaults) either way.
+warn_legacy_md() {  # args: md_path  json_path  label
+  [ -f "$1" ] || return 0
+  [ -f "$2" ] && return 0
+  echo "office: legacy $1 exists but no $2 — preferences were not loaded." >&2
+  echo "office: migrate $1 (v0.5.x .md) to $2 (v0.6.0 .json); see references/preferences-schema.md." >&2
+}
+warn_legacy_md "$HOME/.claude/office.local.md" "$GLOBAL_LOCAL" "global local"
+warn_legacy_md "$HOME/.claude/office.md"       "$GLOBAL_SHARED" "global shared"
+warn_legacy_md "./.claude/office.local.md"     "$PROJECT_LOCAL" "project local"
+warn_legacy_md "./.claude/office.md"           "$PROJECT_SHARED" "project shared"
+
 # Read a file as JSON, or emit '{}' if missing/invalid (warn on invalid).
 read_json() {
   local file="$1"
