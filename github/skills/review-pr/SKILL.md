@@ -54,21 +54,23 @@ Stop the Monitor with `TaskStop` ONLY when ALL hold:
 
 A temporarily empty comment queue is NOT a stop signal — other agents may post more comments later.
 
-## Phase 5: Closeout — Summary Comment and PR Body Rewrite
+## Phase 5: Closeout — Summary, Body Rewrite, and Merge
 
-**Goal**: Once the Phase 4 stop conditions hold (CI green, every comment reflected on and resolved ones hidden + threads resolved), write a merge-readiness summary **as the user** and refresh the PR title/body so the PR page is the durable record. Full rules and templates in `references/closeout.md`.
+**Goal**: Once the Phase 4 stop conditions hold (CI green, every comment reflected on and resolved ones hidden + threads resolved), write a merge-readiness summary **as the user**, refresh the PR title/body so the PR page is the durable record, then ask the user whether to merge. Full rules and templates in `references/closeout.md`.
 
 **Actions** (run after the Phase 3 closeout hide/resolve, before `TaskStop`):
-1. Post a summary `gh pr comment` in the user's first-person voice covering: (a) what was changed across the review cycle, grouped by logical change not commit-by-commit; (b) what each comment batch surfaced and what was done (adopted with sha / rejected with reason / escalated and decision). Use `--body-file -` with a heredoc. If a summary was already posted, `--edit-last` instead of duplicating.
-2. Rewrite the PR title and body via `gh pr edit -t/--body-file -`. Lead the body with What/Why, then Changes, a one-line Review-cycle pointer to the summary comment, then Verification (real commands + results). Rewrite the title only if the current one no longer matches the merged change — do not churn an accurate title for style.
-3. `TaskStop` the Monitor.
+1. Confirm the Phase 3 closeout ran to completion: every `fix`/`reject` comment is hidden + its thread resolved; only `escalate` items remain visible (the user already got `PushNotification`s for those). Do a defensive re-sweep of hide/resolve if the last CI push may have landed after the last closeout pass — the PR must be clean of resolved threads before the summary lands.
+2. Post a summary `gh pr comment` in the user's first-person voice covering: (a) what was changed across the review cycle, grouped by logical change not commit-by-commit; (b) what each comment batch surfaced and what was done (adopted with sha / rejected with reason / escalated and decision). Use `--body-file -` with a heredoc. If a summary was already posted, `--edit-last` instead of duplicating.
+3. Rewrite the PR body (always) and title (only if the current one no longer matches the merged change) via `gh pr edit --body-file -` (add `--title` only when rewriting it). Lead the body with What/Why, then Changes, a one-line Review-cycle pointer to the summary comment, then Verification (real commands + results). Do not churn an accurate title for style.
+4. **Merge decision** — ask the user via `AskUserQuestion`: merge commit (default) / squash / rebase / don't merge. If unresolved `escalate` comments remain, state the count in the question so the user decides with eyes open; never auto-merge past open escalations. On a merge choice: run `gh pr merge "$PR" --repo "$REPO" --<merge|squash|rebase>` (for squash also pass `--subject` from the PR title to avoid an interactive prompt; never add `--auto`). On "don't merge": skip the merge and fall through to `TaskStop`.
+5. `TaskStop` the Monitor.
 
-**CRITICAL**: Do not post the summary or rewrite the body while CI is red or comments remain open — that would claim a merge-ready state that is not true. Do not sign the summary as AI-generated; the user asked for it in their name. The body describes the change; the comment records the review cycle — keep them distinct, do not duplicate content across both.
+**CRITICAL**: Do not post the summary, rewrite the body, or ask to merge while CI is red or comments remain open — that would claim a merge-ready state that is not true. Do not sign the summary as AI-generated; the user asked for it in their name. The body describes the change; the comment records the review cycle — keep them distinct, do not duplicate content across both. **Merging is hard to reverse** — only run `gh pr merge` after an explicit `AskUserQuestion` choice from the user; never auto-merge.
 
 ## References
 
 - **Review Loop**: `references/review-loop.md` - Monitor script, size→INTERVAL table, triage agent prompt, verdict format, lifecycle/stop conditions
-- **Closeout**: `references/closeout.md` - Summary comment template, PR title/body rewrite, idempotency and ordering
+- **Closeout**: `references/closeout.md` - Summary comment template, PR title/body rewrite, merge decision via AskUserQuestion, idempotency and ordering
 - **Commit Standards**: `references/commit-standards.md` - Commit message format for the /git:commit-and-push rounds
 - **Repository Templates**: `references/repository-templates.md` - Contributing guidelines conformance for fixes
 - **Examples**: `references/examples.md` - Commit message examples
