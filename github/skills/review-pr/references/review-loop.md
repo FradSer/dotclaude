@@ -43,7 +43,7 @@ Run it via the Monitor tool — it reads `PR`, `REPO`, and `INTERVAL` from env
 ```bash
 # From the skill, launch under a persistent Monitor:
 PR=<pr-number> REPO=<owner>/<repo> INTERVAL=<sec> \
-  bash ${CLAUDE_SKILL_DIR}/scripts/review-loop.sh
+  bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/review-loop.sh
 ```
 
 Behavior notes:

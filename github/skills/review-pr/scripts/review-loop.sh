@@ -6,9 +6,9 @@
 #
 # Output format:
 #   [ci] <name>: <bucket>                  — CI check reaching a terminal bucket
-#   [comment] issue  @<user>: <body>       — new issue-level comment
-#   [comment] inline @<user> <path>:<line>: <body>  — new inline review comment
-#   [comment] review @<user> [<STATE>]: <body>      — new review summary
+#   [comment] issue  node=<id> @<user>: <body>       — new issue-level comment
+#   [comment] inline node=<id> @<user> <path>:<line>: <body>  — new inline review comment
+#   [comment] review node=<id> @<user> [<STATE>]: <body>      — new review summary
 #
 # Usage:
 #   PR=<n> REPO=<owner>/<repo> INTERVAL=<sec> bash review-loop.sh
@@ -57,8 +57,33 @@ since=$(gh pr view "$PR" --repo "$REPO" --json createdAt --jq '.createdAt' 2>/de
         || date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Dedup sets, space-padded so `case *" $key "*` substring-match works.
-seen_ci=" "
 seen_comments=" "
+
+# CI dedup: track the last-seen bucket per check name as a space-padded string of
+# `name=bucket` entries, so a regression (fail→pass→fail after a fix push) re-emits.
+# A plain append-only `seen_ci` set would suppress the recurring fail because the
+# name=bucket key was already recorded from the first failure — breaking the loop's
+# job of re-surfacing failures after fix pushes. Only suppress when the bucket is
+# UNCHANGED from the last poll. (Plain string, not `declare -A` — macOS /bin/bash
+# is 3.2 and has no associative arrays. Entries are space-delimited so `* name=bucket *`
+# matches whole words, not substrings: `build=fail` won't match `rebuild=fail`.)
+last_ci=" "
+
+# Replace any existing entry for `name` with `name=bucket` (or append if new),
+# so only the latest bucket per check is remembered. Tokens are space-separated
+# on a leading/trailing-space-padded string; the `case ${name}=*` pattern is
+# unquoted so `*` globs (a quoted pattern would treat `*` as literal).
+set_ci_bucket() {  # args: name  bucket
+  local name="$1" bucket="$2" tmp=" " tok rest="$last_ci"
+  while [ -n "$rest" ]; do
+    rest="${rest# }"                       # trim one leading space
+    [ -z "$rest" ] && break
+    tok="${rest%% *}"                      # first token: name=bucket
+    rest="${rest#"$tok"}"                  # consume it
+    case "$tok" in ${name}=*) ;; *) tmp="$tmp$tok " ;; esac
+  done
+  last_ci="$tmp${name}=${bucket} "
+}
 
 emit_comment() {  # args: id  line
   [ -z "${1:-}" ] && return
@@ -71,15 +96,19 @@ emit_comment() {  # args: id  line
 while true; do
   now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-  # --- CI: emit each check that newly reached a terminal bucket (pass/fail/cancel/skip).
+  # --- CI: emit each check whose bucket changed since the last poll (pass/fail/cancel/skip).
+  # Only suppress when the bucket is UNCHANGED from last poll, so a regression
+  # (fail→pass→fail) re-emits the recurring failure rather than silently dropping it.
   checks=$(gh pr checks "$PR" --repo "$REPO" --json name,bucket 2>/dev/null || true)
   if [ -n "$checks" ]; then
     while IFS=$'\t' read -r name bucket; do
       [ -z "$name" ] && continue
-      case "$seen_ci" in
-        *" $name=$bucket "*) ;;
-        *) echo "[ci] $name: $bucket"; seen_ci="$seen_ci$name=$bucket " ;;
-      esac
+      # Suppress only when the bucket is UNCHANGED from last poll (whole-word
+      # match on ` name=bucket `); a changed bucket — including a regression
+      # back to a previously-seen bucket — re-emits.
+      case "$last_ci" in *" ${name}=${bucket} "*) continue ;; esac
+      echo "[ci] $name: $bucket"
+      set_ci_bucket "$name" "$bucket"
     done < <(jq -r '.[] | select(.bucket!="pending") | "\(.name)\t\(.bucket)"' <<<"$checks" 2>/dev/null)
   fi
 
