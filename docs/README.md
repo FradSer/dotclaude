@@ -5,6 +5,7 @@
 
 | path | kind | status | summary | updated |
 |---|---|---|---|---|
+| docs/memory/convention_req-trace-explicit-citation.md | memory | active | design-v3 REQ-TRACE-01 requires explicit (Req #N)/REQ-NNN citations and… | 2026-07-09 |
 | docs/memory/pitfall_bdd-specs-explicit-req-tracing.md | memory | active | bdd-specs.md needs explicit Req# tags per scenario, not just topical na… | 2026-07-07 |
 | docs/memory/pitfall_review-package-cd-pwd-corruption.md | memory | active | review-package.sh cd+pwd substitution corrupts PLAN_DIR resolution | 2026-07-06 |
 | docs/plans/2026-04-01-harness-optimizations-plan/ | plan | implemented:cd29fd7 |  | 2026-07-04 |
@@ -24,3 +25,4 @@
 | docs/retros/retro-2026-06-02-unified-retro-events.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-06-08-calibration-no-new-data.md | retro | active |  | 2026-07-04 |
 | docs/retros/retro-2026-07-04-docs-index-plan.md | retro | active |  | 2026-07-04 |
+| docs/retros/retro-2026-07-09-memory-layer-and-agentbook.md | retro | active | MODIFY REQ-TRACE-01 → design-v3; 1 approved / 3 rejected / 4 deferred a… | 2026-07-09 |

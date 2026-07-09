@@ -172,13 +172,21 @@ Be terse. One line per comment, verdict first.
    comments stay visible. See "Closing out resolved comments" below for the exact commands.
    `escalate` comments stay open until the user decides.
 
-Apply the validated fixes, commit and push them via the `/git:commit-and-push` skill (Skill tool), then acknowledge each:
+Apply the validated fixes, commit and push them via the `/git:commit-and-push` skill (Skill tool), then acknowledge each. **The reply endpoint depends on comment type** — the `/pulls/$PR/comments/<id>/replies` endpoint ONLY accepts inline review-comment ids; using it for an issue-level comment or a review summary hits the wrong resource and fails:
 
 ```bash
-# Reply to accepted inline review comment
-gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="Fixed in <commit-sha>."
-# Reply to rejected inline review comment
-gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="<rejection reason from triage agent>"
+# Reply to an accepted/rejected INLINE review comment (id=<n> from the emitted line).
+gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="Fixed in <commit-sha>."     # accepted
+gh api repos/$REPO/pulls/$PR/comments/<comment-id>/replies -f body="<rejection reason>"        # rejected
+
+# Reply to an ISSUE-LEVEL comment — there is no reply endpoint; post a new PR
+# issue comment (the `id=<n>` from the emitted line can be referenced in the body
+# but is not used in the URL).
+gh pr comment "$PR" --repo "$REPO" --body="Re: <rejection reason or fix summary>"
+
+# REVIEW SUMMARIES have no reply endpoint at all — skip the reply. If a summary
+# raises a point worth addressing, reply to its inline sub-comments (handled as
+# inline above) or post a single summary issue comment via `gh pr comment`.
 ```
 
 ### Closing out resolved comments
