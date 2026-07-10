@@ -68,7 +68,7 @@ Fixes cannot be proposed without completing Phase 1. Each phase MUST finish befo
 
 ## When to Apply
 
-Applies to ANY technical issue: test failures, production bugs, unexpected behavior, performance problems, build failures, integration issues.
+Applies to ANY technical issue: test failures, production bugs, unexpected behavior, performance problems, build failures.
 
 **Especially valuable when:** time pressure tempts guessing, a "quick fix" seems obvious, prior fixes failed, or the issue is not fully understood.
 
@@ -169,6 +169,7 @@ Do NOT pause for approval. The plan stays the contract through Phase 2-4; deviat
 These mental patterns indicate process violation — return to Phase 1:
 - "Quick fix for now, investigate later"
 - "Just try changing X and see if it works"
+- "Add multiple changes, run tests"
 - "Skip the test, I'll manually verify"
 - "It's probably X, let me fix that"
 - "I don't fully understand but this might work"
@@ -196,8 +197,8 @@ If systematic investigation reveals the issue is environmental, timing-dependent
 
 ## References
 
-- `./references/root-cause-tracing.md` - Backward tracing + multi-layer instrumentation example
-- `./references/rationalizations-and-guardrails.md` - Excuse-vs-reality table, human partner signals, inline-plan rationale, real-world impact numbers
+- `./references/root-cause-tracing.md` - Backward tracing, multi-layer instrumentation example
+- `./references/rationalizations-and-guardrails.md` - Excuse table, partner signals, inline-plan rationale, impact numbers
 - `./references/defense-in-depth.md` - Add validation at multiple layers after finding root cause
 - `./references/condition-based-waiting.md` - Replace arbitrary timeouts with condition polling (example: `condition-based-waiting-example.ts`)
 - `./find-polluter.sh` - Bisect test suite to identify which test pollutes shared state

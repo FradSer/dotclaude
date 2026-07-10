@@ -61,7 +61,7 @@ For Bucket A, output the bail-out response below and stop. For Bucket B (includi
 2. **YAGNI Ruthlessly**: Only include what's explicitly needed
 3. **Test-First Mindset**: Always include BDD specifications -- load `superpowers:behavior-driven-development` skill
 4. **Incremental Validation**: Validate each phase exit before proceeding
-5. **Context Reset by Design**: Research and QA happen in fresh sub-agent contexts — the main agent only synthesizes.
+5. **Context Reset by Design**: Research and QA happen in fresh sub-agent contexts (Anthropic harness-design principle 1) — the main agent only synthesizes.
 
 ## Phase 1: Scope Alignment
 
