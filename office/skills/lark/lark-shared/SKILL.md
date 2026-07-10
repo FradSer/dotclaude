@@ -33,6 +33,7 @@ lark-cli config init --new
 | 按业务域授权 | `lark-cli auth login --domain docs --domain drive --no-wait --json`；`--domain` 可重复，也可用逗号分隔 |
 | 指定单个 scope 授权 | `lark-cli auth login --scope "<scope>" --no-wait --json` |
 | 检查当前登录态、是谁登录、token 是否有效 | `lark-cli auth status --json --verify`；回答时引用 `identity`、`verified`、`identities.user.status`、`identities.user.userName`、`identities.user.openId`（用户 open id）、`identities.user.tokenStatus`、`identities.user.scope` |
+| 快速查看当前身份状态 | `lark-cli whoami`；实际生效的那一个身份 |
 | 退出当前机器的用户登录态 | `lark-cli auth logout --json`；`loggedOut:true` 表示注销成功 |
 | bot 缺少权限 | 不要执行 `auth login`；引导用户在开发者后台开通 bot scope，优先复用错误里的 `console_url` |
 | 取消用户对应用的全部服务端授权 | `auth logout` 只清本机登录态；服务端授权需用户在飞书授权管理页取消 |
@@ -144,6 +145,24 @@ lark-cli update
 ```
 
 **重要**：始终使用 `lark-cli update` 更新，它会同时更新 CLI 和 AI Skills。
+
+## JSON 输出契约
+
+`--format json`（默认）下，成功与错误的信封结构不同：
+
+成功信封写入 **stdout**（退出码 0）：
+
+```json
+{ "ok": true, "identity": "user", "data": { "guid": "..." }, "meta": { "count": 1 } }
+```
+
+错误信封写入 **stderr**（退出码非 0）：
+
+```json
+{ "ok": false, "identity": "user", "error": { "type": "api", "subtype": "...", "code": 99991679, "message": "...", "hint": "..." } }
+```
+
+**判断成功必须用 `ok == true`（或进程退出码 0），不要用 `code == 0`**：成功信封没有顶层 `code` / `msg` 字段，`code` 只出现在错误信封的 `error` 内，含义是上游 OpenAPI 的 numeric code。按 OpenAPI 老格式 `{"code": 0, "msg": "ok"}` 判断会把所有成功调用误判为失败；封装写入类命令（如 `task +create`）时尤其危险，误判会绕过幂等逻辑导致重复创建。
 
 ## 安全规则
 

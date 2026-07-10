@@ -1,6 +1,6 @@
 ---
 name: review-pr
-allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop, Skill, Read, Edit, Write
+allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop, Skill, AskUserQuestion, Read, Edit, Write
 description: Reviews a pull request with the built-in /review skill, then persists a Monitor watch over CI results and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
 argument-hint: <PR number or URL>
 user-invocable: true
@@ -22,7 +22,7 @@ Run a baseline review with the built-in `/review`, then keep a persistent watch 
 **Goal**: Run the initial review, resolve the repo, and pick a poll interval sized to the PR.
 
 **Actions**:
-1. Parse the PR number or URL from `$ARGUMENTS`. If absent, list open PRs with `gh pr list` and ask the user which to review.
+1. Parse the PR number or URL from `$ARGUMENTS`. If absent, list open PRs with `gh pr list` and ask the user which to review. **Normalize `PR` to the bare number** before any `gh api` REST call: `gh pr *` commands accept a URL, but `gh api repos/$REPO/issues/$PR/...` interpolates `$PR` into the URL path and breaks on a full URL — run `PR=$(gh pr view "$ARGUMENTS" --json number -q .number)` (the Context block already fetches `--json number`) and use `$PR` as the number everywhere downstream.
 2. Invoke `Skill("review", "<PR#>")` once for the baseline review. Treat its findings as the **first `[comment]` batch** — feed them straight into the Phase 3 triage flow before launching the Monitor. Do not act on them inline; the main context is biased (it likely authored the PR) and the same skeptical gatekeeping must apply to the baseline as to live comments.
 3. Resolve `REPO=<owner>/<repo>` from the PR metadata above (fallback: `git remote get-url origin` parsed into `owner/repo`).
 4. Read PR size from `additions+deletions` and pick `INTERVAL` (seconds) from the size table in `references/review-loop.md`: 180 / 300 / 480 for small / medium / large; floor 60s, cap 7200s (~2h).
@@ -54,21 +54,24 @@ Stop the Monitor with `TaskStop` ONLY when ALL hold:
 
 A temporarily empty comment queue is NOT a stop signal — other agents may post more comments later.
 
-## Phase 5: Closeout — Summary Comment and PR Body Rewrite
+## Phase 5: Closeout — Summary, Body Rewrite, and Merge
 
-**Goal**: Once the Phase 4 stop conditions hold (CI green, every comment reflected on and resolved ones hidden + threads resolved), write a merge-readiness summary **as the user** and refresh the PR title/body so the PR page is the durable record. Full rules and templates in `references/closeout.md`.
+**Goal**: Once the Phase 4 stop conditions hold (CI green, every comment reflected on and resolved ones hidden + threads resolved), write a merge-readiness summary **as the user**, refresh the PR title/body so the PR page is the durable record *linking to that summary*, then ask the user whether to merge. The pair is the deliverable: a short body describing the merged change, pointing at one comment holding the full review-cycle audit trail. Full rules and templates in `references/closeout.md`.
 
 **Actions** (run after the Phase 3 closeout hide/resolve, before `TaskStop`):
-1. Post a summary `gh pr comment` in the user's first-person voice covering: (a) what was changed across the review cycle, grouped by logical change not commit-by-commit; (b) what each comment batch surfaced and what was done (adopted with sha / rejected with reason / escalated and decision). Use `--body-file -` with a heredoc. If a summary was already posted, `--edit-last` instead of duplicating.
-2. Rewrite the PR title and body via `gh pr edit -t/--body-file -`. Lead the body with What/Why, then Changes, a one-line Review-cycle pointer to the summary comment, then Verification (real commands + results). Rewrite the title only if the current one no longer matches the merged change — do not churn an accurate title for style.
-3. `TaskStop` the Monitor.
+1. Confirm the Phase 3 closeout ran to completion: every `fix`/`reject` comment is hidden + its thread resolved; only `escalate` items remain visible (the user already got `PushNotification`s for those). Do a defensive re-sweep of hide/resolve if the last CI push may have landed after the last closeout pass — the PR must be clean of resolved threads before the summary lands.
+2. Post a summary `gh pr comment` in the user's first-person voice covering: (a) what was changed across the review cycle, grouped by logical change not commit-by-commit; (b) what each comment batch surfaced and what was done (adopted with sha / rejected with reason / escalated and decision). Use `--body-file -` with a heredoc whose first line is the marker `<!-- review-pr:summary -->`. **CRITICAL: capture the comment URL that `gh pr comment` prints on stdout** (`SUMMARY_URL=$(gh pr comment …)`) — step 3 links to it. If a summary already exists, find it by its marker and `gh api --method PATCH repos/$REPO/issues/comments/<id>`; never `--edit-last`, which clobbers whatever you commented last.
+3. Rewrite the PR body (always) and title (only if the current one no longer matches the merged change) via `gh pr edit --body-file -` (add `--title` only when rewriting it). Lead the body with What/Why, then Changes, then a Review-cycle line, then Verification (real commands + results). **CRITICAL: the Review-cycle line MUST contain the literal summary-comment URL from step 2** — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it. Do not churn an accurate title for style.
+4. **Merge decision** — ask the user via `AskUserQuestion`: merge commit (default) / squash / rebase / don't merge. If unresolved `escalate` comments remain, state the count in the question so the user decides with eyes open; never auto-merge past open escalations. On a merge choice: run `gh pr merge "$PR" --repo "$REPO" --<merge|squash|rebase>` (for squash also pass `--subject` from the PR title to avoid an interactive prompt; never add `--auto`). Do NOT pass `--delete-branch` — branch cleanup is out of scope. On "don't merge": skip the merge and the sync, fall through to `TaskStop`.
+5. **Sync local base branch** (only after a successful merge) — fetch the PR's `baseRefName` (`gh pr view "$PR" --repo "$REPO" --json baseRefName -q .baseRefName`), then `git switch <baseRefName>` + `git pull --ff-only` so the local base reflects the merge. Do NOT delete branches (local or remote) — that is the user's call, not this skill's. If the local repo is on the head branch, switch to base before pulling; if the working tree has uncommitted changes from earlier in the session, stash or report them rather than aborting the pull. Skip this step entirely if `gh pr merge` failed or the user chose not to merge.
+6. `TaskStop` the Monitor.
 
-**CRITICAL**: Do not post the summary or rewrite the body while CI is red or comments remain open — that would claim a merge-ready state that is not true. Do not sign the summary as AI-generated; the user asked for it in their name. The body describes the change; the comment records the review cycle — keep them distinct, do not duplicate content across both.
+**CRITICAL**: Do not post the summary, rewrite the body, or ask to merge while CI is red or comments remain open — that would claim a merge-ready state that is not true. Do not sign the summary as AI-generated; the user asked for it in their name. The body describes the change and links to the comment; the comment records the review cycle — keep them distinct, do not duplicate content across both. Steps 2 and 3 are ordered: the body needs a URL that does not exist until the comment is posted. **Merging is hard to reverse** — only run `gh pr merge` after an explicit `AskUserQuestion` choice from the user; never auto-merge, never pass `--delete-branch`. Sync the local base branch with `--ff-only` only after a successful merge; never force anything.
 
 ## References
 
 - **Review Loop**: `references/review-loop.md` - Monitor script, size→INTERVAL table, triage agent prompt, verdict format, lifecycle/stop conditions
-- **Closeout**: `references/closeout.md` - Summary comment template, PR title/body rewrite, idempotency and ordering
+- **Closeout**: `references/closeout.md` - Summary comment template (marker + URL capture), PR title/body rewrite linking that summary, merge decision via AskUserQuestion, post-merge base-branch sync, idempotency and ordering
 - **Commit Standards**: `references/commit-standards.md` - Commit message format for the /git:commit-and-push rounds
 - **Repository Templates**: `references/repository-templates.md` - Contributing guidelines conformance for fixes
 - **Examples**: `references/examples.md` - Commit message examples

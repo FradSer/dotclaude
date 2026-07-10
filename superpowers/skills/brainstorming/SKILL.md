@@ -17,7 +17,7 @@ Brainstorming does open-ended, multi-turn research. **Launch it under Claude Cod
 /goal "Claude has narrated a successful design commit (with commit hash) and the evaluator's verdict is PASS" /superpowers:brainstorming "<problem>"
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output (the commit hash, the literal evaluator verdict line), never filesystem state, which is unverifiable and will time out. Full semantics, condition phrasing, and bail-out interaction: `../../skills/references/goal-wrapper.md`.
+`/goal` is a **user-typed outer wrapper** (a skill cannot enable it for itself mid-run), and its evaluator judges only what Claude narrates in the transcript — phrase the condition against narrated output (the commit hash, the literal evaluator verdict line), never filesystem state. Full semantics, condition phrasing, and bail-out interaction: `../../skills/references/goal-wrapper.md`.
 
 ## CRITICAL: Bail-Out Check (run before Initialization)
 
@@ -43,7 +43,7 @@ Brainstorming does open-ended, multi-turn research. **Launch it under Claude Cod
 - Mixes trivial signals with open-ended language
 - Names an outcome but not a scope (e.g., "improve performance", "make it faster")
 
-For Bucket A, output the bail-out response below and stop. For Bucket B (including all Bucket C cases), proceed to Initialization. The `--force` token (literal in `$ARGUMENTS`) is preserved for backward compatibility; it now no-ops since the bail-out is per-invocation. If the user later signals the scope is wrong, the Phase 1 rejection-handling block at the bottom of this section absorbs the pivot.
+For Bucket A, output the bail-out response below and stop. For Bucket B (including all Bucket C cases), proceed to Initialization. The `--force` token is preserved for backward compatibility and now no-ops (the bail-out is per-invocation); a later scope pivot is absorbed by Phase 1's mid-stream pivot handling.
 
 **Bail-out response (Bucket A, output verbatim, then proceed with direct edit OR hand off):**
 
@@ -61,7 +61,7 @@ For Bucket A, output the bail-out response below and stop. For Bucket B (includi
 2. **YAGNI Ruthlessly**: Only include what's explicitly needed
 3. **Test-First Mindset**: Always include BDD specifications -- load `superpowers:behavior-driven-development` skill
 4. **Incremental Validation**: Validate each phase exit before proceeding
-5. **Context Reset by Design**: Research and QA happen in fresh sub-agent contexts (Anthropic harness-design principle 1) — the main brainstorming agent only synthesizes, it does not accumulate research transcripts.
+5. **Context Reset by Design**: Research and QA happen in fresh sub-agent contexts (Anthropic harness-design principle 1) — the main agent only synthesizes.
 
 ## Phase 1: Scope Alignment
 
@@ -77,14 +77,11 @@ Explore codebase, lock the approach inline, proceed to Phase 2 in the same itera
    - "Open questions absorbed: [questions you answered yourself from codebase evidence; never punt these to the user]"
 3. **Lock and advance**: Treat the sprint contract as the locked scope and proceed to Phase 2. Do NOT pause to ask for approval — the evaluator at Phase 2 plus the user's post-commit review are the quality gates. If a question genuinely cannot be answered from the codebase, pick the safest default, document the assumption in the sprint contract, and surface it in Phase 2's design files so the evaluator can flag it.
 
-**Open-Ended Problems**: When the problem requires challenging assumptions or radical innovation, apply first-principles reasoning inline in the sprint contract — name the assumption being challenged, the alternative framing, and why the new framing changes the chosen approach. The user's global CLAUDE.md "Challenge the premise before implementing" rule already covers this surface; no separate skill load is needed.
+**Open-Ended Problems**: When the problem requires challenging assumptions, apply first-principles reasoning inline in the sprint contract — name the assumption being challenged, the alternative framing, and why it changes the chosen approach.
 
 **Exit**: Sprint contract recorded inline with a single chosen approach, clear requirements and constraints, ready for Phase 2.
 
-**Mid-stream pivots** (only possible when wrapped in `/goal`; on a re-prompt turn the user injects "actually this is about X" or "wrong direction"):
-- Absorb the new framing by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint.
-- If the override is fundamental (the user wants a completely unrelated brainstorm), stop the current brainstorm with a one-line note and have the user re-invoke `/superpowers:brainstorming` with the new framing.
-- If the user says "abort" or "cancel", stop with a one-line cancellation note. Do not write design files.
+**Mid-stream pivots** (only possible when wrapped in `/goal`): re-run Phase 1 step 1 with the new scope and regenerate the sprint contract from scratch; on a fundamental override or "abort"/"cancel", stop with a one-line note and write no design files. Full handling: `./references/scope-alignment.md` §Mid-Stream Pivots.
 
 See `./references/scope-alignment.md` for exploration patterns, question guidelines, and trade-off templates.
 
@@ -94,7 +91,7 @@ Create design documents with integrated quality assurance, then reconcile cross-
 
 **Step 1: Create Design Documents**
 
-**Folder**: `docs/plans/YYYY-MM-DD-<topic>-design/` (the `-design` suffix is REQUIRED). If committing a second distinct design for the same topic on the same day, disambiguate the folder name with a `-2` suffix: `docs/plans/YYYY-MM-DD-<topic>-design-2/` (then `-3/`, etc.). The docs index keys on the full folder path, so distinct suffixes keep each design addressable.
+**Folder**: `docs/plans/YYYY-MM-DD-<topic>-design/` (the `-design` suffix is REQUIRED). A second same-day design on the same topic gets a `-design-2/` (then `-3/`) suffix — the docs index keys on the full folder path. Full rules: `./references/design-and-qa.md` §Folder Naming Rules.
 
 **Required files (4)**:
 - `_index.md` -- Context, Discovery Results, Requirements, Rationale, Detailed Design, Design Documents (links to companions)
@@ -106,23 +103,11 @@ Create design documents with integrated quality assurance, then reconcile cross-
 
 **`bdd-specs.md`**: Write all Gherkin scenarios directly in this file. Do NOT create separate `.feature` files -- those belong to the implementation phase.
 
-**Sub-agent strategy (mandatory)**: Launch 3+ sub-agents in parallel via the Agent tool. Each sub-agent runs in an isolated fresh context (context reset — research transcripts never pollute the main agent):
-1. **Architecture Research** — existing patterns, libraries, codebase conventions. Uses WebSearch for latest best practices. Returns architecture recommendations with specific file references.
-2. **Best Practices Research** — security, performance, testing patterns. Loads `superpowers:behavior-driven-development`. Returns BDD scenarios, testing strategy, best practices.
-3. **Context & Requirements Synthesis** — consolidates discovery into requirements, success criteria, rationale.
-4. **Additional sub-agents**: launch for distinct research-intensive aspects as needed.
+**Sub-agent strategy (mandatory)**: Launch 3+ sub-agents in parallel via the Agent tool, each in an isolated fresh context (research transcripts never pollute the main agent): Architecture Research (patterns, libraries, conventions; WebSearch for latest practices), Best Practices Research (security/performance/testing; loads `superpowers:behavior-driven-development`), Context & Requirements Synthesis, plus additional sub-agents for research-intensive aspects. Full prompts and outputs: `./references/design-and-qa.md` §Sub-Agent Strategy.
 
-**Vocabulary reconciliation (MANDATORY, before integration)**: After all sub-agents return and before integrating their outputs into design files, the main agent runs one explicit pass:
+**Vocabulary reconciliation (MANDATORY, before integration)**: After all sub-agents return and before integrating their outputs, run one explicit pass: scan sub-agent outputs for domain-noun vocabulary (anything that names a concept rather than describing it), build a concept-by-sub-agent glossary table, pick ONE canonical label per divergent concept (prefer codebase patterns; document rejected variants), and rewrite divergent labels in the sub-agent outputs BEFORE producing the integrated four files — never write first and reconcile after. Record the canonical labels in `_index.md` under a `## Glossary` section directly after `## Discovery Results`. Full procedure and the 2026-05-09 inciting case: `./references/design-and-qa.md` §Vocabulary reconciliation.
 
-1. Scan each sub-agent's output for **domain-noun vocabulary**: privacy tiers, channel names, role names, schema field names, capability/component names, status flag values. Anything that names a concept rather than describing it.
-2. Build a glossary table: rows = concept (one per distinct concept), columns = each sub-agent's chosen label. If a row has divergent labels across sub-agents, that concept needs reconciliation.
-3. For each divergent concept, pick **one canonical label** — prefer the most-precise / most-discriminating form, prefer codebase patterns over external recommendations, prefer single-word forms only when they don't introduce ambiguity. Document the rejected variants alongside the canonical choice (so future maintainers see what was considered).
-4. Rewrite divergent labels in the affected sub-agent outputs **before** producing the integrated `_index.md` / `architecture.md` / `bdd-specs.md` / `best-practices.md`. Do not write the four files first and reconcile after — divergent labels in the integrated output are an outcome to prevent at write time.
-5. Record the canonical labels in `_index.md` under a `## Glossary` section directly after `## Discovery Results`.
-
-**Verification (after integration)**: `grep -oE "<concept-noun>"` across the four files must return only the canonical label, never any rejected variant. If any rejected variant appears in any file, the integration step has not closed the loop — return to step 4 above.
-
-**Why this exists**: The 2026-05-09 v3.x knowledge platform brainstorm produced three different privacy-tier vocabularies across `_index.md` (`public/project/local`), `architecture.md` (`local-only/cross-session/cross-project/external`), and `bdd-specs.md` (the latter). The divergence was not a content disagreement — sub-agents independently filled in vocabulary gaps and the main agent integrated all three without reconciliation. See `docs/retros/2026-05-09-v3-considered-deferred.md` for the inciting case.
+**Verification (after integration)**: `grep -oE "<concept-noun>"` across the four files must return only the canonical label, never any rejected variant. A surviving variant means the reconciliation pass missed a file — return to it before proceeding.
 
 **Integration**: After reconciliation, the main agent integrates returned results, resolves remaining conflicts favoring codebase patterns, and writes the 4 design files.
 
@@ -130,7 +115,7 @@ Create design documents with integrated quality assurance, then reconcile cross-
 
 Resolve the latest checklist from `docs/retros/checklists/design-v{N}.md` (highest N). Spawn `superpowers:superpowers-evaluator` agent (design mode) with the checklist path. The evaluator outputs report content as text; write it to the design folder as `evaluation-design-round-{N}.md`. Then read the report verdict:
 
-- PASS: proceed directly to Phase 3 wrap-up — do NOT pause for user confirmation. The evaluator PASS verdict plus the post-commit git diff are the review surface; the user audits via `git show` if they want a check.
+- PASS: proceed directly to Phase 3 wrap-up — do NOT pause for user confirmation (the PASS verdict + post-commit `git show` diff are the review surface).
 - REWORK: fix issues, re-run evaluator if needed (writes `evaluation-design-round-2.md`, etc.)
 - REWORK 2+ rounds: consider pivoting back to Phase 1 to realign approach rather than patching
 

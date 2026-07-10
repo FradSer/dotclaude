@@ -167,3 +167,27 @@ From debugging session (2025-10-03):
 - Fixed at source (getter validation)
 - Added 4 layers of defense
 - 1847 tests passed, zero pollution
+
+## Multi-Layer Instrumentation Example
+
+Worked example for Phase 1 step 4 (evidence gathering in multi-component systems). Instrument every component boundary in one pass, run once, and read where the data stops flowing (here: CI workflow -> build script -> signing script -> codesign):
+
+```bash
+# Layer 1: Workflow
+echo "=== Secrets available in workflow: ==="
+echo "IDENTITY: ${IDENTITY:+SET}${IDENTITY:-UNSET}"
+
+# Layer 2: Build script
+echo "=== Env vars in build script: ==="
+env | grep IDENTITY || echo "IDENTITY not in environment"
+
+# Layer 3: Signing script
+echo "=== Keychain state: ==="
+security list-keychains
+security find-identity -v
+
+# Layer 4: Actual signing
+codesign --sign "$IDENTITY" --verbose=4 "$APP"
+```
+
+This reveals which layer fails.

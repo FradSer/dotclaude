@@ -88,3 +88,13 @@ After saving the plan, transition to execution:
 
 **"Plan complete and saved to `docs/plans/<filename>.md`. Load `superpowers:executing-plans` skill using the Skill tool — it orchestrates per-batch sub-agent coordinators through the full Phase 1-6 pipeline."**
 
+
+## Dependency Rules (depends-on)
+
+`**depends-on**` lists only TRUE technical prerequisites — tasks whose output is required before this task can start:
+
+- A test task (Red) for feature X has no dependency on test tasks for other features
+- An implementation task (Green) depends only on its paired test task (Red), not on other features' implementations
+- Tasks that touch different files and test different scenarios are independent by default
+
+**PROHIBITED**: Do not chain tasks sequentially just to impose execution order — use `depends-on` only when there is a real technical reason (e.g., "implement auth middleware" must precede "implement protected route test").

@@ -89,3 +89,11 @@ codebase conventions.
 - **The "Lazy" Question**: "How should I implement this?" -- Explore and propose options instead.
 - **The "Abstract" Question**: "What are the non-functional requirements?" -- Ask specific: "Do we need >1000 req/sec based on the current load balancer?"
 - **Skipping exploration**: Asking before reading code wastes user time and produces ungrounded proposals.
+
+## Mid-Stream Pivots (under /goal)
+
+Pivots are only possible when the run is wrapped in `/goal`: on a re-prompt turn the user injects "actually this is about X" or "wrong direction".
+
+- Absorb the new framing by re-running Phase 1 step 1 (codebase exploration with the new scope) and regenerating the sprint contract from scratch with the new framing as the constraint.
+- If the override is fundamental (the user wants a completely unrelated brainstorm), stop the current brainstorm with a one-line note and have the user re-invoke `/superpowers:brainstorming` with the new framing.
+- If the user says "abort" or "cancel", stop with a one-line cancellation note. Do not write design files.

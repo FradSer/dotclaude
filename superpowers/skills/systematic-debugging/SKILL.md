@@ -10,21 +10,21 @@ allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)",
 
 ## Slash-command Usage
 
-Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by other skills (BDD, brainstorming) when bug-fix language is detected.
+Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by other skills when bug-fix language is detected.
 
-**When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement, then start at Phase 1 (Root Cause Investigation) immediately. Debugging is iterative within a single session, not phase-driven. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
+**When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement and start at Phase 1 immediately. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
 
 **Output discipline**: Report findings inline as you complete each phase. End with: (a) root cause one-liner, (b) fix diff summary, (c) regression test path.
 
 ## Recommended: run wrapped in `/goal`
 
-Debugging is iterative and can span several turns of hypothesis → test → fix. **Launch it under Claude Code's built-in `/goal`** (v2.1.139+) so the investigation continues until the regression is actually fixed:
+**Launch it under Claude Code's built-in `/goal`** (v2.1.139+) so the multi-turn hypothesis → test → fix investigation continues until the regression is actually fixed:
 
 ```
 /goal "Claude has narrated the three-part completion output (root-cause one-liner, fix diff summary, regression-test path) with the regression test passing" /superpowers:systematic-debugging "<symptom>"
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output (the printed test-run result, the three-part summary), never filesystem state, which is unverifiable and will time out. Full semantics, condition phrasing, and bail-out interaction: `../../skills/references/goal-wrapper.md`.
+`/goal` is a **user-typed outer wrapper** (a skill cannot enable it for itself mid-run), and its evaluator judges only what Claude narrates in the transcript — phrase the condition against narrated output (the printed test-run result, the three-part summary), never filesystem state. Full semantics and condition phrasing: `../../skills/references/goal-wrapper.md`.
 
 ## CRITICAL: Bail-Out Check (run before Phase 1)
 
@@ -46,21 +46,17 @@ Examples that DO NOT bail out (proceed to Phase 1):
 - "this is slow" (no hypothesis)
 - "I think it's the cache, can you check?" (hypothesis without confirmed root cause)
 
-**Bail-out response (output verbatim, then proceed with direct edit + write a regression test that catches the bug):**
+**Bail-out response (output verbatim, then apply the fix + a regression test that catches the bug):**
 
 > Detected named root cause and named fix. Skipping the 4-phase pipeline (calibrated for unknown root causes). Applying the fix and writing a regression test directly. To force the full pipeline, re-invoke as `/superpowers:systematic-debugging --force "<symptom>"`.
 
 When the user passes `--force` (literal token in `$ARGUMENTS`), skip this bail-out and proceed to Phase 1 unconditionally.
 
-**Iron Law remains** for non-bail-out paths: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST. The bail-out only fires when the user has *already done* the root cause work and is handing the conclusion to Claude.
+**Iron Law remains** for non-bail-out paths — the bail-out only fires when the user has *already done* the root-cause work and is handing Claude the conclusion.
 
 ## Overview
 
-Random fixes waste time and create new bugs. Quick patches mask underlying issues.
-
-**Core principle:** Root cause investigation must precede any fix attempt. Symptom fixes represent process failure.
-
-**Violating the letter of this process is violating the spirit of debugging.**
+**Core principle:** Root cause investigation must precede any fix attempt — random fixes waste time, mask underlying issues, and create new bugs. **Violating the letter of this process is violating the spirit of debugging.**
 
 ## CRITICAL: The Iron Law
 
@@ -72,57 +68,27 @@ Fixes cannot be proposed without completing Phase 1. Each phase MUST finish befo
 
 ## When to Apply
 
-Systematic debugging applies to ANY technical issue:
-- Test failures
-- Bugs in production
-- Unexpected behavior
-- Performance problems
-- Build failures
-- Integration issues
+Applies to ANY technical issue: test failures, production bugs, unexpected behavior, performance problems, build failures.
 
-**Especially valuable when:**
-- Time pressure creates temptation to guess
-- "Quick fix" seems obvious
-- Multiple fixes have already been attempted
-- Previous fixes failed
-- Issue is not fully understood
+**Especially valuable when:** time pressure tempts guessing, a "quick fix" seems obvious, prior fixes failed, or the issue is not fully understood.
 
-**Process should not be skipped even when:**
-- Issue appears simple (simple bugs have root causes too)
-- Time is tight (systematic approach is faster than thrashing)
-- Urgency exists (investigation is faster than rework)
+Do NOT skip the process because the issue appears simple, time is tight, or urgency exists — see `./references/rationalizations-and-guardrails.md` for why each of those is a trap.
 
 ## The Four Phases
-
-Each phase must be completed before proceeding to the next.
 
 ### Phase 1: Root Cause Investigation
 
 **Before attempting any fix:**
 
-0. **Consult Memory** — this memory read-before step is skipped whenever the Bail-Out Check fires, symmetric with how the bail-out already skips every other Phase-1-onward step: run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active`, filter by summary keywords matching the symptom, and Read the top 2-3 matches before step 1 below.
+0. **Consult Memory** — this memory read-before step is skipped whenever the Bail-Out Check fires (symmetric with the bail-out skipping every other Phase-1-onward step): run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" list --kind memory --status active`, filter by symptom keywords, and Read the top 2-3 matches before step 1.
 
-1. **Read Error Messages Carefully**
-   - Error messages and warnings often contain solutions
-   - Read stack traces completely
-   - Note line numbers, file paths, error codes
+1. **Read Error Messages Carefully** — read stack traces completely; note line numbers, file paths, error codes. Messages and warnings often contain the solution.
 
-2. **Reproduce Consistently**
-   - Determine if the issue triggers reliably
-   - Identify exact steps
-   - Confirm reproducibility
-   - If not reproducible, gather more data instead of guessing
+2. **Reproduce Consistently** — identify exact steps and confirm the issue triggers reliably. If not reproducible, gather more data instead of guessing.
 
-3. **Check Recent Changes**
-   - Git diff and recent commits
-   - New dependencies, config changes
-   - Environmental differences
+3. **Check Recent Changes** — git diff and recent commits, new dependencies, config changes, environmental differences.
 
-4. **Gather Evidence in Multi-Component Systems**
-
-   **For systems with multiple components (CI -> build -> signing, API -> service -> database):**
-
-   Diagnostic instrumentation should be added before proposing fixes:
+4. **Gather Evidence in Multi-Component Systems** (CI -> build -> signing, API -> service -> database) — add diagnostic instrumentation before proposing fixes:
    ```
    For EACH component boundary:
      - Log what data enters component
@@ -135,147 +101,51 @@ Each phase must be completed before proceeding to the next.
    THEN investigate that specific component
    ```
 
-   **Multi-layer system example:**
-   ```bash
-   # Layer 1: Workflow
-   echo "=== Secrets available in workflow: ==="
-   echo "IDENTITY: ${IDENTITY:+SET}${IDENTITY:-UNSET}"
+   Worked example (CI workflow → build → signing): `./references/root-cause-tracing.md` §Multi-Layer Instrumentation Example.
 
-   # Layer 2: Build script
-   echo "=== Env vars in build script: ==="
-   env | grep IDENTITY || echo "IDENTITY not in environment"
-
-   # Layer 3: Signing script
-   echo "=== Keychain state: ==="
-   security list-keychains
-   security find-identity -v
-
-   # Layer 4: Actual signing
-   codesign --sign "$IDENTITY" --verbose=4 "$APP"
-   ```
-
-   This reveals which layer fails.
-
-5. **Trace Data Flow**
-
-   **When error is deep in call stack:**
-
-   See `./references/root-cause-tracing.md` for the complete backward tracing technique.
-
-   **Quick approach:**
-   - Identify where bad value originates
-   - Determine what called this with bad value
-   - Continue tracing up until source is found
-   - Fix at source, not at symptom
+5. **Trace Data Flow** — when the error is deep in the call stack: identify where the bad value originates, determine what called it, keep tracing up until the source is found, fix at source not at symptom. Complete backward-tracing technique: `./references/root-cause-tracing.md`.
 
 ### Phase 2: Pattern Analysis
 
 **Pattern identification should precede any fix:**
 
-1. **Find Working Examples**
-   - Locate similar working code in same codebase
-   - Identify working code similar to what's broken
-
-2. **Compare Against References**
-   - If implementing a pattern, read reference implementation completely
-   - Read every line, do not skim
-   - Understand pattern fully before applying
-
-3. **Identify Differences**
-   - List every difference between working and broken code
-   - Do not dismiss small differences as irrelevant
-
-4. **Understand Dependencies**
-   - Other components required by this operation
-   - Settings, config, environment needed
-   - Assumptions made by the pattern
+1. **Find Working Examples** — locate similar working code in the same codebase.
+2. **Compare Against References** — if implementing a pattern, read the reference implementation completely (every line, do not skim) before applying it.
+3. **Identify Differences** — list every difference between working and broken code; do not dismiss small differences as irrelevant.
+4. **Understand Dependencies** — other components this operation requires; settings, config, environment; assumptions made by the pattern.
 
 ### Phase 3: Hypothesis and Testing
 
 **Scientific method application:**
 
-1. **Form Single Hypothesis**
-   - State clearly: "X is the root cause because Y"
-   - Be specific, not vague
-
-2. **Test Minimally**
-   - Make smallest possible change to test hypothesis
-   - One variable at a time
-   - Do not fix multiple things simultaneously
-
-3. **Verify Before Continuing**
-   - If hypothesis confirmed: proceed to Phase 4
-   - If not confirmed: form new hypothesis
-   - Do not add more fixes on top
-
-4. **When Understanding is Missing**
-   - Acknowledge lack of understanding
-   - Ask for help
-   - Research more
+1. **Form Single Hypothesis** — state clearly and specifically: "X is the root cause because Y".
+2. **Test Minimally** — smallest possible change, one variable at a time; do not fix multiple things simultaneously.
+3. **Verify Before Continuing** — confirmed: proceed to Phase 4; not confirmed: form a new hypothesis. Do not add more fixes on top.
+4. **When Understanding is Missing** — acknowledge it, research more, ask for help.
 
 ### Phase 4: Implementation
 
 **Fix the root cause, not the symptom:**
 
-1. **Create Failing Test Case**
-   - Simplest possible reproduction
-   - Automated test if possible
-   - One-off test script if no framework
-   - Test must exist before fixing
-
-2. **Implement Single Fix**
-   - Address the identified root cause
-   - One change at a time
-   - No "while I'm here" improvements
-   - No bundled refactoring
-
-3. **Verify Fix**
-   - Test now passes?
-   - No other tests broken?
-   - Issue actually resolved?
-
-4. **If Fix Doesn't Work**
-   - Stop
-   - Count attempted fixes
-   - If < 3: Return to Phase 1, re-analyze with new information
-   - If >= 3: Question architecture
-
-5. **Architecture Questioning After 3+ Failed Fixes**
-
-   **Patterns indicating architectural problem:**
-   - Each fix reveals new shared state/coupling/problem in different place
-   - Fixes require "massive refactoring"
-   - Each fix creates new symptoms elsewhere
-
-   **Stop and question fundamentals:**
-   - Is pattern fundamentally sound?
-   - Is approach continuing through inertia?
-   - Should architecture be refactored vs. fixing symptoms?
-
-   **Discuss with human partner before attempting more fixes**
-
-   This is not a failed hypothesis - this is wrong architecture.
+1. **Create Failing Test Case** — simplest possible reproduction; automated test if possible, one-off script if no framework. The test must exist before fixing.
+2. **Implement Single Fix** — address the identified root cause, one change at a time; no "while I'm here" improvements, no bundled refactoring.
+3. **Verify Fix** — test now passes? No other tests broken? Issue actually resolved?
+4. **If Fix Doesn't Work** — stop and count attempted fixes. If < 3: return to Phase 1 and re-analyze with the new information. If >= 3: question the architecture.
+5. **Architecture Questioning After 3+ Failed Fixes** — when each fix reveals a new shared-state/coupling problem elsewhere, requires "massive refactoring", or creates new symptoms, stop and question fundamentals: is the pattern sound? Is the approach continuing through inertia? Should the architecture be refactored instead of fixing symptoms? **Discuss with your human partner before attempting more fixes** — this is not a failed hypothesis, this is wrong architecture.
 
 6. **Capture Memory (conditional — this skill's only `docs/` touchpoint, not a new phase or commit)**
 
    This step reuses the existing 3+ failed fixes trigger as its primary gate: firing that trigger runs upsert memory in the same commit as the fix, OR it fires independently on an explicit cross-cutting gotcha regardless of fix-attempt count; otherwise it is a no-op.
 
-   On fire: write `docs/memory/<category>_<slug>.md` (`category: pitfall` typically, `category: decision` if the architecture-questioning step above concluded a redesign is warranted), reusing the Inline Plan's six-line shape as `Fact`/`Why` material when one was recorded, with `source: commit:<short-sha>`. Then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category <category>`, staged into the same commit as the fix + regression test — no separate commit, no additional phase, no extra user-facing deliverable beyond the existing fix + regression test.
+   On fire: write `docs/memory/<category>_<slug>.md` (`category: pitfall` typically; `decision` if architecture questioning concluded a redesign), reusing the Inline Plan's six-line shape as `Fact`/`Why` material with `source: commit:<short-sha>`. Then run `bash "${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh" upsert memory docs/memory/<path> --status active --summary "<one-line>" --category <category>`, staged into the same commit as the fix + regression test — no separate commit, no extra deliverable.
 
 ## Complex Bugs: Inline Plan Summary (no file written)
 
-**For complex bugs, record a compact plan inline before any code change.** This section is consistent with the Slash-command Usage rule at the top of this skill: do NOT create `docs/plans/` folders or `BUGFIX_PLAN.md` files — the deliverable is still `the fix + a regression test`, never a planning document. The inline plan is the contract the skill holds itself to during Phase 2-4 and the audit surface the user reviews post-fix.
+**For complex bugs, record a compact plan inline before any code change** — never a `docs/plans/` folder or `BUGFIX_PLAN.md` file (rationale: `./references/rationalizations-and-guardrails.md` §Why the Complex-Bug Plan Is Inline). The inline plan is the contract the skill holds itself to during Phase 2-4 and the audit surface the user reviews post-fix.
 
 ### When the Inline Plan Is Required
 
-A bug requires the inline-plan step before edits when ANY of these apply:
-
-- **Multi-component involvement** - Issue spans multiple files, modules, or subsystems
-- **Architecture implications** - Fix may affect system design, contracts, or interfaces
-- **Multiple potential approaches** - Several valid implementation paths exist
-- **Side-effect risk** - Change could impact unrelated functionality
-- **Requires refactoring** - Fix needs structural changes beyond minimal patch
-- **Not fully understood** - After Phase 1 investigation, root cause is still unclear
+A bug requires the inline-plan step before edits when ANY of these apply: multi-component involvement (multiple files/modules/subsystems), architecture implications (design, contracts, interfaces), multiple valid approaches, side-effect risk to unrelated functionality, refactoring beyond a minimal patch, or a root cause still unclear after Phase 1.
 
 ### Inline Plan Format
 
@@ -290,19 +160,13 @@ RISKS: <one line — side effects, blast radius, or "low: localized to <subsyste
 ALTERNATIVES: <one line — rejected approaches + why>
 ```
 
-Do NOT pause for approval. The plan stays the contract through Phase 2-4; deviation requires re-running Phase 1 and re-recording a new six-line shape (do not silently mutate the fix mid-stream). If Phase 1 evidence is too thin to fill any of the six lines confidently, loop back to Phase 1 step 4 (Multi-component layered tracing) before recording the plan — never paper over weak evidence by writing a vague line.
-
-### Why Inline (not BUGFIX_PLAN.md)
-
-- The deliverable contract is "fix + regression test", not a planning artifact — a saved plan file would survive the bug fix in the repo as orphan documentation
-- An inline summary keeps the contract visible in the same turn that applies it, so the executor (this skill) can re-check the six lines against the diff before committing
-- Removes the wording conflict with the top-of-file rule "Do NOT write design documents or task files"
+Do NOT pause for approval. The plan stays the contract through Phase 2-4; deviation requires re-running Phase 1 and recording a new six-line shape — do not silently mutate the fix mid-stream. If evidence is too thin to fill any line confidently, loop back to Phase 1 step 4 first; never paper over weak evidence with a vague line.
 
 **For simple bugs:** Continue with Phase 2-4 directly — no inline plan needed.
 
 ## Red Flags
 
-These mental patterns indicate process violation and require returning to Phase 1:
+These mental patterns indicate process violation — return to Phase 1:
 - "Quick fix for now, investigate later"
 - "Just try changing X and see if it works"
 - "Add multiple changes, run tests"
@@ -316,29 +180,7 @@ These mental patterns indicate process violation and require returning to Phase 
 
 **If 3+ fixes failed:** Question the architecture.
 
-## Human Partner Signals
-
-**Watch for these redirections:**
-- "Is that not happening?" - Indicates assumption without verification
-- "Will it show us...?" - Indicates missing evidence gathering
-- "Stop guessing" - Indicates proposing fixes without understanding
-- "Ultrathink this" - Indicates need to question fundamentals, not just symptoms
-- "We're stuck?" (frustrated) - Indicates current approach isn't working
-
-**When encountering these signals:** Return to Phase 1.
-
-## Common Rationalizations
-
-| Excuse | Reality |
-|--------|---------|
-| "Issue is simple, don't need process" | Simple issues have root causes too. Process is fast for simple bugs. |
-| "Emergency, no time for process" | Systematic debugging is FASTER than guess-and-check thrashing. |
-| "Just try this first, then investigate" | First fix sets the pattern. Do it right from the start. |
-| "I'll write test after confirming fix works" | Untested fixes don't stick. Test first proves it. |
-| "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
-| "Reference too long, I'll adapt the pattern" | Partial understanding guarantees bugs. Read it completely. |
-| "I see the problem, let me fix it" | Seeing symptoms != understanding root cause. |
-| "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem. Question pattern, don't fix again. |
+**When the human partner redirects you** ("Is that not happening?", "Stop guessing", "We're stuck?"): return to Phase 1. Full signal list, plus the excuse-vs-reality table for every rationalization above: `./references/rationalizations-and-guardrails.md`.
 
 ## Quick Reference
 
@@ -351,31 +193,16 @@ These mental patterns indicate process violation and require returning to Phase 
 
 ## When Process Reveals No Root Cause
 
-If systematic investigation reveals issue is environmental, timing-dependent, or external:
-
-1. Process has been completed
-2. Document what was investigated
-3. Implement appropriate handling (retry, timeout, error message)
-4. Add monitoring/logging for future investigation
-
-**Note:** 95% of "no root cause" cases represent incomplete investigation.
+If systematic investigation reveals the issue is environmental, timing-dependent, or external: the process is complete — document what was investigated, implement appropriate handling (retry, timeout, error message), and add monitoring/logging for future investigation. **Note:** 95% of "no root cause" cases represent incomplete investigation.
 
 ## References
 
-- `./references/root-cause-tracing.md` - Trace bugs backward through call stack to find original trigger
+- `./references/root-cause-tracing.md` - Backward tracing, multi-layer instrumentation example
+- `./references/rationalizations-and-guardrails.md` - Excuse table, partner signals, inline-plan rationale, impact numbers
 - `./references/defense-in-depth.md` - Add validation at multiple layers after finding root cause
-- `./references/condition-based-waiting.md` - Replace arbitrary timeouts with condition polling
-- `./references/condition-based-waiting-example.ts` - Example implementation of condition-based waiting
+- `./references/condition-based-waiting.md` - Replace arbitrary timeouts with condition polling (example: `condition-based-waiting-example.ts`)
 - `./find-polluter.sh` - Bisect test suite to identify which test pollutes shared state
-- `../../skills/references/goal-wrapper.md` - `/goal` wrapper semantics and condition phrasing (shared)
+- `../../skills/references/goal-wrapper.md` - `/goal` semantics and condition phrasing (shared)
 
 **Related skills:**
 - `superpowers:behavior-driven-development` - BDD principles including Gherkin scenarios for test design
-
-## Real-World Impact
-
-From debugging sessions:
-- Systematic approach: 15-30 minutes to fix
-- Random fixes approach: 2-3 hours of thrashing
-- First-time fix rate: 95% vs 40%
-- New bugs introduced: Near zero vs common
