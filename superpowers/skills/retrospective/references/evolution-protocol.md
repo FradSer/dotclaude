@@ -270,3 +270,11 @@ Output file: `docs/retros/retro-{date}-{topic}.md`
 - Checklists updated: {mode}-v{N+1}.md
 - Next action: run retrospective again after 2+ more plan executions
 ```
+
+## History: Removed Mechanisms and Threshold Calibration
+
+**Removed in v2.9.0 — the automated disable-test loop.** The one-at-a-time `harness-config.json` disable protocol and its `harness-observations.jsonl` telemetry were deleted. Empirical reason: across every real project those channels stayed empty, and the single disable test that ever ran (user-simulation, 2026-05-08, `recurring_failure_patterns`) was wrong and had to be reverted by hand the same day. Assumption-testing-by-auto-disable imported an industrial-harness pattern that never closed a cycle at single-project scale. Component changes now go through ordinary REMOVE/MODIFY proposals (Phase 3) with human review.
+
+**Why the REMOVE threshold is 3+ reports/item (was 10+).** ADD is cheap to trigger (even a 1-plan post-plan-diff override) while REMOVE used to require 10+ reports/item — a volume real single-project usage never reaches, so checklists only ever grew. The 3+ threshold is deliberately reachable so the loop can shrink checklists, not only grow them.
+
+**Phase 5a provenance.** Post-plan correction mining is exactly how user-simulation's CODE-CONTRACT/CONS/COV items were added — the highest-value checklist evolution produced in practice.
