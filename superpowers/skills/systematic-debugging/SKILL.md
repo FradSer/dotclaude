@@ -10,7 +10,7 @@ allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "Agent", "Bash(git:*)",
 
 ## Slash-command Usage
 
-Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by other skills (BDD, brainstorming) when bug-fix language is detected.
+Invoked via `/superpowers:systematic-debugging "<symptom>"` or auto-loaded by other skills when bug-fix language is detected.
 
 **When invoked as a slash command**: capture `$ARGUMENTS` as the symptom statement and start at Phase 1 immediately. Do NOT write design documents or task files; the deliverable is `the fix + a test that catches the regression`, not a docs/plans/ folder.
 
@@ -46,7 +46,7 @@ Examples that DO NOT bail out (proceed to Phase 1):
 - "this is slow" (no hypothesis)
 - "I think it's the cache, can you check?" (hypothesis without confirmed root cause)
 
-**Bail-out response (output verbatim, then proceed with direct edit + write a regression test that catches the bug):**
+**Bail-out response (output verbatim, then apply the fix + a regression test that catches the bug):**
 
 > Detected named root cause and named fix. Skipping the 4-phase pipeline (calibrated for unknown root causes). Applying the fix and writing a regression test directly. To force the full pipeline, re-invoke as `/superpowers:systematic-debugging --force "<symptom>"`.
 
@@ -68,7 +68,7 @@ Fixes cannot be proposed without completing Phase 1. Each phase MUST finish befo
 
 ## When to Apply
 
-Systematic debugging applies to ANY technical issue: test failures, production bugs, unexpected behavior, performance problems, build failures, integration issues.
+Applies to ANY technical issue: test failures, production bugs, unexpected behavior, performance problems, build failures, integration issues.
 
 **Especially valuable when:** time pressure tempts guessing, a "quick fix" seems obvious, prior fixes failed, or the issue is not fully understood.
 
