@@ -25,8 +25,15 @@ No emojis, no marketing tone. Terse but complete.
 
 ## Write the summary comment
 
+The body opens with the marker `<!-- review-pr:summary -->`. GitHub renders HTML comments as
+nothing, and it makes the summary findable later without guessing which comment it was.
+
+`gh pr comment` prints the new comment's URL on stdout — capture it. The PR body's Review-cycle
+line links to that URL, which is why the comment must be posted *before* the body is rewritten.
+
 ```bash
-gh pr comment "$PR" --repo "$REPO" --body-file - <<'EOF'
+SUMMARY_URL=$(gh pr comment "$PR" --repo "$REPO" --body-file - <<'EOF'
+<!-- review-pr:summary -->
 Summary of the review cycle on this PR.
 
 ## Changes made
@@ -40,20 +47,36 @@ Summary of the review cycle on this PR.
 
 All CI checks are green and no comments remain worth adopting. This PR is ready to merge.
 EOF
+)
 ```
 
 `--body-file -` reads the heredoc from stdin, so multi-line bodies (and the user's actual
 commit/review data pasted into the placeholders) work without shell-escaping pain. Replace
 the placeholders with the real data gathered during Phases 1–4 before running.
 
-If you already posted a summary comment earlier in the cycle, edit it in place rather than
-posting a duplicate:
+### Updating an existing summary
+
+If a summary was already posted (a resumed session, a re-run after an interrupt), edit that
+comment in place rather than posting a duplicate. Do NOT use `gh pr comment --edit-last`: it
+edits your *most recent* comment on the PR, which may be a Phase 3 reject reply rather than
+the summary, and overwrites it. Look the summary up by its marker and patch that exact id:
 
 ```bash
-gh pr comment "$PR" --repo "$REPO" --edit-last --body-file - <<'EOF'
+# `--paginate` runs the jq filter per page, so `.[] | select(...)` sees every page.
+SUMMARY_ID=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+  --jq '.[] | select(.body | startswith("<!-- review-pr:summary -->")) | .id' | head -1)
+
+# An empty SUMMARY_ID means no summary exists yet — post one with the block above instead.
+SUMMARY_URL=$(gh api --method PATCH "repos/$REPO/issues/comments/$SUMMARY_ID" \
+  -F body=@- --jq .html_url <<'EOF'
+<!-- review-pr:summary -->
 ...same template, updated...
 EOF
+)
 ```
+
+`-F body=@-` sends stdin verbatim as a string: the `@` prefix short-circuits gh's type coercion
+and its `{owner}`/`{repo}`/`{branch}` placeholder expansion, so markdown passes through intact.
 
 ## Rewrite the PR title and body
 
@@ -79,13 +102,21 @@ gh pr edit "$PR" --repo "$REPO" \
 - <logical change 2>
 
 ## Review cycle
-<one-line summary: N comments triaged, M adopted, K rejected; all CI green.>
+<N> comments triaged over <R> rounds, <M> adopted, <K> rejected; all CI green.
+Full breakdown: <paste $SUMMARY_URL here, e.g. https://github.com/owner/repo/pull/4#issuecomment-4930992385>
 
 ## Verification
 - <test commands run and their results>
 - <manual checks performed>
 EOF
 ```
+
+**The Review-cycle line MUST carry the summary comment's URL.** A count with no link is not a
+pointer — the whole point is that a reader landing on the PR can reach the audit trail in one
+click. The heredoc is quoted (`<<'EOF'`), so `$SUMMARY_URL` will NOT expand inside it: read the
+URL that the previous command printed and paste it as a literal. Do not switch to an unquoted
+heredoc to interpolate it — PR bodies contain backticks and `$` in code references, and an
+unquoted heredoc would run them as command substitution.
 
 ### Title guidance
 
@@ -102,9 +133,12 @@ body**; do not churn the title for style. When rewriting:
 
 The body is the durable record. Lead with **What** and **Why** (a reviewer who never read
 the comments should understand the PR from the body alone), then **Changes** (the logical
-units, not commit-by-commit), then a one-line **Review cycle** pointer to the summary
-comment, then **Verification** (real commands + results, not claims). Keep it scannable —
+units, not commit-by-commit), then a one-line **Review cycle** pointer *linking to the summary
+comment*, then **Verification** (real commands + results, not claims). Keep it scannable —
 headings and bullets, not prose walls.
+
+The pointer is what makes the pair work: the body stays short and describes the merged change,
+the linked comment holds the full comment-by-comment audit trail, and neither repeats the other.
 
 ## Merge decision
 
@@ -179,20 +213,24 @@ remote — surface that to the user rather than silently pulling from the wrong 
 1. Hide + resolve the fully-addressed comments (Phase 3 closeout) **first** — the summary
    comment should land on a clean PR. Re-sweep if a final CI push landed after the last
    closeout pass.
-2. Post the summary comment.
-3. Rewrite the title/body.
+2. Post the summary comment, capturing its URL.
+3. Rewrite the title/body, linking the Review-cycle line to that URL.
+
+Steps 2 and 3 are ordered, not merely sequential: the body needs a URL that does not exist
+until the comment is posted. Never rewrite the body first and backfill the link later.
+
 4. Ask the user via `AskUserQuestion` whether to merge; on a merge choice, run
    `gh pr merge` with the selected strategy.
 5. Sync the local base branch (`git switch <baseRefName> && git pull --ff-only`) — only
    after a successful merge.
 6. `TaskStop` the Monitor.
 
-Steps 1–3 are idempotent: re-running `gh pr edit` with the same title/body is a no-op, and
-`gh pr comment --edit-last` updates rather than duplicates. Steps 4 and 5 are NOT
-idempotent — only run them once, after the user's explicit merge choice. If the user
-interrupts and you resume, skip steps already completed rather than re-posting; if the user
-already chose "don't merge", or the merge and sync already succeeded, do not ask again or
-re-pull.
+Steps 1–3 are idempotent: re-running `gh pr edit` with the same title/body is a no-op, and the
+marker lookup patches the existing summary rather than duplicating it (which also recovers
+`SUMMARY_URL` after an interrupt). Steps 4 and 5 are NOT idempotent — only run them once, after
+the user's explicit merge choice. If the user interrupts and you resume, skip steps already
+completed rather than re-posting; if the user already chose "don't merge", or the merge and
+sync already succeeded, do not ask again or re-pull.
 
 ## Do not
 
@@ -201,6 +239,10 @@ re-pull.
 - Do not rewrite the title/body to claim something the diff does not deliver.
 - Do not include the closeout summary inside the PR body AND as a comment — the body
   describes the change; the comment records the review cycle. They are different records.
+- Do not ship a Review-cycle line without the summary comment's URL. Counts alone strand the
+  audit trail somewhere in a long comment thread.
+- Do not edit the summary with `gh pr comment --edit-last` — it targets whatever you commented
+  last, not the summary. Find it by its `<!-- review-pr:summary -->` marker.
 - Do not write the summary in the AI's voice or sign it as AI-generated; the user asked for
   it in their name.
 - Do not auto-merge or use `gh pr merge --auto` — the merge requires an explicit
