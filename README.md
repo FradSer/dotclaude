@@ -77,7 +77,7 @@ claude plugin install swiftui@frad-dotclaude
 
 ### [office](office/)
 
-Patent application generation, Product Requirements Documents, image and video generation, Feishu document creation, agent-based browser automation, Lark/Feishu CLI operations, and AI writing trope detection.
+Patent application generation, Product Requirements Documents, image and video generation, Feishu document creation, agent-based browser automation, Lark/Feishu CLI operations, Remotion programmatic video authoring, and AI writing trope detection.
 
 **Installation:**
 ```bash
