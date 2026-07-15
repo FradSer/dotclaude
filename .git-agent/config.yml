@@ -17,6 +17,8 @@ scopes:
       description: GitHub PR monitoring, triage, and feedback loops in github/.
     - name: hw
       description: KiCad CLI and EDA hardware tooling (use-kicad-cli skill) in hardware/.
+    - name: marketing
+      description: Marketing skills (CRO, copywriting, SEO, ads, analytics) mirrored from coreyhaines31/marketingskills plus HyperFrames HTML video authoring skills mirrored from heygen-com/hyperframes, both in marketing/.
     - name: office
       description: Lark suite integration and office productivity tools in office/; does not cover coding tools.
     - name: po

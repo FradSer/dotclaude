@@ -75,6 +75,20 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/office"
     },
     {
+      "name": "marketing",
+      "displayName": "Marketing",
+      "version": "0.1.0",
+      "description": "Marketing skills for AI agents, mirrored from coreyhaines31/marketingskills — CRO, copywriting, SEO, paid ads, ad creative, analytics, and growth",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./marketing",
+      "category": "productivity",
+      "strict": false,
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/marketing"
+    },
+    {
       "name": "refactor",
       "displayName": "Refactor",
       "version": "1.5.6",

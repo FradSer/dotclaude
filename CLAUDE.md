@@ -89,7 +89,7 @@ Validation script enforces these limits with exit codes:
 
 ## Git Commit Conventions
 
-**Scopes:** acpx, ag, as, cctx, fe, git, gitflow, github, hw, office, po, refactor, sp, storm, swiftui, utils
+**Scopes:** acpx, ag, as, cctx, fe, git, gitflow, github, hw, marketing, office, po, refactor, sp, storm, swiftui, utils
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 

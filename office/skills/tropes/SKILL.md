@@ -8,6 +8,7 @@ description: Detects and eliminates AI writing tropes that make text sound artif
 Scan generated text for common AI writing patterns that make content sound artificial or formulaic. This skill provides a systematic workflow for identifying and eliminating tropes.
 
 Source: [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is)
+Original gist: [ossa-ma/f3baa9d2](https://gist.github.com/ossa-ma/f3baa9d25154c33095e22272c631f5a1) — the raw 33-trope list this skill's `references/` are structured from and extended.
 
 ## Core Principle
 
