@@ -295,8 +295,8 @@ main() {
     for skill in "${SKILL_DIRS[@]}"; do
         if [ -f "$modifications_dir/$skill.md" ]; then
             local count
-            count=$(grep -c "^## " "$modifications_dir/$skill.md" 2>/dev/null || echo 0)
-            pending=$((pending + count))
+            count=$(grep -c "^## " "$modifications_dir/$skill.md" 2>/dev/null || true)
+            pending=$((pending + ${count:-0}))
         fi
     done
 

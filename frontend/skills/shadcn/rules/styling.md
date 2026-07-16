@@ -13,6 +13,7 @@ See [customization.md](../customization.md) for theming, CSS variables, and addi
 - No manual dark: color overrides
 - Use cn() for conditional classes
 - No manual z-index on overlay components
+- Use shimmer / scroll-fade utilities, not custom animations
 
 ---
 
@@ -161,6 +162,27 @@ import { cn } from "@/lib/utils"
 
 `Dialog`, `Sheet`, `Drawer`, `AlertDialog`, `DropdownMenu`, `Popover`, `Tooltip`, `HoverCard` handle their own stacking. Never add `z-50` or `z-[999]`.
 
+---
+
+## Use shimmer / scroll-fade utilities, not custom animations
+
+For a live "thinking…" or loading-text shimmer, apply the `shimmer` utility. Don't author a custom `@keyframes` or a `bg-clip-text` gradient sweep.
+
+For scroll-aware edge fading on a scroll container, use `scroll-fade` (and the axis variants `scroll-fade-x` / `scroll-fade-b`). Don't hand-roll mask gradients. The chat components already apply these internally: `Attachment` shimmers its title during upload, and `MessageScrollerViewport` fades its edges.
+
+**Incorrect:**
+
+```tsx
+<span className="animate-pulse bg-gradient-to-r from-muted-foreground/40 via-foreground/70 to-muted-foreground/40 bg-clip-text text-transparent [animation:shimmer_1.6s_infinite]">
+  Thinking…
+</span>
+```
+
+**Correct:**
+
+```tsx
+<span className="shimmer">Thinking…</span>
+```
 
 <!-- LOCAL-MOD: tailwind-v4 (auto-replayed by sync-shadcn.sh; do not edit in styling.md directly — sync wipes it) -->
 ---

@@ -272,8 +272,8 @@ main() {
     local modifications_file="$SCRIPT_DIR/../modifications/design-md.md"
     if [ -f "$modifications_file" ]; then
         local pending
-        pending=$(grep -c "^## " "$modifications_file" 2>/dev/null || echo 0)
-        if [ $pending -gt 0 ]; then
+        pending=$(grep -c "^## " "$modifications_file" 2>/dev/null || true)
+        if [ "${pending:-0}" -gt 0 ]; then
             echo ""
             log_warning "检测到 $pending 条本地 modification 需要 replay"
             log_warning "请让 Claude 读取 frontend/modifications/design-md.md 并重新应用到对应目标文件"

@@ -4,7 +4,7 @@
 
 ## shadcn
 
-- **上次同步**: 2026-06-20
+- **上次同步**: 2026-07-16
 - **仓库**: [shadcn-ui/ui](https://github.com/shadcn-ui/ui)
 - **路径**: `skills/shadcn/`
 - **同步脚本**: `./frontend/scripts/sync-shadcn.sh`
@@ -12,7 +12,7 @@
 
 ## impeccable
 
-- **上次同步**: 2026-06-20
+- **上次同步**: 2026-07-16
 - **仓库**: [pbakaus/impeccable](https://github.com/pbakaus/impeccable)
 - **路径**: `skills/impeccable/`（单一 skill）
 - **同步脚本**: `./frontend/scripts/sync-impeccable.sh`
@@ -38,21 +38,21 @@
 
 ## supabase
 
-- **上次同步**: 2026-06-16
+- **上次同步**: 2026-07-16
 - **仓库**: [supabase/agent-skills](https://github.com/supabase/agent-skills)
 - **路径**: `skills/supabase/`
 - **同步脚本**: `./frontend/scripts/sync-supabase-skills.sh`
 
 ## supabase-postgres-best-practices
 
-- **上次同步**: 2026-06-16
+- **上次同步**: 2026-07-16
 - **仓库**: [supabase/agent-skills](https://github.com/supabase/agent-skills)
 - **路径**: `skills/supabase-postgres-best-practices/`
 - **同步脚本**: `./frontend/scripts/sync-supabase-skills.sh`
 
 ## design-md
 
-- **上次同步**: 2026-06-16
+- **上次同步**: 2026-07-16
 - **仓库**: [google-labs-code/design.md](https://github.com/google-labs-code/design.md)
 - **路径**: `skills/design-md/references/`（仅缓存上游 spec 作为审计参考；`SKILL.md` 为本地自定义集成，不由 sync 管理）
 - **同步脚本**: `./frontend/scripts/sync-design-md.sh`

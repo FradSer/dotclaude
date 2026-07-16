@@ -8,7 +8,7 @@
 
 ## The script-path caveat
 
-Upstream `SKILL.md` (v3.7.1) invokes five bundled helper scripts via a
+Upstream `SKILL.md` (v3.9.1) invokes five bundled helper scripts via a
 hardcoded standalone-install path:
 
 ```

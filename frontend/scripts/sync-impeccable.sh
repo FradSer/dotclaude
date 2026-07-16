@@ -391,8 +391,8 @@ main() {
         name=$(basename "$mod_file" .md)
         if [ "$name" = "impeccable" ]; then
             local count
-            count=$(grep -c "^## " "$mod_file" 2>/dev/null || echo 0)
-            pending=$((pending + count))
+            count=$(grep -c "^## " "$mod_file" 2>/dev/null || true)
+            pending=$((pending + ${count:-0}))
         fi
     done < <(find "$modifications_dir" -maxdepth 1 -name "*.md" -not -name "README.md" -print0 2>/dev/null)
 

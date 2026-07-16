@@ -7,7 +7,7 @@ Sync script: `scripts/sync-impeccable.sh`
 local `*.local.md` sidecars the sync wipe preserves.**
 
 Per the maintainer directive "所有的内容必须以上游为优先", the impeccable skill's
-`SKILL.md` is the upstream `SKILL.md` **byte-for-byte** (currently v3.7.1). The sync
+`SKILL.md` is the upstream `SKILL.md` **byte-for-byte** (currently v3.9.1). The sync
 script wipes the skill dir, copies upstream content in (including upstream's own
 `SKILL.md`), and also saves a pristine copy to `reference/upstream-SKILL.md`. Because
 the live `SKILL.md` IS the upstream one, **there is nothing to replay after a sync** —

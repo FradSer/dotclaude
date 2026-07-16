@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { loadDesignSystemForCwd } from '../design-system.mjs';
+import { RULE_SCOPES, filterByScopes } from '../registry/antipatterns.mjs';
 import { createBrowserDetector, detectUrl } from '../engines/browser/detect-url.mjs';
 import { detectHtml } from '../engines/static-html/detect-html.mjs';
 import { detectText } from '../engines/regex/detect-text.mjs';
@@ -93,7 +94,11 @@ Options:
   --quiet             In text mode, only print the final findings count
   --gpt               Also report GPT-specific provider tells (off by default)
   --gemini            Also report Gemini-specific provider tells (off by default)
-  --no-config         Do not apply project config, detector ignores, or DESIGN.md
+  --scope <name>      Only report rules in the given design domain
+                      (type, layout). Comma-separated.
+  --no-config         Do not apply project config, detector ignores, inline
+                      ignore comments, or DESIGN.md
+  --no-inline-ignores Do not honor in-file impeccable-disable* ignore comments
   --no-design-system  Do not load local DESIGN.md / .impeccable/design.json context
   --help              Show this help message
 
@@ -101,6 +106,14 @@ Project config:
   Respects .impeccable/config.json and .impeccable/config.local.json detector
   settings: detector.ignoreRules, detector.ignoreFiles, detector.ignoreValues,
   and detector.designSystem.enabled.
+
+Inline ignores:
+  In-file comments waive a finding where it lives and travel with the file:
+    <!-- impeccable-disable overused-font -- exported brand doc -->
+    .brand { font-family: Inter } /* impeccable-disable-line overused-font */
+    // impeccable-disable-next-line bounce-easing: intentional bounce
+  impeccable-disable applies to the whole file; -line / -next-line are scoped.
+  List one or more rule ids (comma-separated), or omit them / use * for all.
 
 Detection modes:
   HTML files     Static HTML/CSS analysis (default, catches linked CSS)
@@ -141,9 +154,41 @@ async function detectCli() {
   const providers = [];
   if (args.includes('--gpt')) providers.push('gpt');
   if (args.includes('--gemini')) providers.push('gemini');
+  const scopes = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] !== '--scope' && !args[i].startsWith('--scope=')) continue;
+    const inline = args[i].startsWith('--scope=');
+    const value = inline ? args[i].slice('--scope='.length) : args[i + 1];
+    const parsed = (value && !value.startsWith('--'))
+      ? value.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    // A bare `--scope` would otherwise fall out of `targets` and scan unscoped;
+    // fail loudly so a mistyped pre-scan never runs the wrong rule set.
+    if (parsed.length === 0) {
+      process.stderr.write(
+        `Error: --scope requires a value. Valid scopes: ${[...RULE_SCOPES].join(', ')}\n`,
+      );
+      process.exit(1);
+    }
+    scopes.push(...parsed);
+    args.splice(i, inline ? 1 : 2);
+    i -= 1;
+  }
+  const unknownScopes = scopes.filter(s => !RULE_SCOPES.has(s));
+  if (unknownScopes.length > 0) {
+    process.stderr.write(
+      `Error: unknown --scope value(s): ${unknownScopes.join(', ')}. Valid scopes: ${[...RULE_SCOPES].join(', ')}\n`,
+    );
+    process.exit(1);
+  }
   const designSystemEnabled = configEnabled && !args.includes('--no-design-system') && detectionConfig.designSystem?.enabled !== false;
   const designSystem = designSystemEnabled ? loadDesignSystemForCwd(process.cwd()) : null;
-  const scanOptions = designSystem ? { providers, designSystem } : { providers };
+  // Inline `impeccable-disable*` waivers are part of the scanned file, so they
+  // apply by default. `--no-config` (raw scan) and the dedicated
+  // `--no-inline-ignores` both turn them off.
+  const inlineIgnoresEnabled = configEnabled && !args.includes('--no-inline-ignores');
+  const scanOptions = { providers, inlineIgnores: inlineIgnoresEnabled };
+  if (designSystem) scanOptions.designSystem = designSystem;
   const targets = args.filter(a => !a.startsWith('--'));
 
   if (helpMode) { printUsage(); process.exit(0); }
@@ -261,6 +306,7 @@ async function detectCli() {
   }
 
   allFindings = filterDetectionFindings(allFindings, detectionConfig);
+  allFindings = filterByScopes(allFindings, scopes);
 
   if (allFindings.length > 0) {
     if (jsonMode) process.stdout.write(formatFindings(allFindings, true) + '\n');

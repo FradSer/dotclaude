@@ -9,15 +9,17 @@
  *   ENVELOPE_PREFIX, ALLOWED_EXTS, ACK_EXTS, SENSITIVE_PATH, GENERATED_PATH, TRUTHY
  *   truthy(value)
  *   readConfig(cwd) / DEFAULT_CONFIG / getConfigPath(cwd) / getLocalConfigPath(cwd)
+ *   resolveProjectPlatform(cwd) / isNativePlatform(platform)
  *   normalizeIgnoreValue(value)
- *   readCache(cwd) / persistCache(cwd, cache)
+ *   readCache(cwd) / persistCache(cwd, cache) / resolveCacheCwd(primaryFile, sessionCwd)
  *   bumpEditCount(cache, sessionId, filePath) -> number
  *   suppressionNotice(filePath)
  *   filterFindings(findings, content, ext, config)
+ *   matchConfiguredExtension(filePath, extensions)
  *   dedupeAgainstCache(findings, cache, sessionId, filePath)
  *   renderTemplate(findings, filePath, config, opts)
  *   renderCleanAck(filePath, opts) / renderPendingAck(filePath, known, opts)
- *   shouldEmitAckForFile(filePath)
+ *   shouldEmitAckForFile(filePath, config?)
  *   writeAuditLog(env, entry)
  *   loadDetector() -> Promise<{ detectText, detectHtml }>
  *   matchesAnyGlob(filePath, globs)
@@ -35,8 +37,11 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+import { extractPlatform, loadContext } from './context.mjs';
+import { IMPECCABLE_COMMAND } from './lib/provider.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +82,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   ignoreRules: [],
   ignoreFiles: [],
   ignoreValues: [],
+  extensions: [],
   limits: { maxFindings: 5, maxChars: 8000 },
 });
 
@@ -134,6 +140,59 @@ export function resolveProjectCwd(event, fallback = process.cwd()) {
     || fallback;
 }
 
+function looksLikeProjectRoot(dir) {
+  return ['.git', 'package.json', '.impeccable'].some((marker) => {
+    try { return fs.existsSync(path.join(dir, marker)); } catch { return false; }
+  });
+}
+
+// Where `.impeccable/` (cache + config) lives for this event. Normally the
+// session cwd, untouched. But when the agent was launched from an umbrella
+// directory that is not itself a project (no .git, package.json, or
+// .impeccable), key to the edited file's nearest project root instead, so a
+// multi-project launch dir doesn't accumulate a shared cross-project cache
+// (issue #305). Climbing stops at the home dir, falling back to the session
+// cwd when no marker is found.
+export function resolveCacheCwd(primaryFile, sessionCwd) {
+  const base = path.resolve(sessionCwd || process.cwd());
+  if (!primaryFile || typeof primaryFile !== 'string' || hasPathTraversal(primaryFile)) return base;
+  if (looksLikeProjectRoot(base)) return base;
+  let dir;
+  try {
+    dir = path.dirname(path.resolve(primaryFile));
+  } catch {
+    return base;
+  }
+  const home = path.resolve(os.homedir());
+  while (true) {
+    if (dir === home) return base;
+    if (looksLikeProjectRoot(dir)) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return base;
+    dir = parent;
+  }
+}
+
+// The detector's rules are web rules (HTML/CSS shapes), but a React Native or
+// Flutter project is made of the exact extensions the hook watches (.tsx, .ts,
+// .js), so without this gate every native screen edit would draw web-shaped
+// findings that contradict the native platform references. PRODUCT.md's
+// `## Platform` field decides: `ios` / `android` / `adaptive` projects skip
+// the scan entirely. Resolution goes through loadContext so the hook reads the
+// same PRODUCT.md the skill does (alternate context dirs, monorepo fallback).
+export function resolveProjectPlatform(cwd) {
+  try {
+    const ctx = loadContext(cwd);
+    return extractPlatform(ctx && ctx.product);
+  } catch {
+    return null;
+  }
+}
+
+export function isNativePlatform(platform) {
+  return platform === 'ios' || platform === 'android' || platform === 'adaptive';
+}
+
 export function readConfig(cwd) {
   const config = cloneDefaultConfig();
   // Hook runtime settings live under `hook`; detector filters live under
@@ -168,6 +227,7 @@ function cloneDefaultConfig() {
     ignoreRules: [],
     ignoreFiles: [],
     ignoreValues: [],
+    extensions: [],
     designSystem: { ...DEFAULT_CONFIG.designSystem },
     limits: { ...DEFAULT_CONFIG.limits },
   };
@@ -190,7 +250,53 @@ function applyDetectorConfigSource(config, raw) {
   if (Array.isArray(raw.ignoreValues)) {
     config.ignoreValues = mergeIgnoreValues(config.ignoreValues, raw.ignoreValues);
   }
+  if (Array.isArray(raw.extensions)) {
+    config.extensions = mergeExtensions(config.extensions, raw.extensions);
+  }
   return config;
+}
+
+// Extra scanned extensions from `detector.extensions` config. Entries are
+// `{ ext, engine }` (engine 'html' | 'text', default 'html' — the common case
+// for server-side templates) or bare strings as shorthand. Extensions are
+// matched against the end of the filename, not path.extname, so double
+// extensions like `.blade.php` and `.html.erb` work (issue #316).
+function normalizeExtensionEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  const out = [];
+  for (const entry of entries) {
+    const raw = typeof entry === 'string' ? entry : entry?.ext;
+    if (typeof raw !== 'string') continue;
+    let ext = raw.trim().toLowerCase();
+    if (!ext) continue;
+    if (!ext.startsWith('.')) ext = `.${ext}`;
+    const engine = (!(typeof entry === 'string') && entry?.engine === 'text') ? 'text' : 'html';
+    out.push({ ext, engine });
+  }
+  return out;
+}
+
+function mergeExtensions(existing, incoming) {
+  const map = new Map();
+  for (const entry of normalizeExtensionEntries(existing)) map.set(entry.ext, entry);
+  for (const entry of normalizeExtensionEntries(incoming)) map.set(entry.ext, entry);
+  return Array.from(map.values());
+}
+
+export function matchConfiguredExtension(filePath, extensions) {
+  if (!Array.isArray(extensions) || extensions.length === 0) return null;
+  const name = path.basename(String(filePath || '')).toLowerCase();
+  if (!name) return null;
+  // The longest matching suffix wins, so `.blade.php` beats a broader `.php`
+  // entry regardless of config order.
+  let best = null;
+  for (const entry of normalizeExtensionEntries(extensions)) {
+    if (name.length > entry.ext.length && name.endsWith(entry.ext)
+      && (!best || entry.ext.length > best.ext.length)) {
+      best = entry;
+    }
+  }
+  return best;
 }
 
 function applyConfigSource(config, raw) {
@@ -556,7 +662,7 @@ export function bumpEditCount(cache, sessionId, filePath) {
 }
 
 export function suppressionNotice(filePath) {
-  return `${ENVELOPE_PREFIX} Suppressing further design hints on ${filePath}. More than ${EDIT_COUNT_THRESHOLD} edits in this session reached. Run /impeccable audit to revisit.`;
+  return `${ENVELOPE_PREFIX} Suppressing further design hints on ${filePath}. More than ${EDIT_COUNT_THRESHOLD} edits in this session reached. Run ${IMPECCABLE_COMMAND} audit to revisit.`;
 }
 
 // Glob → RegExp. Supports `**`, `*`, `?`, and `{a,b}` alternation.
@@ -628,11 +734,13 @@ export function filterFindings(findings, _content, _ext, config) {
 function isIgnoredFindingValue(finding, ignoreValues) {
   if (!Array.isArray(ignoreValues) || ignoreValues.length === 0) return false;
   const rule = normalizeIgnoreRule(finding.antipattern);
+  if (!rule) return false;
+  // File-scoped wildcards suppress rules with no extractable value, such as side-tab.
   const value = extractFindingIgnoreValue(finding);
-  if (!rule || !value) return false;
   return ignoreValues.some((entry) => {
+    if (entry.rule !== rule) return false;
     const wildcardValue = entry.value === '*';
-    if (entry.rule !== rule || (!wildcardValue && !ignoreValueMatches(rule, entry.value, value))) return false;
+    if (!wildcardValue && (!value || !ignoreValueMatches(rule, entry.value, value))) return false;
     if (!Array.isArray(entry.files) || entry.files.length === 0) return !wildcardValue;
     return findingMatchesScopedIgnoreFile(finding, entry.files);
   });
@@ -770,7 +878,7 @@ export function renderTemplate(findings, filePath, config, opts = {}) {
   const header = `${ENVELOPE_PREFIX} Design hook findings requiring review in ${display} (${total} issue(s)):`;
   const lines = shown.map((f) => formatFindingLine(f));
   const more = remaining > 0
-    ? `... and ${remaining} more (see /impeccable audit).`
+    ? `... and ${remaining} more (see ${IMPECCABLE_COMMAND} audit).`
     : null;
   const footer = directiveFooter(display);
 
@@ -814,7 +922,7 @@ function renderGroupedTemplate(groups, config, opts = {}) {
     shownCount += shown.length;
     const hidden = group.findings.length - shown.length;
     if (hidden > 0) {
-      lines.push(`- ... ${hidden} more in ${display} (see /impeccable audit).`);
+      lines.push(`- ... ${hidden} more in ${display} (see ${IMPECCABLE_COMMAND} audit).`);
     }
   }
 
@@ -830,7 +938,7 @@ function clampGroupedToBudget(header, lines, footer, maxChars) {
   const assemble = (linesArr, omitted) => [
     header,
     ...linesArr,
-    ...(omitted ? ['... and more (see /impeccable audit).'] : []),
+    ...(omitted ? [`... and more (see ${IMPECCABLE_COMMAND} audit).`] : []),
     '',
     footer,
   ].join('\n');
@@ -863,7 +971,7 @@ function clampToBudget(header, lines, more, footer, maxChars) {
   let assembled = assemble(working, moreText);
   while (assembled.length > maxChars && working.length > 1) {
     working.pop();
-    moreText = '... and more (see /impeccable audit).';
+    moreText = `... and more (see ${IMPECCABLE_COMMAND} audit).`;
     assembled = assemble(working, moreText);
   }
   if (assembled.length > maxChars) {
@@ -895,7 +1003,7 @@ function formatFindingIgnoreCommand(finding) {
   const value = extractFindingIgnoreValueRaw(finding);
   const valueArg = quoteCommandArg(value);
   const reason = quoteCommandArg(`User confirmed ${value} is intentional`);
-  return `/impeccable hooks ignore-value ${rule} ${valueArg} --shared --reason ${reason}`;
+  return `${IMPECCABLE_COMMAND} hooks ignore-value ${rule} ${valueArg} --shared --reason ${reason}`;
 }
 
 function quoteCommandArg(value) {
@@ -1301,12 +1409,12 @@ export function setDetectorForTesting(impl) {
 // session" so the model knows it's a re-mind, not a new finding.
 // ────────────────────────────────────────────────────────────────────────
 
-const STEER_LINE = 'Keep typography hierarchy, spacing rhythm, and color contrast intentional on the next change.';
+const STEER_LINE = 'That does not mean the design is good: keep following the project design system and the impeccable skill guidance.';
 
 export function renderCleanAck(filePath, opts = {}) {
   const cwd = opts.cwd || process.cwd();
   const display = relativize(filePath, cwd);
-  return `${ENVELOPE_PREFIX} Design hook scanned ${display}. No anti-patterns. ${STEER_LINE}`;
+  return `${ENVELOPE_PREFIX} Design hook scanned ${display}. No deterministic design-quality issues found. ${STEER_LINE}`;
 }
 
 export function renderPendingAck(filePath, knownFindings, opts = {}) {
@@ -1319,8 +1427,12 @@ export function renderPendingAck(filePath, knownFindings, opts = {}) {
   return `${ENVELOPE_PREFIX} Design hook scanned ${display}. Still has ${count} finding(s) flagged earlier this session (${sample}${more}). Handle them before finalizing — the previous reminder still applies.`;
 }
 
-export function shouldEmitAckForFile(filePath) {
-  return ACK_EXTS.has(path.extname(String(filePath || '')).toLowerCase());
+export function shouldEmitAckForFile(filePath, config = null) {
+  if (ACK_EXTS.has(path.extname(String(filePath || '')).toLowerCase())) return true;
+  // Configured html-engine extensions are declared UI markup, so they get the
+  // clean/pending acks; text-engine ones stay quiet like plain .ts/.js.
+  const configured = matchConfiguredExtension(filePath, config?.extensions);
+  return Boolean(configured && configured.engine === 'html');
 }
 
 export function designSystemOptions(config, detector, projectCwd) {
@@ -1336,7 +1448,7 @@ export function designSystemOptions(config, detector, projectCwd) {
 
 export function appendDesignSystemNote(text, scanOptions) {
   if (!text || !scanOptions?.designSystem?.mdNewerThanJson) return text;
-  return `${text}\n\n${ENVELOPE_PREFIX} DESIGN.md is newer than .impeccable/design.json. Run /impeccable document to refresh the design-system sidecar.`;
+  return `${text}\n\n${ENVELOPE_PREFIX} DESIGN.md is newer than .impeccable/design.json. Run ${IMPECCABLE_COMMAND} document to refresh the design-system sidecar.`;
 }
 
 // The directive footer is the part of the hook output that steers model
@@ -1353,16 +1465,16 @@ export function appendDesignSystemNote(text, scanOptions) {
 //      raw envelope. Asking the model to surface the resolution in its
 //      reply is the cheapest way to make the feedback loop visible.
 function directiveFooter(display, opts = {}) {
-  const ignoreFileCommand = `/impeccable hooks ignore-file ${quoteCommandArg(display)}`;
+  const ignoreFileCommand = `${IMPECCABLE_COMMAND} hooks ignore-file ${quoteCommandArg(display)}`;
   const fileIgnoreGuidance = opts.grouped
-    ? 'run `/impeccable hooks ignore-file <path>` for the specific file'
+    ? `run \`${IMPECCABLE_COMMAND} hooks ignore-file <path>\` for the specific file`
     : `run \`${ignoreFileCommand}\``;
   return [
     'Handle these before finalizing: fix findings that are real design problems, or explicitly classify contextually intentional findings as false positives. Acknowledge what you changed or why you are leaving a finding unchanged.',
     '',
     'Use context judgment before editing. A finding is not automatically a defect; literal or domain-appropriate motion, intentional demos or fixtures, documentation of bad design, and user-confirmed choices can be valid as-is.',
     '',
-    `Do not change intentional design just to satisfy the hook. Do not add source comments such as \`impeccable: ignore\`; those pollute the code and do not suppress hook findings. Persist hook ignores only after the user explicitly confirms the finding is intentional. Prefer the narrowest persisted exception: run the exact \`/impeccable hooks ignore-value ... --shared\` command shown next to a value-specific finding. For \`overused-font\`, use \`ignore-value\` for a specific font and use \`/impeccable hooks ignore-rule overused-font --all-values\` only when the user asks to ignore overused fonts generally. For file-specific findings without an ignore-value command, ${fileIgnoreGuidance}; use \`/impeccable hooks ignore-rule <id>\` only when the user asks to suppress the whole non-value-specific rule. Run /impeccable audit for the full pass.`,
+    `Do not change intentional design just to satisfy the hook, and do not silence a real finding with an inline ignore comment to skip fixing it. Suppress a finding only after the user explicitly confirms it is intentional. Prefer a config ignore (one reviewable place, the commands below); reach for an inline \`impeccable-disable <rule>\` comment only when the waiver must travel with a file that leaves the repo, such as an exported or standalone document. Prefer the narrowest persisted exception: run the exact \`${IMPECCABLE_COMMAND} hooks ignore-value ... --shared\` command shown next to a value-specific finding. For \`overused-font\`, use \`ignore-value\` for a specific font and use \`${IMPECCABLE_COMMAND} hooks ignore-rule overused-font --all-values\` only when the user asks to ignore overused fonts generally. For file-specific findings without an ignore-value command, ${fileIgnoreGuidance}; use \`${IMPECCABLE_COMMAND} hooks ignore-rule <id>\` only when the user asks to suppress the whole non-value-specific rule. Run ${IMPECCABLE_COMMAND} audit for the full pass.`,
   ].join('\n');
 }
 
@@ -1402,9 +1514,10 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
     event = normalizeHookEvent(event, cwd, harness);
     audit.harness = harness;
 
-    const projectCwd = event.cwd || cwd;
+    const sessionCwd = event.cwd || cwd;
+    const primaryFiles = normalizeScanTargets(resolveTargetFiles(event, sessionCwd), sessionCwd);
+    const projectCwd = resolveCacheCwd(primaryFiles[0], sessionCwd);
     audit.cwd = projectCwd;
-    const primaryFiles = normalizeScanTargets(resolveTargetFiles(event, projectCwd), projectCwd);
     const primaryFileSet = new Set(primaryFiles);
     const targetFiles = expandScanTargets(primaryFiles, projectCwd);
     audit.session = event.session_id || null;
@@ -1419,11 +1532,16 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       return result({ skipped: 'config-disabled', durationMs: Date.now() - started });
     }
 
+    const platform = resolveProjectPlatform(projectCwd);
+    if (isNativePlatform(platform)) {
+      return result({ skipped: 'native-platform', platform, durationMs: Date.now() - started });
+    }
+
     const cache = readCache(projectCwd);
     const sessionId = event.session_id || 'unknown';
     const det = detector || await loadDetector();
     if (!det || typeof det.detectText !== 'function') {
-      persistCache(projectCwd, cache);
+      // Cache is not mutated yet at this point; nothing to persist.
       return result({ skipped: 'detector-missing', durationMs: Date.now() - started });
     }
     const scanOptions = designSystemOptions(config, det, projectCwd);
@@ -1435,6 +1553,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
     let detectorThrewAny = false;
     let lastSkip = 'no-scannable-file';
     let suppressedHit = false;
+    let cacheDirty = false;
 
     for (const filePath of targetFiles) {
       audit.file = filePath;
@@ -1449,8 +1568,9 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       }
 
       const ext = path.extname(filePath).toLowerCase();
-      audit.ext = ext;
-      if (!ALLOWED_EXTS.has(ext)) {
+      const configuredExt = matchConfiguredExtension(filePath, config.extensions);
+      audit.ext = configuredExt ? configuredExt.ext : ext;
+      if (!ALLOWED_EXTS.has(ext) && !configuredExt) {
         lastSkip = 'extension';
         continue;
       }
@@ -1467,6 +1587,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
 
       if (primaryFileSet.has(filePath)) {
         const editCount = bumpEditCount(cache, sessionId, filePath);
+        cacheDirty = true;
         audit.editCount = editCount;
 
         if (editCount > EDIT_COUNT_THRESHOLD) {
@@ -1483,7 +1604,10 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       const content = fs.readFileSync(filePath, 'utf-8');
       let findings;
       let detectorThrew = false;
-      if ((ext === '.html' || ext === '.htm') && typeof det.detectHtml === 'function') {
+      const useHtmlEngine = configuredExt
+        ? configuredExt.engine === 'html'
+        : (ext === '.html' || ext === '.htm');
+      if (useHtmlEngine && typeof det.detectHtml === 'function') {
         try { findings = await det.detectHtml(filePath, scanOptions); } catch { findings = []; detectorThrew = true; }
       } else {
         try { findings = await det.detectText(content, filePath, scanOptions); } catch { findings = []; detectorThrew = true; }
@@ -1496,6 +1620,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
 
       if (fresh.length > 0) {
         rememberFindings(cache, sessionId, filePath, fresh);
+        cacheDirty = true;
         freshGroups.push({ filePath, findings: fresh });
         continue;
       }
@@ -1513,7 +1638,15 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       }
     }
 
-    persistCache(projectCwd, cache);
+    // Persist only when the write is earned: fresh findings justify creating
+    // `.impeccable/` (dedup and suppression need it), and an already-present
+    // `.impeccable/` dir marks a project that opted in. A non-UI edit, or a
+    // clean UI edit in a project with no Impeccable footprint, must be a
+    // no-op on disk (issues #344, #305).
+    if (freshGroups.length > 0
+      || (cacheDirty && fs.existsSync(path.join(projectCwd, '.impeccable')))) {
+      persistCache(projectCwd, cache);
+    }
 
     if (freshGroups.length > 0) {
       const firstGroup = freshGroups[0];
@@ -1548,7 +1681,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       return result({ emitted: false, quiet: true, durationMs: Date.now() - started });
     }
 
-    if (pendingWinner && shouldEmitAckForFile(pendingWinner.filePath)) {
+    if (pendingWinner && shouldEmitAckForFile(pendingWinner.filePath, config)) {
       const text = appendDesignSystemNote(renderPendingAck(pendingWinner.filePath, pendingWinner.known, { cwd: projectCwd }), scanOptions);
       return {
         exitCode: 0,
@@ -1582,7 +1715,7 @@ export async function runHook({ stdinJson, env = {}, cwd = process.cwd(), now = 
       };
     }
 
-    if (cleanWinner && shouldEmitAckForFile(cleanWinner.filePath)) {
+    if (cleanWinner && shouldEmitAckForFile(cleanWinner.filePath, config)) {
       const text = appendDesignSystemNote(renderCleanAck(cleanWinner.filePath, { cwd: projectCwd }), scanOptions);
       return {
         exitCode: 0,
