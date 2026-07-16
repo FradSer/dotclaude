@@ -1346,6 +1346,23 @@ def check_tool_invocations(plugin_dir: Path, verbose: bool = False) -> Validatio
 # Check: Tokens
 # =============================================================================
 
+def _is_verbatim_upstream_mirror(skill_dir: Path) -> bool:
+    """True when SKILL.md is a byte-for-byte copy of an upstream SKILL.md kept
+    beside it as reference/upstream-SKILL.md (the sync-mirror convention in
+    frontend/SYNC.md). Such a skill's body size tracks upstream, so the body
+    token/line MUST caps are reported but not enforced — trimming would break
+    the mirror. The exemption self-revokes the moment the live file diverges
+    from the pristine copy."""
+    pristine = skill_dir / "reference" / "upstream-SKILL.md"
+    live = skill_dir / "SKILL.md"
+    if not pristine.is_file() or not live.is_file():
+        return False
+    try:
+        return pristine.read_bytes() == live.read_bytes()
+    except OSError:
+        return False
+
+
 def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     """Validate token budgets for progressive disclosure."""
     result = ValidationResult("tokens")
@@ -1376,6 +1393,12 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
         body_lines = skill_result["body_lines"]
         refs = skill_result["reference_tokens"]
 
+        # Verbatim upstream mirrors (e.g. frontend/impeccable) track upstream
+        # body size; report their over-budget body but don't fail on it.
+        is_mirror = _is_verbatim_upstream_mirror(skill_dir)
+        mirror_note = " — exempt: verbatim upstream mirror (SKILL.md == reference/upstream-SKILL.md)"
+        mirror_fix = "Body tracks upstream verbatim (see SYNC.md); size is upstream-controlled, not a local defect"
+
         # Build details dict for structured output
         details = {
             "frontmatter": meta,
@@ -1402,12 +1425,20 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
         # Check line count (official requirement: under 500 lines)
         if body_lines >= SKILL_LINE_CRITICAL:
-            result.must(
-                f"SKILL.md body too long: {body_lines} lines (max recommended: {SKILL_LINE_TARGET})",
-                file=rel_path,
-                suggestion=f"MUST move content to references/ - exceed {SKILL_LINE_CRITICAL} lines",
-                **details
-            )
+            if is_mirror:
+                result.should(
+                    f"SKILL.md body too long: {body_lines} lines (max recommended: {SKILL_LINE_TARGET}){mirror_note}",
+                    file=rel_path,
+                    suggestion=mirror_fix,
+                    **details
+                )
+            else:
+                result.must(
+                    f"SKILL.md body too long: {body_lines} lines (max recommended: {SKILL_LINE_TARGET})",
+                    file=rel_path,
+                    suggestion=f"MUST move content to references/ - exceed {SKILL_LINE_CRITICAL} lines",
+                    **details
+                )
         elif body_lines >= SKILL_LINE_WARNING:
             result.should(
                 f"SKILL.md body approaching limit: {body_lines} lines (recommended: {SKILL_LINE_TARGET})",
@@ -1424,12 +1455,20 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
         # Check token count (official: Under 5k tokens for SKILL.md body)
         if body >= SKILL_BODY_MAX:
-            result.must(
-                f"Token budget exceeded: {body} tokens (max: {SKILL_BODY_MAX})",
-                file=rel_path,
-                suggestion=f"MUST move content to references/ - exceed {SKILL_BODY_MAX} tokens",
-                **details
-            )
+            if is_mirror:
+                result.should(
+                    f"Token budget exceeded: {body} tokens (max: {SKILL_BODY_MAX}){mirror_note}",
+                    file=rel_path,
+                    suggestion=mirror_fix,
+                    **details
+                )
+            else:
+                result.must(
+                    f"Token budget exceeded: {body} tokens (max: {SKILL_BODY_MAX})",
+                    file=rel_path,
+                    suggestion=f"MUST move content to references/ - exceed {SKILL_BODY_MAX} tokens",
+                    **details
+                )
         elif body >= SKILL_BODY_WARNING:
             result.should(
                 f"Token count approaching limit: {body} tokens (max: {SKILL_BODY_MAX})",
