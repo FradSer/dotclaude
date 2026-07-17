@@ -193,17 +193,30 @@ this skill to `/gitflow`: a gitflow repo merges into `develop`, a trunk-based re
 # 1. Read the branch the PR merged INTO (gitflow: develop; trunk: main).
 BASE=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q .baseRefName)
 
-# 2. Switch to it and fast-forward to the remote. --ff-only refuses to create a merge
-#    commit, so if the local base has diverged it fails safely instead of papering over
-#    a divergence the user should investigate.
-git switch "$BASE" && git pull --ff-only
+# 2. CRITICAL: never check out the base in a LINKED worktree. /github:resolve-issues runs
+#    this skill from inside one, where `git switch "$BASE"` is wrong in both directions:
+#    if $BASE is checked out in another worktree it hard-fails (exit 128), and if it is NOT
+#    it SUCCEEDS and silently drags the issue worktree off its head branch onto $BASE —
+#    after which ExitWorktree action:"remove" would delete the base branch. Detect the
+#    linked worktree by comparing this worktree's gitdir to the shared common gitdir.
+if [ "$(git rev-parse --absolute-git-dir)" \
+     != "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
+  # Linked worktree: update the remote-tracking ref only, never touch the checkout.
+  git fetch origin "$BASE"
+  echo "linked worktree: fetched origin/$BASE; local $BASE not checked out here"
+else
+  # Main worktree: switch to the base and fast-forward. --ff-only refuses to create a
+  # merge commit, so if the local base has diverged it fails safely instead of papering
+  # over a divergence the user should investigate.
+  git switch "$BASE" && git pull --ff-only
+fi
 ```
 
 Do NOT delete branches (`git branch -d` on the head, or `--delete-branch` on the merge) —
-the user opted out of branch cleanup. If the working tree is on the head branch, `git switch
-"$BASE"` moves it before the pull. If there are uncommitted changes left from earlier in the
-session, stash them or report rather than aborting the pull — the merge already landed on the
-remote, so a clean sync is the priority.
+the user opted out of branch cleanup. In the **main worktree** only, if the working tree is
+on the head branch, `git switch "$BASE"` moves it before the pull. If there are uncommitted
+changes left from earlier in the session, stash them or report rather than aborting the pull
+— the merge already landed on the remote, so a clean sync is the priority.
 
 If the local repo's `origin` does not point at `$REPO`, the pull may target a different
 remote — surface that to the user rather than silently pulling from the wrong place.
