@@ -53,17 +53,23 @@ See `references/repository-templates.md` for template detection and compliance d
 **Goal**: Create pull request with proper structure, metadata, and links.
 
 **Actions**:
-1. Identify and link related issues using GitHub CLI
-2. Generate PR title (≤70 chars, imperative, no emojis)
-3. Assemble PR body following template in `references/pr-structure.md`
-4. Apply automated labels based on file changes
-5. **CRITICAL: Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only trigger when the PR merges into the repository's default branch. If targeting a non-default branch (e.g. `develop`), explicitly warn the user that linked issues will NOT close automatically on merge and must be closed manually.**
-6. Create PR using `gh pr create` with all metadata
-   - Use `--draft` if the PR requires early feedback or is not fully complete
+1. **Consume `$ARGUMENTS` before deriving anything.** It may carry, in any combination:
+   - An **issue reference** (`Closes #456`, `Fixes #12`, or a bare `#456`) — use it verbatim as the auto-closing keyword in the PR body; do not re-derive or second-guess it. `/github:resolve-issues` delegates here and passes the issue it just resolved this way.
+   - A **free-text description** — use it as the basis for the PR title and the What/Why section.
+   - `--draft` — pass through to `gh pr create` in step 6.
+   - `--no-monitor` — a Phase 4 opt-out only; never treat it as description text.
+   Strip the flags before using the remainder as description/issue text.
+2. Identify and link any *further* related issues using GitHub CLI (in addition to any reference from `$ARGUMENTS`)
+3. Generate PR title (≤70 chars, imperative, no emojis)
+4. Assemble PR body following template in `references/pr-structure.md`
+5. Apply automated labels based on file changes
+6. **CRITICAL: Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only trigger when the PR merges into the repository's default branch. If targeting a non-default branch (e.g. `develop`), explicitly warn the user that linked issues will NOT close automatically on merge and must be closed manually.**
+7. Create PR using `gh pr create` with all metadata
+   - Use `--draft` if `$ARGUMENTS` requested it, or if the PR requires early feedback or is not fully complete
    - Set reviewers with `--reviewer` and assignees with `--assignee` when requested
    - Fill title/body automatically using `--fill` for simple changes
 7. Report final PR URL and status to user. Do NOT run a foreground `gh pr checks --watch` here — Phase 4 hands off to `/github:review-pr`, which owns the persistent CI watch; a blocking `--watch` would stall the turn and duplicate that watch.
-8. Proceed to Phase 4 by default. Skip Phase 4 only if `$ARGUMENTS` contains `--no-monitor` or the user explicitly opts out.
+8. **CRITICAL: Proceed to Phase 4.** Creating the PR is not the end of this skill. Skip Phase 4 only if `$ARGUMENTS` contains `--no-monitor` or the user explicitly opts out — never because CI looks green, no reviewers are assigned, or the change looks trivial.
 
 ## Phase 4: Post-PR Handoff (default on)
 
@@ -71,7 +77,9 @@ See `references/repository-templates.md` for template detection and compliance d
 
 **Goal**: Delegate CI monitoring and reviewer-comment triage to the dedicated skill.
 
-**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, and the fix→commit→push loop.
+**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, and the review → fix → commit+push → wait-for-review loop, through to the merge decision.
+
+**CRITICAL: this skill is the plugin's only PR-creating path.** Other skills (e.g. `/github:resolve-issues`) delegate here instead of calling `gh pr create` themselves, precisely so no PR escapes the quality gate or this handoff. Do not add a bypass.
 
 ## References
 
