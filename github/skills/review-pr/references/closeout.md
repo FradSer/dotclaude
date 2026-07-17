@@ -221,6 +221,45 @@ changes left from earlier in the session, stash them or report rather than abort
 If the local repo's `origin` does not point at `$REPO`, the pull may target a different
 remote — surface that to the user rather than silently pulling from the wrong place.
 
+## Stacked / chained PRs (base branch is a shared dependency)
+
+When several PRs depend on each other — PR-B's `--base` is PR-A's head branch, not
+`main` — **the base branch is a load-bearing dependency**, not a scratch branch. A
+chain breaks in a specific, silent way that is easy to miss:
+
+- PR-A merges into `main` with `--delete-branch`. Its head branch is deleted.
+- PR-B (and PR-C, …) had `--base = <PR-A head branch>`. When that branch is deleted,
+  GitHub auto-retargets their base to `main`, **but their merge commits were created
+  against the now-deleted branch and become dangling** — the content of PR-B/C lands
+  on **nothing**, and `main` advances with only PR-A's changes. The PRs show `MERGED`
+  on GitHub, which is the trap: the merge state lies. The only reliable check is
+  `git branch -r --contains <head-sha>` against `origin/main` — if it says no, the
+  content is not on `main` despite the MERGED badge.
+
+**Two safe patterns for a stack:**
+
+1. **All PRs base on `main` directly** (no inter-PR base). Land them in order; each
+   merge advances `main` and the next PR's base is already current. Simplest; prefer
+   this unless the intermediate state is genuinely unreviewable on its own.
+2. **Keep the base branch alive until every downstream PR is merged.** Do NOT pass
+   `--delete-branch` on PR-A's merge. Merge the stack top-down (or in dependency
+   order); delete the base branch only after the last downstream PR merges. This
+   skill already omits `--delete-branch` by default, so this is the path you get
+   unless you override it.
+
+If you suspect a stack already broke (PRs MERGED but content absent from `main`):
+open one repair PR off `origin/main` that cherry-picks each missing head commit, and
+link the dangling PRs in the body. Verify the repair with `git branch -r --contains
+<sha> origin/main` before merging.
+
+**Don't pre-announce implementation-detail strings in docs a parallel agent will
+write.** When a stack splits docs (PR-E) from the code that emits a string
+(PR-B), the docs author will name the string from intuition — `manual-blocks-initial`
+— instead of the real `manual-skips-initial`. The review bots catch it, but it costs
+a round-trip. If a downstream PR documents a value another PR produces, put the
+exact literal in the upstream agent's prompt and have it referenced verbatim, or
+land docs after the code PR merges so the author can grep the real value.
+
 ## Order and idempotency
 
 1. Hide + resolve the fully-addressed comments (Phase 3 closeout) **first** — the summary
