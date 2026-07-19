@@ -175,8 +175,8 @@ On "Don't merge": skip merge and post-merge hygiene; fall through to `TaskStop`.
 Usual hygiene — no ritual script:
 
 1. Ensure remote head is gone when stack-safe (and local head in the main worktree).
-2. `fetch --prune`, then fast-forward local `main` and `develop` when they exist on origin.
-   Never force long-lived branches.
+2. `fetch --prune`, then fast-forward local `main` and `develop` when present on origin,
+   plus the PR's `baseRefName` if it is neither. Never force long-lived branches.
 3. Drop other locals already merged into those; `worktree prune` as needed.
 
 **Linked worktree**: fetch only — do not switch onto `main`/`develop` or delete the issue head.
