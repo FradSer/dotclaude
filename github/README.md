@@ -2,7 +2,7 @@
 
 GitHub project operations with quality gates, TDD workflows, and comprehensive issue management.
 
-**Version**: 0.4.0
+**Version**: 0.5.0
 
 ## Installation
 
@@ -28,6 +28,7 @@ create PR → baseline review → triage each comment skeptically
           → wait for the next review round
           ↺ until CI is green and every comment is triaged
           → summary + body rewrite → ask the user whether to merge
+          → post-merge: prune stale head + sync main/develop
 ```
 
 The loop is the default; opting out takes a deliberate act — passing `--no-monitor` to `/github:create-pr`, or telling Claude directly that you only want the PR created or only want a baseline review. It is never skipped just because CI looks quiet: auto-review services and human reviewers comment on their own schedule, so a repo with no CI workflows still gets watched.
@@ -67,7 +68,7 @@ skills/
     │   └── review-loop.sh          # Monitor poll script
     └── references/
         ├── review-loop.md          # Poll interval, triage prompt, verdicts
-        └── closeout.md             # Summary, body rewrite, merge decision
+        └── closeout.md             # Summary, body rewrite, merge, post-merge hygiene
 ```
 
 This architecture enables efficient context loading by keeping core workflows concise while providing comprehensive reference materials on demand.
@@ -241,7 +242,7 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
    - Implement fixes
    - Refactor while keeping tests green
 4. **Quality Validation**: Runs project-specific lint, test, and build commands for fast local feedback
-5. **PR Creation**: Pushes the branch, then delegates to `/github:create-pr` with the issue reference — which runs the authoritative quality gate and enters the `/github:review-pr` loop. This skill does not resume inline; `/github:review-pr` owns the PR through to the merge decision.
+5. **PR Creation**: Pushes the branch, then delegates to `/github:create-pr` with the issue reference — which runs the authoritative quality gate and enters the `/github:review-pr` loop. This skill does not resume inline; `/github:review-pr` owns the PR through merge and post-merge hygiene.
 6. **Cleanup** (later turn, after the PR actually merges): verifies the worktree is still on the issue branch, then removes worktree and branch with documentation
 
 **Usage:**
@@ -297,6 +298,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 5. Commits + pushes each round, which triggers fresh CI that the same Monitor re-emits — the loop continues
 6. Hides resolved comments and resolves their threads
 7. Once CI is green and every comment is triaged: posts a summary comment, rewrites the PR body to link it, and asks whether to merge
+8. After merge: cleans up the head branch when safe, syncs `main`/`develop`, prunes stale locals
 
 **Usage:**
 ```bash
@@ -309,6 +311,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 - **Independent context**: The triage agent never sees the authoring context, so it can't rationalize the diff
 - **Persistent watch**: Survives across turns; a quiet comment queue is not a stop signal
 - **Never auto-merges**: Merging always requires an explicit user choice
+- **Post-merge hygiene**: Head cleanup + sync `main`/`develop`
 
 ## Best Practices
 

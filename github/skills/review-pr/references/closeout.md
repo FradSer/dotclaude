@@ -158,68 +158,28 @@ If unresolved `escalate` comments remain on the PR, include the count in the que
 (e.g. "Note: 2 escalated comments are still open for your decision") so the user merges
 with eyes open. The user may still choose to merge — that is their call, not the skill's.
 
-On a merge choice, run the matching `gh pr merge`:
+On a merge choice, run the matching `gh pr merge` (`--merge` / `--squash --subject "<title>"` /
+`--rebase`). Never `--auto`.
 
-```bash
-# Merge commit (default)
-gh pr merge "$PR" --repo "$REPO" --merge
+`--delete-branch` removes **both** remote and local head — safe only in the main worktree when
+no open PR still bases on that head. In a linked worktree (`/github:resolve-issues`), omit it:
+delete the remote head separately if stack-safe, leave the local branch for `ExitWorktree`.
 
-# Squash — pass --subject to avoid an interactive editor prompt; use the PR title.
-gh pr merge "$PR" --repo "$REPO" --squash --subject "<PR title>"
-
-# Rebase
-gh pr merge "$PR" --repo "$REPO" --rebase
-```
-
-Never add `--auto` — that delegates the merge to CI status and silently merges without the
-user's explicit confirmation, which defeats the AskUserQuestion gate. Never add
-`--delete-branch` either — branch deletion is out of scope for this skill; leave both the
-local and remote head branches for the user to clean up. If the merge command fails
-(branch protection, required reviews, stale base), surface the error to the user; do not
+If merge fails (branch protection, required reviews, stale base), surface the error; do not
 retry with different flags or force-push.
 
-On "Don't merge": skip the merge and the sync, fall through to `TaskStop`. The PR is
-already in a clean, merge-ready state for the user to merge later by hand.
+On "Don't merge": skip merge and post-merge hygiene; fall through to `TaskStop`.
 
-## Sync the local base branch after merge
+## After a successful merge
 
-After a successful merge (not on "don't merge", and not if `gh pr merge` failed), bring the
-local base branch up to date so the working repo reflects the merge. The sync target is the
-PR's `baseRefName` — read from the PR, not hardcoded. This covers both flows without coupling
-this skill to `/gitflow`: a gitflow repo merges into `develop`, a trunk-based repo into
-`main`, and `baseRefName` reports whichever it was.
+Usual hygiene — no ritual script:
 
-```bash
-# 1. Read the branch the PR merged INTO (gitflow: develop; trunk: main).
-BASE=$(gh pr view "$PR" --repo "$REPO" --json baseRefName -q .baseRefName)
+1. Ensure remote head is gone when stack-safe (and local head in the main worktree).
+2. `fetch --prune`, then fast-forward local `main` and `develop` when present on origin,
+   plus the PR's `baseRefName` if it is neither. Never force long-lived branches.
+3. Drop other locals already merged into those; `worktree prune` as needed.
 
-# 2. CRITICAL: never check out the base in a LINKED worktree. /github:resolve-issues runs
-#    this skill from inside one, where `git switch "$BASE"` is wrong in both directions:
-#    if $BASE is checked out in another worktree it hard-fails (exit 128), and if it is NOT
-#    it SUCCEEDS and silently drags the issue worktree off its head branch onto $BASE —
-#    after which ExitWorktree action:"remove" would delete the base branch. Detect the
-#    linked worktree by comparing this worktree's gitdir to the shared common gitdir.
-if [ "$(git rev-parse --absolute-git-dir)" \
-     != "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
-  # Linked worktree: update the remote-tracking ref only, never touch the checkout.
-  git fetch origin "$BASE"
-  echo "linked worktree: fetched origin/$BASE; local $BASE not checked out here"
-else
-  # Main worktree: switch to the base and fast-forward. --ff-only refuses to create a
-  # merge commit, so if the local base has diverged it fails safely instead of papering
-  # over a divergence the user should investigate.
-  git switch "$BASE" && git pull --ff-only
-fi
-```
-
-Do NOT delete branches (`git branch -d` on the head, or `--delete-branch` on the merge) —
-the user opted out of branch cleanup. In the **main worktree** only, if the working tree is
-on the head branch, `git switch "$BASE"` moves it before the pull. If there are uncommitted
-changes left from earlier in the session, stash them or report rather than aborting the pull
-— the merge already landed on the remote, so a clean sync is the priority.
-
-If the local repo's `origin` does not point at `$REPO`, the pull may target a different
-remote — surface that to the user rather than silently pulling from the wrong place.
+**Linked worktree**: fetch only — do not switch onto `main`/`develop` or delete the issue head.
 
 ## Stacked / chained PRs (base branch is a shared dependency)
 
@@ -241,11 +201,9 @@ chain breaks in a specific, silent way that is easy to miss:
 1. **All PRs base on `main` directly** (no inter-PR base). Land them in order; each
    merge advances `main` and the next PR's base is already current. Simplest; prefer
    this unless the intermediate state is genuinely unreviewable on its own.
-2. **Keep the base branch alive until every downstream PR is merged.** Do NOT pass
-   `--delete-branch` on PR-A's merge. Merge the stack top-down (or in dependency
-   order); delete the base branch only after the last downstream PR merges. This
-   skill already omits `--delete-branch` by default, so this is the path you get
-   unless you override it.
+2. **Keep the base branch alive until every downstream PR is merged.** Merge the
+   stack top-down (or in dependency order); do not delete a head that open PRs still
+   base on.
 
 If you suspect a stack already broke (PRs MERGED but content absent from `main`):
 open one repair PR off `origin/main` that cherry-picks each missing head commit, and
@@ -272,17 +230,15 @@ Steps 2 and 3 are ordered, not merely sequential: the body needs a URL that does
 until the comment is posted. Never rewrite the body first and backfill the link later.
 
 4. Ask the user via `AskUserQuestion` whether to merge; on a merge choice, run
-   `gh pr merge` with the selected strategy.
-5. Sync the local base branch (`git switch <baseRefName> && git pull --ff-only`) — only
-   after a successful merge.
+   `gh pr merge` (add `--delete-branch` only when stack-safe and in the main worktree).
+5. After a successful merge: head cleanup + sync `main`/`develop` (see above).
 6. `TaskStop` the Monitor.
 
 Steps 1–3 are idempotent: re-running `gh pr edit` with the same title/body is a no-op, and the
 marker lookup patches the existing summary rather than duplicating it (which also recovers
 `SUMMARY_URL` after an interrupt). Steps 4 and 5 are NOT idempotent — only run them once, after
 the user's explicit merge choice. If the user interrupts and you resume, skip steps already
-completed rather than re-posting; if the user already chose "don't merge", or the merge and
-sync already succeeded, do not ask again or re-pull.
+completed; if they chose "don't merge", or merge + hygiene already ran, do not repeat.
 
 ## Do not
 
