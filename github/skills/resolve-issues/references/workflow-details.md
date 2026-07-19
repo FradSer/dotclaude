@@ -66,5 +66,5 @@ During the TDD cycle, run project-specific quality checks:
 
 1. **Push branch**: `git push -u origin <branch-name>`
 2. **Create PR**: **CRITICAL: never call `gh pr create` from this skill.** Invoke `Skill("github:create-pr", "Closes #456")` with the issue reference. `/github:create-pr` is the plugin's single PR-creating path — it runs the quality/security gate, handles auto-closing keywords and the non-default-branch warning, and hands off to `/github:review-pr` for the review → fix → commit+push → wait-for-review loop. Pass `--no-monitor` through only on an explicit user opt-out.
-3. **After merge**: `/github:review-pr` owns the merge decision (it asks the user before merging). Once merged, use the ExitWorktree tool with action "remove" to clean up the worktree and branch
+3. **After merge**: `/github:review-pr` owns the merge decision and post-merge hygiene. Once merged, use ExitWorktree action "remove" for the linked worktree — confirm you are still on the issue branch first
    - If uncommitted changes exist, ExitWorktree will refuse; confirm with the user before setting `discard_changes: true`

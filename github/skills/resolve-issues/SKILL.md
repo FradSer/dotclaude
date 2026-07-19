@@ -60,7 +60,7 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 **Trigger**: The PR from Phase 3 has actually merged — normally a later turn, after `/github:review-pr` completed its merge decision. Verify with `gh pr view <PR#> --json state -q .state` returning `MERGED`; never assume.
 
 **Actions**:
-1. **CRITICAL: confirm the session is still in the issue worktree and still on the issue branch** (`git branch --show-current`) before removing anything. `/github:review-pr` runs a post-merge base-branch sync; if it ever left this worktree checked out on the base branch (`main`/`develop`) rather than the issue branch, `ExitWorktree action:"remove"` would delete the **base** branch. Stop and report instead of removing.
+1. **CRITICAL: confirm still on the issue branch** before `ExitWorktree action:"remove"`. If checkout drifted onto `main`/`develop`, stop — removing would delete a long-lived branch. Remote head may already be gone; that is fine.
 2. Use the ExitWorktree tool with action "remove" to clean up worktree and branch
    - If uncommitted changes exist, ExitWorktree refuses; confirm with the user before setting `discard_changes: true`
 3. Document resolution and any follow-up tasks
