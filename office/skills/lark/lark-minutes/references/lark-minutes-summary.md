@@ -115,6 +115,6 @@ lark-cli minutes +summary --minute-token obcnxxxxxxxxxxxxxxxxxxxx --summary @sum
 
 ## 参考
 
-- [lark-minutes](../SKILL.md) — 妙记全部命令
+- [lark-minutes](../lark-minutes.md) — 妙记全部命令
 - [minutes +todo](lark-minutes-todo.md) — 替换待办项
 - [minutes +detail](lark-minutes-detail.md) — 读取总结、待办等 AI 产物

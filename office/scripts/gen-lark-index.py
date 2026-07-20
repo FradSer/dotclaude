@@ -3,7 +3,8 @@
 
 Scans each lark-* subdirectory (and lark-shared) under
 office/skills/lark/, extracts the name/version/description frontmatter
-from each sub-skill's SKILL.md, and rewrites the index table in the
+from each sub-skill's <dirname>.md (nested SKILL.md is denested after
+sync so it is not auto-discovered), and rewrites the index table in the
 parent SKILL.md between the `## Sub-skill Index` and `## Routing Rules`
 markers. Local-only SKILL.md/SYNC.md at the root are never overwritten;
 this script only edits the index table region.
@@ -64,19 +65,30 @@ LABELS: dict[str, str] = {
 }
 
 
+def subskill_entry(sub: Path) -> Path | None:
+    """Prefer denested <dirname>.md; fall back to upstream SKILL.md if present."""
+    denested = sub / f"{sub.name}.md"
+    if denested.is_file():
+        return denested
+    legacy = sub / "SKILL.md"
+    if legacy.is_file():
+        return legacy
+    return None
+
+
 def load_subskills() -> list[dict]:
-    """Return one record per lark-* subdirectory with a SKILL.md frontmatter."""
+    """Return one record per lark-* subdirectory with entry-file frontmatter."""
     records: list[dict] = []
     for sub in sorted(LARK_DIR.iterdir()):
         if not sub.is_dir() or not sub.name.startswith("lark-"):
             continue
-        skill_md = sub / "SKILL.md"
-        if not skill_md.is_file():
-            print(f"warn: {sub.name}/SKILL.md missing, skipping", file=sys.stderr)
+        skill_md = subskill_entry(sub)
+        if skill_md is None:
+            print(f"warn: {sub.name}/{{SKILL.md|{sub.name}.md}} missing, skipping", file=sys.stderr)
             continue
         text = skill_md.read_text(encoding="utf-8")
         if not text.startswith("---\n"):
-            print(f"warn: {sub.name}/SKILL.md has no frontmatter", file=sys.stderr)
+            print(f"warn: {skill_md.relative_to(LARK_DIR)} has no frontmatter", file=sys.stderr)
             continue
         _, fm_raw, _body = text.split("---\n", 2)
         fm = yaml.safe_load(fm_raw) or {}
@@ -97,14 +109,18 @@ def load_subskills() -> list[dict]:
 
 
 def render_table(records: list[dict]) -> str:
-    header = "| Sub-skill | Directory | Version | Use When |\n|-----------|-----------|---------|----------|"
+    header = (
+        "| Sub-skill | Entry | Version | Use When |\n"
+        "|-----------|-------|---------|----------|"
+    )
     rows = []
     for r in records:
         label = LABELS.get(r["dir"], r["dir"])
+        entry = f"{r['dir']}/{r['dir']}.md"
         # Escape pipes inside the description so the markdown table survives.
         use_when = r["description"].replace("|", "\\|")
         rows.append(
-            f"| {label} | `{r['dir']}/` | {r['version']} | {use_when} |"
+            f"| {label} | [`{entry}`]({entry}) | {r['version']} | {use_when} |"
         )
     return header + "\n" + "\n".join(rows) + "\n\n"
 

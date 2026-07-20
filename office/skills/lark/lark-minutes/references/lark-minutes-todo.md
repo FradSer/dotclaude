@@ -1,6 +1,6 @@
 # minutes +todo
 
-> **路由**：本命令操作**妙记内的 AI 待办**，不是飞书任务（Task）。用户说「在妙记里新建待办」时**必须**用本命令，**禁止**走 `lark-cli task` / `tasklists list` / `task +create`。详见 [lark-minutes/SKILL.md](../SKILL.md) 第 6 节。
+> **路由**：本命令操作**妙记内的 AI 待办**，不是飞书任务（Task）。用户说「在妙记里新建待办」时**必须**用本命令，**禁止**走 `lark-cli task` / `tasklists list` / `task +create`。详见 [lark-minutes/lark-minutes.md](../lark-minutes.md) 第 6 节。
 
 
 对妙记中的待办做新增 / 更新 / 删除（单条或批量）。写操作。
@@ -131,6 +131,6 @@ lark-cli minutes +todo --minute-token obcnxxxxxxxxxxxxxxxxxxxx --operation add -
 
 ## 参考
 
-- [lark-minutes](../SKILL.md)
+- [lark-minutes](../lark-minutes.md)
 - [minutes +summary](lark-minutes-summary.md)
 - [minutes +detail](lark-minutes-detail.md)

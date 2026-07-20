@@ -1,6 +1,6 @@
 # mail +reply
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 回复指定邮件，自动处理：
 - 主题前缀 `Re: `（已含常见回复前缀时不重复叠加）

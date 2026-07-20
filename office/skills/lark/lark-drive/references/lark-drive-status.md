@@ -1,7 +1,7 @@
 
 # drive +status
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 按 **精确 SHA-256**（默认）或 **快速 modified_time**（`--quick`）比较本地目录与飞书云空间（云盘/云存储）文件夹，输出四类差异：
 
@@ -132,6 +132,6 @@ lark-cli drive +status \
 
 ## 参考
 
-- [lark-drive](../SKILL.md) —— 云空间（云盘/云存储）全部命令
-- [lark-shared](../../lark-shared/SKILL.md) —— 认证和全局参数
+- [lark-drive](../lark-drive.md) —— 云空间（云盘/云存储）全部命令
+- [lark-shared](../../lark-shared/lark-shared.md) —— 认证和全局参数
 - [lark-drive-upload](lark-drive-upload.md) / [lark-drive-download](lark-drive-download.md) —— 把 +status 输出接到推/拉动作上

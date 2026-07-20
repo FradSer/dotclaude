@@ -1,6 +1,6 @@
 # im reactions
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 > **Heads-up — don't reach for `batch_query` by default.** The four message-pulling shortcuts (`+messages-mget`, `+chat-messages-list`, `+messages-search`, `+threads-messages-list`) already call `im.reactions.batch_query` automatically and attach the result as a `reactions` block on each message (replies inside `thread_replies` included). Use those shortcuts for any "read reactions of messages I'm already pulling" task. Reach for the raw `batch_query` API only when you have a standalone `message_id` outside that pull flow. See the main [message enrichment](lark-im-message-enrichment.md) for the contract.
 
@@ -294,6 +294,6 @@ GoGoGo, ThanksFace, SaluteFace, Shrug, ClownFace, HappyDragon
 
 ## References
 
-- [lark-im](../SKILL.md) - all IM commands
-- [lark-shared](../../lark-shared/SKILL.md) - authentication and global parameters
+- [lark-im](../lark-im.md) - all IM commands
+- [lark-shared](../../lark-shared/lark-shared.md) - authentication and global parameters
 - Official emoji doc: `https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message-reaction/emojis-introduce`

@@ -1,6 +1,6 @@
 # slides +replace-slide（块级替换 / 插入）
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 对指定 slide 做块级替换或插入。编辑已有 PPT 的主路径——`slide_id` 不变、页序不动、只影响被指定的块。
 

@@ -147,6 +147,6 @@ lark-cli minutes +download --minute-tokens <minute_token>
 
 ## 参考
 
-- [lark-vc](../SKILL.md) — 视频会议全部命令
+- [lark-vc](../lark-vc.md) — 视频会议全部命令
 - [lark-vc-search](lark-vc-search.md) — 搜索历史会议（获取 meeting_id）
 - [lark-minutes-detail](../../lark-minutes/references/lark-minutes-detail.md) — 获取会议纪要

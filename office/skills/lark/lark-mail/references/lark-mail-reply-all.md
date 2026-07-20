@@ -1,6 +1,6 @@
 # mail +reply-all
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 回复全部会自动处理：
 - 自动聚合原邮件发件人、原 To、原 Cc

@@ -1,6 +1,6 @@
 # mail send_as
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 使用公共邮箱或别名发信。适用于 `+send` / `+draft-create` / `+reply` / `+reply-all` / `+forward` 等发信类 shortcut。
 

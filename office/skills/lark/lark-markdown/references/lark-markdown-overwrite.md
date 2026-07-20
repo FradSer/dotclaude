@@ -1,6 +1,6 @@
 # markdown +overwrite
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 覆盖更新 Drive 中已有的原生 Markdown 文件，并返回覆盖后的新版本号。
 
@@ -81,5 +81,5 @@ lark-cli markdown +overwrite \
 
 ## 参考
 
-- [lark-markdown](../SKILL.md) — Markdown 域总览
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-markdown](../lark-markdown.md) — Markdown 域总览
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

@@ -1,6 +1,6 @@
 # mail +draft-edit
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 编辑已有的邮件草稿。命令会读取当前原始 EML，应用最小化补丁，然后将更新后的草稿写回。
 

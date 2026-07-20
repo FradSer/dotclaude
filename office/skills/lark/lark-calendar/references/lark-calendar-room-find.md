@@ -106,4 +106,4 @@ lark-cli calendar +room-find \
 
 - [lark-calendar-create](lark-calendar-create.md)
 - [lark-calendar-suggestion](lark-calendar-suggestion.md)
-- [lark-calendar](../SKILL.md) — skill 入口与路由
+- [lark-calendar](../lark-calendar.md) — skill 入口与路由

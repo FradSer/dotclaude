@@ -25,6 +25,10 @@ TEMP_DIR="/tmp/lark-cli-sync-$$"
 # 本地文件（不被覆盖）
 LOCAL_FILES=("SKILL.md" "SYNC.md")
 
+# 上游子 skill 以 SKILL.md 交付；同步后改名为 <dirname>.md，避免被
+# Claude/Cursor 当成独立 skill 误发现。见 denest-lark-skills.py。
+DENEST_SCRIPT="$SCRIPT_DIR/denest-lark-skills.py"
+
 # 帮助信息
 show_help() {
     cat << EOF
@@ -46,6 +50,10 @@ ${GREEN}示例:${NC}
 
 ${GREEN}上游仓库:${NC}
     $UPSTREAM_REPO (branch: $UPSTREAM_BRANCH)
+
+${GREEN}本地变换:${NC}
+    同步后将 lark-*/SKILL.md 重命名为 lark-*/<dirname>.md
+    （仅根目录 SKILL.md 路由器可被 skill 发现）
 
 EOF
 }
@@ -178,9 +186,34 @@ prune_backups() {
     done < <(ls -1 "$BACKUP_DIR" 2>/dev/null | sort -r | tail -n +$((KEEP_BACKUPS + 1)))
 }
 
-# 检查差异
+# 在给定目录上执行与生产相同的 denest（rename SKILL.md + 重写链接）
+apply_denest() {
+    local tree="$1"
+    if [ ! -f "$DENEST_SCRIPT" ]; then
+        log_error "缺少 denest 脚本: $DENEST_SCRIPT"
+        return 1
+    fi
+    LARK_DIR_OVERRIDE="$tree" DENEST_SCRIPT="$DENEST_SCRIPT" python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+import os
+import sys
+
+script = os.environ["DENEST_SCRIPT"]
+spec = importlib.util.spec_from_file_location("denest", script)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+mod.LARK_DIR = Path(os.environ["LARK_DIR_OVERRIDE"]).resolve()
+renamed = mod.rename_nested()
+links = mod.rewrite_links()
+print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
+PY
+}
+
+# 检查差异（先对上游临时副本做 denest，再与本地比较）
 check_diff() {
     local upstream_skills="$TEMP_DIR/repo/$UPSTREAM_PATH"
+    local compare_dir="$TEMP_DIR/denested"
     local has_changes=false
     local new_count=0
     local changed_count=0
@@ -193,9 +226,17 @@ check_diff() {
 
     log_info "检查文件差异..."
 
+    rm -rf "$compare_dir"
+    mkdir -p "$compare_dir"
+    # 只镜像上游 skill 子树，再应用与本地相同的 denest
+    while IFS= read -r -d '' item; do
+        cp -R "$item" "$compare_dir/"
+    done < <(find "$upstream_skills" -maxdepth 1 -mindepth 1 -print0)
+    apply_denest "$compare_dir" || return 1
+
     # 检查新增和变更的文件
     while IFS= read -r -d '' upstream_file; do
-        local rel_path="${upstream_file#$upstream_skills/}"
+        local rel_path="${upstream_file#$compare_dir/}"
         local local_file="$TARGET_DIR/$rel_path"
 
         if [ ! -f "$local_file" ]; then
@@ -205,7 +246,7 @@ check_diff() {
             changed_count=$((changed_count + 1))
             has_changes=true
         fi
-    done < <(find "$upstream_skills" -type f -print0)
+    done < <(find "$compare_dir" -type f -print0)
 
     # 检查本地已删除的上游文件
     while IFS= read -r -d '' local_file; do
@@ -223,7 +264,7 @@ check_diff() {
         [[ "$rel_path" == .backup* ]] && skip=true
         [ "$skip" = true ] && continue
 
-        local upstream_file="$upstream_skills/$rel_path"
+        local upstream_file="$compare_dir/$rel_path"
         if [ ! -f "$upstream_file" ]; then
             deleted_count=$((deleted_count + 1))
             has_changes=true
@@ -276,6 +317,15 @@ sync_files() {
     done < <(find "$upstream_skills" -maxdepth 1 -mindepth 1 -print0)
 
     log_success "同步完成: 已同步 $count 个 skill 目录"
+
+    # 重命名嵌套 SKILL.md，避免被当成独立 skill 发现
+    log_info "正在 denest 子 skill（SKILL.md → <dirname>.md）..."
+    apply_denest "$TARGET_DIR" || return 1
+
+    # 按子 skill frontmatter 刷新路由器索引表
+    if [ -f "$SCRIPT_DIR/gen-lark-index.py" ]; then
+        python3 "$SCRIPT_DIR/gen-lark-index.py" || log_warning "gen-lark-index.py 失败，请手动重跑"
+    fi
 
     # 更新 SYNC.md 元数据：同步日期 / 已装 lark-cli 版本 / 同步到的 commit
     local sync_md="$TARGET_DIR/SYNC.md"

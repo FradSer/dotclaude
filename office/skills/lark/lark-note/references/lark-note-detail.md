@@ -11,7 +11,7 @@ lark-cli note +detail --note-id <note_id>
 ## `note_id` 来源
 
 - 可以来自用户直接给出的 `note_id`。
-- 如果入口是文档，先由 [lark-doc](../../lark-doc/SKILL.md) 读取 Docx；只有 `<vc-transcribe-tab vc-node-id="...">` 的 `vc-node-id` 可以作为 `note_id`。
+- 如果入口是文档，先由 [lark-doc](../../lark-doc/lark-doc.md) 读取 Docx；只有 `<vc-transcribe-tab vc-node-id="...">` 的 `vc-node-id` 可以作为 `note_id`。
 - 没有 `vc-node-id` 时，不要从 `doc_token`、标题、正文或 backlink 反推 `note_id`。
 
 ## 输出后的路由

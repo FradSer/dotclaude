@@ -1,6 +1,6 @@
 # 飞书思维笔记（Mindnote）
 
-> **前置条件：** 先阅读 [`../SKILL.md`](../SKILL.md) 和 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和路由规则。
+> **前置条件：** 先阅读 [`../lark-doc.md`](../lark-doc.md) 和 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和路由规则。
 
 当用户要操作思维笔记时，入口属于 `lark-doc`，但实际执行命令使用 `lark-cli mindnotes nodes list/create`，不是 `docs +...`。
 
@@ -110,4 +110,4 @@ lark-cli mindnotes nodes create \
 
 - [lark-doc-fetch](lark-doc-fetch.md) — 获取文档内容
 - [lark-doc-whiteboard](lark-doc-whiteboard.md) — 新建思维笔记走画板链路
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

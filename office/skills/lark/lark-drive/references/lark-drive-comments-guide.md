@@ -1,6 +1,6 @@
 # Drive 评论查询、统计与回复指南
 
-> 前置条件：先阅读 [`../SKILL.md`](../SKILL.md) 的“评论能力入口”，添加评论参数细节见 [`lark-drive-add-comment.md`](lark-drive-add-comment.md)，reaction 见 [`lark-drive-reactions.md`](lark-drive-reactions.md)。
+> 前置条件：先阅读 [`../lark-drive.md`](../lark-drive.md) 的“评论能力入口”，添加评论参数细节见 [`lark-drive-add-comment.md`](lark-drive-add-comment.md)，reaction 见 [`lark-drive-reactions.md`](lark-drive-reactions.md)。
 
 ## 评论模式
 

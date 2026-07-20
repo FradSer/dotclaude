@@ -4,7 +4,7 @@ Workflow id: `knowledge_organize`
 
 Risk / Structure: `R2-R3` / `S3`
 
-This file implements the registered knowledge organization workflow. Before execution, the agent MUST read [`lark-drive-workflow.md`](lark-drive-workflow.md) and [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md), and follow the shared execution protocol, Artifact Contract, Workflow Loading rules, authentication rules, and write confirmation rules.
+This file implements the registered knowledge organization workflow. Before execution, the agent MUST read [`lark-drive-workflow.md`](lark-drive-workflow.md) and [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md), and follow the shared execution protocol, Artifact Contract, Workflow Loading rules, authentication rules, and write confirmation rules.
 
 It defines the workflow-specific state machine and progressive loading map. Stage-specific rules live in phase files and MUST be loaded only when the workflow reaches the corresponding state.
 
@@ -12,14 +12,14 @@ Phase files are references for this workflow, not independent skills. Do not rou
 
 ## Required Context
 
-Before running this workflow, MUST read [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) for identity, authentication, permission handling, and write-operation confirmation rules.
+Before running this workflow, MUST read [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) for identity, authentication, permission handling, and write-operation confirmation rules.
 
 Load other skills / references progressively:
 
-- Wiki / personal library target: [`../../lark-wiki/SKILL.md`](../../lark-wiki/SKILL.md)
-- Content read required: [`../../lark-doc/SKILL.md`](../../lark-doc/SKILL.md) and [`../../lark-doc/references/lark-doc-fetch.md`](../../lark-doc/references/lark-doc-fetch.md)
-- Sheet down-drill required: [`../../lark-sheets/SKILL.md`](../../lark-sheets/SKILL.md)
-- Base down-drill required: [`../../lark-base/SKILL.md`](../../lark-base/SKILL.md)
+- Wiki / personal library target: [`../../lark-wiki/lark-wiki.md`](../../lark-wiki/lark-wiki.md)
+- Content read required: [`../../lark-doc/lark-doc.md`](../../lark-doc/lark-doc.md) and [`../../lark-doc/references/lark-doc-fetch.md`](../../lark-doc/references/lark-doc-fetch.md)
+- Sheet down-drill required: [`../../lark-sheets/lark-sheets.md`](../../lark-sheets/lark-sheets.md)
+- Base down-drill required: [`../../lark-base/lark-base.md`](../../lark-base/lark-base.md)
 
 ## Agent Contract
 
@@ -216,17 +216,17 @@ Never request permission automatically, never batch permission requests, and nev
 - [Planning phase](lark-drive-workflow-knowledge-organize-planning.md)
 - [Execution phase](lark-drive-workflow-knowledge-organize-execution.md)
 - [Rollback phase](lark-drive-workflow-knowledge-organize-rollback.md)
-- [lark-shared](../../lark-shared/SKILL.md)
-- [lark-drive](../SKILL.md)
+- [lark-shared](../../lark-shared/lark-shared.md)
+- [lark-drive](../lark-drive.md)
 - [lark-drive-files-list](lark-drive-files-list.md)
 - [lark-drive-search](lark-drive-search.md)
 - [lark-drive-inspect](lark-drive-inspect.md)
 - [lark-drive-apply-permission](lark-drive-apply-permission.md)
 - [lark-drive-task-result](lark-drive-task-result.md)
 - [lark-drive-delete](lark-drive-delete.md)
-- [lark-wiki](../../lark-wiki/SKILL.md)
+- [lark-wiki](../../lark-wiki/lark-wiki.md)
 - [lark-wiki-node-delete](../../lark-wiki/references/lark-wiki-node-delete.md)
-- [lark-doc](../../lark-doc/SKILL.md)
+- [lark-doc](../../lark-doc/lark-doc.md)
 - [lark-doc-fetch](../../lark-doc/references/lark-doc-fetch.md)
-- [lark-sheets](../../lark-sheets/SKILL.md)
-- [lark-base](../../lark-base/SKILL.md)
+- [lark-sheets](../../lark-sheets/lark-sheets.md)
+- [lark-base](../../lark-base/lark-base.md)

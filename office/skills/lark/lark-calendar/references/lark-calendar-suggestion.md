@@ -118,4 +118,4 @@ lark-cli calendar +suggestion \
 ## 参考
 
 - [lark-calendar-create](lark-calendar-create.md) — 创建日程
-- [lark-calendar](../SKILL.md) — skill 入口与路由
+- [lark-calendar](../lark-calendar.md) — skill 入口与路由

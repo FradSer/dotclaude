@@ -1,6 +1,6 @@
 ## `drive +preview`
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、权限处理和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、权限处理和安全规则。
 
 列出或下载 Drive 文件可用的预览产物。这个 shortcut 不猜测默认类型：
 
@@ -83,5 +83,5 @@ lark-cli drive +preview \
 
 ### 参考
 
-- [lark-drive](../SKILL.md) -- Drive 总入口
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-drive](../lark-drive.md) -- Drive 总入口
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

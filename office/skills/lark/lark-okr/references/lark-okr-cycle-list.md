@@ -1,6 +1,6 @@
 # okr +cycle-list
 
-> **前置条件：** 先阅读 [`lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 列出指定用户的 OKR 周期，支持可选的时间范围过滤。
 
@@ -89,5 +89,5 @@ lark-cli okr +cycle-list --user-id "ou_xxx" --dry-run
 
 ## 参考
 
-- [lark-okr](../SKILL.md) -- 所有 OKR 命令
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-okr](../lark-okr.md) -- 所有 OKR 命令
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

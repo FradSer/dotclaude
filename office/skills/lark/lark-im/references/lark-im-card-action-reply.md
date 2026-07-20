@@ -1,6 +1,6 @@
 # card.action.trigger
 
-> **Prerequisite:** Read [`../../lark-event/SKILL.md`](../../lark-event/SKILL.md) first for `event consume` essentials.
+> **Prerequisite:** Read [`../../lark-event/lark-event.md`](../../lark-event/lark-event.md) first for `event consume` essentials.
 
 Fires when a user interacts with an interactive card — button click, form submit, dropdown select,
 checkbox toggle, date/time pick, etc.

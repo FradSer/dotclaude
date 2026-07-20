@@ -1,6 +1,6 @@
 # whiteboard +update（更新画板）
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 更新画板内容，支持四种输入格式：
 
@@ -27,7 +27,7 @@
 
 思维导图，时序图，类图，饼图，流程图等图表推荐使用 Mermaid/PlantUML 语法绘制。
 
-而当需要绘制架构图，组织架构图，泳道图，对比图，鱼骨图，柱状图，折线图，树状图，漏斗图，金字塔图，循环/飞轮图，里程碑或其他较为复杂的图表时，推荐参考 [§ 渲染 & 写入画板](../SKILL.md#渲染--写入画板) 使用 whiteboard-cli 工具创作。
+而当需要绘制架构图，组织架构图，泳道图，对比图，鱼骨图，柱状图，折线图，树状图，漏斗图，金字塔图，循环/飞轮图，里程碑或其他较为复杂的图表时，推荐参考 [§ 渲染 & 写入画板](../lark-whiteboard.md#渲染--写入画板) 使用 whiteboard-cli 工具创作。
 
 ## 示例
 
@@ -71,7 +71,7 @@ lark-cli whiteboard +update \
 
 ### 示例 3：使用 whiteboard-cli 生成 OpenAPI 格式并写入画板
 
-whiteboard-cli 工具的具体用法请参考 [§ 渲染 & 写入画板](../SKILL.md#渲染--写入画板)
+whiteboard-cli 工具的具体用法请参考 [§ 渲染 & 写入画板](../lark-whiteboard.md#渲染--写入画板)
 
 ```bash
 # 使用 whiteboard-cli 生成 OpenAPI 格式并通过管道传递
@@ -85,7 +85,7 @@ npx -y @larksuite/whiteboard-cli@^0.2.12 -i <产物文件> --to openapi --format
 
 ### 示例 4：先生成产物文件，再从文件读取更新
 
-whiteboard-cli 工具的具体用法请参考 [§ 渲染 & 写入画板](../SKILL.md#渲染--写入画板)
+whiteboard-cli 工具的具体用法请参考 [§ 渲染 & 写入画板](../lark-whiteboard.md#渲染--写入画板)
 
 ```bash
 # 生成 OpenAPI 格式到文件

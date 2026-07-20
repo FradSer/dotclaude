@@ -1,6 +1,6 @@
 # okr +progress-update
 
-> **前置条件：** 先阅读 [`lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 更新指定 ID 的 OKR 进展记录内容。
 
@@ -80,6 +80,6 @@ lark-cli okr +progress-update \
 
 ## 参考
 
-- [lark-okr](../SKILL.md) -- 所有 OKR 命令(shortcut 和 API 接口)
+- [lark-okr](../lark-okr.md) -- 所有 OKR 命令(shortcut 和 API 接口)
 - [ContentBlock 格式](lark-okr-contentblock.md) -- 进展内容使用的富文本格式
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

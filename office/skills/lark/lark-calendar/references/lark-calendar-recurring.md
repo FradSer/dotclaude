@@ -84,7 +84,7 @@
 
 ## 参考
 
-- [lark-calendar](../SKILL.md) — 日历全部命令
+- [lark-calendar](../lark-calendar.md) — 日历全部命令
 - [lark-calendar-update](lark-calendar-update.md) — 更新日程 Shortcut
 - [lark-calendar-create](lark-calendar-create.md) — 创建日程 Shortcut
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

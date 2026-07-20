@@ -1,6 +1,6 @@
 # mail +thread
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 读取指定会话中的所有邮件，按发送时间升序排列。每条邮件结构与 `+message` 相同。
 

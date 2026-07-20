@@ -4,7 +4,7 @@
 
 普通柱状图、条形图、折线图、面积图、雷达图、饼图 / 环图和组合图应优先使用原生 `<chart>`。除非用户明确要求像素级自定义，或图表类型确实不受 `<chart>` 支持，否则不要用 `<whiteboard>` + SVG / Mermaid 重画这些标准图表。
 
-> 前置条件：使用本文档前先阅读 [lark-slides SKILL.md](../SKILL.md)。
+> 前置条件：使用本文档前先阅读 [lark-slides SKILL.md](../lark-slides.md)。
 
 ---
 
@@ -328,4 +328,4 @@ Mermaid 语法包含 `[`、`>`、`-->`，不用 CDATA 直接写会破坏 XML 解
 
 ## 参考
 
-- [lark-slides SKILL.md](../SKILL.md)
+- [lark-slides SKILL.md](../lark-slides.md)

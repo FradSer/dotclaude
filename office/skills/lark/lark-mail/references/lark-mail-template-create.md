@@ -1,6 +1,6 @@
 # mail +template-create
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 创建一个新的个人邮件模板。适用于需要长期复用的邮件框架，例如周报、客户通知、请假申请等。
 

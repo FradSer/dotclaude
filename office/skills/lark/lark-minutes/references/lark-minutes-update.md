@@ -36,4 +36,4 @@ lark-cli minutes +update --minute-token xxx --topic "周会纪要 2026-05-18"
 
 ## 参考
 
-- [lark-minutes](../SKILL.md) -- 妙记相关功能说明
+- [lark-minutes](../lark-minutes.md) -- 妙记相关功能说明

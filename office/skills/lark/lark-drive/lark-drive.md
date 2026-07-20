@@ -10,7 +10,7 @@ metadata:
 
 # drive (v1)
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，其中包含认证、权限处理**
+**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，其中包含认证、权限处理**
 
 > **术语说明：** 飞书云空间也常被称为"云盘"、"云存储"、"网盘"或"我的空间"，这些说法通常指的是同一个产品，是飞书官方的云端文件存储与管理中心。
 
@@ -32,8 +32,8 @@ metadata:
 - 用户要把本地 `.md` / `.docx` / `.doc` / `.txt` / `.html` 导入成在线文档，使用 `lark-cli drive +import --type docx`。
 - 用户要把本地 `.pptx` 导入成飞书幻灯片，使用 `lark-cli drive +import --type slides`；当前 PPTX 导入上限是 500MB。
 - 批量执行 `drive +import` 且目标是同一个位置（同一 `--folder-token`、默认根目录，或同一 `--target-token`）时，必须串行执行；不要并发导入到同一位置，服务端可能返回并发冲突错误。
-- 用户要在 Drive 里上传、创建、读取、局部 patch 或覆盖更新**原生 `.md` 文件**（不是导入成 docx），切到 [`lark-markdown`](../lark-markdown/SKILL.md)。
-- 用户要比较原生 `.md` 文件的**历史版本差异**，或比较远端 Markdown 与本地草稿，切到 [`lark-markdown`](../lark-markdown/SKILL.md) 的 `lark-cli markdown +diff`；需要版本号时先用 `drive +version-history`。
+- 用户要在 Drive 里上传、创建、读取、局部 patch 或覆盖更新**原生 `.md` 文件**（不是导入成 docx），切到 [`lark-markdown`](../lark-markdown/lark-markdown.md)。
+- 用户要比较原生 `.md` 文件的**历史版本差异**，或比较远端 Markdown 与本地草稿，切到 [`lark-markdown`](../lark-markdown/lark-markdown.md) 的 `lark-cli markdown +diff`；需要版本号时先用 `drive +version-history`。
 - 用户要查看、下载、回滚或删除文件的**历史版本**，使用 `drive +version-history`、`drive +version-get`、`drive +version-revert`、`drive +version-delete`；这组命令同时支持 `--as user` 和 `--as bot`，自动化场景优先 `--as bot`。
 - 用户要把本地 `.xlsx` / `.xls` / `.csv` 导入成电子表格，使用 `lark-cli drive +import --type sheet`。
 - 用户要在云空间（云盘/云存储）里新建文件夹，优先使用 `lark-cli drive +create-folder`。
@@ -93,7 +93,7 @@ lark-cli drive +inspect --url 'https://xxx.feishu.cn/wiki/wikcnXXX'
 - 评论写入内容（添加评论、回复评论、编辑回复）里的文本不能直接出现 `<`、`>`；提交前必须先转义：`<` -> `&lt;`，`>` -> `&gt;`。
 - 使用 `drive +add-comment` 时，shortcut 会对 `type=text` 的文本元素自动做上述转义兜底；如果直接调用 `drive file.comments create_v2`、`drive file.comment.replys create`、`drive file.comment.replys update`，则需要在请求里自行传入已转义的内容。
 - Base 记录局部评论使用 `--type bitable` / `--type base` 或 `/base/`、`/bitable/`、wiki Base 链接；`bitable` 和 Base 是同一概念，`bitable` 是内部代号、Base 是产品名，裸 token 推荐传 `bitable`，`base` 仅作为兼容别名兜底。
-- Base 不支持全局评论，所有评论都挂在记录上；定位信息必须是 file token（base token）+ `--block-id <table-id>!<record-id>!<view-id>`，其中 table/record/view ID 通常分别以 `tbl`/`rec`/`vew` 开头。view_id 只决定被提及时点击通知打开哪个视图，不影响评论挂载点；只要在同一记录上都能看到评论，但必须传，否则通知无法确定跳转视图。ID 可通过 [`lark-base`](../lark-base/SKILL.md) 获取。
+- Base 不支持全局评论，所有评论都挂在记录上；定位信息必须是 file token（base token）+ `--block-id <table-id>!<record-id>!<view-id>`，其中 table/record/view ID 通常分别以 `tbl`/`rec`/`vew` 开头。view_id 只决定被提及时点击通知打开哪个视图，不影响评论挂载点；只要在同一记录上都能看到评论，但必须传，否则通知无法确定跳转视图。ID 可通过 [`lark-base`](../lark-base/lark-base.md) 获取。
 - 如果 wiki 解析后不是 `doc`/`docx`/`file`/`sheet`/`slides`/`bitable`/`base`，不要用 `+add-comment`。
 - 如果需要更底层地直接调用评论 V2 协议，再走原生 API：先执行 `lark-cli schema drive.file.comments.create_v2`，再执行 `lark-cli drive file.comments create_v2 ...`。全文评论省略 `anchor`；docx/sheet/slides 局部评论传 `anchor.block_id`，Base 记录局部评论传 `anchor.block_id`（table_id）、`anchor.base_record_id`、`anchor.base_view_id`。
 - 直接调用原生 `drive.file.comments.*` / `drive.file.comment.replys.*` 评论 Base 文档时，`file_type` 填 `bitable`，不要填 `base`。
@@ -111,15 +111,15 @@ lark-cli drive +inspect --url 'https://xxx.feishu.cn/wiki/wikcnXXX'
 
 - 用户要管理 Drive 文档/文件协作者、公开权限、授权当前应用访问文档，或处理 `permission.public.patch` 的 `91009` / `91010` / `91011` / `91012` 错误时，先读 [`lark-drive-permission-guide.md`](references/lark-drive-permission-guide.md)。
 - 用户只是没有访问权限并希望向 owner 申请访问，优先使用 [`+apply-permission`](references/lark-drive-apply-permission.md)。
-- 普通 scope、身份或登录问题仍按 [`lark-shared`](../lark-shared/SKILL.md) 处理；不要把租户安全策略、对外分享、密级拦截简单归类为缺 scope。
+- 普通 scope、身份或登录问题仍按 [`lark-shared`](../lark-shared/lark-shared.md) 处理；不要把租户安全策略、对外分享、密级拦截简单归类为缺 scope。
 
 ## 不在本 skill 范围
 
-- 文档正文读取、总结、创建、编辑、图片/附件插入或下载：使用 [`lark-doc`](../lark-doc/SKILL.md)。
-- 电子表格单元格、筛选、公式、样式等表内操作：使用 [`lark-sheets`](../lark-sheets/SKILL.md)。
-- Base / 多维表格内部的表、字段、记录、视图、仪表盘等操作：使用 [`lark-base`](../lark-base/SKILL.md)。
-- 知识空间、Wiki 节点层级、空间成员管理：使用 [`lark-wiki`](../lark-wiki/SKILL.md)；上传本地文件到 wiki 节点仍用 `drive +upload --wiki-token`。
-- 原生 Markdown 文件读取、写入、patch、diff：使用 [`lark-markdown`](../lark-markdown/SKILL.md)；把 Markdown 导入成在线 docx 才用 `drive +import --type docx`。
+- 文档正文读取、总结、创建、编辑、图片/附件插入或下载：使用 [`lark-doc`](../lark-doc/lark-doc.md)。
+- 电子表格单元格、筛选、公式、样式等表内操作：使用 [`lark-sheets`](../lark-sheets/lark-sheets.md)。
+- Base / 多维表格内部的表、字段、记录、视图、仪表盘等操作：使用 [`lark-base`](../lark-base/lark-base.md)。
+- 知识空间、Wiki 节点层级、空间成员管理：使用 [`lark-wiki`](../lark-wiki/lark-wiki.md)；上传本地文件到 wiki 节点仍用 `drive +upload --wiki-token`。
+- 原生 Markdown 文件读取、写入、patch、diff：使用 [`lark-markdown`](../lark-markdown/lark-markdown.md)；把 Markdown 导入成在线 docx 才用 `drive +import --type docx`。
 
 ## Shortcuts（推荐优先使用）
 

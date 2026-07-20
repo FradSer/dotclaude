@@ -1,6 +1,6 @@
 # wiki +delete-space
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 删除一个飞书知识空间（知识库）。OpenAPI 对应 `DELETE /open-apis/wiki/v2/spaces/:space_id`。
 
@@ -200,6 +200,6 @@ lark-cli wiki +delete-space --space-id <RESOLVED_SPACE_ID> --yes
 
 ## 参考
 
-- [lark-wiki](../SKILL.md) -- 知识库全部命令
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-wiki](../lark-wiki.md) -- 知识库全部命令
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数
 - [drive +task_result](../../lark-drive/references/lark-drive-task-result.md) -- 异步任务的续跑查询命令

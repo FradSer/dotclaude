@@ -1,8 +1,8 @@
 # 发送投递状态
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
-发送后确认投递状态，处理发送拦截。命令选择见 [`../SKILL.md`](../SKILL.md) 的“命令选择”章节。
+发送后确认投递状态，处理发送拦截。命令选择见 [`../lark-mail.md`](../lark-mail.md) 的“命令选择”章节。
 
 ## 查询时机
 

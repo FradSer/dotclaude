@@ -230,7 +230,7 @@ lark-cli docs +update --doc "<doc_id>" --command str_replace \
 
 ## 画板处理
 
-> **`docs +update` 不能直接编辑已有画板的内容。** 本命令只能**新增**画板块；要修改已有画板，先用 `docs +fetch` 取到 `<whiteboard token="...">`，再按 [`lark-doc-whiteboard.md`](lark-doc-whiteboard.md) 启动 SubAgent 读取 [`lark-whiteboard`](../../lark-whiteboard/SKILL.md) 并写入。
+> **`docs +update` 不能直接编辑已有画板的内容。** 本命令只能**新增**画板块；要修改已有画板，先用 `docs +fetch` 取到 `<whiteboard token="...">`，再按 [`lark-doc-whiteboard.md`](lark-doc-whiteboard.md) 启动 SubAgent 读取 [`lark-whiteboard`](../../lark-whiteboard/lark-whiteboard.md) 并写入。
 
 画板的语法选型与插入示例见 [`lark-doc-xml.md`](lark-doc-xml.md) 与 [`lark-doc-whiteboard.md`](lark-doc-whiteboard.md)。
 

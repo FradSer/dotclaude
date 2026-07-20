@@ -1,6 +1,6 @@
 # markdown +patch
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 对 Drive 中已有的原生 Markdown 文件做局部文本替换，并返回是否实际写入了新版本。
 
@@ -150,11 +150,11 @@ lark-cli markdown +patch \
 
 ## 不适用场景
 
-- 需要 rename / move / delete / permission / comment 管理：切到 [`lark-drive`](../../lark-drive/SKILL.md)
+- 需要 rename / move / delete / permission / comment 管理：切到 [`lark-drive`](../../lark-drive/lark-drive.md)
 - 需要多组 patch 一次完成：当前不支持，改为多次调用 `markdown +patch`
 - 需要真正原子更新：当前能力不提供
 
 ## 参考
 
-- [lark-markdown](../SKILL.md) — Markdown 域总览
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-markdown](../lark-markdown.md) — Markdown 域总览
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

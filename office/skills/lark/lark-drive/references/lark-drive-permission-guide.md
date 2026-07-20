@@ -1,6 +1,6 @@
 # Drive 权限与授权指南
 
-> 前置条件：通用认证、scope 与 `--as` 规则见 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md)。
+> 前置条件：通用认证、scope 与 `--as` 规则见 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md)。
 
 ## 何时读取
 

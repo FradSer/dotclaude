@@ -1,6 +1,6 @@
 # im +chat-search
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 Search the list of group chats visible to a user or bot, including chats the user or bot belongs to and public chats visible to them. Supports keyword matching on chat names and member names, including pinyin and prefix fuzzy search.
 
@@ -138,5 +138,5 @@ When the user asks to search chats, follow these rules:
 
 ## References
 
-- [lark-im](../SKILL.md) - all IM commands
-- [lark-shared](../../lark-shared/SKILL.md) - authentication and global parameters
+- [lark-im](../lark-im.md) - all IM commands
+- [lark-shared](../../lark-shared/lark-shared.md) - authentication and global parameters

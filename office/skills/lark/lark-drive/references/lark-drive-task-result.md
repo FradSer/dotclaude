@@ -1,7 +1,7 @@
 
 # drive +task_result
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 查询异步任务结果。该 shortcut 聚合了导入、导出、移动/删除文件夹、Wiki 节点 / 文档迁入 Wiki 等多种异步任务的结果查询，统一接口方便调用。
 
@@ -298,5 +298,5 @@ lark-cli drive +export-download --file-token <EXPORTED_FILE_TOKEN>
 
 ## 参考
 
-- [lark-drive](../SKILL.md) -- 云空间（云盘/云存储）全部命令
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-drive](../lark-drive.md) -- 云空间（云盘/云存储）全部命令
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

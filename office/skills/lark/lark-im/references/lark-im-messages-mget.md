@@ -1,6 +1,6 @@
 # im +messages-mget
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 Fetch message details in batch. Given a list of message IDs, this returns the full content for multiple messages in one call and automatically resolves sender names.
 
@@ -95,5 +95,5 @@ lark-cli im +messages-mget --message-ids "om_aaa,om_bbb"
 
 ## References
 
-- [lark-im](../SKILL.md) - all IM commands
-- [lark-shared](../../lark-shared/SKILL.md) - authentication and global parameters
+- [lark-im](../lark-im.md) - all IM commands
+- [lark-shared](../../lark-shared/lark-shared.md) - authentication and global parameters

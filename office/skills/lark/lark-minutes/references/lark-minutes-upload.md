@@ -100,5 +100,5 @@ lark-cli minutes +detail --minute-tokens obcnxxxxxxxxxxxxxxxx --wait-ready --sum
 
 ## 参考
 
-- [lark-minutes](../SKILL.md) -- 妙记相关功能说明
+- [lark-minutes](../lark-minutes.md) -- 妙记相关功能说明
 - [drive +upload](../../lark-drive/references/lark-drive-upload.md) -- 上传文件到云空间（云盘/云存储）

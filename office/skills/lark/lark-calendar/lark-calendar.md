@@ -10,7 +10,7 @@ metadata:
 
 # calendar (v4)
 
-开始前先读 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)（认证、权限处理）。
+开始前先读 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)（认证、权限处理）。
 
 **CRITICAL — 凡涉及预约日程/会议室、调整时间或查询/搜索会议室，第一步 MUST 读 [`references/lark-calendar-schedule-meeting.md`](references/lark-calendar-schedule-meeting.md)。仅编辑字段（改标题/描述）或增删参会人（不涉及时间和会议室）时可跳过，直接读 [`references/lark-calendar-update.md`](references/lark-calendar-update.md)。**
 
@@ -121,7 +121,7 @@ lark-cli calendar +freebusy --start 2026-03-11 --end 2026-03-12 --user-id ou_xxx
 
 | 用户意图 | 路由到 |
 |----------|--------|
-| 查询过去的会议（"昨天的会议""上周的会"） | [`../lark-vc/SKILL.md`](../lark-vc/SKILL.md)（会议数据含即时会议，仅查日程会遗漏） |
+| 查询过去的会议（"昨天的会议""上周的会"） | [`../lark-vc/lark-vc.md`](../lark-vc/lark-vc.md)（会议数据含即时会议，仅查日程会遗漏） |
 | 查询日历/日程或未来时间的会议 | 本 skill |
 | 按关键词搜索日程 | 本 skill（`+search-event`） |
 | 从日程获取关联的视频会议 ID 或用户绑定的会议纪要文档 | 本 skill（`+meeting`） |
@@ -188,10 +188,10 @@ lark-cli im +chat-search --query <query> --as user
 
 ## 不在本 skill 范围
 
-- 查询过去的视频会议记录 → [lark-vc](../lark-vc/SKILL.md)
-- 待办任务管理 → [lark-task](../lark-task/SKILL.md)
-- 通讯录 → [lark-contact](../lark-contact/SKILL.md)
-- 即时通讯 → [lark-im](../lark-im/SKILL.md)
+- 查询过去的视频会议记录 → [lark-vc](../lark-vc/lark-vc.md)
+- 待办任务管理 → [lark-task](../lark-task/lark-task.md)
+- 通讯录 → [lark-contact](../lark-contact/lark-contact.md)
+- 即时通讯 → [lark-im](../lark-im/lark-im.md)
 - 会议室物理设施管理 → 管理员后台
 
 **注意（强制性）：**

@@ -1,6 +1,6 @@
 # mail +template-update
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 更新已有的个人邮件模板（全量替换式更新）。支持 `--inspect` 只读 projection、`--print-patch-template` 打印 patch 骨架、`--patch-file` 结构化 patch、以及扁平的 `--set-*` flag。
 

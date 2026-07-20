@@ -36,7 +36,7 @@ lark-cli api GET /open-apis/vc/v1/rooms --params '{"page_size":"50"}'
 lark-cli api POST /open-apis/vc/v1/rooms/search --data '{"query":"5F"}'
 ```
 
-如果以上命令无法覆盖需求（CLI 没有对应的已注册 API 或 Shortcut），使用 [lark-openapi-explorer](../lark-openapi-explorer/SKILL.md) 从飞书官方文档库逐层挖掘原生 OpenAPI 接口，获取完整的方法、路径、参数和权限信息，再通过 `lark-cli api` 裸调完成任务。
+如果以上命令无法覆盖需求（CLI 没有对应的已注册 API 或 Shortcut），使用 [lark-openapi-explorer](../lark-openapi-explorer/lark-openapi-explorer.md) 从飞书官方文档库逐层挖掘原生 OpenAPI 接口，获取完整的方法、路径、参数和权限信息，再通过 `lark-cli api` 裸调完成任务。
 
 通过以上流程确定需要哪些 API、参数和 scope。
 

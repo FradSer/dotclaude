@@ -1,7 +1,7 @@
 
 # mail +triage
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 查看收件箱邮件摘要（date / from / subject / message_id），用于快速浏览和决定读哪封邮件。
 
@@ -127,5 +127,5 @@ tip: read full content: single message use mail +message --mailbox 'shared@examp
 
 ## 参考
 
-- [lark-mail](../SKILL.md) — 邮箱域总览
+- [lark-mail](../lark-mail.md) — 邮箱域总览
 - [lark-mail-watch](lark-mail-watch.md) — 实时监听新邮件

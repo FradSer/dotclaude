@@ -1,6 +1,6 @@
 # im +messages-resources-download
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 Download image or file resources from a message. Supports **automatic chunked download for large files** using HTTP Range requests. Resources are identified by the combination of `message_id` + `file_key`, both of which come directly from message content returned by `im +chat-messages-list`.
 
@@ -90,5 +90,5 @@ lark-cli im +messages-resources-download --message-id om_xxx --file-key img_v3_x
 
 ## References
 
-- [lark-im](../SKILL.md) - all message-related commands
-- [lark-shared](../../lark-shared/SKILL.md) - authentication and global parameters
+- [lark-im](../lark-im.md) - all message-related commands
+- [lark-shared](../../lark-shared/lark-shared.md) - authentication and global parameters

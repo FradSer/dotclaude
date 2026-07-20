@@ -70,7 +70,7 @@ lark-cli vc +search --query "周会" --page-token "<PAGE_TOKEN>"
 
 ### 2. 仅搜索历史会议
 
-`vc +search` 只能搜索已结束的历史会议记录，不用于查询未来日程。查询未来会议安排请使用 [lark-calendar](../../lark-calendar/SKILL.md)。
+`vc +search` 只能搜索已结束的历史会议记录，不用于查询未来日程。查询未来会议安排请使用 [lark-calendar](../../lark-calendar/lark-calendar.md)。
 
 ### 3. 仅支持 user 身份
 
@@ -151,7 +151,7 @@ lark-cli minutes minutes get --params '{"minute_token":"<MINUTE_TOKEN>"}'
 |---------|---------|---------|
 | 命令直接报错，要求提供过滤条件 | 没有传入 `--query`、时间范围或任何过滤 ID | 至少补充一个过滤条件后重试 |
 | 时间参数校验失败 | `--start` 或 `--end` 格式不合法 | 改用 ISO 8601 或 `YYYY-MM-DD` |
-| 搜不到未来会议 | `vc +search` 只查历史会议 | 改用 [lark-calendar](../../lark-calendar/SKILL.md) 查询未来日程 |
+| 搜不到未来会议 | `vc +search` 只查历史会议 | 改用 [lark-calendar](../../lark-calendar/lark-calendar.md) 查询未来日程 |
 | 权限不足 | 未授权 `vc:meeting.search:read` | 使用 `auth login` 完成授权 |
 
 ## 提示

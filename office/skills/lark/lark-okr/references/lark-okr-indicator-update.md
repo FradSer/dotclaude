@@ -1,6 +1,6 @@
 # okr +indicator-update
 
-> **前置条件：** 先阅读 [`lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 直接更新目标（Objective）或关键结果（Key Result）的指标当前值，无需手动查询指标 ID。
 

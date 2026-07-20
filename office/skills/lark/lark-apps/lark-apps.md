@@ -10,7 +10,7 @@ metadata:
 
 # apps (v1)
 
-妙搭应用属于用户资产。默认用 `--as user`；认证、scope、exit-10、高风险确认、`_notice` 等通用处理只读 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，不要在本 skill 里复制。妙搭应用有三条开发路径：**本地全栈**（拉源码本地写）/ **HTML 托管**（发布静态产物）/ **云端会话**（妙搭 AI 生成）。
+妙搭应用属于用户资产。默认用 `--as user`；认证、scope、exit-10、高风险确认、`_notice` 等通用处理只读 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，不要在本 skill 里复制。妙搭应用有三条开发路径：**本地全栈**（拉源码本地写）/ **HTML 托管**（发布静态产物）/ **云端会话**（妙搭 AI 生成）。
 
 ## 身份与一次性授权
 
@@ -20,7 +20,7 @@ metadata:
 lark-cli auth login --domain apps
 ```
 
-因缺权限失败（`error.subtype == "missing_scope"`）时的通用处理见 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，同样按 `--domain apps` 授权。
+因缺权限失败（`error.subtype == "missing_scope"`）时的通用处理见 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，同样按 `--domain apps` 授权。
 
 ## 意图路由
 

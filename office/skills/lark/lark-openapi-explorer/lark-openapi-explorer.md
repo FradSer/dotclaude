@@ -9,7 +9,7 @@ metadata:
 
 # OpenAPI Explorer
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md) 了解认证、身份切换和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md) 了解认证、身份切换和安全规则。
 
 当用户的需求**无法被现有 skill 或 CLI 已注册 API 覆盖**时，使用本技能从飞书官方 markdown 文档库中逐层挖掘原生 OpenAPI 接口，然后通过 `lark-cli api` 裸调完成任务。
 
@@ -149,5 +149,5 @@ lark-cli api PATCH /open-apis/im/v1/chats/oc_xxx/announcement \
 
 ## 参考
 
-- [lark-shared](../lark-shared/SKILL.md) — 认证和全局参数
-- [lark-skill-maker](../lark-skill-maker/SKILL.md) — 如需将挖掘到的 API 固化为新 Skill
+- [lark-shared](../lark-shared/lark-shared.md) — 认证和全局参数
+- [lark-skill-maker](../lark-skill-maker/lark-skill-maker.md) — 如需将挖掘到的 API 固化为新 Skill

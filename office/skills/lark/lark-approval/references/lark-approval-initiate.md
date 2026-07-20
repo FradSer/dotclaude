@@ -5,7 +5,7 @@
 - **原生审批提单如果用户未明确给出 `approval_code`，必须固定走 `approvals search` -> `approvals get` -> `instances create`** 不要跳过 `get` 直接拼请求。
 - **原生审批提单如果用户明确给出 `approval_code`，固定走 `approvals get` -> `instances create`** 不要跳过 `get` 直接拼请求。
 - **`is_external=true` 的定义是三方定义。** 这类定义不要调用 `instances create`，应优先使用 `create_link`。
-- **所有人员类参数默认使用 `open_id`。** 若用户给的是姓名、邮箱或其他身份，先用 [`../../lark-contact/SKILL.md`](../../lark-contact/SKILL.md) 解析。
+- **所有人员类参数默认使用 `open_id`。** 若用户给的是姓名、邮箱或其他身份，先用 [`../../lark-contact/lark-contact.md`](../../lark-contact/lark-contact.md) 解析。
 - **先读控件参数 reference 和值来源 reference，再读本文里的创建参数规则。** 提单前必须先阅读 [`lark-approval-instance-form-control-parameters.md`](./lark-approval-instance-form-control-parameters.md) 和 [`lark-approval-instance-value-sourcing.md`](./lark-approval-instance-value-sourcing.md)。
 - **`approvals.get.form` 不是创建 payload 的原样模板。** 它主要用于识别控件 `id`、`type`、选项值范围和明细子控件结构；真正的 `instances create --data.form` 中，控件 `value` 结构以 [`lark-approval-instance-form-control-parameters.md`](./lark-approval-instance-form-control-parameters.md) 为准。
 - **节点参数只从 `node_list` 和本文里的节点参数规则里取。** 节点 key 必须来自定义详情返回的节点标识；审批人/抄送人列表传用户 ID 时，不要混用姓名或其他身份标识。

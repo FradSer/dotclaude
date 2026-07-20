@@ -95,6 +95,6 @@ lark-cli calendar +update \
 
 ## 参考
 
-- [lark-calendar](../SKILL.md) -- skill 入口与路由
+- [lark-calendar](../lark-calendar.md) -- skill 入口与路由
 - [lark-calendar-schedule-meeting](lark-calendar-schedule-meeting.md) -- 预约/改约会议与会议室工作流
 - [lark-calendar-room-find](lark-calendar-room-find.md) -- 查找可用会议室

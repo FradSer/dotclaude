@@ -6,7 +6,7 @@
 
 ## 必读上下文
 
-执行本总框架内的 workflow 前，必须先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+执行本总框架内的 workflow 前，必须先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 下游 reference 只能按需逐步加载。不要因为命中本总框架，就预加载所有 workflow 文件或相关 skill。
 
@@ -16,7 +16,7 @@
 
 | Layer | Owns | Must Not Own |
 |-------|------|--------------|
-| `lark-drive/SKILL.md` | 用户意图到具体 workflow entry 的短路由 | 长流程逻辑、未注册场景 |
+| `lark-drive/lark-drive.md` | 用户意图到具体 workflow entry 的短路由 | 长流程逻辑、未注册场景 |
 | `lark-drive-workflow.md` | 共享运行协议、Artifact Contract、Workflow Registry、加载规则 | 非运行时背景说明、宽泛路线图、场景专项执行细节 |
 | Registered workflow file | 场景范围、状态机、Command Map、确认门槛、验证规则 | 其他场景、隐藏写入、未被 CLI/API 支持的能力声明 |
 

@@ -1,6 +1,6 @@
 # im +chat-create
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 Create a group chat. Supports both user identity (`--as user`) and bot identity (`--as bot`). You can specify the group name, description, members (users/bots), owner, chat type (private/public), and group mode. Set `--chat-mode topic` to create a topic chat.
 
@@ -158,5 +158,5 @@ lark-cli im +messages-send --chat-id "$CHAT_ID" --text "Welcome, everyone!"
 
 ## References
 
-- [lark-im](../SKILL.md) - all IM commands
-- [lark-shared](../../lark-shared/SKILL.md) - authentication and global parameters
+- [lark-im](../lark-im.md) - all IM commands
+- [lark-shared](../../lark-shared/lark-shared.md) - authentication and global parameters

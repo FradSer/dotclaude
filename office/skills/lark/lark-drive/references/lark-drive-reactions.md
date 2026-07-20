@@ -1,6 +1,6 @@
 # drive reactions
 
-> **前置条件：** 先阅读 [`../SKILL.md`](../SKILL.md) 了解 Drive 评论入口，再阅读 [`lark-drive-comments-guide.md`](lark-drive-comments-guide.md) 了解评论卡片模型、评论数/回复数统计口径、`file_token` / `file_type` 规则；同时阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-drive.md`](../lark-drive.md) 了解 Drive 评论入口，再阅读 [`lark-drive-comments-guide.md`](lark-drive-comments-guide.md) 了解评论卡片模型、评论数/回复数统计口径、`file_token` / `file_type` 规则；同时阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 处理文档评论 / 回复上的 reaction（点赞、表情、各表情数量、谁点了什么、添加/删除表情）。这个场景不常见，但规则比较集中：查询时只有在用户明确需要 reaction 信息时才带 `need_reaction=true`；写入时统一使用 `drive file.comment.reply.reactions update_reaction`，操作对象始终是 `reply_id`。
 
@@ -109,5 +109,5 @@ Music, Typing, Pepper, CheckMark, CrossMark
 
 ## 参考
 
-- [lark-drive](../SKILL.md) -- 云空间（云盘/云存储）全部命令
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-drive](../lark-drive.md) -- 云空间（云盘/云存储）全部命令
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

@@ -1,6 +1,6 @@
 # markdown +create
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 在 Drive 中创建一个原生 Markdown 文件（`.md`），支持创建到普通 Drive 文件夹或 Wiki 节点下。
 
@@ -110,5 +110,5 @@ lark-cli markdown +create \
 
 ## 参考
 
-- [lark-markdown](../SKILL.md) — Markdown 域总览
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-markdown](../lark-markdown.md) — Markdown 域总览
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

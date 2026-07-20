@@ -1,6 +1,6 @@
 # mail +decline-receipt
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 关闭收到邮件的已读回执请求 banner，**但不向发件人发送回执**。**本命令仅在对方邮件请求了已读回执（`READ_RECEIPT_REQUEST` 标签，系统 ID `-607`）时使用**。对齐飞书客户端上已读回执 banner 右侧的"不发送"按钮。
 

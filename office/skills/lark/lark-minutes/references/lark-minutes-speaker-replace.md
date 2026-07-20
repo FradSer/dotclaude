@@ -43,7 +43,7 @@
    - 若列表中无匹配展示名：告知用户并核对拼写，或请用户在妙记页面确认标签。
 
 4. **解析 `--to-user-id`**
-   - 新说话人必须是 `ou_` 开头的 open_id。用户只给姓名时，先用 [lark-contact](../../lark-contact/SKILL.md) 解析。
+   - 新说话人必须是 `ou_` 开头的 open_id。用户只给姓名时，先用 [lark-contact](../../lark-contact/lark-contact.md) 解析。
 
 5. **执行替换**
    ```bash
@@ -84,7 +84,7 @@ Agent 必须先 `lark-cli api GET .../speakerlist`，再 `+speaker-replace`；`-
 
 ### 2. 新说话人必须是 open_id
 
-`--to-user-id` 仅支持 `ou_` 开头的 open_id，**不支持直接传姓名**；如果用户只给了姓名，请先用 [lark-contact](../../lark-contact/SKILL.md) 把姓名解析成 `open_id`。
+`--to-user-id` 仅支持 `ou_` 开头的 open_id，**不支持直接传姓名**；如果用户只给了姓名，请先用 [lark-contact](../../lark-contact/lark-contact.md) 把姓名解析成 `open_id`。
 
 ### 3. 历史参数
 
@@ -104,4 +104,4 @@ Agent 必须先 `lark-cli api GET .../speakerlist`，再 `+speaker-replace`；`-
 
 ## 参考
 
-- [lark-minutes](../SKILL.md) -- 妙记相关功能说明
+- [lark-minutes](../lark-minutes.md) -- 妙记相关功能说明

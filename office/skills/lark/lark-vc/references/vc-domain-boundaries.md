@@ -144,7 +144,7 @@ lark-cli docs +fetch --doc <verbatim_doc_token> --doc-format markdown
 lark-cli note +transcript --note-id <note_id>
 ```
 
-详细用法请参考 [lark-doc](../../lark-doc/SKILL.md) 与 [lark-note](../../lark-note/SKILL.md) skill。
+详细用法请参考 [lark-doc](../../lark-doc/lark-doc.md) 与 [lark-note](../../lark-note/lark-note.md) skill。
 
 #### Step 4: 判断用户需要的产物内容
 
@@ -154,7 +154,7 @@ lark-cli note +transcript --note-id <note_id>
 ## Note 域
 
 - VC 只负责从 `meeting_id` 定位会议产物和 `note_id` / `minute_token`（[`vc +detail`](lark-vc-detail.md)）。
-- 已知 `note_id` 后切到 [lark-note](../../lark-note/SKILL.md)；逐字稿路由以 `lark-note` 的 `note_display_type` 规则为准。
+- 已知 `note_id` 后切到 [lark-note](../../lark-note/lark-note.md)；逐字稿路由以 `lark-note` 的 `note_display_type` 规则为准。
 - 已知 `minute_token` 时，[`minutes +detail`](../../lark-minutes/references/lark-minutes-detail.md) 顶层会一并返回该妙记关联的 `note_id`（如有）；可直接传给 `note +detail` 取纪要文档 token，无需绕回 VC。
 - 仅有日程 `event_id` 时，先走 [`calendar +meeting`](../../lark-calendar/references/lark-calendar-meeting.md) 拿到 `meeting_id` 或用户绑定的 `meeting_note`，再按上述路径继续。
 - 只有自然语言纪要标题时，先走文档搜索与 `docs +fetch`；只有 `<vc-transcribe-tab vc-node-id="...">` 的 `vc-node-id` 可以进入 Note 域。
@@ -163,7 +163,7 @@ lark-cli note +transcript --note-id <note_id>
 ## Doc 域
 
 - **lark-doc skill** 负责飞书云文档管理，包括获取文档元信息、读取文档内容、创建和编辑文档等操作。
-- **会议产物的文档本质**：智能纪要（`note_doc_token`）和 `normal` 纪要的逐字稿（`verbatim_doc_token`）都是飞书文档，需要通过 `lark-doc` 的 API（如 `docs +fetch`）查询其内容和元信息；`unified` 纪要的逐字稿不是独立文档，用 `note +transcript` 拉取（[lark-note](../../lark-note/SKILL.md)）。
+- **会议产物的文档本质**：智能纪要（`note_doc_token`）和 `normal` 纪要的逐字稿（`verbatim_doc_token`）都是飞书文档，需要通过 `lark-doc` 的 API（如 `docs +fetch`）查询其内容和元信息；`unified` 纪要的逐字稿不是独立文档，用 `note +transcript` 拉取（[lark-note](../../lark-note/lark-note.md)）。
 - **文档元信息查询**：获取文档名称、URL 等基本信息时，使用 `drive metas batch_query`；获取文档正文内容时，使用 `docs +fetch`。
 
 ## 三域关联总览

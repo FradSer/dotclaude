@@ -1,6 +1,6 @@
 # mail +messages
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 通过传入逗号分隔的 `message_id` 列表，一次性读取多封邮件的完整内容。
 

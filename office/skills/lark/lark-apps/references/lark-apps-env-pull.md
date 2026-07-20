@@ -1,6 +1,6 @@
 # apps +env-pull
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md)（认证 / 全局参数 / 安全）。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md)（认证 / 全局参数 / 安全）。
 
 把妙搭应用 dev 启动期环境变量拉取到本地项目根的 `.env.local`。身份固定 `--as user`；scope `spark:app:read`。`--app-id` 必填，目标项目根默认当前工作目录（`--project-path` 可指定）。
 
@@ -32,6 +32,6 @@ lark-cli apps +env-pull --app-id <app_id>
 
 ## 参考
 
-- [lark-apps](../SKILL.md) — 妙搭应用全部命令 + 心智模型
+- [lark-apps](../lark-apps.md) — 妙搭应用全部命令 + 心智模型
 - [lark-apps-local-dev](lark-apps-local-dev.md) — 本地全栈开发端到端流程
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

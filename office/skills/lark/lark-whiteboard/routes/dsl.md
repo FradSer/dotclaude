@@ -33,7 +33,7 @@ Step 3: 渲染 & 审查 → 交付
       npx -y @larksuite/whiteboard-cli@^0.2.12 -i diagram.json --to openapi --format json \
         | lark-cli whiteboard +update --whiteboard-token <board_token> \
             --source - --input_format raw --idempotent-token <时间戳+标识> --as user
-      → 完整 dry-run / 确认流程见 SKILL.md [§ 写入画板](../SKILL.md#写入画板)
+      → 完整 dry-run / 确认流程见 SKILL.md [§ 写入画板](../lark-whiteboard.md#写入画板)
   - 交付：向用户报告 board_token 写入成功
 ```
 

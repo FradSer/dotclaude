@@ -9,7 +9,7 @@ metadata:
 ---
 
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，其中包含认证、权限处理**
+**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，其中包含认证、权限处理**
 
 所有命令默认 `--as user`（审批是人的动作）。调用前先按需读取 references 下对应的文件，查参数结构，不要猜字段；**references 是第一信息源**，只有在 reference 未覆盖的原生 / 高级场景下，才额外用 `lark-cli ... --help`、`lark-cli schema` 等方式补充确认字段。
 
@@ -25,7 +25,7 @@ metadata:
 - 同意 / 拒绝 / 转交 / 退回 / 撤回 / 催办 / 加签 / 抄送
 - 待办列表 / 待办单据 / 已发起审批 / 已办审批 / 审批详情 / 同意可编辑
 
-**判定规则：** 只要最终动作是对审批单据做同意、拒绝、转交、退回、撤回、催办、加签、抄送、查详情、查已发起/已办/待办，就归 `lark-approval`。只有当用户处理的是**非审批类任务/待办**时，才走 [`lark-task`](../lark-task/SKILL.md)。
+**判定规则：** 只要最终动作是对审批单据做同意、拒绝、转交、退回、撤回、催办、加签、抄送、查详情、查已发起/已办/待办，就归 `lark-approval`。只有当用户处理的是**非审批类任务/待办**时，才走 [`lark-task`](../lark-task/lark-task.md)。
 
 ## 选哪个命令
 
@@ -96,4 +96,4 @@ lark-cli approval tasks approve --data '{"instance_code":"<ic>","task_id":"<tid>
 
 ## 不在本 skill 范围
 
-创建审批定义（走飞书客户端或审批管理后台）；三方定义发起（返回 `create_link`，引导用户通过链接发起）；非审批类待办 → [`lark-task`](../lark-task/SKILL.md)
+创建审批定义（走飞书客户端或审批管理后台）；三方定义发起（返回 `create_link`，引导用户通过链接发起）；非审批类待办 → [`lark-task`](../lark-task/lark-task.md)

@@ -131,5 +131,5 @@ API 限流 5 次/秒，批量下载时需注意控制频率。
 
 ## 参考
 
-- [lark-minutes](../SKILL.md) — 妙记全部命令
+- [lark-minutes](../lark-minutes.md) — 妙记全部命令
 - [lark-minutes-detail](lark-minutes-detail.md) — 妙记详情与 AI 产物查询

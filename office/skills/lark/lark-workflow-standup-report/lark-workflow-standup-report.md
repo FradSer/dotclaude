@@ -9,7 +9,7 @@ metadata:
 
 # 日程待办摘要工作流
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，其中包含认证、权限处理**
+**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，其中包含认证、权限处理**
 
 ## 适用场景
 
@@ -117,6 +117,6 @@ lark-cli task +get-my-tasks --complete=false --page-all
 
 ## 参考
 
-- [lark-shared](../lark-shared/SKILL.md) — 认证、权限（必读）
-- [lark-calendar](../lark-calendar/SKILL.md) — `+agenda` 详细用法
-- [lark-task](../lark-task/SKILL.md) — `+get-my-tasks` 详细用法
+- [lark-shared](../lark-shared/lark-shared.md) — 认证、权限（必读）
+- [lark-calendar](../lark-calendar/lark-calendar.md) — `+agenda` 详细用法
+- [lark-task](../lark-task/lark-task.md) — `+get-my-tasks` 详细用法

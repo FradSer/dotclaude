@@ -1,6 +1,6 @@
 # im feed.groups
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 This reference is the shared annotation target for the IM feed-group (tag) APIs: it documents what each method does, the `--params` / `--data` request and response shapes, and the enum surface used in payloads. The full method list is in [Command Overview](#command-overview) below.
 
@@ -448,5 +448,5 @@ If a required scope is missing, the CLI surfaces a hint such as `lark-cli auth l
 
 ## References
 
-- [lark-im](../SKILL.md) — all IM commands
-- [lark-shared](../../lark-shared/SKILL.md) — authentication and global parameters
+- [lark-im](../lark-im.md) — all IM commands
+- [lark-shared](../../lark-shared/lark-shared.md) — authentication and global parameters

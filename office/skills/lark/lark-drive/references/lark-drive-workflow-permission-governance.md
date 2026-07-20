@@ -4,7 +4,7 @@ Workflow id: `permission_governance`
 
 Risk / Structure: `R2` / `S2`
 
-本文实现已注册的权限治理 workflow。执行前必须先读取 [`lark-drive-workflow.md`](lark-drive-workflow.md) 和 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md)，并遵循共享执行协议、Artifact Contract、Workflow Loading、认证和写入确认规则。
+本文实现已注册的权限治理 workflow。执行前必须先读取 [`lark-drive-workflow.md`](lark-drive-workflow.md) 和 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md)，并遵循共享执行协议、Artifact Contract、Workflow Loading、认证和写入确认规则。
 
 ## 适用范围
 
@@ -50,7 +50,7 @@ Risk / Structure: `R2` / `S2`
 
 | State | Required Reference |
 |-------|--------------------|
-| `PARSE_INTENT` | 本文件、[`lark-drive-workflow.md`](lark-drive-workflow.md)、[`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) |
+| `PARSE_INTENT` | 本文件、[`lark-drive-workflow.md`](lark-drive-workflow.md)、[`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) |
 | `TARGET_INSPECT` | [`lark-drive-inspect.md`](lark-drive-inspect.md) |
 | `DISCOVER_TARGETS` | 容器范围时读取 [`../../lark-wiki/references/lark-wiki-node-list.md`](../../lark-wiki/references/lark-wiki-node-list.md) 或 [`lark-drive-files-list.md`](lark-drive-files-list.md) |
 | `FACT_READ` | `lark-cli schema drive.metas.batch_query`；涉及公开权限时再读取 `lark-cli schema drive.permission.public.get`；涉及活跃度、访问复核或生命周期判断时再读取 `lark-cli schema drive.file.statistics.get` 和 `lark-cli schema drive.file.view_records.list` |

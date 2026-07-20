@@ -9,7 +9,7 @@ metadata:
 
 # 会议纪要汇总工作流
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，其中包含认证、权限处理**。然后阅读 [`../lark-vc/SKILL.md`](../lark-vc/SKILL.md)，了解会议纪要相关操作。
+**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，其中包含认证、权限处理**。然后阅读 [`../lark-vc/lark-vc.md`](../lark-vc/lark-vc.md)，了解会议纪要相关操作。
 
 **CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-vc/references/vc-domain-boundaries.md`](../lark-vc/references/vc-domain-boundaries.md)**，不读将导致命令使用、会议产物决策、领域边界职责判断错误：
 > 1. 了解日历 & VC、会议产物 & 文档的关联关系和职责划分
@@ -85,7 +85,7 @@ lark-cli note +detail --note-id "note_id"
 
 > **逐字稿路由按 `note_display_type` 决定**（详见 [vc-domain-boundaries.md](../lark-vc/references/vc-domain-boundaries.md) 的 Note 域）：
 > - `normal`：逐字稿是独立文档，链接/正文走 `verbatim_doc_token`。
-> - `unified`：逐字稿**不是独立文档**，没有可分享的逐字稿文档链接；需要逐字稿内容时用 `note +transcript --note-id <note_id>`（[lark-note](../lark-note/SKILL.md)）拉取到本地，报告中标注"unified 纪要"即可。
+> - `unified`：逐字稿**不是独立文档**，没有可分享的逐字稿文档链接；需要逐字稿内容时用 `note +transcript --note-id <note_id>`（[lark-note](../lark-note/lark-note.md)）拉取到本地，报告中标注"unified 纪要"即可。
 
 2. 获取纪要文档和逐字稿文档链接
 ```bash
@@ -106,7 +106,7 @@ lark-cli drive metas batch_query --data '{"request_docs": [{"doc_type": "docx", 
 
 ### Step 5: 生成文档（可选，用户要求时）
 
-阅读 [`../lark-doc/SKILL.md`](../lark-doc/SKILL.md) 学习云文档技能。
+阅读 [`../lark-doc/lark-doc.md`](../lark-doc/lark-doc.md) 学习云文档技能。
 
 ```bash
 lark-cli docs +create --doc-format markdown --content $'<title>会议纪要汇总 (<start> - <end>)</title>\n<内容>'
@@ -116,7 +116,7 @@ lark-cli docs +update --doc "<url_or_token>" --command append --doc-format markd
 
 ## 参考
 
-- [lark-shared](../lark-shared/SKILL.md) — 认证、权限（必读）
-- [lark-vc](../lark-vc/SKILL.md) — `+search`、`+detail` 详细用法
-- [lark-note](../lark-note/SKILL.md) — `note +detail`、`note +transcript`（unified 纪要逐字稿）
-- [lark-doc](../lark-doc/SKILL.md) — `+fetch`、`+create`、`+update` 详细用法
+- [lark-shared](../lark-shared/lark-shared.md) — 认证、权限（必读）
+- [lark-vc](../lark-vc/lark-vc.md) — `+search`、`+detail` 详细用法
+- [lark-note](../lark-note/lark-note.md) — `note +detail`、`note +transcript`（unified 纪要逐字稿）
+- [lark-doc](../lark-doc/lark-doc.md) — `+fetch`、`+create`、`+update` 详细用法

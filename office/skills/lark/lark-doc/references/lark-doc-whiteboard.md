@@ -1,6 +1,6 @@
 # lark-doc 画板处理指南
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 ## 两个 Skill 的职责边界
 
@@ -120,7 +120,7 @@ Sub Agent 需要携带以下的最小上下文，以及后续的 [SVG 设计 Wor
 
 插入画板后，可以从返回值使用 lark-cli 指令，将画板内容导出为 png
 图片。若是对设计不满意，可以修改后，删除原来的画板再重新插入，或是调用 [
-`../../lark-whiteboard/SKILL.md`](../../lark-whiteboard/SKILL.md) 编辑。
+`../../lark-whiteboard/lark-whiteboard.md`](../../lark-whiteboard/lark-whiteboard.md) 编辑。
 
 ```bash
 lark-cli whiteboard +query \
@@ -138,7 +138,7 @@ lark-cli whiteboard +query \
 - board_token
 - 图表目标、推荐画板类型、受众
 - 与图表直接相关的源段落或数据
-- 要求读取 [`../../lark-whiteboard/SKILL.md`](../../lark-whiteboard/SKILL.md)，按其完整流程写入该 board_token
+- 要求读取 [`../../lark-whiteboard/lark-whiteboard.md`](../../lark-whiteboard/lark-whiteboard.md)，按其完整流程写入该 board_token
 
 多个画板互不依赖时，可并行启动多个 SubAgent；每个 SubAgent 只负责一个画板或一个 SVG 插入点，不要互相复用上下文。
 
@@ -155,4 +155,4 @@ lark-cli whiteboard +query \
 
 ## 关联参考
 
-- 画板查询/创作/修改/渲染写入：[`../../lark-whiteboard/SKILL.md`](../../lark-whiteboard/SKILL.md)
+- 画板查询/创作/修改/渲染写入：[`../../lark-whiteboard/lark-whiteboard.md`](../../lark-whiteboard/lark-whiteboard.md)

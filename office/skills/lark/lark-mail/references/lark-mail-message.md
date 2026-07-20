@@ -1,6 +1,6 @@
 # mail +message
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 读取指定邮件的完整内容，包括邮件头、正文（纯文本 + 可选 HTML）以及统一的 `attachments` 列表（涵盖普通附件和内嵌图片）。
 

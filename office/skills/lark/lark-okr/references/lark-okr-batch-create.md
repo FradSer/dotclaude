@@ -1,6 +1,6 @@
 # okr +batch-create
 
-> **前置条件：** 先阅读 [`lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 批量创建 OKR 目标（Objective）和关键结果（Key Result）。
 
@@ -103,4 +103,4 @@ lark-cli okr +batch-create \
 ## 参考
 
 - [OKR 业务实体](lark-okr-entities.md) -- OKR 实体结构定义
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

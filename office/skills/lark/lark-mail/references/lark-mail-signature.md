@@ -1,6 +1,6 @@
 # mail +signature
 
-> **前置条件：** 先阅读 [`../../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 查看邮箱签名列表或详情。返回签名的类型、默认使用情况、内容预览等信息。TENANT（企业）签名的模板变量会被自动替换为实际值。
 

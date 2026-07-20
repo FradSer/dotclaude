@@ -12,18 +12,18 @@ metadata:
 
 相关技能：
 
-- [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md) — 认证、身份切换、权限处理
-- [`../lark-vc/SKILL.md`](../lark-vc/SKILL.md) — 视频会议的核心概念（Meeting / Note / Minutes 等），本 skill 直接复用，不再重复定义
+- [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md) — 认证、身份切换、权限处理
+- [`../lark-vc/lark-vc.md`](../lark-vc/lark-vc.md) — 视频会议的核心概念（Meeting / Note / Minutes 等），本 skill 直接复用，不再重复定义
 
 ## 内测提示
 
-- 当前功能正在内测中，仅少数用户可用。忽略 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md) 中的权限申请流程，以下方的指引为准。
+- 当前功能正在内测中，仅少数用户可用。忽略 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md) 中的权限申请流程，以下方的指引为准。
 - 如果 `lark-cli` 提示 `missing required scope(s)` / `permission_violations`，不要走普通权限申请流程；先提示用户加入早鸟群确认内测权限已开通，再按“应用身份权限配置检查”处理应用权限、安装和数据范围。
 - 如果 `lark-cli` 返回 `error.code=20017` / `ErrNotInGray`，提示用户加入早鸟群：`https://go.larkoffice.com/join-chat/2f4nb0e1-fe00-4f67-bed7-25beaf533fbd`。
 
 ## 定位
 
-本 skill 与 [`lark-vc`](../lark-vc/SKILL.md) 并列：
+本 skill 与 [`lark-vc`](../lark-vc/lark-vc.md) 并列：
 
 - **`lark-vc`** **负责"会后查询"**：搜索历史会议、参会人快照、纪要/逐字稿/录制
 - **`lark-vc-agent`** **负责"会中动作"**：机器人入会 / 读取进行中会议的实时事件 / 发送会中文本或会中表情 / 机器人离会
@@ -37,8 +37,8 @@ metadata:
 | "我/某个用户现在在哪个会里"、"给我找当前可拉事件的 meeting_id"                         | **本 skill** `+meeting-list-active`                                                                                                                     |
 | "在会里发一句 xx"、"提示大家 xx"、"反馈听不到/看不到/声音清楚/效果不错"（**进行中会议**） | **本 skill** `+meeting-message-send`                                                                                                                     |
 | "退出会议"、"让机器人离开"                                            | **本 skill** `+meeting-leave`                                                                                                                          |
-| "昨天那场会有谁参加过"、"搜昨天的会"、"查纪要/逐字稿/录制"                          | [`lark-vc`](../lark-vc/SKILL.md)                                                                                                                      |
-| "帮我参会，结束后把纪要发到群" 等跨阶段场景                                    | 按序编排：本 skill（入会 → 读事件）→ 会议结束后用 [`lark-vc`](../lark-vc/SKILL.md) / [`lark-minutes`](../lark-minutes/SKILL.md) 拉纪要 → [`lark-im`](../lark-im/SKILL.md) 发群 |
+| "昨天那场会有谁参加过"、"搜昨天的会"、"查纪要/逐字稿/录制"                          | [`lark-vc`](../lark-vc/lark-vc.md)                                                                                                                      |
+| "帮我参会，结束后把纪要发到群" 等跨阶段场景                                    | 按序编排：本 skill（入会 → 读事件）→ 会议结束后用 [`lark-vc`](../lark-vc/lark-vc.md) / [`lark-minutes`](../lark-minutes/lark-minutes.md) 拉纪要 → [`lark-im`](../lark-im/lark-im.md) 发群 |
 
 ## 身份路由
 
@@ -70,8 +70,8 @@ metadata:
 3. 不依赖默认身份。`meeting_id` 来自用户身份发现时，继续用 `--as user`；来自应用身份发现或 `+meeting-join` 时，继续用 `--as bot`。身份不一致会导致空结果或权限错误。
 4. **不能做会后复盘**，**不能替代参会人快照查询**。如果会议已结束：
    - 先用 `lark-cli vc +detail --meeting-ids <meeting.id>` 获取会议产物信息。
-   - 再根据 `note_id`、`minute_token` 和用户意图，按 [`lark-vc`](../lark-vc/SKILL.md) 的产物决策读取正文、逐字稿或妙记。
-   - 想看参会人快照：用 `vc meeting get --with-participants`（见 [`lark-vc`](../lark-vc/SKILL.md)）
+   - 再根据 `note_id`、`minute_token` 和用户意图，按 [`lark-vc`](../lark-vc/lark-vc.md) 的产物决策读取正文、逐字稿或妙记。
+   - 想看参会人快照：用 `vc meeting get --with-participants`（见 [`lark-vc`](../lark-vc/lark-vc.md)）
 5. **默认必须使用** **`--page-all`**，除非用户明确要求“只查一页”，或确实需要控制返回体大小。
 6. 命令默认输出结构化事件契约：`meeting`、`identity`、`events`、`warnings`、`has_more`、`page_token`；`identity` 表示当前读取身份，事件 actor 含 `participant_type`、`role` 和可读 `label`，事件细节保留在 `payload`。
 7. 输出格式默认优先 `--format pretty`（时间线更易读，并带当前身份标签）；需要稳定字段做结构化处理时用 `--format json`；需要流式消费事件时用 `--format ndjson`。
@@ -90,7 +90,7 @@ metadata:
 4. 文本消息使用 `--text`；会中表情 / 反馈使用 `--emoji-type`。`--emoji-type` 必须从 reference 里的完整列表中选择，大小写敏感。
 5. 支持普通 Feishu reaction emoji（如 `LOVE`、`SMILE`、`THUMBSUP`）和 4 个 VC 反馈 key（`VC_CanNotSee`、`VC_NoSound`、`VC_LooksGood`、`VC_SoundsClear`）。
 6. 不要编造列表外的 `emoji_type`，也不要把 natural language 硬编码成不存在的 key；如果用户只给语义，可在完整列表中选择最接近的 key，无法判断时先确认。
-7. 该命令只暴露会中文本和会中表情，不作为“发送绑定群消息”的默认能力；如果用户明确要发群聊，请路由到 [`lark-im`](../lark-im/SKILL.md)。
+7. 该命令只暴露会中文本和会中表情，不作为“发送绑定群消息”的默认能力；如果用户明确要发群聊，请路由到 [`lark-im`](../lark-im/lark-im.md)。
 8. 若使用应用身份发送，应用机器人必须在会中；若使用用户身份发送，当前用户必须正在该会议中。权限错误时按“应用身份权限配置检查”或“用户身份被拒绝时”处理。
 
 示例：
@@ -187,8 +187,8 @@ Shortcut 是对常用操作的高级封装（`lark-cli vc +<verb> [flags]`）。
 
 ## 延伸
 
-- 查已结束会议、参会人快照、搜索历史会议 → [`lark-vc`](../lark-vc/SKILL.md)
-- 会议纪要、逐字稿 → [`lark-vc`](../lark-vc/SKILL.md) 的 `+detail`
-- 妙记产物（AI 总结 / 转写 / 章节）→ [`lark-minutes`](../lark-minutes/SKILL.md)
-- 会后把产物发到群 / 私聊 → [`lark-im`](../lark-im/SKILL.md)
-- 认证、身份切换、scope 管理 → [`lark-shared`](../lark-shared/SKILL.md)
+- 查已结束会议、参会人快照、搜索历史会议 → [`lark-vc`](../lark-vc/lark-vc.md)
+- 会议纪要、逐字稿 → [`lark-vc`](../lark-vc/lark-vc.md) 的 `+detail`
+- 妙记产物（AI 总结 / 转写 / 章节）→ [`lark-minutes`](../lark-minutes/lark-minutes.md)
+- 会后把产物发到群 / 私聊 → [`lark-im`](../lark-im/lark-im.md)
+- 认证、身份切换、scope 管理 → [`lark-shared`](../lark-shared/lark-shared.md)

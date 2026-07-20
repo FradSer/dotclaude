@@ -196,7 +196,7 @@ lark-cli minutes +detail --minute-tokens <minute_token> --summary
 
 ## 参考
 
-- [lark-minutes](../SKILL.md) -- 妙记相关命令
+- [lark-minutes](../lark-minutes.md) -- 妙记相关命令
 - [lark-minutes-detail](lark-minutes-detail.md) -- 基于 `minute_token` 获取逐字稿、总结、待办、章节等产物
-- [lark-vc](../../lark-vc/SKILL.md) -- 视频会议全部命令
+- [lark-vc](../../lark-vc/lark-vc.md) -- 视频会议全部命令
 

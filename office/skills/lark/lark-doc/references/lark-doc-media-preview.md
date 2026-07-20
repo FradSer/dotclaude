@@ -1,7 +1,7 @@
 
 # docs +media-preview（预览文档素材）
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 优先用于查看、预览文档中的图片或文件素材（`file_token`）。命令会把素材保存到本地路径，便于后续打开查看内容。
 
@@ -38,4 +38,4 @@ lark-cli docs +media-preview --token "Z1Fjxxxxxxxx" --output ./asset.png
 
 - [lark-doc-fetch](lark-doc-fetch.md) — 获取文档内容（用于提取 token）
 - [lark-doc-media-download](lark-doc-media-download.md) — 明确下载素材，或下载画板缩略图
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

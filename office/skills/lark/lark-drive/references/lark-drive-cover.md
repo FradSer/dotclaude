@@ -1,6 +1,6 @@
 ## `drive +cover`
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、权限处理和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、权限处理和安全规则。
 
 列出或下载 Drive 文件的稳定封面预设。这个 shortcut 只暴露 `spec`，不暴露底层 `cover_option` 细节。
 
@@ -75,5 +75,5 @@ lark-cli drive +cover \
 
 ### 参考
 
-- [lark-drive](../SKILL.md) -- Drive 总入口
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-drive](../lark-drive.md) -- Drive 总入口
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

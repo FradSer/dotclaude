@@ -10,7 +10,7 @@ metadata:
 
 # Lark Events
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md) first for authentication, `--as user/bot` switching, `Permission denied` handling, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md) first for authentication, `--as user/bot` switching, `Permission denied` handling, and safety rules.
 
 ## Core commands
 

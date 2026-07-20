@@ -78,5 +78,5 @@ lark-cli calendar event.attendees create \
 
 ## 参考
 
-- [lark-calendar](../SKILL.md) -- skill 入口与路由
+- [lark-calendar](../lark-calendar.md) -- skill 入口与路由
 - [lark-calendar-suggestion](lark-calendar-suggestion.md) -- 根据非明确时间或一段时间范围，推荐多个可用时间块方案

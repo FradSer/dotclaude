@@ -1,6 +1,6 @@
 # im +threads-messages-list
 
-> **Prerequisite:** Read [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) first to understand authentication, global parameters, and safety rules.
+> **Prerequisite:** Read [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) first to understand authentication, global parameters, and safety rules.
 
 Fetch the reply message list inside a thread. When `im +chat-messages-list` returns messages that include a `thread_id` field, use this command to inspect all replies in that thread.
 
@@ -110,6 +110,6 @@ Pass `--download-resources` to download every eligible resource (image/file/audi
 
 ## References
 
-- [lark-im](../SKILL.md) - all message-related commands
+- [lark-im](../lark-im.md) - all message-related commands
 - [lark-im-chat-messages-list](lark-im-chat-messages-list.md) - fetch conversation messages (source of `thread_id`)
-- [lark-shared](../../lark-shared/SKILL.md) - authentication and global parameters
+- [lark-shared](../../lark-shared/lark-shared.md) - authentication and global parameters

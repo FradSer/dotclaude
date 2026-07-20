@@ -19,7 +19,7 @@ metadata:
 | 查看自己 | `+get-user` 或 `+search-user --user-ids me` | 不支持 |
 | 查同事的个人状态 / 签名 | `user_profiles batch_query` | 不支持 |
 
-已知 open_id 只是想发消息 / 排日程,不必经过 contact —— 直接 [`lark-im`](../lark-im/SKILL.md) / [`lark-calendar`](../lark-calendar/SKILL.md)。
+已知 open_id 只是想发消息 / 排日程,不必经过 contact —— 直接 [`lark-im`](../lark-im/lark-im.md) / [`lark-calendar`](../lark-calendar/lark-calendar.md)。
 
 ## 典型场景
 
@@ -44,12 +44,12 @@ lark-cli contact user_profiles batch_query \
 
 ## 注意事项
 
-- **41050 / Permission denied** 受当前身份的可见范围限制(两条命令都可能遇到)。换 bot 身份或让管理员调整可见范围,细节见 [`lark-shared`](../lark-shared/SKILL.md)。
+- **41050 / Permission denied** 受当前身份的可见范围限制(两条命令都可能遇到)。换 bot 身份或让管理员调整可见范围,细节见 [`lark-shared`](../lark-shared/lark-shared.md)。
 - **跨租户用户**(`is_cross_tenant=true`)多数业务字段为空字符串,这是飞书可见性规则,下游做空值兜底。
 - **ID 类型**:默认 `open_id`。`+get-user` 可改 `--user-id-type union_id|user_id`;`+search-user` 只接受 `open_id`。
 
 ## 不在本 skill 范围
 
-- 发消息 / 查聊天记录 → [`lark-im`](../lark-im/SKILL.md)
-- 排日程 / 邀请会议 → [`lark-calendar`](../lark-calendar/SKILL.md)
-- 部门树 / 按部门列员工 / 组织架构 → [`lark-openapi-explorer`](../lark-openapi-explorer/SKILL.md) 查找原生接口
+- 发消息 / 查聊天记录 → [`lark-im`](../lark-im/lark-im.md)
+- 排日程 / 邀请会议 → [`lark-calendar`](../lark-calendar/lark-calendar.md)
+- 部门树 / 按部门列员工 / 组织架构 → [`lark-openapi-explorer`](../lark-openapi-explorer/lark-openapi-explorer.md) 查找原生接口

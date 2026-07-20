@@ -1,6 +1,6 @@
 # base +form-questions-create
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 向多维表格表单/问卷中批量添加问题。
 
@@ -114,5 +114,5 @@ lark-cli base +form-questions-create \
 
 ## 参考
 
-- [lark-base](../SKILL.md) — 多维表格全部命令
-- [lark-shared](../../lark-shared/SKILL.md) — 认证和全局参数
+- [lark-base](../lark-base.md) — 多维表格全部命令
+- [lark-shared](../../lark-shared/lark-shared.md) — 认证和全局参数

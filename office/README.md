@@ -1,8 +1,8 @@
 # Office Plugin
 
-Office productivity skills for patent applications, PRD generation, Feishu document creation, browser automation, Lark/Feishu CLI operations, and AI writing trope detection.
+Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI routing (denested sub-skill entries), Remotion programmatic video authoring, and AI writing trope detection.
 
-**Version**: 0.5.2
+**Version**: 0.6.1
 **Display Name**: Office
 
 ## Installation
@@ -133,15 +133,15 @@ Browser automation command reference for agents and workflows.
 
 **Sync**: Use `./scripts/sync-agent-browser.sh` to update from upstream
 
-### `lark` (Internal Skill)
+### `lark` (Internal Skill) — v1.1.0
 
-Lark/Feishu CLI skills for operating Lark workspace resources via `lark-cli`. Covers docs, markdown, sheets, base, calendar, IM, mail, tasks, OKR, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, VC, minutes, and events.
+Router for Lark/Feishu CLI operations via `lark-cli`. Match user intent in `skills/lark/SKILL.md`, then Read the linked Entry file (e.g. `lark-doc/lark-doc.md`). Covers docs, markdown, sheets, base, calendar, IM, mail, tasks, OKR, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, VC, minutes, note, and events.
 
 **Source**: Synced from [larksuite/cli](https://github.com/larksuite/cli) skills/
 
-**Sub-skills**: 27 specialized sub-skills covering the full Lark/Feishu API surface. See `skills/lark/SKILL.md` for the complete index.
+**Sub-skills**: 27 denested entries (`lark-*/<dirname>.md`, not nested `SKILL.md`) so only the router is auto-discovered. Index Entry column is the load path.
 
-**Sync**: Use `./scripts/sync-lark.sh` to update from upstream. `SYNC.md` tracks the current `lark-cli` version.
+**Sync**: Use `./scripts/sync-lark.sh` (runs denest + index regen). `SYNC.md` tracks the current `lark-cli` version.
 
 ### `tropes` (Internal Skill)
 

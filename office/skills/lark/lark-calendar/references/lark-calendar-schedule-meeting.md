@@ -119,4 +119,4 @@ lark-cli calendar +update \
 - [lark-calendar-suggestion.md](./lark-calendar-suggestion.md)
 - [lark-calendar-create.md](./lark-calendar-create.md)
 - [lark-calendar-update.md](./lark-calendar-update.md)
-- [SKILL.md](../SKILL.md)
+- [SKILL.md](../lark-calendar.md)

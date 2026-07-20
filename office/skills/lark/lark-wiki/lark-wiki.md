@@ -10,7 +10,7 @@ metadata:
 
 # wiki (v2)
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，其中包含认证、权限处理**
+**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，其中包含认证、权限处理**
 
 > **成员管理硬限制：**
 > - 如果目标是“部门”，先判断身份，再决定是否继续。
@@ -106,7 +106,7 @@ lark-cli wiki <resource> <method> [flags]  # 调用 API
 
 ## 不在本 skill 范围
 
-- 上传 / 下载文件到知识库节点下 → [`lark-drive`](../lark-drive/SKILL.md)（`drive +upload --wiki-token`）
-- 编辑文档正文内容 → [`lark-doc`](../lark-doc/SKILL.md)
-- 表格 / 多维表格数据操作 → [`lark-sheets`](../lark-sheets/SKILL.md) / [`lark-base`](../lark-base/SKILL.md)
-- 按名称搜索文档 / Wiki / 表格文件、评论与权限管理 → [`lark-drive`](../lark-drive/SKILL.md)
+- 上传 / 下载文件到知识库节点下 → [`lark-drive`](../lark-drive/lark-drive.md)（`drive +upload --wiki-token`）
+- 编辑文档正文内容 → [`lark-doc`](../lark-doc/lark-doc.md)
+- 表格 / 多维表格数据操作 → [`lark-sheets`](../lark-sheets/lark-sheets.md) / [`lark-base`](../lark-base/lark-base.md)
+- 按名称搜索文档 / Wiki / 表格文件、评论与权限管理 → [`lark-drive`](../lark-drive/lark-drive.md)

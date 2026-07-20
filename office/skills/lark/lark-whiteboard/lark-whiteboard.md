@@ -14,7 +14,7 @@ metadata:
 > - 运行 `lark-cli --version`，确认可用，无需询问用户。
 > - 运行 `npx -y @larksuite/whiteboard-cli@^0.2.12 -v`，确认可用，无需询问用户。
 
-**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)，其中包含认证、权限处理**
+**CRITICAL — 开始前 MUST 先用 Read 工具读取 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)，其中包含认证、权限处理**
 
 ---
 
@@ -42,6 +42,6 @@ metadata:
 ---
 
 ## 不在本 skill 范围
-- 文档内容编辑 → lark-doc [lark-doc](../lark-doc/SKILL.md)
+- 文档内容编辑 → lark-doc [lark-doc](../lark-doc/lark-doc.md)
 - 在文档中创建画板 → [lark-doc-whiteboard.md](../lark-doc/references/lark-doc-whiteboard.md)
-- 表格 / Base 操作 → [lark-sheets](../lark-sheets/SKILL.md) / [lark-base](../lark-base/SKILL.md)
+- 表格 / Base 操作 → [lark-sheets](../lark-sheets/lark-sheets.md) / [lark-base](../lark-base/lark-base.md)

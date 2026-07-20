@@ -1,6 +1,6 @@
 # task +create
 
-> **Prerequisites:** Please read `../lark-shared/SKILL.md` to understand authentication, global parameters, and security rules.
+> **Prerequisites:** Please read `../lark-shared/lark-shared.md` to understand authentication, global parameters, and security rules.
 
 Create a new task in Lark.
 
@@ -66,5 +66,5 @@ Example success response:
 
 ## References
 
-- [lark-task](../SKILL.md) -- All task commands
-- [lark-shared](../../lark-shared/SKILL.md) -- Authentication and global parameters
+- [lark-task](../lark-task.md) -- All task commands
+- [lark-shared](../../lark-shared/lark-shared.md) -- Authentication and global parameters

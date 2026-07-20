@@ -1,6 +1,6 @@
 # base +record-batch-update (batch update)
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 批量更新记录（将同一份 `patch` 批量应用到一批 `record_id_list`）。
 

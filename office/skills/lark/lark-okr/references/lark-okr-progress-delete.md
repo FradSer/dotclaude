@@ -1,6 +1,6 @@
 # okr +progress-delete
 
-> **前置条件：** 先阅读 [`lark-shared/SKILL.md`](../../lark-shared/SKILL.md) 了解认证、全局参数和安全规则。
+> **前置条件：** 先阅读 [`lark-shared/lark-shared.md`](../../lark-shared/lark-shared.md) 了解认证、全局参数和安全规则。
 
 根据 ID 删除一条 OKR 进展记录。此操作为高风险操作，删除后不可恢复。
 
@@ -43,5 +43,5 @@ lark-cli okr +progress-delete --progress-id 1234567890123456789 --dry-run
 
 ## 参考
 
-- [lark-okr](../SKILL.md) -- 所有 OKR 命令(shortcut 和 API 接口)
-- [lark-shared](../../lark-shared/SKILL.md) -- 认证和全局参数
+- [lark-okr](../lark-okr.md) -- 所有 OKR 命令(shortcut 和 API 接口)
+- [lark-shared](../../lark-shared/lark-shared.md) -- 认证和全局参数

@@ -35,4 +35,4 @@ lark-cli calendar +rsvp --calendar-id cal_xxx --event-id evt_xxx --rsvp-status a
 
 ## 参考
 
-- [lark-calendar](../SKILL.md) -- skill 入口与路由
+- [lark-calendar](../lark-calendar.md) -- skill 入口与路由
