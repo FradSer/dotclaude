@@ -79,20 +79,7 @@ body:
 
 ## Auto-Closing Keywords
 
-**CRITICAL LIMITATION:** Auto-closing keywords **only work when the PR targets the repository's default branch** (usually `main` or `master`). If your PR targets a different branch (e.g., `develop` in Git Flow), GitHub will **ignore** these keywords and the issue will not be closed upon merge.
-
-If you are targeting a non-default branch, you must manually link the issue using the GitHub UI or CLI, and warn the user.
-
-| Keyword | Variants | Behavior |
-|---------|----------|----------|
-| close | close, closes, closed | PR merges into default branch → issue closes |
-| fix | fix, fixes, fixed | PR merges into default branch → issue closes |
-| resolve | resolve, resolves, resolved | PR merges into default branch → issue closes |
-
-**Rules:**
-- PR-scoped issues targeting default branch: use auto-close keywords
-- PR-scoped issues targeting non-default branch: warn user that auto-close won't work automatically
-- Epic issues: do NOT use auto-close (use manual linking)
+Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only close the linked issue when the PR merges into the default branch — see `references/auto-closing-keywords.md` for the limitation, keyword table, and rules.
 
 ## Template Compliance
 

@@ -39,38 +39,36 @@ The only valid skip is an explicit user opt-out ("just baseline review, don't wa
 
 ## Phase 3: React to Each Monitor Event
 
-**Goal**: Fix what is actionable, reject the noise, escalate the ambiguous. Full rules in `references/review-loop.md`.
+**Goal**: Fix what is actionable, reject the noise, escalate the ambiguous. Full rules, prompt template, verdict format, and reply/hide/resolve lifecycle in `references/review-loop.md`.
 
-- `[ci] <name>: fail|cancel` → fetch logs with `gh run view <run-id> --log-failed`, apply the fix, then commit+push via `Skill("git:commit-and-push")`. The push triggers a fresh CI run that the same Monitor re-emits — no relaunch needed. Stop and report (do NOT auto-fix) for auth/permission, missing-secret, flaky, or infrastructure failures.
-- `[comment]` batch → **CRITICAL: spawn an independent review-triage agent** via `Task` with a clean context. Use the prompt template and verdict format in `references/review-loop.md` (`fix` / `reject <reason>` / `escalate`). Apply ONLY the `fix` verdicts. **CRITICAL: reply by comment type** — the `/pulls/$PR/comments/<id>/replies` endpoint ONLY accepts inline review-comment ids. For a `reject`: inline comment → `gh api repos/$REPO/pulls/$PR/comments/<id>/replies`; issue-level comment → `gh pr comment "$PR" --repo "$REPO"` (post a new issue comment referencing it; there is no reply endpoint for issue comments); review summary → no reply endpoint, skip the reply (its inline sub-comments, if any, are handled as inline above). Use the `id=<n>` and `node=<id>` tokens from each emitted line. Send a `PushNotification` for each `escalate` with comment body, author, and file context. Commit+push all `fix` changes together in one round via `Skill("git:commit-and-push")`. Then **close out resolved comments**: hide each fully-addressed comment (a pushed `fix` or a replied `reject`) as `OUTDATED` via `minimizeComment`, and resolve its thread via `resolveReviewThread` (inline comments only; issue-level comments have no thread, so only hide them). Leave `escalate` comments open. See `references/review-loop.md`.
-- `[comment]` ambiguous (design disagreement, scope change, unclear intent) → `PushNotification` and report to the user; do not guess, reply, hide, or resolve.
+- `[ci] <name>: fail|cancel` → fetch logs (`gh run view <run-id> --log-failed`), apply the fix, commit+push via `Skill("git:commit-and-push")`. The push triggers a fresh CI run the same Monitor re-emits. **CRITICAL: stop and report (do NOT auto-fix) for auth/permission, missing-secret, flaky, or infrastructure failures.**
+- `[comment]` batch → **CRITICAL: spawn an independent review-triage Task agent with clean context.** Apply ONLY the `fix` verdicts; reject/escalate the rest. **CRITICAL: reply by comment type** — inline review comment → `gh api repos/$REPO/pulls/$PR/comments/<id>/replies`; issue-level comment → `gh pr comment` (no reply endpoint); review summary → skip reply. Use the `id=<n>`/`node=<id>` tokens from each emitted line. Commit+push all `fix` changes in one round; then hide each fully-addressed comment (`fix` pushed or `reject` replied) as `OUTDATED` via `minimizeComment` and resolve its thread via `resolveReviewThread` (inline only). Leave `escalate` comments open. Send a `PushNotification` per `escalate`.
+- `[comment]` ambiguous (design disagreement, scope change, unclear intent) → `PushNotification` and report; do not guess, reply, hide, or resolve.
 
-**CRITICAL mindset**: Comments are mostly from other agents (linters, code-review bots) and human reviewers. They are suggestions to *consider*, not orders. Default to skepticism — verify each claim against the diff and adopt only what is demonstrably correct and safe. Rejecting a comment is the normal, expected outcome for noise and false positives.
+**CRITICAL mindset**: Comments are mostly from other agents (linters, code-review bots) and human reviewers — suggestions to *consider*, not orders. Default to skepticism; verify each claim against the diff and adopt only what is demonstrably correct and safe. Rejecting a comment is the normal outcome for noise and false positives.
 
 ## Phase 4: Stop Conditions
 
-Stop the Monitor with `TaskStop` when EITHER holds:
-- **Normal stop (all three must hold)**:
-  1. Every `[ci]` check is terminal AND passing.
-  2. Every review comment received so far has been reflected on (triaged, replied to, or fixed) AND every fully-resolved one is hidden + its thread resolved — the only comments left visible on the PR are unresolved `escalate` items awaiting the user.
-  3. The user signals they are done with live coverage.
-- **Hard cap (overrides the above)**: the ~2-hour max wall-clock is reached, OR the user explicitly opts out. In this case surface the unsettled state to the user first (state which of #1/#2 is still open), then stop — do NOT keep polling just because CI is still red or comments remain. The cap exists precisely so a stuck PR (red CI that the skill correctly won't auto-fix) cannot hold the watch open forever.
+Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `references/review-loop.md`:
+- **Normal stop (all three)**: every `[ci]` check terminal + passing; every comment reflected on with resolved ones hidden + threads resolved (only `escalate` items remain visible); user signals done.
+- **Hard cap (overrides the above)**: ~2h wall-clock reached OR user explicitly opts out — surface the unsettled state first (which of CI/comments is still open), then stop. Do NOT keep polling because CI is red or comments remain; the cap exists so a stuck PR cannot hold the watch open forever.
 
-A temporarily empty comment queue is NOT a stop signal — other agents may post more comments later.
+**CRITICAL: a temporarily empty comment queue is NOT a stop signal** — other agents may post more comments later.
 
 ## Phase 5: Closeout — Summary, Body Rewrite, and Merge
 
-**Goal**: Once the Phase 4 stop conditions hold (CI green, every comment reflected on and resolved ones hidden + threads resolved), write a merge-readiness summary **as the user**, refresh the PR title/body so the PR page is the durable record *linking to that summary*, then ask the user whether to merge. The pair is the deliverable: a short body describing the merged change, pointing at one comment holding the full review-cycle audit trail. Full rules and templates in `references/closeout.md`.
+**Goal**: Once Phase 4 holds, post a merge-readiness summary comment (user's first-person voice), rewrite the PR title/body to link to it, then ask the user whether to merge. Full templates and ordered steps in `references/closeout.md`.
 
-**Actions** (run after the Phase 3 closeout hide/resolve, before `TaskStop`):
-1. Confirm the Phase 3 closeout ran to completion: every `fix`/`reject` comment is hidden + its thread resolved; only `escalate` items remain visible (the user already got `PushNotification`s for those). Do a defensive re-sweep of hide/resolve if the last CI push may have landed after the last closeout pass — the PR must be clean of resolved threads before the summary lands.
-2. Post a summary `gh pr comment` in the user's first-person voice covering: (a) what was changed across the review cycle, grouped by logical change not commit-by-commit; (b) what each comment batch surfaced and what was done (adopted with sha / rejected with reason / escalated and decision). Use `--body-file -` with a heredoc whose first line is the marker `<!-- review-pr:summary -->`. **CRITICAL: capture the comment URL that `gh pr comment` prints on stdout** (`SUMMARY_URL=$(gh pr comment …)`) — step 3 links to it. If a summary already exists, find it by its marker and `gh api --method PATCH repos/$REPO/issues/comments/<id>`; never `--edit-last`, which clobbers whatever you commented last.
-3. Rewrite the PR body (always) and title (only if the current one no longer matches the merged change) via `gh pr edit --body-file -` (add `--title` only when rewriting it). Lead the body with What/Why, then Changes, then a Review-cycle line, then Verification (real commands + results). **CRITICAL: the Review-cycle line MUST contain the literal summary-comment URL from step 2** — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it. Do not churn an accurate title for style.
-4. **Merge decision** — ask the user via `AskUserQuestion`: merge commit (default) / squash / rebase / don't merge. If unresolved `escalate` comments remain, state the count in the question so the user decides with eyes open; never auto-merge past open escalations. On a merge choice: `gh pr merge` with the chosen strategy (squash: pass `--subject` from the PR title; never `--auto`). Add `--delete-branch` only when stack-safe **and** in the main worktree (`gh` deletes local+remote — unsafe on a linked worktree still checked out on the head).
-5. **After merge** — finish head cleanup if needed; `fetch --prune` and fast-forward local `main` and `develop` when present (plus `baseRefName` if neither); prune merged locals / stale worktrees. In a linked worktree: delete remote head if stack-safe, fetch only for long-lived branches — do not switch or delete the local issue head (`ExitWorktree` owns that). Skip if merge failed or user chose not to merge.
-6. `TaskStop` the Monitor.
+**CRITICAL constraints (hold even when detail is delegated to L3)**:
+1. Capture the summary comment URL from `gh pr comment` stdout (`SUMMARY_URL=$(gh pr comment …)`).
+2. The Review-cycle line in the rewritten body MUST contain that literal URL — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it.
+3. Steps are ordered — the body needs the comment URL, so summary first, body second.
+4. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
+5. Do not post summary / rewrite body / ask to merge while CI is red or comments remain open; never auto-merge past open `escalate` items.
+6. Merge only after an explicit `AskUserQuestion` choice (merge/squash/rebase/don't); never `--auto`.
+7. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
 
-**CRITICAL**: Do not post the summary, rewrite the body, or ask to merge while CI is red or comments remain open. Do not sign the summary as AI-generated. Body describes the change and links to the comment; comment records the review cycle — keep them distinct. Steps 2 and 3 are ordered (body needs the comment URL). Merge only after an explicit `AskUserQuestion` choice; never force long-lived branch updates.
+`TaskStop` the Monitor after closeout completes.
 
 ## References
 

@@ -47,7 +47,7 @@ See `references/repository-templates.md` for template detection and compliance d
    - Assign owners using `--assignee`
    - Link milestones using `--milestone` or projects using `--project` if requested
 4. Add auto-closing keywords if PR-scoped issue (NOT for epics)
-   - **CRITICAL: Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only trigger when the PR merges into the repository's default branch (usually `main`/`master`). If the issue will be resolved by a PR targeting a non-default branch (e.g. `develop`), warn the user that the issue will NOT close automatically and must be closed manually.**
+   - **CRITICAL: auto-closing keywords only fire when the PR merges into the repository's default branch.** If the issue will be resolved by a PR targeting a non-default branch, warn the user that the issue will NOT close automatically and must be closed manually — see `references/auto-closing-keywords.md` for the full rule and keyword table.
 5. Link to related issues or epics if applicable
 
 ## Phase 3: Documentation and Handoff
@@ -65,5 +65,6 @@ See `references/repository-templates.md` for template detection and compliance d
 - **Requirements**: `references/requirements.md` - Full TDD and commit standards
 - **Decision Logic**: `references/decision-logic.md` - Branch-based decisions and issue types
 - **Issue Structure**: `references/issue-structure.md` - Title, labels, body, auto-closing
+- **Auto-Closing Keywords**: `references/auto-closing-keywords.md` - Default-branch limitation and keyword table
 - **Repository Templates**: `references/repository-templates.md` - Contributing guidelines and issue templates
 - **Examples**: `references/examples.md` - Commit message examples

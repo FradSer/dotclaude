@@ -63,7 +63,7 @@ See `references/repository-templates.md` for template detection and compliance d
 3. Generate PR title (≤70 chars, imperative, no emojis)
 4. Assemble PR body following template in `references/pr-structure.md`
 5. Apply automated labels based on file changes
-6. **CRITICAL: Auto-closing keywords (`Closes`/`Fixes`/`Resolves #N`) only trigger when the PR merges into the repository's default branch. If targeting a non-default branch (e.g. `develop`), explicitly warn the user that linked issues will NOT close automatically on merge and must be closed manually.**
+6. **CRITICAL: auto-closing keywords only fire when the PR merges into the repository's default branch.** If targeting a non-default branch (e.g. `develop`), explicitly warn the user that linked issues will NOT close automatically on merge and must be closed manually — see `references/auto-closing-keywords.md` for the full rule and keyword table.
 7. Create PR using `gh pr create` with all metadata
    - Use `--draft` if `$ARGUMENTS` requested it, or if the PR requires early feedback or is not fully complete
    - Set reviewers with `--reviewer` and assignees with `--assignee` when requested
@@ -77,9 +77,9 @@ See `references/repository-templates.md` for template detection and compliance d
 
 **Goal**: Delegate CI monitoring and reviewer-comment triage to the dedicated skill.
 
-**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, and the review → fix → commit+push → wait-for-review loop, through to the merge decision **and the post-merge branch hygiene** — on a merge, review-pr's Phase 5 deletes the remote + local head branches (when stack-safe and in the main worktree), runs `fetch --prune`, fast-forwards local `main`/`develop`, and drops other already-merged locals, so the repo is left clean with no dangling head branch. This skill does not duplicate that cleanup; it is the handoff target's responsibility.
+**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, the review → fix → commit+push → wait-for-review loop, through to the merge decision and the post-merge branch hygiene (remote + local head cleanup, `fetch --prune`, fast-forward `main`/`develop`). See `references/pr-creation-handoff.md` for the handoff contract including post-merge hygiene. This skill does not duplicate that cleanup; it is the handoff target's responsibility.
 
-**CRITICAL: this skill is the plugin's only PR-creating path.** Other skills (e.g. `/github:resolve-issues`) delegate here instead of calling `gh pr create` themselves, precisely so no PR escapes the quality gate or this handoff. Do not add a bypass.
+**CRITICAL: this skill is the plugin's only PR-creating path.** Other skills (e.g. `/github:resolve-issues`) delegate here instead of calling `gh pr create` themselves, precisely so no PR escapes the quality gate or this handoff. See `references/pr-creation-handoff.md` for the full contract. Do not add a bypass.
 
 ## References
 
@@ -87,5 +87,7 @@ See `references/repository-templates.md` for template detection and compliance d
 - **Repository Templates**: `references/repository-templates.md` - Contributing guidelines and PR templates
 - **Quality Validation**: `references/quality-validation.md` - Node.js/Python validation commands
 - **PR Structure**: `references/pr-structure.md` - Title guidelines, body template, labels
+- **Auto-Closing Keywords**: `references/auto-closing-keywords.md` - Default-branch limitation and keyword table
+- **PR Creation Handoff**: `references/pr-creation-handoff.md` - Only PR-creating path contract
 - **Failure Resolution**: `references/failure-resolution.md` - Agent collaboration for fixing failures
 - **Examples**: `references/examples.md` - Commit message examples

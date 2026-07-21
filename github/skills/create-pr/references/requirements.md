@@ -6,10 +6,6 @@
 - Complete lint, test, build, and security checks before creating the PR.
 - Link related issues and apply accurate labels for traceability.
 
-## Commit Message Standards
-
-See `references/commit-standards.md` for the full commit message standards.
-
 ## Pre-Creation Checklist
 
 - Repository state validated and clean
@@ -17,4 +13,4 @@ See `references/commit-standards.md` for the full commit message standards.
 - Security scan completed without issues
 - Related issues identified and linked
 - Proper branch naming and commit messages following standards
-- **Branch Target Validation**: Verify that the target base branch accepts auto-closing keywords (they only work for the default branch)
+- **Branch Target Validation**: auto-closing keywords only fire on the default branch — see `references/auto-closing-keywords.md`.

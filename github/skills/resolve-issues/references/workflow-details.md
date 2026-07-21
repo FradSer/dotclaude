@@ -54,17 +54,11 @@ Follow the red-green-refactor cycle with agent collaboration:
 
 ## Quality Validation
 
-During the TDD cycle, run project-specific quality checks:
-- Lint: `npm run lint` or `pnpm lint` (Node.js) / `ruff check .` (Python)
-- Test: `npm test` or `pnpm test` (Node.js) / `pytest` (Python)
-- Build: `npm run build` or `pnpm build` (Node.js)
-- Type Check: `npm run type-check` (Node.js) / `mypy .` (Python)
-
-`/github:create-pr` re-runs the full quality and security gate before it opens the PR, so these checks are for fast local feedback, not the gate itself.
+During the TDD cycle, run project-specific quality checks for fast local feedback — see `references/quality-validation.md` for commands. `/github:create-pr` re-runs the full quality and security gate before it opens the PR, so these checks are not the gate itself.
 
 ## PR Creation and Cleanup
 
 1. **Push branch**: `git push -u origin <branch-name>`
-2. **Create PR**: **CRITICAL: never call `gh pr create` from this skill.** Invoke `Skill("github:create-pr", "Closes #456")` with the issue reference. `/github:create-pr` is the plugin's single PR-creating path — it runs the quality/security gate, handles auto-closing keywords and the non-default-branch warning, and hands off to `/github:review-pr` for the review → fix → commit+push → wait-for-review loop. Pass `--no-monitor` through only on an explicit user opt-out.
+2. **Create PR**: **CRITICAL: never call `gh pr create` from this skill.** Invoke `Skill("github:create-pr", "Closes #456")` with the issue reference — see `references/pr-creation-handoff.md` for the full contract. Pass `--no-monitor` through only on an explicit user opt-out.
 3. **After merge**: `/github:review-pr` owns the merge decision and post-merge hygiene. Once merged, use ExitWorktree action "remove" for the linked worktree — confirm you are still on the issue branch first
    - If uncommitted changes exist, ExitWorktree will refuse; confirm with the user before setting `discard_changes: true`

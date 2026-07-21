@@ -50,7 +50,7 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 
 **Actions**:
 1. Push branch to remote with `git push -u origin <branch-name>`
-2. **CRITICAL: Do NOT call `gh pr create` here.** Invoke `Skill("github:create-pr", "<issue reference>")` — e.g. `Skill("github:create-pr", "Closes #456")`. This is the plugin's only PR-creating path: it owns the quality/security gate, the auto-closing-keyword linkage, the non-default-branch warning, and the mandatory `/github:review-pr` handoff (review → fix → commit+push → wait for review, until CI is green and every comment is triaged). Creating the PR directly skips all of it.
+2. **CRITICAL: Do NOT call `gh pr create` here.** Invoke `Skill("github:create-pr", "<issue reference>")` — e.g. `Skill("github:create-pr", "Closes #456")`. It is the plugin's only PR-creating path and owns the quality/security gate, the auto-closing-keyword linkage, the non-default-branch warning, and the mandatory `/github:review-pr` handoff. See `references/pr-creation-handoff.md` for the full contract. Creating the PR directly skips all of it.
    - Append `--draft` to the arguments if the fix requires further feedback before review
    - Append `--no-monitor` only when the user explicitly opts out of the review loop
 3. **This skill does not resume here.** `/github:create-pr` reports the PR URL, and `/github:review-pr` then owns the PR for the rest of its life: a persistent Monitor spanning turns, the triage/fix/push rounds, and the merge decision it asks the user to make. Do NOT wait inline, do NOT re-report the URL, and do NOT run Phase 4 speculatively.
@@ -68,5 +68,7 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
 ## References
 
 - **Requirements**: `references/requirements.md` - Worktree setup, TDD, and commit standards
+- **PR Creation Handoff**: `references/pr-creation-handoff.md` - Why PRs delegate to /github:create-pr
 - **Workflow Details**: `references/workflow-details.md` - Issue selection, TDD cycle, agent collaboration
+- **Quality Validation**: `references/quality-validation.md` - Node.js/Python validation commands (shared)
 - **Examples**: `references/examples.md` - Commit message examples
