@@ -10,7 +10,7 @@
 ## Issue Types
 
 1. **Epic issues**: Multi-PR initiatives (no auto-close keywords).
-2. **PR-scoped issues**: Single PR resolution (use auto-close keywords).
+2. **PR-scoped issues**: Single PR resolution (use auto-close keywords — only fire on the default branch; see `references/auto-closing-keywords.md`).
 3. **Review issues**: Non-blocking feedback from PR reviews.
 
 ## Issue Creation Process
