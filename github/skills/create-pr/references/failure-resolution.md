@@ -2,9 +2,9 @@
 
 When quality checks fail, follow this systematic process:
 
-## 1. Task List Creation
+## 1. Track the Failures
 
-Use TaskCreate to create specific task list for failures:
+Track each failing check as a task (TaskCreate/TaskUpdate, or an inline checklist in your message):
 - List each failing check as a separate task
 - Include error messages and context
 - Prioritize critical failures first

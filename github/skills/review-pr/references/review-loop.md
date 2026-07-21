@@ -40,7 +40,7 @@ Every `[comment]` line carries two IDs so the closeout steps never need a second
   reply to accepted/rejected inline comments. (For review summaries, `id` is the review's id,
   not a comment id — it does not feed the replies endpoint.)
 
-The script lives at `scripts/review-loop.sh` (executable, `#!/usr/bin/env bash`).
+The script lives at `${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/review-loop.sh` (executable, `#!/usr/bin/env bash`). The skill runs in the PR's repository cwd, not the plugin dir, so the bare path `scripts/review-loop.sh` does NOT resolve — always address the script by its absolute plugin path.
 Run it via the Monitor tool — it reads `PR`, `REPO`, and `INTERVAL` from env
 (or `--pr`/`--repo`/`--interval` flags) and emits the tagged lines above.
 
@@ -258,11 +258,16 @@ body + author + file context, and let the user decide. Do NOT reply to or guess 
 - A pushed fix triggers a fresh CI run that the same Monitor re-emits — no need to relaunch it.
 - A temporarily empty comment queue is NOT a stop signal — other agents may post more
   comments later. Keep the watch running.
-- Stop with **TaskStop** ONLY when ALL hold:
-  1. Every `[ci]` check is terminal AND passing.
-  2. Every review comment received so far has been reflected on (triaged, replied to,
-     or fixed) AND every fully-resolved one is hidden + its thread resolved. The only
-     comments left visible on the PR are unresolved `escalate` items awaiting the user.
-  3. The user signals they are done with live coverage, or the ~2-hour max wall-clock
-     is reached (in which case surface the unsettled state to the user first).
+- Stop with **TaskStop** when EITHER holds:
+  - **Normal stop (all three must hold)**:
+    1. Every `[ci]` check is terminal AND passing.
+    2. Every review comment received so far has been reflected on (triaged, replied to,
+       or fixed) AND every fully-resolved one is hidden + its thread resolved. The only
+       comments left visible on the PR are unresolved `escalate` items awaiting the user.
+    3. The user signals they are done with live coverage.
+  - **Hard cap (overrides the above)**: the ~2-hour max wall-clock is reached, OR the
+    user explicitly opts out. Surface the unsettled state to the user first (state which
+    of #1/#2 is still open), then stop — do NOT keep polling just because CI is still red
+    or comments remain. The cap exists so a stuck PR (red CI the skill correctly won't
+    auto-fix) cannot hold the watch open forever.
 - If the user wants ongoing review coverage, leave it persistent and stop on their signal.

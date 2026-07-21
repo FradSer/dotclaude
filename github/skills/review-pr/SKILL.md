@@ -31,7 +31,7 @@ Run a baseline review with the built-in `/review`, then keep a persistent watch 
 
 **Goal**: One background watch streaming CI + comment events across turns.
 
-**Action**: Launch a single `Monitor` with `persistent: true` running `scripts/review-loop.sh`. Pass `PR`, `REPO`, and `INTERVAL` as env vars (the script also accepts `--pr`/`--repo`/`--interval`). Use a specific `description` like `"CI + new comments on PR #<n> (<m> poll)"`. Do NOT run a foreground `while` loop. The script is documented in `references/review-loop.md`.
+**Action**: Launch a single `Monitor` with `persistent: true` running `${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/review-loop.sh`. The bare path `scripts/review-loop.sh` does NOT resolve — the skill runs in the PR's repository cwd, not the plugin dir, so the script must be addressed by its absolute plugin path. Pass `PR`, `REPO`, and `INTERVAL` as env vars (the script also accepts `--pr`/`--repo`/`--interval`). Use a specific `description` like `"CI + new comments on PR #<n> (<m> poll)"`. Do NOT run a foreground `while` loop. The script is documented in `references/review-loop.md`.
 
 **CRITICAL: Do NOT skip the watch based on a launch-time snapshot.** "This repo has no CI workflow, so the watch would spin idly" is a **false** inference and not a valid reason to skip: CI is only one of the two things watched. Third-party auto-review services (GitHub Copilot code review, CodeRabbit, Greptile, Codex, Sourcery, and similar), org-level bots, and human reviewers post comments on no fixed schedule and are invisible in a launch-time snapshot — a repo with zero workflows can still accumulate a full review thread minutes after the PR opens. An empty `.github/workflows/` proves nothing about who will comment.
 
@@ -49,10 +49,12 @@ The only valid skip is an explicit user opt-out ("just baseline review, don't wa
 
 ## Phase 4: Stop Conditions
 
-Stop the Monitor with `TaskStop` ONLY when ALL hold:
-1. Every `[ci]` check is terminal AND passing.
-2. Every review comment received so far has been reflected on (triaged, replied to, or fixed) AND every fully-resolved one is hidden + its thread resolved — the only comments left visible on the PR are unresolved `escalate` items awaiting the user.
-3. The user signals they are done with live coverage, or the ~2-hour max wall-clock is reached (surface the unsettled state to the user first).
+Stop the Monitor with `TaskStop` when EITHER holds:
+- **Normal stop (all three must hold)**:
+  1. Every `[ci]` check is terminal AND passing.
+  2. Every review comment received so far has been reflected on (triaged, replied to, or fixed) AND every fully-resolved one is hidden + its thread resolved — the only comments left visible on the PR are unresolved `escalate` items awaiting the user.
+  3. The user signals they are done with live coverage.
+- **Hard cap (overrides the above)**: the ~2-hour max wall-clock is reached, OR the user explicitly opts out. In this case surface the unsettled state to the user first (state which of #1/#2 is still open), then stop — do NOT keep polling just because CI is still red or comments remain. The cap exists precisely so a stuck PR (red CI that the skill correctly won't auto-fix) cannot hold the watch open forever.
 
 A temporarily empty comment queue is NOT a stop signal — other agents may post more comments later.
 

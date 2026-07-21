@@ -68,8 +68,8 @@ See `references/repository-templates.md` for template detection and compliance d
    - Use `--draft` if `$ARGUMENTS` requested it, or if the PR requires early feedback or is not fully complete
    - Set reviewers with `--reviewer` and assignees with `--assignee` when requested
    - Fill title/body automatically using `--fill` for simple changes
-7. Report final PR URL and status to user. Do NOT run a foreground `gh pr checks --watch` here — Phase 4 hands off to `/github:review-pr`, which owns the persistent CI watch; a blocking `--watch` would stall the turn and duplicate that watch.
-8. **CRITICAL: Proceed to Phase 4.** Creating the PR is not the end of this skill. Skip Phase 4 only if `$ARGUMENTS` contains `--no-monitor` or the user explicitly opts out — never because CI looks green, no reviewers are assigned, or the change looks trivial.
+8. Report final PR URL and status to user. Do NOT run a foreground `gh pr checks --watch` here — Phase 4 hands off to `/github:review-pr`, which owns the persistent CI watch; a blocking `--watch` would stall the turn and duplicate that watch.
+9. **CRITICAL: Proceed to Phase 4.** Creating the PR is not the end of this skill. Skip Phase 4 only if `$ARGUMENTS` contains `--no-monitor` or the user explicitly opts out — never because CI looks green, no reviewers are assigned, or the change looks trivial.
 
 ## Phase 4: Post-PR Handoff (default on)
 
@@ -77,7 +77,7 @@ See `references/repository-templates.md` for template detection and compliance d
 
 **Goal**: Delegate CI monitoring and reviewer-comment triage to the dedicated skill.
 
-**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, and the review → fix → commit+push → wait-for-review loop, through to the merge decision.
+**Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, and the review → fix → commit+push → wait-for-review loop, through to the merge decision **and the post-merge branch hygiene** — on a merge, review-pr's Phase 5 deletes the remote + local head branches (when stack-safe and in the main worktree), runs `fetch --prune`, fast-forwards local `main`/`develop`, and drops other already-merged locals, so the repo is left clean with no dangling head branch. This skill does not duplicate that cleanup; it is the handoff target's responsibility.
 
 **CRITICAL: this skill is the plugin's only PR-creating path.** Other skills (e.g. `/github:resolve-issues`) delegate here instead of calling `gh pr create` themselves, precisely so no PR escapes the quality gate or this handoff. Do not add a bypass.
 
