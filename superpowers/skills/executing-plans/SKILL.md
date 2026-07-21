@@ -18,7 +18,7 @@ Execute written implementation plans through phase-based orchestration: Plan Rev
 /goal "Claude has emitted the Phase 6 completion message 'Plan execution complete. All N tasks verified and committed' AND has reported the final commit hash from Phase 5 in the transcript" /superpowers:executing-plans <plan>
 ```
 
-`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output, never filesystem state. **Note**: executing-plans commits **once** at Phase 5 after all batches finish — do NOT phrase the condition around a "per-batch commit hash" or it will never match; per-batch evaluator verdicts are progress signals, not completion signals. Full semantics and condition phrasing: `../../skills/references/goal-wrapper.md`. The skill body itself is single-turn-driven and orients via `scripts/batch-progress.sh` at the top of every turn (see Step 1 below).
+`/goal` is a **user-typed outer wrapper** — it must prefix the invocation; a skill cannot enable it for itself mid-run. The evaluator judges only what Claude narrates in the transcript (it does NOT read files or run commands) — phrase the condition against narrated output, never filesystem state. **Note**: executing-plans commits **once** at Phase 5 after all batches finish — do NOT phrase the condition around a "per-batch commit hash" or it will never match; per-batch evaluator verdicts are progress signals, not completion signals. Full semantics and condition phrasing: `../../skills/references/goal-wrapper.md`. The skill body itself is single-turn-driven and orients via `bash "${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh"` at the top of every turn (see Step 1 below).
 
 ## Step 1 of every iteration — orient via batch-progress.sh
 
@@ -44,7 +44,7 @@ Read `_index.md`. If "Execution Plan" YAML lists < 5 tasks in a single batch, ba
    - If `$ARGUMENTS` provides a path (e.g., `docs/plans/YYYY-MM-DD-topic-plan/`), use it
    - Otherwise, pick the `*-plan/` folder whose basename sorts last under `YYYY-MM-DD-*-plan/` — i.e., the highest date prefix in the name, not filesystem mtime. Use `ls -1d docs/plans/*-plan/ 2>/dev/null | sort | tail -1` (do NOT use `ls -t` / `ls -1dt` — directory mtimes get bumped when an older folder's files are edited, which makes it rank above a freshly-created folder). Use the result directly (no confirmation).
    - If no plan folder is found, abort with a clear error message naming the expected path pattern
-2. Run `scripts/batch-progress.sh <plan-path>` to print the current batch state. If batches already exist, follow the script's directive directly (skip Phase 1/2 — they ran on a prior turn). Otherwise proceed with Initialization.
+2. Run `bash "${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh" <plan-path>` to print the current batch state. The bare path `scripts/batch-progress.sh` does NOT resolve — the skill runs in the plan's repository cwd, not the plugin dir, so the script must be addressed by its absolute plugin path. If batches already exist, follow the script's directive directly (skip Phase 1/2 — they ran on a prior turn). Otherwise proceed with Initialization.
 
 ## Initialization (first turn only)
 

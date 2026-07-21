@@ -179,6 +179,39 @@ Run `git status` to check changes
 Query the data source for records
 ```
 
+## Bundled Script Paths (Critical)
+
+When a skill/command/agent instructs the agent to run a script bundled with the plugin, **always address the script by its absolute plugin path via `${CLAUDE_PLUGIN_ROOT}`** — never by a bare relative path like `scripts/foo.sh` or `./scripts/foo.sh`.
+
+**Why this matters:** the skill's working directory is the **target repo** (the user's project, the PR's repository, the plan folder), NOT the plugin directory. A bare `scripts/foo.sh` resolves against the cwd, so it points at a file that does not exist in the target repo, and the agent reports "the referenced script doesn't exist in this repo." This bug is silent in authoring (the path looks fine in the plugin source) and only surfaces at runtime in a different repo.
+
+**MUST — executable instructions use `${CLAUDE_PLUGIN_ROOT}`:**
+
+```markdown
+# Good — resolves regardless of cwd
+Run `bash "${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/review-loop.sh"`
+Launch a Monitor running `${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh`
+
+# Bad — breaks the moment the skill runs in a target repo
+Run `scripts/review-loop.sh`              # cwd is the PR's repo, not the plugin
+Launch a Monitor running `scripts/batch-progress.sh`
+```
+
+**Drift trap:** a skill's L2 `SKILL.md` body and its L3 `references/*.md` are often written separately. If the L3 uses `${CLAUDE_PLUGIN_ROOT}` but the L2 executable instruction drifts back to a bare `scripts/...`, the L2 is the one that runs — and it fails. Keep both layers consistent; when fixing one, grep the other.
+
+**Allowed bare paths (NOT bugs):**
+- Descriptive pointers in a **References** section: `- ./scripts/foo.sh - what it does`. Documentation, not executed.
+- **Upstream mirrors** whose paths are resolved by an external CLI at install time (e.g. hyperframes uses `<SKILL_DIR>`, impeccable uses `.claude/skills/...`). These are an install-time convention, not a runtime bare path — the placeholder (`<SKILL_DIR>`, `<MEDIA_DIR>`) is the tell.
+- Prose naming the script's location without instructing execution: "the script lives at `scripts/foo.sh`" — provided the executable instruction in the same doc uses the absolute path.
+
+**The line between bug and benign is semantic, not syntactic** — the same text shape (`scripts/foo.sh` inside backticks) can be a real executable instruction or a descriptive reference. A static checker cannot reliably tell them apart, so the rule is enforced by review, not by `validate-plugin.py`. Run the advisory audit after touching any skill that bundles a script:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/audit-bare-paths.py <plugin-dir-or-.>
+```
+
+It lists every bare `scripts/...` candidate with a reason; judge each against the skill's cwd contract.
+
 ## Quick Reference
 
 | Tool | Style | Example |

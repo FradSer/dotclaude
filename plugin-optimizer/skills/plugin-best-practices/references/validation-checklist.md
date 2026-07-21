@@ -33,6 +33,7 @@ Complete checklist for plugin quality assurance.
 
 - Scripts are executable with shebangs
 - Scripts use `${CLAUDE_PLUGIN_ROOT}` paths
+- **Executable instructions in L2 SKILL.md use `${CLAUDE_PLUGIN_ROOT}` — no bare `scripts/...`** (the skill's cwd is the target repo, not the plugin dir; bare paths fail silently at runtime). L2 and L3 references must not drift. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/audit-bare-paths.py <plugin>` to surface candidates. See `./tool-invocations.md` § Bundled Script Paths.
 
 ## Tool Invocations
 
