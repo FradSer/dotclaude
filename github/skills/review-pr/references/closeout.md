@@ -149,7 +149,7 @@ never auto-merge, and never merge past open `escalate` comments without surfacin
 
 Ask one question, four mutually exclusive options:
 
-- **Create a merge commit** (default — listed first)
+- **Create a merge commit** (Recommended — listed first; the default merge strategy)
 - **Squash and merge**
 - **Rebase and merge**
 - **Don't merge**
@@ -160,6 +160,42 @@ with eyes open. The user may still choose to merge — that is their call, not t
 
 On a merge choice, run the matching `gh pr merge` (`--merge` / `--squash --subject "<title>"` /
 `--rebase`). Never `--auto`.
+
+## Auto-merge branch (`--auto-merge` opt-in)
+
+When `--auto-merge` was parsed in Phase 1, the closeout swaps the `AskUserQuestion` step for
+an automatic merge — but only under the same stop conditions that gate the question. The flag
+is an opt-out from the *prompt*, not from the *readiness gate*.
+
+**Pre-merge gate (ALL must hold, same as the explicit-choice path):**
+1. Every `[ci]` check is terminal AND passing.
+2. Every non-escalate comment is reflected on: `fix` pushed, `reject` replied, resolved ones
+   hidden + threads resolved. Only `escalate` items may remain visible.
+3. No open `escalate` comments. ← this is the hard switch
+
+**If any `escalate` comment is still open, the auto-merge opt-in is suspended for this closeout.**
+Fall back to the explicit `AskUserQuestion` (four options, merge listed first as Recommended)
+and include the escalate count in the question text. Do not merge past escalate items just
+because the flag was set — escalate means "needs human judgment", and auto-merging past it
+is exactly the over-reach the explicit-choice rule exists to prevent. The user may still pick
+merge from the question; that is their call.
+
+**If the gate holds (CI green, zero open escalate), execute:**
+1. Send a `PushNotification` that the PR is about to auto-merge — merge is hard to reverse and
+   outward-facing, so warn the user before it lands (they may still interrupt to stop it).
+   One line: e.g. "PR #<n>: CI green, no open comments — auto-merging with a merge commit."
+2. Run `gh pr merge "$PR" --repo "$REPO" --merge` (add `--delete-branch` only when stack-safe
+   AND in the main worktree, same rule as the explicit path). Never `--auto`.
+
+**Single-shot.** Auto-merge is a one-shot choice for this PR. If the merge fails (branch
+protection, required reviews, stale base), surface the error and stop — do not retry with
+different flags, do not force-push, and do not re-arm auto-merge; the user decides next. If
+the user interrupts and you resume, and the gate no longer holds (a new comment arrived, CI
+re-ran red), do not auto-merge — re-check the gate, and if escalate items now exist, fall
+back to the explicit question.
+
+**On a successful auto-merge**, proceed to "After a successful merge" hygiene exactly as the
+explicit-choice path would. `TaskStop` the Monitor.
 
 `--delete-branch` removes **both** remote and local head — safe only in the main worktree when
 no open PR still bases on that head. In a linked worktree (`/github:resolve-issues`), omit it:
@@ -229,16 +265,24 @@ land docs after the code PR merges so the author can grep the real value.
 Steps 2 and 3 are ordered, not merely sequential: the body needs a URL that does not exist
 until the comment is posted. Never rewrite the body first and backfill the link later.
 
-4. Ask the user via `AskUserQuestion` whether to merge; on a merge choice, run
-   `gh pr merge` (add `--delete-branch` only when stack-safe and in the main worktree).
+4. Merge step — depends on the opt-in:
+   - **No flag (default)**: ask the user via `AskUserQuestion` (four options, merge listed
+     first as Recommended); on a merge choice, run `gh pr merge` (add `--delete-branch` only
+     when stack-safe and in the main worktree).
+   - **`--auto-merge` opt-in**: if the pre-merge gate holds with zero open `escalate` items,
+     send a `PushNotification` then run `gh pr merge --merge` directly (no question). If any
+     `escalate` item is open, suspend auto-merge and fall back to the explicit question.
 5. After a successful merge: head cleanup + sync `main`/`develop` (see above).
 6. `TaskStop` the Monitor.
 
 Steps 1–3 are idempotent: re-running `gh pr edit` with the same title/body is a no-op, and the
 marker lookup patches the existing summary rather than duplicating it (which also recovers
 `SUMMARY_URL` after an interrupt). Steps 4 and 5 are NOT idempotent — only run them once, after
-the user's explicit merge choice. If the user interrupts and you resume, skip steps already
-completed; if they chose "don't merge", or merge + hygiene already ran, do not repeat.
+the user's explicit merge choice (or, under `--auto-merge`, the gate holding). If the user
+interrupts and you resume, skip steps already completed; if they chose "don't merge", or
+merge + hygiene already ran, do not repeat. Under `--auto-merge`, if the gate no longer holds
+on resume (new comment or CI re-ran red), do not auto-merge — re-check and fall back to the
+explicit question if escalate items now exist.
 
 ## Do not
 
@@ -253,6 +297,11 @@ completed; if they chose "don't merge", or merge + hygiene already ran, do not r
   last, not the summary. Find it by its `<!-- review-pr:summary -->` marker.
 - Do not write the summary in the AI's voice or sign it as AI-generated; the user asked for
   it in their name.
-- Do not auto-merge or use `gh pr merge --auto` — the merge requires an explicit
-  `AskUserQuestion` choice every time. Never merge past open `escalate` comments without
-  surfacing them in the question.
+- Do not merge without the user's explicit choice OR the `--auto-merge` opt-in — the merge
+  requires an explicit `AskUserQuestion` choice every time, unless the user set `--auto-merge`
+  AND the pre-merge gate holds with zero open `escalate` items. Never call
+  `gh pr merge --auto` (GitHub's background auto-merge feature, which fires whenever it can and
+  bypasses your own gate); under `--auto-merge` use `gh pr merge --merge` (a direct merge you
+  execute only when the gate holds). Never merge past open `escalate` comments without
+  surfacing them — under `--auto-merge`, that means falling back to the explicit question
+  instead of merging.

@@ -2,7 +2,7 @@
 name: create-pr
 allowed-tools: Task, Bash(gh:*), Bash(git:*), Skill
 description: Creates comprehensive GitHub pull requests with automated quality validation and security scanning, then hands off to /github:review-pr for CI monitoring and reviewer-comment triage. This skill should be used when the user asks to "create a PR", "submit a pull request", or needs to merge completed work with full compliance checks.
-argument-hint: [optional description or issue reference] [--no-monitor]
+argument-hint: [optional description or issue reference] [--no-monitor] [--auto-merge]
 user-invocable: true
 ---
 
@@ -58,6 +58,7 @@ See `references/repository-templates.md` for template detection and compliance d
    - A **free-text description** — use it as the basis for the PR title and the What/Why section.
    - `--draft` — pass through to `gh pr create` in step 6.
    - `--no-monitor` — a Phase 4 opt-out only; never treat it as description text.
+   - `--auto-merge` — pass through to `/github:review-pr` in Phase 4; turns on auto-merge on green in the review loop. Never treat it as description text.
    Strip the flags before using the remainder as description/issue text.
 2. Identify and link any *further* related issues using GitHub CLI (in addition to any reference from `$ARGUMENTS`)
 3. Generate PR title (≤70 chars, imperative, no emojis)
@@ -78,6 +79,8 @@ See `references/repository-templates.md` for template detection and compliance d
 **Goal**: Delegate CI monitoring and reviewer-comment triage to the dedicated skill.
 
 **Action**: After the PR is created, invoke `Skill("github:review-pr", "<PR#>")` to run the baseline review and launch the persistent CI + comment watch. The review-pr skill owns the Monitor script, the skeptical triage agent, the review → fix → commit+push → wait-for-review loop, through to the merge decision and the post-merge branch hygiene (remote + local head cleanup, `fetch --prune`, fast-forward `main`/`develop`). See `references/pr-creation-handoff.md` for the handoff contract including post-merge hygiene. This skill does not duplicate that cleanup; it is the handoff target's responsibility.
+
+**`--auto-merge` passthrough**: If `$ARGUMENTS` carried `--auto-merge`, pass it through to the review-pr invocation as `Skill("github:review-pr", "<PR#> --auto-merge")`. It instructs review-pr to skip the merge `AskUserQuestion` and auto-merge with `gh pr merge --merge` once CI is green and every non-escalate comment is triaged — see `references/pr-creation-handoff.md` for the contract and the escalate fallback. Pass it through **only** when the user explicitly set it; never infer it.
 
 **CRITICAL: this skill is the plugin's only PR-creating path.** Other skills (e.g. `/github:resolve-issues`) delegate here instead of calling `gh pr create` themselves, precisely so no PR escapes the quality gate or this handoff. See `references/pr-creation-handoff.md` for the full contract. Do not add a bypass.
 

@@ -18,6 +18,7 @@ No other skill calls `gh pr create`. Other skills (`/github:resolve-issues`, and
 - Invoke `Skill("github:create-pr", "Closes #<n>")` with the issue reference **verbatim** — do not re-derive or second-guess the auto-closing keyword.
 - Pass `--draft` through if early feedback is needed.
 - Pass `--no-monitor` through **only** on an explicit user opt-out (never infer it).
+- Pass `--auto-merge` through **only** on an explicit user opt-in (never infer it). create-pr forwards it to `/github:review-pr` as `Skill("github:review-pr", "<PR#> --auto-merge")`; review-pr then skips the merge `AskUserQuestion` and runs `gh pr merge --merge` once CI is green and every non-escalate comment is triaged. `escalate` items suspend the opt-in and fall back to the explicit question — see `review-pr/references/closeout.md` (Auto-merge branch).
 - Do NOT wait inline for the PR URL; do NOT re-report the PR; do NOT call `gh pr create`.
 - Creating the PR directly skips the quality gate, the auto-closing-keyword linkage, the non-default-branch warning, and the review-pr loop — all of it.
 

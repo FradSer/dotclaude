@@ -2,7 +2,7 @@
 name: review-pr
 allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop, Skill, AskUserQuestion, Read, Edit, Write
 description: Reviews a pull request with the built-in /review skill, then persists a Monitor watch over CI results and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
-argument-hint: <PR number or URL>
+argument-hint: <PR number or URL> [--auto-merge]
 user-invocable: true
 ---
 
@@ -22,7 +22,7 @@ Run a baseline review with the built-in `/review`, then keep a persistent watch 
 **Goal**: Run the initial review, resolve the repo, and pick a poll interval sized to the PR.
 
 **Actions**:
-1. Parse the PR number or URL from `$ARGUMENTS`. If absent, list open PRs with `gh pr list` and ask the user which to review. **Normalize `PR` to the bare number** before any `gh api` REST call: `gh pr *` commands accept a URL, but `gh api repos/$REPO/issues/$PR/...` interpolates `$PR` into the URL path and breaks on a full URL — run `PR=$(gh pr view "$ARGUMENTS" --json number -q .number)` (the Context block already fetches `--json number`) and use `$PR` as the number everywhere downstream.
+1. Parse the PR number or URL from `$ARGUMENTS`. If absent, list open PRs with `gh pr list` and ask the user which to review. **Normalize `PR` to the bare number** before any `gh api` REST call: `gh pr *` commands accept a URL, but `gh api repos/$REPO/issues/$PR/...` interpolates `$PR` into the URL path and breaks on a full URL — run `PR=$(gh pr view "$ARGUMENTS" --json number -q .number)` (the Context block already fetches `--json number`) and use `$PR` as the number everywhere downstream. **Parse `--auto-merge` from `$ARGUMENTS` and strip it before resolving the PR number** — it is a closeout opt-in (see Phase 5), not part of the PR identifier; treat its absence as the default (explicit `AskUserQuestion` merge).
 2. Invoke `Skill("review", "<PR#>")` once for the baseline review. Treat its findings as the **first `[comment]` batch** — feed them straight into the Phase 3 triage flow before launching the Monitor. Do not act on them inline; the main context is biased (it likely authored the PR) and the same skeptical gatekeeping must apply to the baseline as to live comments.
 3. Resolve `REPO=<owner>/<repo>` from the PR metadata above (fallback: `git remote get-url origin` parsed into `owner/repo`).
 4. Read PR size from `additions+deletions` and pick `INTERVAL` (seconds) from the size table in `references/review-loop.md`: 180 / 300 / 480 for small / medium / large; floor 60s, cap 7200s (~2h).
@@ -65,7 +65,7 @@ Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `refer
 3. Steps are ordered — the body needs the comment URL, so summary first, body second.
 4. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
 5. Do not post summary / rewrite body / ask to merge while CI is red or comments remain open; never auto-merge past open `escalate` items.
-6. Merge only after an explicit `AskUserQuestion` choice (merge/squash/rebase/don't); never `--auto`.
+6. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` and auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: fall back to the explicit `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
 7. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
 
 `TaskStop` the Monitor after closeout completes.

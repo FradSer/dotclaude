@@ -59,6 +59,6 @@ During the TDD cycle, run project-specific quality checks for fast local feedbac
 ## PR Creation and Cleanup
 
 1. **Push branch**: `git push -u origin <branch-name>`
-2. **Create PR**: **CRITICAL: never call `gh pr create` from this skill.** Invoke `Skill("github:create-pr", "Closes #456")` with the issue reference — see `references/pr-creation-handoff.md` for the full contract. Pass `--no-monitor` through only on an explicit user opt-out.
+2. **Create PR**: **CRITICAL: never call `gh pr create` from this skill.** Invoke `Skill("github:create-pr", "Closes #456")` with the issue reference — see `references/pr-creation-handoff.md` for the full contract. Pass `--no-monitor` through only on an explicit user opt-out. Pass `--auto-merge` through only on an explicit user opt-in (it forwards through create-pr to `/github:review-pr`, which auto-merges with a merge commit once CI is green and every non-escalate comment is triaged — escalate items suspend it and fall back to the explicit question).
 3. **After merge**: `/github:review-pr` owns the merge decision and post-merge hygiene. Once merged, use ExitWorktree action "remove" for the linked worktree — confirm you are still on the issue branch first
    - If uncommitted changes exist, ExitWorktree will refuse; confirm with the user before setting `discard_changes: true`

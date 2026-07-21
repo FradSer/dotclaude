@@ -1,7 +1,7 @@
 {
   "name": "github",
   "displayName": "GitHub",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "GitHub project operations with quality gates.",
   "author": {
     "name": "Frad LEE",
