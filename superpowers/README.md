@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.7.0
+**Version**: 3.8.0
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 **Runtime** (state-sync hook): `git` and `jq` on `PATH` — without them the single Stop hook exits silently and neither `docs/retros/plans-completed.jsonl` nor the evolution-log backfill is written
 
@@ -130,11 +130,9 @@ Root-cause analysis for bugs, test failures, and incidents — no design pipelin
 
 **Output**: root cause one-liner + fix diff summary + regression test path
 
-## Internal Skills (Loaded Automatically)
+## Internal Skills (Loaded Within User-Invoked Flows)
 
-### Using Superpowers (the 1% Rule dispatcher)
-
-Reintroduced in v3.0.0. The keystone that makes the rest of the library actually fire. If there is even a 1% chance one of the user-invocable skills is the right tool, this dispatcher routes you to it explicitly via the Skill tool rather than letting you improvise past it. Its concrete trigger phrases ride in the always-resident description; `user-invocable: false` hides it from the `/` menu while the full routing table loads with the skill body.
+All superpowers entry points are user-invocable slash commands (see the commands above) — the model does **not** proactively invoke superpowers on its own; you drive the workflow by typing the command. The skills below are internal helpers loaded only inside a user-invoked `/superpowers:*` flow, never surfaced in the `/` menu and never auto-dispatched.
 
 ### Behavior-Driven Development
 
@@ -235,7 +233,6 @@ superpowers/
 │   │       ├── condition-based-waiting-example.ts
 │   │       ├── defense-in-depth.md
 │   │       └── root-cause-tracing.md
-│   ├── using-superpowers/       # 1% Rule dispatcher (internal, 3.0.0+)
 │   ├── behavior-driven-development/  # BDD cycle (internal)
 │   └── references/
 │       └── git-commit.md        # Shared git commit patterns

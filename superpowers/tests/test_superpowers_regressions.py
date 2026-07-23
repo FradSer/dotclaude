@@ -77,19 +77,6 @@ class SuperpowersRegressionTests(unittest.TestCase):
 
         self.assertNotIn("grep -P", checklist)
 
-    def test_using_superpowers_description_has_routing_triggers(self) -> None:
-        skill = (SUPERPOWERS / "skills/using-superpowers/SKILL.md").read_text()
-        front = skill.split("---", 2)[1]
-        desc = next(l for l in front.splitlines() if l.startswith("description:"))
-        for lemma in (
-            "brainstorm",
-            "write a plan",
-            "execute the plan",
-            "run a retrospective",
-            "systematic-debugging",
-        ):
-            self.assertIn(lemma, desc, msg=f"missing trigger {lemma!r} in description")
-
     def test_executing_plans_goal_section_forbids_per_batch_commit_condition(self) -> None:
         skill = (SUPERPOWERS / "skills/executing-plans/SKILL.md").read_text()
         self.assertIn("batch-progress.sh", skill)

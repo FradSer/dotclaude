@@ -1,7 +1,7 @@
 {
   "name": "superpowers",
   "displayName": "Superpowers",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
   "author": {
     "name": "Frad LEE",
@@ -27,7 +27,6 @@
   ],
   "skills": [
     "./skills/behavior-driven-development/",
-    "./skills/using-superpowers/",
     "./skills/verification-before-completion/",
     "./skills/receiving-code-review/"
   ],
@@ -38,17 +37,6 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-state-sync.sh"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh"
           }
         ]
       }
