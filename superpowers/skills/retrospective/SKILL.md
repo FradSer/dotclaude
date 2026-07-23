@@ -1,8 +1,9 @@
 ---
 name: retrospective
-description: This skill should be used when the user wants to analyze evaluation patterns across completed plans and evolve checklists. Triggered by asking to "run a retrospective", "analyze evaluation patterns", "evolve checklists", or "/superpowers:retrospective". For autonomous multi-turn runs, invoke wrapped in `/goal`.
+description: Analyzes evaluation patterns across completed plans and evolves the superpowers checklists accordingly.
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
+disable-model-invocation: true
 allowed-tools: ["Read", "Glob", "Grep", "Write", "Edit", "Bash(python3:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/post-plan-diff.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 
