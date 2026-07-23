@@ -128,19 +128,6 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/plugin-optimizer"
     },
     {
-      "name": "frontend",
-      "displayName": "Frontend",
-      "version": "0.6.0",
-      "description": "Frontend design integration layer — DESIGN.md design system spec, articulate design vocabulary, Next.js DevTools, and the design-md-first hook. Mirror skills were slimmed out; install upstream repos directly.",
-      "author": {
-        "name": "Frad LEE",
-        "email": "fradser@gmail.com"
-      },
-      "source": "./frontend",
-      "category": "development",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/frontend"
-    },
-    {
       "name": "acpx",
       "displayName": "ACPX",
       "version": "0.3.0",

@@ -8,7 +8,7 @@ scopes:
     - name: cctx
       description: Code context research, environment mapping, and repository analysis in code-context/.
     - name: fe
-      description: Frontend framework tools, impeccable design system, and react patterns in frontend/.
+      description: Frontend web framework tooling, UI/design-system skills, and design-token work (formerly the frontend/ plugin; now spans frontend-adjacent skills across plugins).
     - name: git
       description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow.
     - name: gitflow

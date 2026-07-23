@@ -1348,8 +1348,8 @@ def check_tool_invocations(plugin_dir: Path, verbose: bool = False) -> Validatio
 
 def _is_verbatim_upstream_mirror(skill_dir: Path) -> bool:
     """True when SKILL.md is a byte-for-byte copy of an upstream SKILL.md kept
-    beside it as reference/upstream-SKILL.md (the sync-mirror convention in
-    frontend/SYNC.md). Such a skill's body size tracks upstream, so the body
+    beside it as reference/upstream-SKILL.md (the sync-mirror convention, see
+    any synced plugin's SYNC.md). Such a skill's body size tracks upstream, so the body
     token/line MUST caps are reported but not enforced — trimming would break
     the mirror. The exemption self-revokes the moment the live file diverges
     from the pristine copy."""
@@ -1393,8 +1393,8 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
         body_lines = skill_result["body_lines"]
         refs = skill_result["reference_tokens"]
 
-        # Verbatim upstream mirrors (e.g. frontend/impeccable) track upstream
-        # body size; report their over-budget body but don't fail on it.
+        # Verbatim upstream mirrors track upstream body size; report their
+        # over-budget body but don't fail on it.
         is_mirror = _is_verbatim_upstream_mirror(skill_dir)
         mirror_note = " — exempt: verbatim upstream mirror (SKILL.md == reference/upstream-SKILL.md)"
         mirror_fix = "Body tracks upstream verbatim (see SYNC.md); size is upstream-controlled, not a local defect"

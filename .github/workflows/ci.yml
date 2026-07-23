@@ -46,10 +46,6 @@ jobs:
       - name: Validate ${{ matrix.plugin }}
         run: python3 plugin-optimizer/scripts/validate-plugin.py "${{ matrix.plugin }}"
 
-      - name: Cross-skill coherence (frontend only)
-        if: matrix.plugin == 'frontend'
-        run: frontend/scripts/check-coherence.sh
-
   test:
     needs: discover-plugins
     runs-on: ubuntu-latest

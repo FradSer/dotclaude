@@ -97,17 +97,6 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ---
 
-### [frontend](frontend/)
-
-前端设计集成层 —— DESIGN.md 设计系统规范、articulate 设计词汇、Next.js DevTools，以及 design-md-first hook。镜像 skill（shadcn/impeccable/supabase/react-best-practices/web-design-guidelines）已在 v0.6.0 瘦身移除，请直装对应上游 repo。
-
-**安装：**
-```bash
-claude plugin install frontend@frad-dotclaude
-```
-
----
-
 ### [autoresearch](autoresearch/)
 
 受 karpathy/autoresearch 启发的自主研究循环 —— 你提供可编辑的目标文件、一个打印单个数值的评分命令以及优化方向；循环运行有边界的实验，仅在分数改善时保留改动，将结果记录到 results.tsv，并通过 stop hook 持续迭代。适用于任意目标，而不止 ML 训练。

@@ -97,17 +97,6 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ---
 
-### [frontend](frontend/)
-
-Frontend design integration layer — DESIGN.md design system spec, articulate design vocabulary, Next.js DevTools, and the design-md-first hook. Mirror skills (shadcn/impeccable/supabase/react-best-practices/web-design-guidelines) were slimmed out in v0.6.0; install their upstream repos directly.
-
-**Installation:**
-```bash
-claude plugin install frontend@frad-dotclaude
-```
-
----
-
 ### [autoresearch](autoresearch/)
 
 Autonomous research loop inspired by karpathy/autoresearch — you supply an editable artifact, a scorer that prints one number, and an optimization direction; it runs bounded experiments, keeps a change only if the score improves, logs to results.tsv, and iterates via a stop hook. Works on any objective, not just ML training.
