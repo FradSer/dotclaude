@@ -19,7 +19,7 @@ Use this skill to **choose the right word**: when describing a UI issue, writing
 - **Describing a UI/interaction issue** precisely (e.g. "the disabled state relies on opacity, not a muted token").
 - Reaching for a term and unsure of the exact word (kerning vs tracking, voice vs tone, WCAG vs APCA).
 
-Pairs with `frontend:impeccable` (design execution), `frontend:impeccable` (argument: `critique`, heuristic review), and `frontend:web-design-guidelines` (standards) — articulate supplies the words those skills' findings should be written in.
+Pairs with the design-execution (`impeccable`), standards (`web-design-guidelines`), and token-source-of-truth (`frontend:design-md`) skills — articulate supplies the words those skills' findings should be written in. The `impeccable` and `web-design-guidelines` skills were unbundled from this plugin in v0.6.0; install `pbakaus/impeccable` and `vercel-labs/agent-skills` upstream to use them alongside articulate.
 
 ## The 12 domains (quick reference)
 

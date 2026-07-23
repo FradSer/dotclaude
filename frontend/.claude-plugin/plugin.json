@@ -1,22 +1,18 @@
 {
   "name": "frontend",
   "displayName": "Frontend",
-  "version": "0.5.1",
-  "description": "Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills",
+  "version": "0.6.0",
+  "description": "Frontend design integration layer — DESIGN.md design system spec, articulate design vocabulary, Next.js DevTools, and the design-md-first hook that grounds design work in the project's token source of truth. Mirror skills (shadcn, impeccable, supabase, react-best-practices, web-design-guidelines) were slimmed out; install their upstream repos directly.",
   "keywords": [
     "frontend",
-    "shadcn",
-    "nextjs",
-    "react",
-    "supabase",
     "design",
     "ui",
-    "tailwind",
-    "impeccable",
-    "anti-patterns",
     "design-tokens",
     "design.md",
-    "design-vocabulary"
+    "design-vocabulary",
+    "nextjs",
+    "anti-patterns",
+    "tailwind"
   ],
   "author": {
     "name": "Frad LEE",
@@ -24,17 +20,11 @@
   },
   "license": "MIT",
   "commands": [
-    "./skills/impeccable/",
     "./skills/design-md/"
   ],
   "skills": [
-    "./skills/shadcn/",
     "./skills/next-devtools-guide/",
-    "./skills/react-best-practices/",
-    "./skills/web-design-guidelines/",
-    "./skills/articulate/",
-    "./skills/supabase/",
-    "./skills/supabase-postgres-best-practices/"
+    "./skills/articulate/"
   ],
   "agents": [
     "./agents/frontend-expert.md",

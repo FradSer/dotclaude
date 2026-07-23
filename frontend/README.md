@@ -1,88 +1,65 @@
 # Frontend Plugin
 
-**Version**: 0.5.0
+**Version**: 0.6.0
 
-Web frontend development toolkit combining component management, framework tools, best practices, and design skills.
+Frontend **design integration layer** — the original, locally-authored content that grounds design work in the project's `DESIGN.md` token source of truth. v0.6.0 slimmed the plugin down from 9 skills to its integration layer; upstream-mirror skills were unbundled so users install them directly from their upstream repos.
 
-## Skills (9)
+## v0.6.0 Migration — deleted mirror skills
+
+The following skills were removed as upstream mirrors. Install each upstream repo directly to get them back:
+
+| Deleted skill | Upstream repo |
+|---|---|
+| `impeccable` | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) |
+| `shadcn` | [shadcn-ui/ui](https://github.com/shadcn-ui/ui) |
+| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
+| `web-design-guidelines` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
+| `supabase` | [supabase/agent-skills](https://github.com/supabase/agent-skills) |
+| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) |
+
+The `frontend-anti-patterns` agent lost its `impeccable` `detect.mjs` computed detector and now runs manual checks only — install `pbakaus/impeccable` upstream to restore the detector. The `design-md-first` hook's token-authority ladder was slimmed from 4 steps to design-md + anti-patterns.
+
+## Skills (3)
 
 ### Design System Source of Truth
 
+| Skill | Source | Sync Script |
+|---|---|---|
+| design-md | [google-labs-code/design.md](https://github.com/google-labs-code/design.md) | `sync-design-md.sh` |
 
-| Skill     | Source                                                                        | Sync Script           |
-| --------- | ----------------------------------------------------------------------------- | --------------------- |
-| design-md | [google-labs-code/design.md](https://github.com/google-labs-code/design.md)   | `sync-design-md.sh`   |
+### Design Vocabulary & Runtime
 
-
-### Component & Framework
-
-
-| Skill                 | Source                                                                  | Sync Script             |
-| --------------------- | ----------------------------------------------------------------------- | ----------------------- |
-| shadcn                | [shadcn-ui/ui](https://github.com/shadcn-ui/ui)                         | `sync-shadcn.sh`        |
-| next-devtools-guide   | local                                                                   | --                      |
-| react-best-practices  | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
-| web-design-guidelines | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | `sync-vercel-skills.sh` |
-| articulate            | [index.how/to/articulate](https://index.how/to/articulate)              | local (manual)          |
-
-
-### Backend & Data
-
-
-| Skill                            | Source                                                            | Sync Script               |
-| -------------------------------- | ----------------------------------------------------------------- | ------------------------- |
-| supabase                         | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
-| supabase-postgres-best-practices | [supabase/agent-skills](https://github.com/supabase/agent-skills) | `sync-supabase-skills.sh` |
-
-
-### Design & Quality (from impeccable)
-
-
-| Skill      | Source                                                      | Sync Script          |
-| ---------- | ----------------------------------------------------------- | -------------------- |
-| impeccable | [pbakaus/impeccable](https://github.com/pbakaus/impeccable) | `sync-impeccable.sh` |
-
-
-`impeccable` is a **single** skill (`/impeccable`, SKILL.md tracks upstream verbatim) with sub-commands invoked as `/impeccable <command>` — craft, shape, init, document, extract, critique, audit, polish, bolder, quieter, distill, harden, onboard, animate, colorize, typeset, layout, delight, overdrive, clarify, adapt, optimize, live — each routing to `reference/<command>.md`. There are no separate `impeccable-*` skills.
+| Skill | Source | Sync Script |
+|---|---|---|
+| articulate | [index.how/to/articulate](https://index.how/to/articulate) | local (manual) |
+| next-devtools-guide | local | -- |
 
 ## Agents (2)
 
-
-| Agent                  | Purpose                                                             |
-| ---------------------- | ------------------------------------------------------------------- |
-| frontend-expert        | Guides usage of all skills, recommends the right skill for any task |
-| frontend-anti-patterns | Detects UI anti-patterns: AI slop and design quality issues         |
-
+| Agent | Purpose |
+|---|---|
+| frontend-expert | Coordinator across the surviving skills; recommends the right skill for any task |
+| frontend-anti-patterns | Detects UI anti-patterns: AI slop and design quality issues (manual checks) |
 
 ## Syncing
 
-Sync metadata is centralized in `SYNC.md` (single file under `frontend/`), and all sync scripts update its `**上次同步**` field.
-
-Run these commands from the `frontend/` directory:
+Only `design-md` still syncs from upstream (caches the spec; `SKILL.md` is local). Sync metadata is in `SYNC.md`.
 
 ```bash
-# shadcn (from shadcn-ui/ui)
-./scripts/sync-shadcn.sh
-
-# React best practices + web design guidelines (from vercel-labs/agent-skills)
-./scripts/sync-vercel-skills.sh
-
-# Supabase + Postgres best practices (from supabase/agent-skills)
-./scripts/sync-supabase-skills.sh
-
-# Impeccable design skills + anti-patterns agent (from pbakaus/impeccable)
-./scripts/sync-impeccable.sh
-
 # DESIGN.md spec (from google-labs-code/design.md)
 ./scripts/sync-design-md.sh
 
-# Check all for updates (dry run)
-./scripts/sync-shadcn.sh --check
-./scripts/sync-vercel-skills.sh --check
-./scripts/sync-supabase-skills.sh --check
-./scripts/sync-impeccable.sh --check
+# Check for updates (dry run)
 ./scripts/sync-design-md.sh --check
+
+# Cross-skill consistency + reference checks
+./scripts/check-coherence.sh
+./scripts/check-references.sh
 ```
+
+## Hook
+
+- **`design-md-first.sh`** (UserPromptSubmit) — when the working directory has a `DESIGN.md`, injects a token-authority ladder preamble grounding design work in `design-md` as the source of truth. Slimmed to design-md + anti-patterns in v0.6.0.
 
 ## MCP Server
 

@@ -99,7 +99,7 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ### [frontend](frontend/)
 
-Web 前端开发工具包 —— shadcn/ui、Next.js DevTools、React 最佳实践、Supabase、DESIGN.md 设计系统规范，以及无可挑剔的设计技能。
+前端设计集成层 —— DESIGN.md 设计系统规范、articulate 设计词汇、Next.js DevTools，以及 design-md-first hook。镜像 skill（shadcn/impeccable/supabase/react-best-practices/web-design-guidelines）已在 v0.6.0 瘦身移除，请直装对应上游 repo。
 
 **安装：**
 ```bash

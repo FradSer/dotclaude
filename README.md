@@ -99,7 +99,7 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ### [frontend](frontend/)
 
-Web frontend development toolkit — shadcn/ui, Next.js DevTools, React best practices, Supabase, DESIGN.md design system spec, and impeccable design skills.
+Frontend design integration layer — DESIGN.md design system spec, articulate design vocabulary, Next.js DevTools, and the design-md-first hook. Mirror skills (shadcn/impeccable/supabase/react-best-practices/web-design-guidelines) were slimmed out in v0.6.0; install their upstream repos directly.
 
 **Installation:**
 ```bash

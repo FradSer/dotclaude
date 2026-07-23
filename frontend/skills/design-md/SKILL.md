@@ -183,15 +183,17 @@ For v3 projects, copy the JSON straight into `theme.extend` and stop.
 
 ## Sibling Skill Integration
 
-When DESIGN.md is present, **it is the source of truth**. Override heuristic defaults from other skills:
+When DESIGN.md is present, **it is the source of truth**. The design execution, standards, and component skills that consume these tokens (`impeccable`, `web-design-guidelines`, `shadcn`) were unbundled from this plugin in v0.6.0 as upstream mirrors — install `pbakaus/impeccable`, `vercel-labs/agent-skills`, and `shadcn-ui/ui` directly. When those skills are present in the session, their token work should defer to DESIGN.md:
 
-- **`frontend:impeccable`** — inject the `## Overview` and `## Do's and Don'ts` prose into the context-gathering protocol. Never suggest palettes that contradict defined tokens.
-- **`frontend:impeccable` (argument: `colorize`)** — restrict new accents to the `colors.*` map. If a hue is genuinely missing, propose adding it to DESIGN.md (and the token name) rather than inlining raw hex.
-- **`frontend:impeccable` (argument: `typeset`)** — pull from `typography.*` tokens directly. Surface `missing-typography` findings before suggesting fonts from scratch.
-- **`frontend:impeccable` (argument: `audit`)** — run `lint --format json` as part of the audit. Include every `error` in the report; treat `contrast-ratio` warnings as blockers on AA-committed projects.
-- **`frontend:impeccable` (argument: `critique`)** — cite `## Do's and Don'ts` when flagging usability issues.
-- **`frontend:web-design-guidelines`** — cross-reference `contrast-ratio` findings with the guideline rules.
-- **`frontend:shadcn`** — map DESIGN.md `components.button-primary.*` onto shadcn's CSS variable contract (`--primary`, `--primary-foreground`, `--radius`). DESIGN.md exports provide the semantic variables that satisfy the shadcn rule "no raw `bg-blue-500`".
+- **`impeccable`** (if installed upstream) — inject the `## Overview` and `## Do's and Don'ts` prose into the context-gathering protocol. Never suggest palettes that contradict defined tokens.
+- **`impeccable` (argument: `colorize`)** — restrict new accents to the `colors.*` map. If a hue is genuinely missing, propose adding it to DESIGN.md (and the token name) rather than inlining raw hex.
+- **`impeccable` (argument: `typeset`)** — pull from `typography.*` tokens directly. Surface `missing-typography` findings before suggesting fonts from scratch.
+- **`impeccable` (argument: `audit`)** — run `lint --format json` as part of the audit. Include every `error` in the report; treat `contrast-ratio` warnings as blockers on AA-committed projects.
+- **`impeccable` (argument: `critique`)** — cite `## Do's and Don'ts` when flagging usability issues.
+- **`web-design-guidelines`** (if installed upstream) — cross-reference `contrast-ratio` findings with the guideline rules.
+- **`shadcn`** (if installed upstream) — map DESIGN.md `components.button-primary.*` onto shadcn's CSS variable contract (`--primary`, `--primary-foreground`, `--radius`). DESIGN.md exports provide the semantic variables that satisfy the shadcn rule "no raw `bg-blue-500`".
+
+Within this plugin, **`frontend:articulate`** pairs with design-md: articulate supplies the precise vocabulary (domain + term + state) for writing up the lint findings and token decisions.
 
 ## Authoring Flow
 
@@ -214,7 +216,7 @@ When DESIGN.md is present, **it is the source of truth**. Override heuristic def
 
 - Spec version is `alpha`. Re-check `spec --rules` if more than a week has passed since last use.
 - `export --format tailwind` still targets v3. Apply the v4 transform above until upstream ships a v4 adapter.
-- Linter WCAG findings are warnings by default — promote to errors when running `frontend:impeccable` (argument: `audit`) for AA+ commitments.
+- Linter WCAG findings are warnings by default — promote to errors when running the `impeccable` `audit` sub-command (if installed upstream) for AA+ commitments.
 - No runtime dependency. All CLI invocations go via `npx @google/design.md@latest`. Do not add `@google/design.md` to `dependencies` or `devDependencies`.
 - `alpha` status means token groups may gain or lose fields — treat unknown properties as warnings, not errors (matches the spec's "Consumer Behavior for Unknown Content" table).
 
