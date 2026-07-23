@@ -57,7 +57,7 @@ metadata:
 
 # <标题>
 
-> **前置条件：** 先阅读 [`../lark-shared/SKILL.md`](../lark-shared/SKILL.md)。
+> **前置条件：** 先阅读 [`../lark-shared/lark-shared.md`](../lark-shared/lark-shared.md)。
 
 ## 命令
 

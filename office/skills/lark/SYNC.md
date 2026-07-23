@@ -1,9 +1,9 @@
 # Lark CLI Skills Sync
 
 **Upstream**: [larksuite/cli](https://github.com/larksuite/cli) `skills/` (main branch)
-**Last sync**: 2026-07-10
-**lark-cli version**: 1.0.68
-**Synced commit**: 0dd844c
+**Last sync**: 2026-07-23
+**lark-cli version**: 1.0.72
+**Synced commit**: 67015ee
 
 ## Sync Strategy
 
@@ -16,7 +16,7 @@ Upstream ships every sub-skill as `lark-*/SKILL.md`. Claude Code / Cursor auto-d
 After each sync, `office/scripts/denest-lark-skills.py` (invoked by `sync-lark.sh`):
 
 1. Renames `lark-*/SKILL.md` → `lark-*/<dirname>.md` (e.g. `lark-doc/lark-doc.md`)
-2. Rewrites relative links (`…/lark-foo/SKILL.md` → `…/lark-foo/lark-foo.md`, `../SKILL.md` → `../<dirname>.md`)
+2. Rewrites relative links (`…/lark-foo/lark-foo.md` → `…/lark-foo/lark-foo.md`, `../SKILL.md` → `../<dirname>.md`)
 
 Only the root `SKILL.md` remains discoverable. `--check` denests a temp copy of upstream before diffing so local transforms do not look like drift.
 

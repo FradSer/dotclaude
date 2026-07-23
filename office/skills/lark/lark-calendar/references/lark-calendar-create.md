@@ -44,6 +44,7 @@ lark-cli calendar +create --summary "..." --start "..." --end "..." \
 > 自动设置 `reminders: [{"minutes": 5}]`，默认日程开始前 5 分钟提醒。
 > 自动设置 `vchat: {"vc_type": "vc"}`，默认日程包含飞书视频会议。如需其他视频会议类型或不含视频会议，请使用完整 API 命令。
 > 失败保护：若添加参会人失败（如 open_id 错误），CLI 会自动删除刚创建的空日程（回滚，不通知参会人）。
+> 搜索用户接口不支持 bot 身份，需用 `--as user` 进行搜索。
 > 审批会议室：`+create` 不暴露低频字段 `attendees[].approval_reason`。如果会议室要求审批，请使用用户身份先创建日程，再用完整 API `calendar event.attendees create --as user` 添加会议室并传 `approval_reason`。
 
 ## 高级用法（完整 API 命令）
@@ -63,6 +64,7 @@ lark-cli calendar event.attendees create \
 - 时间参数是 **Unix 秒字符串**（非 ISO 8601）。
 - 全天日程的开始日期和结束日期必须分别是日程开始的第一天和结束的最后一天；单日全天日程两者相同。
 - 手动拆成“创建日程 + 添加参会人”两步时，若第二步失败，建议删除刚创建的空日程，避免遗留无参会人的日程。
+- 设置会议 owner：`+create` 不支持，需用完整 API 命令在 `vchat.meeting_settings.owner_id` 中设置，且必须同时设置 `vchat.vc_type` 为 `vc`（代表该日程为 VC 视频会议）。仅当以应用（bot）身份在应用日历上操作时生效；owner 必须为用户身份（`ou_` open_id），不能为非用户或外部租户用户。
 
 ## 参会人类型
 
