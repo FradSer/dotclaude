@@ -1,7 +1,8 @@
 ---
 name: brainstorming
-description: Turns rough ideas into implementation-ready designs for the current repository via autonomous codebase research and BDD specs, then commits the design for your review (it runs to completion without pausing for mid-design questions). This skill should be used when the user wants to design a new software feature or multi-component change to be built in the current repo before implementation begins — including new features that do not yet reference existing code. NOT for hardware or physical-system design (sensors, devices, firmware-to-app communication, embedded behavior), questions outside this repo's codebase, single-file refactors, known-root-cause bug fixes, or "how does X work" questions (those route to systematic-debugging or direct code reading instead).
+description: Designs new software features and multi-component changes for the current repo into implementation-ready BDD specs via autonomous codebase research, then commits the design for review (runs to completion without mid-design questions). Scope covers new features, greenfield design, and multi-component changes. Not for hardware/physical-system design, out-of-repo questions, single-file refactors, or known-root-cause bugs (those go to direct edits or systematic-debugging).
 user-invocable: true
+disable-model-invocation: true
 allowed-tools: ["Read", "Write", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 

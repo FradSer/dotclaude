@@ -1,8 +1,9 @@
 ---
 name: writing-plans
-description: Creates executable implementation plans that break down designs into detailed tasks. This skill should be used when the user has completed a brainstorming design and asks to "write an implementation plan" or "create step-by-step tasks" for execution.
+description: Creates executable implementation plans that break down a brainstorming design into detailed, unambiguous per-batch tasks for execution.
 argument-hint: [design-folder-path]
 user-invocable: true
+disable-model-invocation: true
 allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Agent", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)"]
 ---
 

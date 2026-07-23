@@ -1,8 +1,9 @@
 ---
 name: executing-plans
-description: Executes written implementation plans efficiently using per-batch sub-agent coordinators. This skill should be used when the user has a completed plan.md, asks to "execute the plan", or is ready to run batches of independent tasks in parallel following BDD principles.
+description: Executes a written implementation plan via per-batch sub-agent coordinators with verification and commits between batches.
 argument-hint: [plan-folder-path]
 user-invocable: true
+disable-model-invocation: true
 allowed-tools: ["TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "Read", "Write", "Edit", "Glob", "Grep", "Agent", "Workflow", "Bash(git-agent:*)", "Bash(git:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/skills/executing-plans/scripts/batch-progress.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/seed-checklists.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/jsonl-emit.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-brief.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/review-package.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/docs-index.sh:*)", "Bash(${CLAUDE_PLUGIN_ROOT}/lib/task-ledger.sh:*)"]
 ---
 
