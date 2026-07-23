@@ -1,3 +1,4 @@
+import json
 import subprocess
 import tempfile
 import unittest
@@ -88,6 +89,69 @@ class SuperpowersRegressionTests(unittest.TestCase):
         skill = (SUPERPOWERS / "skills/executing-plans/SKILL.md").read_text()
         self.assertIn("./references/phase-2-task-creation.md", skill)
         self.assertIn("./references/definition-of-done.md", skill)
+
+    # --- Invocation-only contract (v3.8.0): superpowers must be user-manual ---
+    # The model must NOT be able to proactively/auto-dispatch any superpowers
+    # skill. This guards the removal of the SessionStart routing hook and the
+    # using-superpowers dispatcher; regressing either reintroduces model
+    # auto-invocation. See feedback memory feedback_skill_invocation_bypass.
+
+    def test_plugin_manifest_has_no_sessionstart_hook(self) -> None:
+        """The SessionStart routing-injection hook was removed in v3.8.0.
+        Its presence would re-arm the model's proactive dispatch path."""
+        manifest = json.loads(
+            (SUPERPOWERS / ".claude-plugin/plugin.json").read_text()
+        )
+        self.assertNotIn("SessionStart", manifest.get("hooks", {}),
+                         "SessionStart hook reintroduces model auto-dispatch")
+
+    def test_plugin_manifest_has_no_using_superpowers_skill(self) -> None:
+        """The using-superpowers dispatcher skill was removed in v3.8.0.
+        Its presence would let the model auto-route to other superpowers
+        skills via description trigger phrases."""
+        manifest = json.loads(
+            (SUPERPOWERS / ".claude-plugin/plugin.json").read_text()
+        )
+        skills = manifest.get("skills", [])
+        for entry in skills:
+            self.assertNotIn("using-superpowers", entry,
+                             "using-superpowers dispatcher reintroduces model auto-dispatch")
+
+    def test_using_superpowers_skill_dir_is_absent(self) -> None:
+        """No residual dispatcher directory on disk."""
+        self.assertFalse(
+            (SUPERPOWERS / "skills/using-superpowers").exists(),
+            "skills/using-superpowers/ should have been deleted in v3.8.0",
+        )
+
+    def test_session_start_hook_script_is_absent(self) -> None:
+        """No residual SessionStart hook script on disk."""
+        self.assertFalse(
+            (SUPERPOWERS / "hooks/session-start.sh").exists(),
+            "hooks/session-start.sh should have been deleted in v3.8.0",
+        )
+
+    def test_manifest_keeps_five_user_commands_and_three_internal_skills(self) -> None:
+        """Removal must not have dropped the 5 user-invocable commands or the
+        3 internal helper skills loaded within user-invoked flows."""
+        manifest = json.loads(
+            (SUPERPOWERS / ".claude-plugin/plugin.json").read_text()
+        )
+        commands = manifest.get("commands", [])
+        skills = manifest.get("skills", [])
+        self.assertEqual(len(commands), 5,
+                         f"expected 5 user commands, got {len(commands)}: {commands}")
+        self.assertEqual(len(skills), 3,
+                         f"expected 3 internal skills, got {len(skills)}: {skills}")
+        for name in (
+            "behavior-driven-development",
+            "verification-before-completion",
+            "receiving-code-review",
+        ):
+            self.assertTrue(
+                any(name in s for s in skills),
+                f"internal skill {name} missing from manifest",
+            )
 
 
 if __name__ == "__main__":
