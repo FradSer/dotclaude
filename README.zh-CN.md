@@ -42,13 +42,13 @@ claude plugin install github@frad-dotclaude
 
 ---
 
-### [superpowers](superpowers/)
+### [superdev](superdev/)
 
-高级开发工作流编排，支持 BDD 与可自我改进的 skill 库。
+以 BDD 为先的工程 skills，fork 自 mattpocock/skills v1.2.0，附带自我改进的 checklist 子系统。
 
 **安装：**
 ```bash
-claude plugin install superpowers@frad-dotclaude
+claude plugin install superdev@frad-dotclaude
 ```
 
 ---

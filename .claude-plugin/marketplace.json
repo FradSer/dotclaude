@@ -102,17 +102,17 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/refactor"
     },
     {
-      "name": "superpowers",
-      "displayName": "Superpowers",
-      "version": "3.8.0",
-      "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
+      "name": "superdev",
+      "displayName": "Superdev",
+      "version": "0.1.0",
+      "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0, with a self-improving checklist subsystem",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
-      "source": "./superpowers",
+      "source": "./superdev",
       "category": "productivity",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/superpowers"
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/superdev"
     },
     {
       "name": "plugin-optimizer",
