@@ -59,6 +59,11 @@ case "$MODE" in
 
 - **Version:** v1
 - **Mode:** spec
+- **Note:** v1 placeholder — item bodies still reference the prior plan-folder
+  artifacts (`_index.md`, `bdd-specs.md`, `architecture.md`). Run
+  `/superdev:retrospective` to evolve them toward superdev's spec artifacts
+  (Gherkin scenarios published to the issue tracker) as real evaluation data
+  accumulates.
 - **Created:** auto-seeded
 
 ## Purpose
@@ -188,6 +193,11 @@ EOF
 
 - **Version:** v1
 - **Mode:** tickets
+- **Note:** v1 placeholder — item bodies still reference the prior plan-folder
+  artifacts (`_index.md`, `task-NNN-*.md`, depends-on graph). Run
+  `/superdev:retrospective` to evolve them toward superdev's ticket artifacts
+  (tracer-bullet tickets with blocking edges on the issue tracker) as real
+  evaluation data accumulates.
 - **Created:** auto-seeded
 
 ## Purpose

@@ -45,7 +45,6 @@ if [[ "$_JSONL_EMIT_DIR" != /* ]]; then
   esac
   _JSONL_EMIT_DIR="${_base}/${_JSONL_EMIT_DIR}"
 fi
-# shellcheck source=./utils.sh
 # repo_root() inlined (superdev drops utils.sh); resolution order:
 #   1. ${CLAUDE_PROJECT_DIR}  2. git rev-parse --show-toplevel  3. ${PWD}
 repo_root() {
