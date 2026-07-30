@@ -321,6 +321,20 @@ def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult
             if not skill_dir.is_dir():
                 continue
             if not (skill_dir / "SKILL.md").exists():
+                # Bucket layout: skills/<bucket>/<skill>/SKILL.md (used by
+                # mattpocock-fork plugins). When a top-level subdir has no
+                # SKILL.md but contains subdirs that each hold one, descend
+                # into the bucket and validate each nested skill rather than
+                # flagging the bucket itself.
+                nested = [
+                    d for d in skill_dir.iterdir()
+                    if d.is_dir() and d.name not in NON_SKILL_DIRS
+                    and (d / "SKILL.md").exists()
+                ]
+                if nested:
+                    for nested_skill in nested:
+                        _check_skill_folder_contents(nested_skill, plugin_dir, result)
+                    continue
                 result.must(
                     "Missing SKILL.md",
                     file=f"skills/{skill_dir.name}/",
