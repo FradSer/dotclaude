@@ -52,3 +52,14 @@ This is the engine of implementation.
 *   **TDD** (Test-Driven Development) is a lower-level developer practice (unit tests).
 *   **BDD** (Behavior-Driven Development) is a higher-level collaboration practice (acceptance tests).
 *   **Usage:** Use BDD to define *what* to build (the requirements). Use TDD to ensure the *implementation* is correct and robust. They work best together.
+
+## 5. Iron Law Exceptions
+
+The Iron Law ("no production code without a failing test first") has exactly three legitimate exceptions — and even these should be raised with the user, not silently assumed:
+
+*   **One-off prototypes** — throwaway code answering a design question (see `/superdev:prototype`). It will be deleted, not shipped, so a regression guard adds nothing. If the prototype survives into the real codebase, the Iron Law re-applies.
+*   **Generated code** — output of a code generator or scaffolder where the *generator* is the system under test, not the generated artifact. Test the generator's contract; the generated files are downstream artifacts, not hand-written behavior.
+*   **Config files** — declarative configuration (`.feature` step definitions aside) that carries no executable behavior of its own. A misconfigured file fails at load time or via an integration test; a unit test against its literal contents would be tautological.
+
+Everything else writes a failing test first. "Too simple," "already verified manually," and "pragmatic not dogmatic" are rationalizations, not exceptions — see the Iron Law table in `SKILL.md`.
+
