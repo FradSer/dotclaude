@@ -15,10 +15,7 @@
     "claude-code"
   ],
   "commands": [
-    "./skills/consolidate/",
-    "./skills/sync/",
-    "./skills/publish/",
-    "./skills/recall/"
+    "./skills/consolidate/"
   ],
   "hooks": {
     "Stop": [
