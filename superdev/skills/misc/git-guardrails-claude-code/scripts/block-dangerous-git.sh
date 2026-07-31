@@ -1,6 +1,13 @@
 #!/bin/bash
 
 INPUT=$(cat)
+# Guard: jq is required to parse the hook's JSON input. If it is missing,
+# refuse to evaluate rather than silently treating an empty COMMAND as safe
+# (which would let dangerous git commands execute unchecked).
+if ! command -v jq >/dev/null 2>&1; then
+  echo "BLOCKED: jq not available — refusing to evaluate commands without JSON parsing" >&2
+  exit 2
+fi
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
 
 DANGEROUS_PATTERNS=(

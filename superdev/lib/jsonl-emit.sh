@@ -33,18 +33,6 @@
 
 [[ -n "${_JSONL_EMIT_LOADED:-}" ]] && return 0
 
-_JSONL_EMIT_DIR="$(dirname "${BASH_SOURCE[0]}")"
-# Resolve to an absolute path without `cd ... && pwd` — the latter doubles
-# the path under some shells. If the dirname is relative, anchor it against
-# $PWD (stripped of any trailing duplicate) without invoking pwd.
-if [[ "$_JSONL_EMIT_DIR" != /* ]]; then
-  _base="${PWD}"
-  # Defensive: if PWD somehow contains a doubled path, take the first half.
-  case "$_base" in
-    *$'\n'*) _base="${_base%%$'\n'*}" ;;
-  esac
-  _JSONL_EMIT_DIR="${_base}/${_JSONL_EMIT_DIR}"
-fi
 # repo_root() inlined (superdev drops utils.sh); resolution order:
 #   1. ${CLAUDE_PROJECT_DIR}  2. git rev-parse --show-toplevel  3. ${PWD}
 repo_root() {

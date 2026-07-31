@@ -2,14 +2,12 @@
 #
 # lib/seed-checklists.sh — Single source of truth for v1 checklist templates.
 #
-# Replaces inline template duplication previously distributed across:
-#   skills/retrospective/SKILL.md Phase 0
-#   skills/brainstorming/SKILL.md auto-seed callout
-#   skills/writing-plans/SKILL.md auto-seed callout
-#   skills/executing-plans/SKILL.md auto-seed callout
+# Seeded by:
+#   skills/retrospective/SKILL.md Phase 0 (the bootstrap caller)
+#   skills/retrospective/references/bootstrap.md (Path A/B procedure)
 #
 # Usage:
-#   seed-checklists.sh <design|plan|code> <output-path> [--force]
+#   seed-checklists.sh <spec|tickets|code> <output-path> [--force]
 #
 # By default the script REFUSES to overwrite an existing output file —
 # the checklists evolve through retrospectives and clobbering a hand-curated
