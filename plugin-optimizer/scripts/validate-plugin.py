@@ -211,10 +211,20 @@ def find_components(plugin_dir: Path) -> dict[str, list[Path]]:
     skills_dir = plugin_dir / "skills"
     if skills_dir.exists():
         for skill_dir in skills_dir.iterdir():
-            if skill_dir.is_dir():
-                skill_md = skill_dir / "SKILL.md"
-                if skill_md.exists():
-                    components["skills"].append(skill_md)
+            if not skill_dir.is_dir():
+                continue
+            skill_md = skill_dir / "SKILL.md"
+            if skill_md.exists():
+                components["skills"].append(skill_md)
+            else:
+                # Bucket layout: skills/<bucket>/<skill>/SKILL.md. When a
+                # top-level subdir has no SKILL.md but contains subdirs that
+                # each hold one, descend into the bucket so its nested skills
+                # get the same frontmatter/tool/token checks as flat-layout
+                # skills.
+                for nested in skill_dir.iterdir():
+                    if nested.is_dir() and (nested / "SKILL.md").exists():
+                        components["skills"].append(nested / "SKILL.md")
 
     monitors_file = plugin_dir / "monitors" / "monitors.json"
     if monitors_file.exists():
@@ -542,19 +552,30 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
             skills_dir = plugin_dir / "skills"
             if skills_dir.exists():
                 declared = set(commands)
+
+                def _check_user_invocable(skill_dir: Path, rel_root: str) -> None:
+                    skill_path = f"./skills/{rel_root}{skill_dir.name}/"
+                    if skill_path not in declared:
+                        content = (skill_dir / "SKILL.md").read_text()
+                        fm, _, _ = parse_frontmatter(content)
+                        if fm.get("user-invocable", "").lower() == "true":
+                            result.must(
+                                "Undeclared user-invocable skill",
+                                file=f"skills/{rel_root}{skill_dir.name}/SKILL.md",
+                                source="user-invocable: true",
+                                suggestion=f'Add "{skill_path}" to "commands" array in plugin.json',
+                            )
+
                 for skill_dir in skills_dir.iterdir():
-                    if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
-                        skill_path = f"./skills/{skill_dir.name}/"
-                        if skill_path not in declared:
-                            content = (skill_dir / "SKILL.md").read_text()
-                            fm, _, _ = parse_frontmatter(content)
-                            if fm.get("user-invocable", "").lower() == "true":
-                                result.must(
-                                    "Undeclared user-invocable skill",
-                                    file=f"skills/{skill_dir.name}/SKILL.md",
-                                    source=f'user-invocable: true',
-                                    suggestion=f'Add "{skill_path}" to "commands" array in plugin.json'
-                                )
+                    if not skill_dir.is_dir():
+                        continue
+                    if (skill_dir / "SKILL.md").exists():
+                        _check_user_invocable(skill_dir, "")
+                    else:
+                        # Bucket layout: skills/<bucket>/<skill>/SKILL.md
+                        for nested in skill_dir.iterdir():
+                            if nested.is_dir() and (nested / "SKILL.md").exists():
+                                _check_user_invocable(nested, f"{skill_dir.name}/")
 
     # Validate hooks field
     if "hooks" in manifest:
@@ -1422,8 +1443,15 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
     skills = []
     for skill_dir in skills_dir.iterdir():
-        if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
+        if not skill_dir.is_dir():
+            continue
+        if (skill_dir / "SKILL.md").exists():
             skills.append(skill_dir)
+        else:
+            # Bucket layout: descend so nested skills get token-budget checks.
+            for nested in skill_dir.iterdir():
+                if nested.is_dir() and (nested / "SKILL.md").exists():
+                    skills.append(nested)
 
     if not skills:
         result.may("No skills found")
