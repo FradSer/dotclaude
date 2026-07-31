@@ -1377,6 +1377,37 @@ def _is_verbatim_upstream_mirror(skill_dir: Path) -> bool:
         return False
 
 
+def _is_plugin_level_mirror(plugin_dir: Path) -> bool:
+    """True when the whole plugin is a synced mirror of an upstream repo
+    (marketplace.json marks it strict:false, or it ships a sync script and
+    declares itself mirrored in its README). Such plugins intentionally
+    bundle upstream-controlled content; per CLAUDE.md, strict:false relaxes
+    marketplace validation for exactly this case. Body token/line MUST caps
+    are reported but not enforced — trimming would be overwritten on the
+    next sync, so it is upstream-controlled, not a local defect."""
+    # 1. marketplace.json strict:false on this plugin
+    marketplace = plugin_dir.parent / ".claude-plugin" / "marketplace.json"
+    if marketplace.is_file():
+        try:
+            import json
+            data = json.loads(marketplace.read_text())
+            for entry in data.get("plugins", []):
+                if entry.get("name") == plugin_dir.name and entry.get("strict") is False:
+                    return True
+        except (OSError, ValueError):
+            pass
+    # 2. ships a sync script + README declares mirrored
+    has_sync = any((plugin_dir / "scripts").glob("sync-*.sh")) if (plugin_dir / "scripts").is_dir() else False
+    readme = plugin_dir / "README.md"
+    if has_sync and readme.is_file():
+        try:
+            if "mirror" in readme.read_text().lower():
+                return True
+        except OSError:
+            pass
+    return False
+
+
 def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     """Validate token budgets for progressive disclosure."""
     result = ValidationResult("tokens")
@@ -1398,6 +1429,11 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
         result.may("No skills found")
         return result
 
+    # Plugin-level mirror (marketplace strict:false or sync script + mirrored
+    # README): the whole plugin tracks an upstream, so body size is
+    # upstream-controlled and MUST caps are reported but not enforced.
+    plugin_mirror = _is_plugin_level_mirror(plugin_dir)
+
     for skill_dir in sorted(skills):
         skill_result = _analyze_skill_tokens(skill_dir)
         rel_path = f"skills/{skill_dir.name}/SKILL.md"
@@ -1408,10 +1444,12 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
         refs = skill_result["reference_tokens"]
 
         # Verbatim upstream mirrors track upstream body size; report their
-        # over-budget body but don't fail on it.
-        is_mirror = _is_verbatim_upstream_mirror(skill_dir)
-        mirror_note = " — exempt: verbatim upstream mirror (SKILL.md == reference/upstream-SKILL.md)"
-        mirror_fix = "Body tracks upstream verbatim (see SYNC.md); size is upstream-controlled, not a local defect"
+        # over-budget body but don't fail on it. A plugin-level mirror
+        # (strict:false / sync script) extends the same exemption to every
+        # skill in it — trimming any one would be overwritten on next sync.
+        is_mirror = _is_verbatim_upstream_mirror(skill_dir) or plugin_mirror
+        mirror_note = " — exempt: verbatim upstream mirror (SKILL.md == reference/upstream-SKILL.md)" if not plugin_mirror else " — exempt: plugin-level upstream mirror (marketplace strict:false / sync script)"
+        mirror_fix = "Body tracks upstream verbatim (see SYNC.md); size is upstream-controlled, not a local defect" if not plugin_mirror else "Plugin is a synced mirror; body size is upstream-controlled, not a local defect (see README)"
 
         # Build details dict for structured output
         details = {
