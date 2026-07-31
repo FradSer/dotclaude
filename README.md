@@ -42,6 +42,17 @@ claude plugin install github@frad-dotclaude
 
 ---
 
+### [superdev](superdev/)
+
+BDD-first engineering skills forked from mattpocock/skills v1.2.0, with a self-improving checklist subsystem.
+
+**Installation:**
+```bash
+claude plugin install superdev@frad-dotclaude
+```
+
+---
+
 ### [superpowers](superpowers/)
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
