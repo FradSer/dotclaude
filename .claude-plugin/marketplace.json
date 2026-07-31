@@ -230,6 +230,19 @@
       "source": "./hardware",
       "category": "development",
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/hardware"
+    },
+    {
+      "name": "memory",
+      "displayName": "Memory",
+      "version": "0.1.0",
+      "description": "Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./memory",
+      "category": "development",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/memory"
     }
   ]
 }

@@ -1,0 +1,35 @@
+{
+  "name": "memory",
+  "displayName": "Memory",
+  "version": "0.1.0",
+  "description": "Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "consolidation",
+    "sync",
+    "claude-code"
+  ],
+  "commands": [
+    "./skills/consolidate/",
+    "./skills/sync/",
+    "./skills/publish/",
+    "./skills/recall/"
+  ],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/consolidate-stop.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

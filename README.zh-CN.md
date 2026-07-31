@@ -1,11 +1,11 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-16-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-18-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 [English](README.md) | **简体中文**
 
-精心打造的 16 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 18 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -181,6 +181,17 @@ claude plugin install code-context@frad-dotclaude
 **安装：**
 ```bash
 claude plugin install utils@frad-dotclaude
+```
+
+---
+
+### [memory](memory/)
+
+双层记忆整理、同步与公开/私有分离。在 Stop 时自动整理私有 harness 记忆（Tier A），按项目 24 小时去重；提供手动 skill 整理任一层、双向同步事实、把私有记忆发布为公开、以及跨层查询。
+
+**安装：**
+```bash
+claude plugin install memory@frad-dotclaude
 ```
 
 ---
