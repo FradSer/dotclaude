@@ -10,6 +10,15 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command')
 
+# Guard: if jq could not extract a command (missing key → "null", parse
+# error → empty, or unparseable input), refuse to evaluate rather than
+# defaulting to ALLOW — a security hook that lets commands through on
+# unparseable input defeats its own purpose.
+if [[ -z "$COMMAND" || "$COMMAND" == "null" ]]; then
+  echo "BLOCKED: could not parse command from hook input — refusing to evaluate" >&2
+  exit 2
+fi
+
 DANGEROUS_PATTERNS=(
   "git push"
   "git reset --hard"
