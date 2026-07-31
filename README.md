@@ -1,11 +1,11 @@
-# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-16-blue)
+# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-18-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 16 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 18 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -181,6 +181,17 @@ General-purpose utility skills for documentation, writing, and project maintenan
 **Installation:**
 ```bash
 claude plugin install utils@frad-dotclaude
+```
+
+---
+
+### [memory](memory/)
+
+Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects. Auto-consolidates the private harness memory (Tier A) on Stop with a 24h per-project debounce, with manual skills to consolidate either layer, bidirectionally sync facts, promote a private fact to public, and recall across both.
+
+**Installation:**
+```bash
+claude plugin install memory@frad-dotclaude
 ```
 
 ---
