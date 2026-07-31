@@ -53,6 +53,17 @@ claude plugin install superdev@frad-dotclaude
 
 ---
 
+### [superpowers](superpowers/)
+
+Advanced development workflow orchestration with BDD support and self-improving skills.
+
+**Installation:**
+```bash
+claude plugin install superpowers@frad-dotclaude
+```
+
+---
+
 ### [refactor](refactor/)
 
 Code simplification and refactoring with language-specific patterns and cross-file optimization.

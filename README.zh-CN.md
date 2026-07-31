@@ -53,6 +53,17 @@ claude plugin install superdev@frad-dotclaude
 
 ---
 
+### [superpowers](superpowers/)
+
+高级开发工作流编排，支持 BDD 与可自我改进的 skill 库。
+
+**安装：**
+```bash
+claude plugin install superpowers@frad-dotclaude
+```
+
+---
+
 ### [refactor](refactor/)
 
 代码简化和重构，包含语言特定模式和跨文件优化。

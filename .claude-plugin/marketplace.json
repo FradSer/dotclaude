@@ -115,6 +115,19 @@
       "homepage": "https://github.com/FradSer/dotclaude/tree/main/superdev"
     },
     {
+      "name": "superpowers",
+      "displayName": "Superpowers",
+      "version": "3.8.0",
+      "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
+      "author": {
+        "name": "Frad LEE",
+        "email": "fradser@gmail.com"
+      },
+      "source": "./superpowers",
+      "category": "productivity",
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/superpowers"
+    },
+    {
       "name": "plugin-optimizer",
       "displayName": "Plugin Optimizer",
       "version": "0.13.1",
