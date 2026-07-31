@@ -77,6 +77,8 @@ Write the retrospective report to `docs/retros/retro-{date}-{topic}.md`:
 
 **Close the calibration loop** — **CRITICAL: do this before you stop, even when zero proposals were approved.** Append one `retrospective_run` row to `docs/retros/evolution-log.jsonl` via the canonical emit pattern (`./references/evolution-protocol.md` §"Canonical Emit Invocations"), recording `proposals_approved` and `proposals_rejected`. This row is the closure marker the *next* run's auto-scope reads — skip it and the next retrospective silently re-analyzes these specs/tickets.
 
+**CRITICAL self-check (Phase 5 closure):** after emitting the `retrospective_run` row, read back the last line of `docs/retros/evolution-log.jsonl` and confirm it carries `"event":"retrospective_run"` with this run's timestamp. `lib/jsonl-emit.sh` now exits non-zero on a write failure (warning to stderr), but a successful `exit 0` with a *malformed* jq filter can still produce no row — verify the row landed before declaring the run closed. If it did not, re-emit before stopping.
+
 ## References
 
 - `./references/bootstrap.md` - Phase 0 procedure: Path A/B, exit codes, `--force` reset

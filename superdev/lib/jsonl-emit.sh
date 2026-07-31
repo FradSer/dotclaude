@@ -75,14 +75,17 @@ repo_root_or_skip() {
   printf '%s' "$root"
 }
 
-# Append one NDJSON line. All failures swallowed; rc is always 0.
+# Append one NDJSON line. Returns the jq/write exit code so callers can
+# detect a dropped row (env-skips upstream still exit 0 by design, but an
+# actual write failure should be visible — the retrospective skill marks
+# the retrospective_run closure marker CRITICAL and a silent drop there
+# makes the next run re-analyze already-processed specs/tickets).
 write_jsonl() {
   local log_file="${1:-}"
   local jq_program="${2:-}"
   shift 2 || return 0
   [[ -z "$log_file" || -z "$jq_program" ]] && return 0
-  jq -nc "$jq_program" "$@" >> "$log_file" 2>/dev/null || true
-  return 0
+  jq -nc "$jq_program" "$@" >> "$log_file" 2>/dev/null
 }
 
 # Returns 0 if <substring> appears in the last 200 lines of <log_file>.
@@ -114,5 +117,11 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
   write_jsonl "$log_file" "$jq_program" \
     --arg timestamp "$now" \
     --arg repo_root "$root" \
-    "$@"
+    "$@" || {
+    # A dropped row here is data loss — surface it so the caller (e.g.
+    # retrospective Phase 5 closure) can retry or report, instead of
+    # silently exiting 0 and dropping the retrospective_run marker.
+    echo "warning: jsonl-emit failed to append to $log_file (jq/write error) — row may be lost" >&2
+    exit 1
+  }
 fi

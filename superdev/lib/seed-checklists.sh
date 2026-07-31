@@ -48,11 +48,29 @@ if [[ -e "$OUTPUT" && "$FORCE" != "1" ]]; then
   exit 3
 fi
 
-mkdir -p "$(dirname "$OUTPUT")"
+mkdir -p "$(dirname "$OUTPUT")" 2>/dev/null || {
+  echo "error: cannot create directory for $OUTPUT (disk/permission error)" >&2
+  exit 2
+}
+
+# write_template <output-path> <heredoc-content-via-stdin>
+# Wraps the heredoc write so a disk/permission failure exits 2 (documented
+# disk-error code) rather than leaking cat's exit code under `set -e`.
+write_template() {
+  local out="$1" rc
+  set +e
+  cat > "$out"
+  rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    echo "error: cannot write $out (disk/permission error)" >&2
+    exit 2
+  fi
+}
 
 case "$MODE" in
   spec)
-    cat > "$OUTPUT" <<'EOF'
+    write_template "$OUTPUT" <<'EOF'
 # Spec Checklist v1
 
 - **Version:** v1
@@ -186,7 +204,7 @@ Confirm the flagged verb is the primary action (not a supplement to a concrete m
 EOF
     ;;
   tickets)
-    cat > "$OUTPUT" <<'EOF'
+    write_template "$OUTPUT" <<'EOF'
 # Tickets Checklist v1
 
 - **Version:** v1
@@ -303,7 +321,7 @@ done
 EOF
     ;;
   code)
-    cat > "$OUTPUT" <<'EOF'
+    write_template "$OUTPUT" <<'EOF'
 # Code Checklist v1
 
 - **Version:** v1
