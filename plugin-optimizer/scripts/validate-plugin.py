@@ -1464,7 +1464,7 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
 
     for skill_dir in sorted(skills):
         skill_result = _analyze_skill_tokens(skill_dir)
-        rel_path = f"skills/{skill_dir.name}/SKILL.md"
+        rel_path = get_relative_path(skill_dir / "SKILL.md", plugin_dir)
 
         meta = skill_result["metadata_tokens"]
         body = skill_result["skill_tokens"]
