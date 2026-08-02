@@ -132,7 +132,7 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ### [autoresearch](autoresearch/)
 
-受 karpathy/autoresearch 启发的自主研究循环 —— 给它一个自然语言目标，它会自行推断目标文件、评估器（数值打分、客观门槛或 LLM 评分标准）和实验边界，然后迭代：先用廉价的串行轮次，遇到平台期后升级为并行的 GAN 锦标赛。适用于任意目标，而不止 ML 训练。
+受 karpathy/autoresearch 启发的自主研究循环 —— 给它一个自然语言目标，它会先推断一份推荐契约（目标文件、评估器、实验边界），再逐项与你盘问确认每个决策，然后迭代：先用廉价的串行轮次，遇到平台期后升级为并行的 GAN 锦标赛。适用于任意目标，而不止 ML 训练。
 
 **安装：**
 ```bash

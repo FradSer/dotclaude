@@ -132,7 +132,7 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ### [autoresearch](autoresearch/)
 
-Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal and it infers the artifact, the evaluator (numeric scorer, objective gate, or LLM rubric), and the experiment bounds, then iterates: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau. Works on any objective, not just ML training.
+Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal; it infers a recommended contract (artifact, evaluator, bounds), then grills each decision with you one at a time before iterating: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau. Works on any objective, not just ML training.
 
 **Installation:**
 ```bash
