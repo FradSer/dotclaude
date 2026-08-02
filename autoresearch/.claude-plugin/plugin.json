@@ -7,5 +7,17 @@
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["research", "autonomous", "loop", "experiment", "optimization", "scorer", "evaluator", "gan", "tournament", "workflow", "rubric"]
+  "keywords": ["research", "autonomous", "loop", "experiment", "optimization", "scorer", "evaluator", "gan", "tournament", "workflow", "rubric"],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
