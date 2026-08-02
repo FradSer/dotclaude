@@ -16,7 +16,7 @@ claude plugin install autoresearch@frad-dotclaude
 
 | Command | What it does |
 |---------|--------------|
-| `/autoresearch:start <goal> [overrides]` | Give it a plain-language goal; it infers the artifact, evaluator, and bounds (asking only on true ambiguity), then runs the loop in an isolated git **worktree** (your checkout is untouched). |
+| `/autoresearch:start <goal> [overrides]` | Give it a plain-language goal; it infers the artifact, evaluator, and bounds, then **grills the contract with you** (one decision at a time, each with a recommended answer — goal measurability, artifact, evaluator, bounds), and runs the loop in an isolated git **worktree** (your checkout is untouched). |
 | `/autoresearch:cancel` | Force-stop an active loop. Run from a **separate** session — the looping session is busy being re-prompted. |
 | `/autoresearch:help` | Explain the plugin and its commands. |
 
@@ -42,9 +42,9 @@ Autoresearch enforces its own bound (experiments / wall-clock / completion promi
 
 `"0"` disables the cap; or set a number comfortably above your experiment count. The variable is read at **session start**, so set it and restart Claude Code *before* the run — a plugin cannot set it for you, and it does not take effect mid-session. `/autoresearch:start` prints a reminder whenever your configured bound exceeds the active cap.
 
-## The contract (mostly inferred)
+## The contract (inferred, then grilled)
 
-Normally you just give a goal: `/autoresearch:start <plain-language goal>`. The command inspects the repo and infers everything below, asking only when the artifact or evaluator is genuinely ambiguous. Pass any flag to pin it as an override.
+Normally you just give a goal: `/autoresearch:start <plain-language goal>`. The command inspects the repo and infers a recommended contract, then grills each decision with you — one question at a time, each with a recommended answer (goal measurability, artifact, evaluator, bounds). A wrong contract — especially a wrong evaluator — wastes the whole overnight run, so the contract is a shared decision, not a silent inference. Pass any flag to pin it as an override (no re-grill for that field). Empty goal is refused.
 
 | Flag | Meaning |
 |------|---------|

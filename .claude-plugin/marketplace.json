@@ -198,8 +198,8 @@
     {
       "name": "autoresearch",
       "displayName": "Autoresearch",
-      "version": "0.8.0",
-      "description": "Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal and it infers the artifact, evaluator (numeric scorer / objective gate / LLM rubric), and bounds, then iterates: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau",
+      "version": "0.9.0",
+      "description": "Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal; it infers a recommended contract, then grills each decision with you (goal measurability, artifact, evaluator, bounds) before iterating: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
