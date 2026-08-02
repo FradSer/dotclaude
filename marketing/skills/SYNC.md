@@ -27,9 +27,9 @@ would register ~49 extra skills alongside the router.
 After each sync this plugin applies a local transform (lark-style):
 
 1. **Router** — `skills/SKILL.md` is a local `marketing` router (index table
-   generated from sub-skill frontmatter by `scripts/gen-marketing-index.py`).
+   generated from sub-skill frontmatter by `tools/skill-sync/gen-index.py`).
    It is backed up before the sync rebuilds `skills/` and restored after.
-2. **Denest** — `scripts/denest-marketing-skills.py` renames every
+2. **Denest** — `tools/skill-sync/denest.py` renames every
    `skills/<name>/SKILL.md` → `skills/<name>/<name>.md` and rewrites relative
    links (`../foo/SKILL.md` → `../foo/foo.md`, parent `../SKILL.md` → exact
    path to the owning skill's entry). Only the router `SKILL.md` remains
@@ -84,10 +84,10 @@ bash marketing/scripts/sync-marketing.sh --force    # skip confirmation
 
 ```bash
 # Re-run denest only (e.g. after a partial sync)
-python3 marketing/scripts/denest-marketing-skills.py
-python3 marketing/scripts/denest-marketing-skills.py --check
+python3 tools/skill-sync/denest.py --tree marketing/skills
+python3 tools/skill-sync/denest.py --tree marketing/skills --check
 
 # Regenerate the router index table from sub-skill frontmatter
-python3 marketing/scripts/gen-marketing-index.py
-python3 marketing/scripts/gen-marketing-index.py --check
+python3 tools/skill-sync/gen-index.py --skills marketing/skills --router marketing/skills/SKILL.md --versions marketing/VERSIONS.md
+python3 tools/skill-sync/gen-index.py --skills marketing/skills --router marketing/skills/SKILL.md --versions marketing/VERSIONS.md --check
 ```

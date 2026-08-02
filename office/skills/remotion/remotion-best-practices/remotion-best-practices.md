@@ -1,6 +1,6 @@
 ---
 name: remotion-best-practices
-description: Remotion best-practices router (shim). Use when a sub-skill points here via ../remotion-best-practices/SKILL.md — forwards to the top-level remotion router.
+description: Remotion best-practices router (shim). Use when a sub-skill points here via ../remotion-best-practices/remotion-best-practices.md — forwards to the top-level remotion router.
 metadata:
   tags: [remotion, router, shim]
 ---

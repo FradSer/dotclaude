@@ -14,23 +14,23 @@ This skill is a router for all Remotion video-creation operations. It mirrors th
 
 ## Sub-skill Index
 
-| Sub-skill | Directory | Use When |
-|-----------|-----------|----------|
-| New Project | `remotion-create/` | Scaffold a new Remotion project (`npx create-video`), design a video, start the Studio preview |
-| React Markup | `remotion-markup/` | Writing Remotion React markup — the core: animations, media, sequences, timing, fonts, effects, maps, Lottie, DOM measurement, transitions, trimming |
-| Rendering | `remotion-render/` | Rendering videos and stills (`npx remotion render/still`), transparent videos |
-| Captions | `remotion-captions/` | Transcribing, importing SRT, and displaying captions/subtitles |
-| Interactivity | `remotion-interactivity/` | Making animations editable in Remotion Studio Visual Mode |
-| SaaS / Apps | `remotion-saas/` | Building video apps — `<Player>`, rendering on Lambda/Vercel/Cloudflare/Node, client-side rendering, choosing a framework |
-| Mediabunny | `mediabunny/` | Multimedia handling in the browser — get audio/video duration, get video dimensions |
+| Sub-skill | Entry | Use When |
+|-----------|-------|----------|
+| New Project | [`remotion-create/remotion-create.md`](remotion-create/remotion-create.md) | Scaffold a new Remotion project (`npx create-video`), design a video, start the Studio preview |
+| React Markup | [`remotion-markup/remotion-markup.md`](remotion-markup/remotion-markup.md) | Writing Remotion React markup — the core: animations, media, sequences, timing, fonts, effects, maps, Lottie, DOM measurement, transitions, trimming |
+| Rendering | [`remotion-render/remotion-render.md`](remotion-render/remotion-render.md) | Rendering videos and stills (`npx remotion render/still`), transparent videos |
+| Captions | [`remotion-captions/remotion-captions.md`](remotion-captions/remotion-captions.md) | Transcribing, importing SRT, and displaying captions/subtitles |
+| Interactivity | [`remotion-interactivity/remotion-interactivity.md`](remotion-interactivity/remotion-interactivity.md) | Making animations editable in Remotion Studio Visual Mode |
+| SaaS / Apps | [`remotion-saas/remotion-saas.md`](remotion-saas/remotion-saas.md) | Building video apps — `<Player>`, rendering on Lambda/Vercel/Cloudflare/Node, client-side rendering, choosing a framework |
+| Mediabunny | [`mediabunny/mediabunny.md`](mediabunny/mediabunny.md) | Multimedia handling in the browser — get audio/video duration, get video dimensions |
 
 ## How to route
 
 1. Identify the user's intent against the **Use When** column.
 2. If the task spans several domains (e.g. "build a Remotion SaaS that renders captions"), load each relevant sub-skill in the order the task needs them.
-3. Read the sub-skill's `SKILL.md`, then follow any `references/`-style `.md` files it points to (each sub-skill folder carries its own detail files).
-4. Sub-skills reference each other via relative paths like `../remotion-markup/SKILL.md` — these resolve within this `remotion/` directory.
+3. Read the sub-skill's entry file (`<name>/<name>.md`, denested from `SKILL.md` so sub-skills are not auto-discovered), then follow any `references/`-style `.md` files it points to (each sub-skill folder carries its own detail files).
+4. Sub-skills reference each other via relative paths like `../remotion-markup/remotion-markup.md` — these resolve within this `remotion/` directory.
 
 ## Notes on cross-references
 
-Some upstream sub-skill files contain links like `[Remotion Best Practices](../remotion-best-practices/SKILL.md)`. There is no `remotion-best-practices/` directory here — that role is filled by this top-level `SKILL.md`. Treat such links as "go back to the Remotion router" (i.e. this file). All other sibling cross-references (`../remotion-markup/SKILL.md`, `../remotion-captions/SKILL.md`, etc.) resolve correctly.
+Some upstream sub-skill files contain links like `[Remotion Best Practices](../remotion-best-practices/remotion-best-practices.md)`. `remotion-best-practices/` is a local shim (not an upstream sub-skill) that forwards to this top-level router — treat those links as "go back to the Remotion router" (i.e. this file). All other sibling cross-references (`../remotion-markup/remotion-markup.md`, `../remotion-captions/remotion-captions.md`, etc.) resolve correctly.

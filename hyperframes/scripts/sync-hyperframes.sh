@@ -34,32 +34,18 @@ TEMP_DIR="/tmp/hyperframes-sync-$$"
 # 本地文件（不被覆盖）——位于 TARGET_DIR 根层，不含子目录
 LOCAL_FILES=("SKILL.md" "SYNC.md" "LICENSE" "UPSTREAM-CLAUDE.md" "UPSTREAM-AGENTS.md")
 
-# denest 脚本：子 skill SKILL.md → <dirname>.md（仅保留顶层路由器 SKILL.md）
-DENEST_SCRIPT="$SCRIPT_DIR/denest-skills.py"
+# 共享 denest 工具（repo 根 tools/skill-sync/）：子 skill SKILL.md → <dirname>.md
+DENEST_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/denest.py"
 
 # 对指定目录执行与生产相同的 denest（rename SKILL.md + 重写链接）
-# HF_TREE_ROOT=1：TARGET_DIR 就是 hyperframes 子树，顶层目录即子 skill
+# --hf-root：TARGET_DIR 就是 hyperframes 子树，顶层目录即子 skill
 apply_denest() {
     local tree="$1"
     if [ ! -f "$DENEST_SCRIPT" ]; then
-        log_error "缺少 denest 脚本: $DENEST_SCRIPT"
+        log_error "缺少共享 denest 工具: $DENEST_SCRIPT（需要完整 repo 克隆）"
         return 1
     fi
-    HF_TREE_ROOT=1 MARKETING_DIR_OVERRIDE="$tree" DENEST_SCRIPT="$DENEST_SCRIPT" python3 - <<'PY'
-from pathlib import Path
-import importlib.util
-import os
-import sys
-
-script = os.environ["DENEST_SCRIPT"]
-spec = importlib.util.spec_from_file_location("denest", script)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-mod.MARKETING_DIR = Path(os.environ["MARKETING_DIR_OVERRIDE"]).resolve()
-renamed = mod.rename_nested()
-links = mod.rewrite_links()
-print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
-PY
+    python3 "$DENEST_SCRIPT" --tree "$tree" --hf-root || return 1
 }
 
 # 帮助信息

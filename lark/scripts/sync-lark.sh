@@ -25,9 +25,9 @@ TEMP_DIR="/tmp/lark-cli-sync-$$"
 # 本地文件（不被覆盖）
 LOCAL_FILES=("SKILL.md" "SYNC.md")
 
-# 上游子 skill 以 SKILL.md 交付；同步后改名为 <dirname>.md，避免被
-# Claude/Cursor 当成独立 skill 误发现。见 denest-lark-skills.py。
-DENEST_SCRIPT="$SCRIPT_DIR/denest-lark-skills.py"
+# 共享 denest / 索引生成工具（repo 根 tools/skill-sync/）
+DENEST_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/denest.py"
+GEN_INDEX_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/gen-index.py"
 
 # 帮助信息
 show_help() {
@@ -190,24 +190,10 @@ prune_backups() {
 apply_denest() {
     local tree="$1"
     if [ ! -f "$DENEST_SCRIPT" ]; then
-        log_error "缺少 denest 脚本: $DENEST_SCRIPT"
+        log_error "缺少共享 denest 工具: $DENEST_SCRIPT（需要完整 repo 克隆）"
         return 1
     fi
-    LARK_DIR_OVERRIDE="$tree" DENEST_SCRIPT="$DENEST_SCRIPT" python3 - <<'PY'
-from pathlib import Path
-import importlib.util
-import os
-import sys
-
-script = os.environ["DENEST_SCRIPT"]
-spec = importlib.util.spec_from_file_location("denest", script)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-mod.LARK_DIR = Path(os.environ["LARK_DIR_OVERRIDE"]).resolve()
-renamed = mod.rename_nested()
-links = mod.rewrite_links()
-print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
-PY
+    python3 "$DENEST_SCRIPT" --tree "$tree" || return 1
 }
 
 # 检查差异（先对上游临时副本做 denest，再与本地比较）
@@ -322,9 +308,40 @@ sync_files() {
     log_info "正在 denest 子 skill（SKILL.md → <dirname>.md）..."
     apply_denest "$TARGET_DIR" || return 1
 
-    # 按子 skill frontmatter 刷新路由器索引表
-    if [ -f "$SCRIPT_DIR/gen-lark-index.py" ]; then
-        python3 "$SCRIPT_DIR/gen-lark-index.py" || log_warning "gen-lark-index.py 失败，请手动重跑"
+    # 按子 skill frontmatter 刷新路由器索引表（lark-shared 置顶 + 友好显示名）
+    if [ -f "$GEN_INDEX_SCRIPT" ]; then
+        python3 "$GEN_INDEX_SCRIPT" \
+            --skills "$TARGET_DIR" \
+            --router "$TARGET_DIR/SKILL.md" \
+            --hoist lark-shared \
+            --display "lark-shared=Shared Config & Auth" \
+            --display "lark-doc=Documents" \
+            --display "lark-markdown=Markdown" \
+            --display "lark-sheets=Spreadsheets" \
+            --display "lark-base=Multidimensional Tables" \
+            --display "lark-calendar=Calendar" \
+            --display "lark-im=Instant Messaging" \
+            --display "lark-mail=Email" \
+            --display "lark-task=Tasks" \
+            --display "lark-okr=OKR" \
+            --display "lark-drive=Drive" \
+            --display "lark-wiki=Wiki" \
+            --display "lark-slides=Slides" \
+            --display "lark-apps=Web Apps (Miaoda)" \
+            --display "lark-whiteboard=Whiteboard" \
+            --display "lark-approval=Approval" \
+            --display "lark-attendance=Attendance" \
+            --display "lark-contact=Contact" \
+            --display "lark-vc=Video Conference" \
+            --display "lark-vc-agent=VC Agent (live)" \
+            --display "lark-minutes=Minutes" \
+            --display "lark-note=Note" \
+            --display "lark-event=Event Subscription" \
+            --display "lark-openapi-explorer=OpenAPI Explorer" \
+            --display "lark-skill-maker=Skill Maker" \
+            --display "lark-workflow-meeting-summary=Workflow: Meeting Summary" \
+            --display "lark-workflow-standup-report=Workflow: Standup Report" \
+            || log_warning "gen-index.py 失败，请手动重跑"
     fi
 
     # 更新 SYNC.md 元数据：同步日期 / 已装 lark-cli 版本 / 同步到的 commit

@@ -33,7 +33,7 @@ auto-discover any directory containing a file named `SKILL.md`, so leaving
 those nested files would register ~19 extra skills alongside the router.
 
 After each sync, `scripts/sync-hyperframes.sh` invokes
-`scripts/denest-skills.py` with `HF_TREE_ROOT=1` (the tree
+`tools/skill-sync/denest.py` with `--hf-root` (the tree
 root IS the hyperframes sub-tree, so top-level dirs are sub-skills directly):
 
 1. Renames `<name>/SKILL.md` → `<name>/<name>.md` (e.g.

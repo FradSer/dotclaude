@@ -6,7 +6,7 @@ metadata:
 ---
 
 These are instructions for making a new Remotion project and composition.  
-If this is not the next task, see [Remotion Best Practices](../remotion-best-practices/SKILL.md)
+If this is not the next task, see [Remotion Best Practices](../remotion-best-practices/remotion-best-practices.md)
 
 ## Scaffold a project
 
@@ -25,11 +25,11 @@ Replace `my-video` with a suitable project name.
 
 ## Designing a video
 
-Keep the scaffold and add React Markup. Follow [Remotion React Markup Best Practices](../remotion-markup/SKILL.md) and [Video Layout Rules](video-layout.md) for video-first layout and text sizing guidance.
+Keep the scaffold and add React Markup. Follow [Remotion React Markup Best Practices](../remotion-markup/remotion-markup.md) and [Video Layout Rules](video-layout.md) for video-first layout and text sizing guidance.
 
 ## Interactivity Best Practices
 
-By structuring the React Markup following [Remotion Interactivity Best Practices](../remotion-interactivity/SKILL.md), you allow the user to make edits in the Studio which write back to code.
+By structuring the React Markup following [Remotion Interactivity Best Practices](../remotion-interactivity/remotion-interactivity.md), you allow the user to make edits in the Studio which write back to code.
 
 ## TailwindCSS
 
@@ -46,4 +46,4 @@ This will start a long-running process and print the server URL for the preview.
 ## Follow-up
 
 The video creation process has finished.
-For follow-up prompts, use [Remotion Best Practices](../remotion-best-practices/SKILL.md)
+For follow-up prompts, use [Remotion Best Practices](../remotion-best-practices/remotion-best-practices.md)

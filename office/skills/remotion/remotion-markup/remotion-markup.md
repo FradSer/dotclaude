@@ -6,7 +6,7 @@ metadata:
 ---
 
 This is guidance for writing Remotion React Markup.
-If this is not relevant, load [Remotion Best Practices](../remotion-best-practices/SKILL.md) instead.
+If this is not relevant, load [Remotion Best Practices](../remotion-best-practices/remotion-best-practices.md) instead.
 
 ## General rules
 
@@ -182,7 +182,7 @@ When needing to visualize audio (spectrum bars, waveforms, bass-reactive effects
 
 ## Captions
 
-When dealing with captions or subtitles, load the [Remotion Captions](../remotion-captions/SKILL.md) skill for more information.
+When dealing with captions or subtitles, load the [Remotion Captions](../remotion-captions/remotion-captions.md) skill for more information.
 
 ## Google Fonts
 

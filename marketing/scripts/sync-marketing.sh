@@ -12,7 +12,7 @@
 # LICENSE），这些由本地市场元数据取代。
 # 本地保留：scripts/ .backup/ skills/SKILL.md（路由器） skills/SYNC.md（同步文档）。
 # 同步后执行 denest（子 skill SKILL.md → <dirname>.md，避免 auto-discovery 注册
-# 49 个独立 skill）并刷新路由器 SKILL.md 的索引表（gen-marketing-index.py）。
+# 49 个独立 skill）并刷新路由器 SKILL.md 的索引表（共享 tools/skill-sync/）。
 # 刷新 marketing/skills/SYNC.md 的元数据。
 #
 
@@ -120,33 +120,19 @@ create_backup() {
     fi
 }
 
-# denest 脚本：SKILL.md → <dirname>.md 重命名 + 链接重写
-DENEST_SCRIPT="$SCRIPT_DIR/denest-marketing-skills.py"
-# 索引生成脚本：按子 skill frontmatter 刷新路由器 SKILL.md 的索引表
-GEN_INDEX_SCRIPT="$SCRIPT_DIR/gen-marketing-index.py"
+# 共享 denest 工具（repo 根 tools/skill-sync/）：SKILL.md → <dirname>.md 重命名 + 链接重写
+DENEST_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/denest.py"
+# 共享索引生成工具：按子 skill frontmatter 刷新路由器 SKILL.md 的索引表
+GEN_INDEX_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/gen-index.py"
 
 # 对指定目录执行与生产相同的 denest（rename SKILL.md + 重写链接）
 apply_denest() {
     local tree="$1"
     if [ ! -f "$DENEST_SCRIPT" ]; then
-        log_error "缺少 denest 脚本: $DENEST_SCRIPT"
+        log_error "缺少共享 denest 工具: $DENEST_SCRIPT（需要完整 repo 克隆）"
         return 1
     fi
-    MARKETING_DIR_OVERRIDE="$tree" DENEST_SCRIPT="$DENEST_SCRIPT" python3 - <<'PY'
-from pathlib import Path
-import importlib.util
-import os
-import sys
-
-script = os.environ["DENEST_SCRIPT"]
-spec = importlib.util.spec_from_file_location("denest", script)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-mod.MARKETING_DIR = Path(os.environ["MARKETING_DIR_OVERRIDE"]).resolve()
-renamed = mod.rename_nested()
-links = mod.rewrite_links()
-print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
-PY
+    python3 "$DENEST_SCRIPT" --tree "$tree" || return 1
 }
 
 check_diff() {
@@ -272,7 +258,11 @@ sync_files() {
     apply_denest "$TARGET_DIR/skills" || return 1
     # 按子 skill frontmatter 刷新路由器索引表
     if [ -f "$GEN_INDEX_SCRIPT" ]; then
-        python3 "$GEN_INDEX_SCRIPT" || log_warning "gen-marketing-index.py 失败，请手动重跑"
+        python3 "$GEN_INDEX_SCRIPT" \
+            --skills "$TARGET_DIR/skills" \
+            --router "$TARGET_DIR/skills/SKILL.md" \
+            --versions "$TARGET_DIR/VERSIONS.md" \
+            || log_warning "gen-index.py 失败，请手动重跑"
     fi
 
     # 恢复本地 SYNC.md 并刷新元数据

@@ -13,7 +13,7 @@ Uses `git sparse-checkout` to clone only the `skills/` directory from upstream `
 
 Upstream ships every sub-skill as `lark-*/SKILL.md`. Claude Code / Cursor auto-discover any directory that contains a file named `SKILL.md`, so leaving those nested files would register ~27 extra skills alongside the router.
 
-After each sync, `lark/scripts/denest-lark-skills.py` (invoked by `lark/scripts/sync-lark.sh`):
+After each sync, `tools/skill-sync/denest.py` (invoked by `lark/scripts/sync-lark.sh`):
 
 1. Renames `lark-*/SKILL.md` → `lark-*/<dirname>.md` (e.g. `lark-doc/lark-doc.md`)
 2. Rewrites relative links (`…/lark-foo/lark-foo.md` → `…/lark-foo/lark-foo.md`, `../SKILL.md` → `../<dirname>.md`)
@@ -28,7 +28,7 @@ Only the root `SKILL.md` remains discoverable. `--check` denests a temp copy of 
 
 The following files are maintained locally and are NOT overwritten by sync:
 
-- `SKILL.md` -- Top-level router skill (local orchestration layer). Its Sub-skill Index table is regenerated from sub-skill frontmatter by `lark/scripts/gen-lark-index.py` (see below) — do not hand-edit the table rows; edit the description in each `lark-*/<dirname>.md` and rerun the script.
+- `SKILL.md` -- Top-level router skill (local orchestration layer). Its Sub-skill Index table is regenerated from sub-skill frontmatter by `tools/skill-sync/gen-index.py` (see below) — do not hand-edit the table rows; edit the description in each `lark-*/<dirname>.md` and rerun the script.
 - `SYNC.md` -- This file
 
 ## Running Sync
@@ -44,8 +44,8 @@ bash lark/scripts/sync-lark.sh
 bash lark/scripts/sync-lark.sh --force
 
 # Re-run denest only (e.g. after a partial sync)
-python3 lark/scripts/denest-lark-skills.py
-python3 lark/scripts/denest-lark-skills.py --check
+python3 tools/skill-sync/denest.py --tree lark/skills
+python3 tools/skill-sync/denest.py --tree lark/skills --check
 ```
 
 ## Regenerating the SKILL.md Index Table
@@ -56,10 +56,10 @@ the real sub-directories:
 
 ```bash
 # Rewrite the index table from sub-skill frontmatter
-python3 lark/scripts/gen-lark-index.py
+python3 tools/skill-sync/gen-index.py --skills lark/skills --router lark/skills/SKILL.md
 
 # Dry-run: exit 1 if the table is stale, 0 if in sync
-python3 lark/scripts/gen-lark-index.py --check
+python3 tools/skill-sync/gen-index.py --skills lark/skills --router lark/skills/SKILL.md --check
 ```
 
 The script reads `name` / `version` / `description` from each
