@@ -1,11 +1,11 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-18-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-19-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 [English](README.md) | **简体中文**
 
-精心打造的 18 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 19 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -97,6 +97,17 @@ claude plugin install lark@frad-dotclaude
 
 ---
 
+### [marketing](marketing/)
+
+面向 AI Agent 的营销技能，镜像自 coreyhaines31/marketingskills —— CRO、文案写作、SEO、付费广告、广告创意、分析与增长。
+
+**安装：**
+```bash
+claude plugin install marketing@frad-dotclaude
+```
+
+---
+
 ### [hyperframes](hyperframes/)
 
 HyperFrames HTML 视频创作技能，镜像自 heygen-com/hyperframes —— keyframes、动画、字幕、动态图形与 remotion-to-hyperframes 转换。
@@ -121,7 +132,7 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ### [autoresearch](autoresearch/)
 
-受 karpathy/autoresearch 启发的自主研究循环 —— 你提供可编辑的目标文件、一个打印单个数值的评分命令以及优化方向；循环运行有边界的实验，仅在分数改善时保留改动，将结果记录到 results.tsv，并通过 stop hook 持续迭代。适用于任意目标，而不止 ML 训练。
+受 karpathy/autoresearch 启发的自主研究循环 —— 给它一个自然语言目标，它会自行推断目标文件、评估器（数值打分、客观门槛或 LLM 评分标准）和实验边界，然后迭代：先用廉价的串行轮次，遇到平台期后升级为并行的 GAN 锦标赛。适用于任意目标，而不止 ML 训练。
 
 **安装：**
 ```bash

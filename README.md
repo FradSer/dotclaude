@@ -1,11 +1,11 @@
-# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-18-blue)
+# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-19-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 18 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 19 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -97,6 +97,17 @@ claude plugin install lark@frad-dotclaude
 
 ---
 
+### [marketing](marketing/)
+
+Marketing skills for AI agents, mirrored from coreyhaines31/marketingskills — CRO, copywriting, SEO, paid ads, ad creative, analytics, and growth.
+
+**Installation:**
+```bash
+claude plugin install marketing@frad-dotclaude
+```
+
+---
+
 ### [hyperframes](hyperframes/)
 
 HyperFrames HTML-based video authoring skills, mirrored from heygen-com/hyperframes — keyframes, animation, captions, motion graphics, and remotion-to-hyperframes conversion.
@@ -121,7 +132,7 @@ claude plugin install plugin-optimizer@frad-dotclaude
 
 ### [autoresearch](autoresearch/)
 
-Autonomous research loop inspired by karpathy/autoresearch — you supply an editable artifact, a scorer that prints one number, and an optimization direction; it runs bounded experiments, keeps a change only if the score improves, logs to results.tsv, and iterates via a stop hook. Works on any objective, not just ML training.
+Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal and it infers the artifact, the evaluator (numeric scorer, objective gate, or LLM rubric), and the experiment bounds, then iterates: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau. Works on any objective, not just ML training.
 
 **Installation:**
 ```bash
