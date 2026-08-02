@@ -7,8 +7,9 @@ Current versions of all skills. Agents can compare against local versions to che
 | ab-testing | 2.0.0 | 2026-05-05 |
 | ad-creative | 2.8.0 | 2026-07-14 |
 | ai-seo | 2.2.0 | 2026-07-09 |
-| analytics | 2.0.0 | 2026-05-05 |
+| analytics | 2.0.1 | 2026-07-22 |
 | aso | 2.0.0 | 2026-05-05 |
+| attribution | 1.1.0 | 2026-07-23 |
 | churn-prevention | 2.0.0 | 2026-05-05 |
 | co-marketing | 2.0.0 | 2026-05-05 |
 | cold-email | 2.0.0 | 2026-05-05 |
@@ -24,6 +25,7 @@ Current versions of all skills. Agents can compare against local versions to che
 | emails | 2.0.0 | 2026-05-05 |
 | free-tools | 2.0.0 | 2026-05-05 |
 | image | 2.0.1 | 2026-05-18 |
+| influencer-marketing | 1.0.0 | 2026-07-15 |
 | launch | 2.0.1 | 2026-06-16 |
 | lead-magnets | 2.0.0 | 2026-05-05 |
 | marketing-council | 1.0.0 | 2026-07-06 |
@@ -36,8 +38,8 @@ Current versions of all skills. Agents can compare against local versions to che
 | ads | 2.2.0 | 2026-07-05 |
 | paywalls | 2.0.0 | 2026-05-05 |
 | popups | 2.0.0 | 2026-05-05 |
-| pricing | 2.0.1 | 2026-06-16 |
-| product-marketing | 2.0.0 | 2026-05-05 |
+| pricing | 2.1.0 | 2026-07-27 |
+| product-marketing | 2.1.0 | 2026-07-16 |
 | programmatic-seo | 2.0.0 | 2026-05-05 |
 | prospecting | 1.1.0 | 2026-07-13 |
 | public-relations | 1.0.0 | 2026-06-10 |
@@ -50,9 +52,29 @@ Current versions of all skills. Agents can compare against local versions to che
 | site-architecture | 2.0.0 | 2026-05-05 |
 | sms | 1.0.0 | 2026-05-21 |
 | social | 2.2.0 | 2026-07-09 |
-| video | 2.0.1 | 2026-05-18 |
+| video | 2.1.0 | 2026-07-14 |
 
 ## Recent Changes
+
+### 2.10.0 (2026-07-22)
+
+- **attribution** (new, 1.1.0): a dedicated skill for the hardest question in marketing — which efforts actually drive conversions and revenue. Fills a real gap: attribution was scattered across analytics (UTM setup), ads (platform pixels), revops (pipeline), and ai-seo (the AI blind spot), but no skill owned the *models* or the *reconciliation problem*. Two pillars. **(A) Interpretation** — the six attribution models and when each lies; MTA vs. MMM vs. incrementality and how to choose; self-reported attribution; reconciling the platform-vs-GA-vs-CRM-vs-survey disagreement (never sum across platforms; pick one source of truth; read directional trends); and the direct / branded-search / dark-social / AI blind spots. **(B) Own your attribution (first-party)** — a build runbook for instrumenting attribution yourself when you control the site/app: the identity graph, closing the `identify()` gap (adapted from Tessa Kriesel's PostHog approach), stitching conversions on third-party domains you don't own (SavvyCal/Calendly/Stripe) via metadata passthrough + webhook identity-merge, fail-closed anonymity guards, and first-touch data-quality cleanup — distilled from real production builds (Conversion Factory + Truelist). Four references (`attribution-models.md`, `measurement-paradigms.md`, `by-business-type.md` with B2B/DTC playbooks, `first-party-tracking.md`) and 7 evals covering reconciliation, model choice, the third-party stitch, ROAS incrementality, the direct/branded blind spot, the analytics boundary, and the DTC measurement stack. Pillar B also folds in **production feedback from Tessa Kriesel** (credited): the CRM last mile (sync a `source` field with confidence + basis and a paid-vs-non-paid read onto the account → revops), storing the full ordered touch path so the build track can run Pillar A's multi-touch models on real data, the "expect ~zero until the cross-subdomain stitch is verified in prod" window with a narrowly-scoped campaign-window fallback + pre-stitch backfill, and account-level rollup (excluding free-mail domains) for B2B.
+- **analytics** (2.0.0 → 2.0.1): description now hands off attribution modeling and reconciliation to the new attribution skill, keeping analytics scoped to tracking setup, event taxonomy, and UTMs.
+
+### 2.9.1 (2026-07-27)
+
+- **pricing** (2.0.1 → 2.1.0): added a **Pricing Page Teardown** — a two-axis audit of a live pricing page. Axis 1 is the classic human buyer experience (value-prop clarity, plan differentiation, cognitive load, trust signals, psychology, transparency); Axis 2 is the novel **AI-agent readiness** lens: whether the LLMs/agents that increasingly shortlist and compare tools can actually read and quote your pricing — machine-readable prices (not locked in an image or behind "Contact us"), extractable FAQ/objection coverage, per-tier depth in text, and structured data. Includes the memorable **"paste test"** (give the URL to a browsing-capable AI and ask for the plans and prices — if it can't answer, an AI shopping for your buyer can't either), a full 10-dimension rubric + scoring/report template in `references/pricing-page-teardown.md`, and hand-offs to `schema` (Product/Offer JSON-LD) and `ai-seo` (extractability, AI search-bot access, llms.txt). New eval (id 7). AI-agent-readiness lens adapted from Kyle Poyar / Growth Unhinged (learn-from-only, credited).
+
+### 2.9.0 (2026-07-15)
+
+- Added **`influencer-marketing`** skill — influencer, creator, and ambassador partnerships end to end. Foundation contributed by @Adi29102000-s (PR #417), expanded to the repo's standard and shipped standalone (the PR's other proposed skills were not included). Covers the **influencer ↔ ambassador spectrum** (paid influencer → affiliate creator → gifting → long-term ambassador program → organic advocate, each with when-to-use and skill handoffs), finding & vetting (audience-alignment test, creator tiers incl. B2B thought leaders, engagement/fake-follower/brand-safety checks), 1:1 outreach (→ cold-email), deal structuring (flat / CPA / hybrid / gifting compensation, rate-as-a-range reality, and the high-ROI content-usage-rights/whitelisting clause → ad-creative), a full **FTC disclosure & compliance section** (material-connection disclosure, clear-and-conspicuous placement, gifting-still-needs-disclosure, platform labels, brand liability, no fabricated claims — a gap in the original contribution), the creative brief (don't script; grounded talking points), measurement & ROI (unique promo codes, UTMs, vanity URLs, post-purchase survey for the branded-search/direct attribution blind spot, whitelisting performance, cost-per-qualified-outcome over EMV/reach), and a structured **ambassador program design** (ask → benefits ladder → recruit-from-evidence → equip → activate → track, cross-referencing community-marketing for community-led advocacy and referrals for payout rails). Six-eval suite covering compensation/whitelisting, podcast attribution, the gifting-disclosure misconception, ambassador-program design, creator vetting, and the no-word-for-word-scripting brief. New skill = repo y release. Total skills: 48.
+### 2.8.12 (2026-07-16)
+
+- **product-marketing** (2.0.0 → 2.1.0): the context document now carries its own **version history**. `.agents/product-marketing.md` gets a `Document version:` header (v1, v2 …) and a `## Changelog` section at the bottom — a newest-first, dated, one-line-per-revision paper trail of *what changed and why*. The update flow now reads the current version and recent changelog on open, and on save bumps the version, updates `Last updated`, and prepends a new changelog entry naming the sections touched and the reason (never rewriting past entries; skipped only for pure typo fixes). Since this doc is the shared context every other marketing skill reads, the changelog makes positioning/ICP changes traceable across a project — you can see how the positioning evolved and what a downstream skill was generating against. New eval (id 7) covers the version-bump + prepend-changelog behavior on a repositioning update.
+
+### 2.8.11 (2026-07-14)
+
+- **video** (2.0.1 → 2.1.0): added **reverse-engineering a viral edit into a reusable edit spec** (the tool-agnostic decomposition behind "copy any viral edit" — pattern from Arcads' skill, whose Omni generation model is proprietary/MCP-gated; we build only the decomposition, credited). New `references/edit-anatomy.md`: pull the reference with watch-video (visual/multimodal to read frames + caption style + cut timing) or social-fetch, extract the edit anatomy beat by beat across nine dimensions (shot/framing, cut rhythm/cuts-per-second, on-screen text, caption style, motion/punch-ins, b-roll/overlays, sound design, the first-2s hook, pacing curve), and output a per-beat **beat sheet** table plus a **style summary** of the 3–5 signature moves that make the edit recognizable (patterns over instance-logging). Includes the review-once gate (approve the beat sheet — on-screen text + scene-change placement — before executing in Remotion/Hyperframes, CapCut, or an AI restyle tool) and a hard originality guardrail (copy the editing grammar applied to your own footage/message, never the reference's footage, script, voiceover, or music). SKILL.md adds a Reverse-Engineer a Viral Edit workflow and 'copy this edit,' 'match this video style,' 'reverse-engineer this video,' 'edit like this reference' triggers. New eval (id 7). Closes #456.
 
 ### 2.8.10 (2026-07-14)
 

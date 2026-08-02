@@ -1,8 +1,8 @@
 # Marketing Skills Sync
 
 **Upstream**: [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) (main branch)
-**Last sync**: 2026-07-15
-**Synced commit**: 130847d
+**Last sync**: 2026-08-02
+**Synced commit**: 7868cb9
 
 ## Sync Strategy
 
