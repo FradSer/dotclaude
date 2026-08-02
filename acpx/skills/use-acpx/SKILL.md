@@ -38,6 +38,7 @@ Core capabilities:
 - Built-in agent registry plus raw `--agent` escape hatch
 - Claude system prompt override via `--system-prompt` / `--append-system-prompt`
 - Optional terminal capability disable via `--no-terminal` for review-only flows
+- Optional filesystem capability disable via `--no-fs` for agent-native file operations
 - Tool whitelist (`--allowed-tools`), turn cap (`--max-turns`), retry on transient failures (`--prompt-retries`)
 - Multi-agent flows via `acpx flow run` and the `acpx/flows` authoring API (`defineFlow`, `decision`, `decisionEdge`, `acp`, `action`, `compute`, `checkpoint`)
 
@@ -115,29 +116,33 @@ If prompt text is omitted and stdin is piped, `acpx` reads prompt text from stdi
 
 Friendly agent names resolve to commands:
 
-- `pi` -> `npx pi-acp`
+- `pi` -> `npx pi-acp@^0.0.31`
 - `openclaw` -> `openclaw acp`
-- `codex` -> `npx -y @agentclientprotocol/codex-acp`
-- `claude` -> `npx -y @agentclientprotocol/claude-agent-acp`
+- `codex` -> `npx -y @agentclientprotocol/codex-acp@^1.1.5`
+- `claude` -> `npx -y @agentclientprotocol/claude-agent-acp@^0.60.0`
 - `gemini` -> `gemini --acp`
 - `cursor` -> `cursor-agent acp`
 - `copilot` -> `copilot --acp --stdio`
 - `droid` -> `droid exec --output-format acp`
 - `fast-agent` -> `uvx fast-agent-mcp acp`
+- `grok-build` -> `grok agent stdio`
 - `iflow` -> `iflow --experimental-acp`
 - `kilocode` -> `npx -y @kilocode/cli acp`
 - `kimi` -> `kimi acp`
 - `kiro` -> `kiro-cli-chat acp`
-- `mux` -> `npx -y mux@^0.27.0 acp`
+- `mux` -> `npx -y mux@^0.28.0 acp`
 - `opencode` -> `npx -y opencode-ai acp`
+- `pool` -> `pool acp`
 - `qoder` -> `qodercli --acp`
 - `qwen` -> `qwen --acp`
 - `trae` -> `traecli acp serve`
+- `zeroclaw` -> `zeroclaw acp`
 
 Rules:
 
 - Default agent is `codex` for top-level `prompt`, `exec`, `compare`, and `sessions`.
 - `factory-droid` and `factorydroid` also resolve to the built-in `droid` adapter.
+- `grok-build` authenticates through the installed `grok` CLI: its agent-managed cached login when the server advertises `cached_token`, or `XAI_API_KEY` when it advertises `xai.api_key`.
 - Unknown positional agent tokens are treated as raw agent commands.
 - `--agent <command>` explicitly sets a raw ACP adapter command.
 - Do not combine a positional agent and `--agent` in the same command.
@@ -240,6 +245,7 @@ Prefix any command with an agent name: `acpx codex sessions ensure --name backen
 - `--allowed-tools <list>`: comma-separated tool whitelist (use `""` for no tools)
 - `--max-turns <count>`: cap session turn count
 - `--prompt-retries <count>`: retry failed prompt turns on transient errors (default `0`)
+- `--no-fs`: advertise ACP filesystem read/write capabilities as disabled so compatible agents use their native filesystem implementation
 - `--no-terminal`: do not advertise the ACP terminal capability
 - `--verbose`: verbose ACP/debug logs to stderr
 
@@ -269,6 +275,8 @@ Config files are merged in this order (later wins):
 Supported keys: `defaultAgent`, `defaultPermissions`, `nonInteractivePermissions`, `authPolicy`, `ttl`, `timeout`, `format`, `agents` map, `auth` map.
 
 Use `acpx config show` to inspect the resolved config and `acpx config init` to create the global template.
+
+Custom agents on Windows: define structured `agents.<name>.argv` (command plus arguments array). Unambiguous legacy `command` + `args` entries migrate automatically; raw or ambiguous commands and `.sh` wrappers must move to `argv` (with explicit migration guidance), and saved custom-agent sessions without `argv` must be recreated.
 
 For ACP `authenticate` handshakes, use either config `auth` entries or explicit `ACPX_AUTH_<METHOD_ID>` environment variables such as `ACPX_AUTH_OPENAI_API_KEY`. Ambient provider env vars like `OPENAI_API_KEY` pass through to child agents but do not trigger ACP auth-method selection on their own.
 

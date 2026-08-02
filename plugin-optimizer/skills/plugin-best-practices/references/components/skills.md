@@ -97,8 +97,8 @@ Skills support string substitution for dynamic values:
 ## Declaring in plugin.json
 
 Declare by frontmatter (see `user-invocable` and `disable-model-invocation` fields above):
-- **Knowledge-type** (`user-invocable: false`) → `plugin.json` **`skills`** field
-- **Instruction-type** (default or `user-invocable: true`) → **`commands`** field
+- **Knowledge-type** (`user-invocable: false`) → `plugin.json` **`skills`** field; name with a `using-<topic>` prefix (e.g., `using-git-worktrees`)
+- **Instruction-type** (default or `user-invocable: true`) → **`commands`** field; name with a `use-<action>` prefix (e.g., `use-kicad-cli`)
 - **`disable-model-invocation: true`** → **`commands`** (still instruction-type; prevents Claude auto-invoke)
 
 ## Best Practices
@@ -174,6 +174,7 @@ cloud-deploy/
 ```
 
 ### Must Do
+- Name by type: `use-<action>` prefix for instruction-type skills, `using-<topic>` prefix for knowledge-type skills
 - Place `SKILL.md` inside a subdirectory (e.g., `skills/my-skill/SKILL.md`)
 - Use imperative style in bodies ("Parse the file...", "Validate the input...")
 - Write frontmatter descriptions in **third person** ("This skill should be used when...")

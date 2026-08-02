@@ -100,7 +100,7 @@ Also self-check:
 
 ## Last synced
 
-- **Upstream version**: v0.11.2 (2026-06-23)
-- **Plugin version**: 0.3.0
-- **Deltas applied**: `compare` subcommand (v0.11.0), `mux` built-in agent (v0.11.0), `--mcp-config` global option (v0.11.1), `factory-droid`/`factorydroid` alias, `authPolicy` config key, `ACPX_CLAUDE_INCLUDE_USER_SETTINGS` env var.
+- **Upstream version**: v0.13.0 (2026-07-27)
+- **Plugin version**: 0.4.0
+- **Deltas applied**: `compare` subcommand (v0.11.0), `mux` built-in agent (v0.11.0), `--mcp-config` global option (v0.11.1), `factory-droid`/`factorydroid` alias, `authPolicy` config key, `ACPX_CLAUDE_INCLUDE_USER_SETTINGS` env var. Plus v0.12.0–v0.13.0: `grok-build`/`pool`/`zeroclaw` built-ins, adapter ranges refreshed (pi ^0.0.31, codex ^1.1.5, claude ^0.60.0, mux ^0.28.0), `--no-fs` global option, `grok-build` auth rule (cached login / `XAI_API_KEY`), Windows `agents.<name>.argv` breaking-change note.
 - **Local constraints**: `claude` adapter blacklisted (runs inside Claude Code).

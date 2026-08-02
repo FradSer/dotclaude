@@ -7,8 +7,8 @@ Detailed overview of Claude Code plugin component types. Per the upstream plugin
 Skills are markdown prompts that run in the main conversation context and extend knowledge or provide workflows.
 
 Two skill types are supported:
-- **Instruction-type** (`user-invocable: true` → `commands`): imperative voice, phase-based workflows (with optional "Initialization" and "Background Knowledge" pre-phase sections), user-invoked.
-- **Knowledge-type** (`user-invocable: false` → `skills`): declarative voice, topic-based references, auto-loaded.
+- **Instruction-type** (`user-invocable: true` → `commands`): imperative voice, phase-based workflows (with optional "Initialization" and "Background Knowledge" pre-phase sections), user-invoked. Name with a `use-<action>` prefix (e.g., `use-kicad-cli`).
+- **Knowledge-type** (`user-invocable: false` → `skills`): declarative voice, topic-based references, auto-loaded. Name with a `using-<topic>` prefix (e.g., `using-git-worktrees`).
 
 ### Progressive Disclosure
 
