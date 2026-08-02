@@ -7,29 +7,27 @@ scopes:
       description: Autonomous ML experimentation, GAN workflows, and rolling research in autoresearch/; does not cover plugins.
     - name: cctx
       description: Code context research, environment mapping, and repository analysis in code-context/.
-    - name: fe
-      description: Frontend web framework tooling, UI/design-system skills, and design-token work (formerly the frontend/ plugin; now spans frontend-adjacent skills across plugins).
     - name: git
-      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow.
-    - name: gitflow
+      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow/.
+    - name: gf
       description: Gitflow branch management, releases, and feature/hotfix workflows in gitflow/.
-    - name: github
+    - name: gh
       description: GitHub PR monitoring, triage, and feedback loops in github/.
     - name: hw
-      description: KiCad CLI and EDA hardware tooling (use-kicad-cli skill) in hardware/.
-    - name: marketing
-      description: Marketing skills (CRO, copywriting, SEO, ads, analytics) mirrored from coreyhaines31/marketingskills plus HyperFrames HTML video authoring skills mirrored from heygen-com/hyperframes, both in marketing/.
-    - name: office
+      description: KiCad CLI and OpenSCAD hardware tooling in hardware/.
+    - name: mkt
+      description: Marketing skills, CRO, copywriting, and HyperFrames HTML video authoring in marketing/.
+    - name: mem
+      description: Memory plugin for dual-layer sync and state consolidation in memory/.
+    - name: "off"
       description: Lark suite integration and office productivity tools in office/; does not cover coding tools.
     - name: po
       description: Plugin optimizer framework for validation and metadata in plugin-optimizer/.
-    - name: refactor
+    - name: ref
       description: Code simplification and refactoring agent and skills in refactor/.
     - name: sp
       description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/.
     - name: storm
       description: STORM article generation pipeline and researcher agents in storm/.
-    - name: swiftui
+    - name: sw
       description: SwiftUI code review and modern API best practices in swiftui/.
-    - name: utils
-      description: Documentation, changelog, and project maintenance utilities in utils/.
