@@ -5,10 +5,6 @@ description: Use acpx as a headless ACP CLI for agent-to-agent communication, al
 
 # acpx
 
-## When to use this skill
-
-Use this skill when you need to run coding agents through `acpx`, manage persistent ACP sessions, queue prompts, override the Claude system prompt, prune stale sessions, consume structured agent output from scripts, compare one prompt across multiple agents, or compose multi-agent workflows declaratively with `acpx/flows`.
-
 ## What acpx is
 
 `acpx` is a headless, scriptable CLI client for the Agent Client Protocol (ACP). It is built for agent-to-agent communication over the command line and avoids PTY scraping.
