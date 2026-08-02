@@ -54,6 +54,7 @@ Animate any custom property. Works for color, length, number — anything CSS wi
 
 - `svgOrigin` sets transform origin in the SVG's global coordinate space (not the element's local box). **Do not** combine `svgOrigin` with `transformOrigin` on the same element — pick one.
 - Animate SVG transform attributes via the same alias names (`x`, `y`, `rotation`) — GSAP handles the SVG-specific quirks.
+- **Resolve SVG geometry before building center-based transforms.** `createElementNS` is supported, but a detached, hidden, or zero-size element may not expose usable geometry when GSAP resolves a percentage `transformOrigin`. Attach and size the SVG before constructing the timeline, use an explicit `svgOrigin` when you know the canvas coordinates, or draw animated geometry around local `(0,0)` inside a positioning `<g>` for a center pivot that does not depend on a measured bounding box.
 
 ## Performance Rules
 

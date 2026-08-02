@@ -7,6 +7,8 @@
 # marketingskills)的 sync-marketing.sh 会备份并恢复此子树，互不破坏。
 # 仿 office/scripts/sync-lark.sh 模式：sparse-checkout 上游 skills/，镜像全部内容，
 # 排除本地 SKILL.md / SYNC.md（顶层路由与同步文档），按需创建备份并刷新 SYNC.md 元数据。
+# 同步后执行 denest：子 skill 的 SKILL.md → <dirname>.md（仅保留顶层路由器
+# SKILL.md），避免 19 个镜像子 skill 被 auto-discovery 注册成独立 skill。
 #
 
 set -euo pipefail
@@ -34,6 +36,34 @@ TEMP_DIR="/tmp/hyperframes-sync-$$"
 # 本地文件（不被覆盖）——位于 TARGET_DIR 根层，不含子目录
 LOCAL_FILES=("SKILL.md" "SYNC.md" "LICENSE" "UPSTREAM-CLAUDE.md" "UPSTREAM-AGENTS.md")
 
+# denest 脚本：子 skill SKILL.md → <dirname>.md（仅保留顶层路由器 SKILL.md）
+DENEST_SCRIPT="$SCRIPT_DIR/denest-marketing-skills.py"
+
+# 对指定目录执行与生产相同的 denest（rename SKILL.md + 重写链接）
+# HF_TREE_ROOT=1：TARGET_DIR 就是 hyperframes 子树，顶层目录即子 skill
+apply_denest() {
+    local tree="$1"
+    if [ ! -f "$DENEST_SCRIPT" ]; then
+        log_error "缺少 denest 脚本: $DENEST_SCRIPT"
+        return 1
+    fi
+    HF_TREE_ROOT=1 MARKETING_DIR_OVERRIDE="$tree" DENEST_SCRIPT="$DENEST_SCRIPT" python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+import os
+import sys
+
+script = os.environ["DENEST_SCRIPT"]
+spec = importlib.util.spec_from_file_location("denest", script)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+mod.MARKETING_DIR = Path(os.environ["MARKETING_DIR_OVERRIDE"]).resolve()
+renamed = mod.rename_nested()
+links = mod.rewrite_links()
+print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
+PY
+}
+
 # 帮助信息
 show_help() {
     cat << EOF
@@ -55,6 +85,10 @@ ${GREEN}示例:${NC}
 
 ${GREEN}上游仓库:${NC}
     $UPSTREAM_REPO (branch: $UPSTREAM_BRANCH, path: $UPSTREAM_PATH)
+
+${GREEN}本地变换:${NC}
+    同步后将子 skill 的 SKILL.md 重命名为 <dirname>.md
+    （仅顶层路由器 SKILL.md 可被 skill 发现）
 
 EOF
 }
@@ -184,6 +218,17 @@ check_diff() {
 
     log_info "检查文件差异..."
 
+    # 先把上游副本 denest（SKILL.md → <dirname>.md），再与本地比较，
+    # 避免 denest 被误报为变更/删除
+    local compare_dir="$TEMP_DIR/denested"
+    rm -rf "$compare_dir"
+    mkdir -p "$compare_dir"
+    while IFS= read -r -d '' item; do
+        cp -R "$item" "$compare_dir/"
+    done < <(find "$upstream_skills" -maxdepth 1 -mindepth 1 -print0)
+    apply_denest "$compare_dir" || return 1
+    upstream_skills="$compare_dir"
+
     # 检查新增和变更的文件
     while IFS= read -r -d '' upstream_file; do
         local rel_path="${upstream_file#$upstream_skills/}"
@@ -279,6 +324,10 @@ sync_files() {
     done < <(find "$upstream_skills" -maxdepth 1 -mindepth 1 -print0)
 
     log_success "同步完成: 已同步 $count 个顶层条目"
+
+    # denest 子 skill（SKILL.md → <dirname>.md），仅保留顶层路由器 SKILL.md
+    log_info "正在 denest 子 skill（SKILL.md → <dirname>.md）..."
+    apply_denest "$TARGET_DIR" || return 1
 
     # 根层功能文件（CLAUDE.md/AGENTS.md → UPSTREAM-*.md，加前缀避免与 marketing 根的 CLAUDE.md 冲突）
     for entry in "${UPSTREAM_FILES[@]}"; do

@@ -1,8 +1,8 @@
 # HyperFrames Skills Sync
 
 **Upstream**: [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes) `skills/` (main branch)
-**Last sync**: 2026-07-15
-**Synced commit**: b9be0b2
+**Last sync**: 2026-08-02
+**Synced commit**: 74fadf6
 
 ## Sync Strategy
 
@@ -26,6 +26,26 @@ unchanged once the skills are mirrored here — the sync script does NOT rewrite
 them. The mirrored upstream router lives at `hyperframes/hyperframes.md` (the
 `hyperframes` sub-skill directory); it is kept for fidelity but is NOT the
 loaded entry point — the local top-level `SKILL.md` above is.
+
+### Sub-skill denest (required)
+
+Upstream ships every sub-skill as `<name>/SKILL.md`. Claude Code / Cursor
+auto-discover any directory containing a file named `SKILL.md`, so leaving
+those nested files would register ~19 extra skills alongside the router.
+
+After each sync, `sync-hyperframes.sh` invokes
+`marketing/scripts/denest-marketing-skills.py` with `HF_TREE_ROOT=1` (the tree
+root IS the hyperframes sub-tree, so top-level dirs are sub-skills directly):
+
+1. Renames `<name>/SKILL.md` → `<name>/<name>.md` (e.g.
+   `motion-graphics/SKILL.md` → `motion-graphics/motion-graphics.md`)
+2. Rewrites relative links (`../SKILL.md` → exact path to the owning
+   sub-skill's entry, e.g. `../../media-use.md` from
+   `media-use/audio/references/`)
+
+Only the local top-level router `SKILL.md` remains discoverable. `--check`
+denests a temp copy of upstream before diffing so local transforms do not look
+like drift.
 
 ## Version Tracking
 

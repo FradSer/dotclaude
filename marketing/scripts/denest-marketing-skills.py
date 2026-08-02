@@ -61,6 +61,11 @@ def owning_subskill(path: Path) -> Path | None:
     first = parts[0]
     if first in LOCAL_FILES or first == ".backup":
         return None
+    # When the tree root IS the hyperframes sub-tree (sync-hyperframes.sh passes
+    # TARGET_DIR as MARKETING_DIR_OVERRIDE), top-level dirs are sub-skills
+    # directly — no hyperframes/ nesting to special-case.
+    if os.environ.get("HF_TREE_ROOT") == "1":
+        return Path(first)
     if first != "hyperframes":
         return Path(first)
     if len(parts) >= 2 and parts[1] not in LOCAL_FILES and parts[1] != ".backup":
@@ -102,6 +107,11 @@ def rewrite_links() -> int:
         if ".backup" in path.parts:
             continue
         owner = owning_subskill(path)
+        if owner is None:
+            # Root-level files (SKILL.md, SYNC.md, UPSTREAM-*.md, LICENSE)
+            # are local additions that describe upstream paths in prose —
+            # leave them untouched.
+            continue
         original = path.read_text(encoding="utf-8")
         updated = rewrite_text(original, owner, path)
         if updated != original:
@@ -110,14 +120,23 @@ def rewrite_links() -> int:
     return changed
 
 
+def is_hf_tree_root() -> bool:
+    """True when MARKETING_DIR IS the hyperframes sub-tree (HF_TREE_ROOT=1).
+
+    In that mode top-level dirs are hyperframes sub-skills directly — no
+    hyperframes/ nesting to special-case.
+    """
+    return os.environ.get("HF_TREE_ROOT") == "1"
+
+
 def rename_nested() -> list[str]:
     """Rename each <dirname>/SKILL.md → <dirname>/<dirname>.md. Returns renamed dirs."""
     renamed: list[str] = []
     for sub in sorted(MARKETING_DIR.iterdir()):
         if not sub.is_dir() or sub.name in LOCAL_FILES or sub.name == ".backup":
             continue
-        # Skip hyperframes/ root — it has its own SKILL.md router
-        if sub.name == "hyperframes":
+        if not is_hf_tree_root() and sub.name == "hyperframes":
+            # Skip hyperframes/ root — it has its own SKILL.md router
             continue
         src = sub / "SKILL.md"
         dst = sub / f"{sub.name}.md"
@@ -129,9 +148,10 @@ def rename_nested() -> list[str]:
         src.rename(dst)
         renamed.append(sub.name)
 
-    # Now handle hyperframes sub-skills (not the router)
+    # Now handle hyperframes sub-skills (not the router) — only when the tree
+    # root is the marketing skills dir itself.
     hyperframes_dir = MARKETING_DIR / "hyperframes"
-    if hyperframes_dir.is_dir():
+    if not is_hf_tree_root() and hyperframes_dir.is_dir():
         for sub in sorted(hyperframes_dir.iterdir()):
             if not sub.is_dir() or sub.name in LOCAL_FILES or sub.name == ".backup":
                 continue
@@ -153,12 +173,12 @@ def nested_skill_md_paths() -> list[Path]:
     for sub in sorted(MARKETING_DIR.iterdir()):
         if not sub.is_dir() or sub.name in LOCAL_FILES or sub.name == ".backup":
             continue
-        if sub.name == "hyperframes":
+        if not is_hf_tree_root() and sub.name == "hyperframes":
             continue
         if (sub / "SKILL.md").is_file():
             paths.append(sub / "SKILL.md")
     hyperframes_dir = MARKETING_DIR / "hyperframes"
-    if hyperframes_dir.is_dir():
+    if not is_hf_tree_root() and hyperframes_dir.is_dir():
         for sub in sorted(hyperframes_dir.iterdir()):
             if not sub.is_dir() or sub.name in LOCAL_FILES or sub.name == ".backup":
                 continue

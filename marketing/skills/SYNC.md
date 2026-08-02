@@ -18,11 +18,27 @@ Mirrors all functional content from upstream `main` to keep this plugin
   audit skills against the Agent Skills spec.
 
 Upstream is itself a Claude Code plugin using `"skills": "./skills"`
-auto-discovery (no router skill), so this plugin does the same — all mirrored
-skills are discovered automatically; no hand-maintained index table. Cross-skill
-references use backtick-quoted skill names (e.g. "see onboarding") resolved by
-name, so they work unchanged after mirroring. The `tools/` tree holds CLI
-wrappers some skills invoke.
+auto-discovery and ships every skill as `<name>/SKILL.md`. Claude Code / Cursor
+auto-discover any directory containing `SKILL.md`, so upstream's flat layout
+would register ~49 extra skills alongside the router.
+
+### Local router + denest (required)
+
+After each sync this plugin applies a local transform (lark-style):
+
+1. **Router** — `skills/SKILL.md` is a local `marketing` router (index table
+   generated from sub-skill frontmatter by `scripts/gen-marketing-index.py`).
+   It is backed up before the sync rebuilds `skills/` and restored after.
+2. **Denest** — `scripts/denest-marketing-skills.py` renames every
+   `skills/<name>/SKILL.md` → `skills/<name>/<name>.md` and rewrites relative
+   links (`../foo/SKILL.md` → `../foo/foo.md`, parent `../SKILL.md` → exact
+   path to the owning skill's entry). Only the router `SKILL.md` remains
+   discoverable. `--check` denests a temp copy of upstream before diffing so
+   local transforms do not look like drift.
+
+Cross-skill references use backtick-quoted skill names (e.g. "see onboarding")
+resolved by name, so they work unchanged after mirroring. The `tools/` tree
+holds CLI wrappers some skills invoke.
 
 ### Co-habitation with the hyperframes sub-tree
 
@@ -31,7 +47,8 @@ wrappers some skills invoke.
 marketing sync rebuilds `skills/` on each run, so it **backs up and restores**
 `hyperframes/` around its own sync — run `sync-hyperframes.sh` to update the
 hyperframes side independently. The two sync scripts do not disturb each
-other's mirrors.
+other's mirrors. HyperFrames applies the same denest locally (its own router
+`SKILL.md` stays; sub-skills become `<name>/<name>.md`).
 
 ### Excluded (upstream repo metadata, replaced by local marketplace metadata)
 
@@ -61,4 +78,16 @@ local edits).
 bash marketing/scripts/sync-marketing.sh --check   # dry-run
 bash marketing/scripts/sync-marketing.sh            # sync with backup
 bash marketing/scripts/sync-marketing.sh --force    # skip confirmation
+```
+
+## Re-running the Transforms
+
+```bash
+# Re-run denest only (e.g. after a partial sync)
+python3 marketing/scripts/denest-marketing-skills.py
+python3 marketing/scripts/denest-marketing-skills.py --check
+
+# Regenerate the router index table from sub-skill frontmatter
+python3 marketing/scripts/gen-marketing-index.py
+python3 marketing/scripts/gen-marketing-index.py --check
 ```

@@ -28,6 +28,7 @@ This skill is the **technical contract** — how to build one hyperframes projec
 | `references/brief-format.md`         | author `BRIEF.md` — the confirmed intent document a workflow's Setup writes and every later step reads                                                                             |
 | `references/script-format.md`        | author the optional `SCRIPT.md` locked narration                                                                                                                                   |
 | `references/subagent-dispatch.md`    | map subagent dispatch verbs (parallel fan-out / background / wait) to your harness                                                                                                 |
+| `references/frame-worker-core.md`    | the shared frame-worker role contract — each narrative workflow's packet builder prepends it to that workflow's `sub-agents/frame-worker.md` delta                                 |
 | `references/tailwind.md`             | work in a Tailwind v4 project (`init --tailwind`; runtime contract differs from Studio's v3)                                                                                       |
 
 For animation runtime specifics (GSAP API, Lottie, Three.js, etc.) go to `hyperframes-animation` → `adapters/<runtime>.md`.
@@ -52,6 +53,13 @@ The standalone root needs an explicit **sized box** (`width`/`height` in px), an
 
 Each composition registers **exactly one** `gsap.timeline({ paused: true })` at `window.__timelines["<id>"]` (key = root `data-composition-id`), built **synchronously** at page load. Render duration = root `data-duration`, not timeline length. Don't manually nest sub-timelines into the host. Full contract (incl. non-GSAP runtimes) → `references/determinism-rules.md` + `hyperframes-animation/adapters/`.
 
+### First-pass lint gotchas (a guaranteed first build failure)
+
+Two rules that `lint` **does** catch, but only after the fact — write them right the first time:
+
+- The **root** composition element must carry `data-start="0"` (alongside `data-composition-id`/`data-width`/`data-height`); omitting it fails `lint` with `root_composition_missing_data_start`.
+- Never pair a CSS initial `transform` with a GSAP tween on the **same** property — the CSS value and the tween's start fight and `lint` rejects it with `gsap_css_transform_conflict`. Set the initial state inside the tween with `gsap.fromTo(el, { x: -40 }, { x: 0 })` instead of a CSS `transform: translateX(-40px)`.
+
 ### Non-negotiable rules (silent bugs automated gates may miss)
 
 Surfaced here; full rationale in the linked reference. Do not violate:
@@ -59,7 +67,7 @@ Surfaced here; full rationale in the linked reference. Do not violate:
 - No render-time clocks / unseeded `Math.random` / network / input-state; no `repeat: -1` (use a finite count). → `determinism-rules.md`
 - Animate only the visual-property allowlist; never tween `display` or raw `visibility`. GSAP `autoAlpha` and zero-duration timeline boundary sets are the only visibility exceptions, and only on non-clip elements or wrappers inside a clip. The framework alone controls `.clip` visibility. Do not `gsap.set` later-scene clips at page load. → `determinism-rules.md`
 - No `<br>` in body text; transformed elements must be block-level + sized; pulsing absolute decoratives need peak clearance. → `determinism-rules.md`
-- `<video>`/`<audio>` must be a **direct child of the host root** (never inside a sub-comp `<template>`/wrapper); the framework owns playback. → `variables-and-media.md`
+- `<video>`/`<audio>` work at **any nesting depth** (including inside a sub-comp `<template>` or wrapper); the framework owns playback and seeks/decodes media wherever it lives. The one caveat is timelines, not placement: a sub-comp timeline can't animate host-root elements. → `variables-and-media.md`
 - Every `id` must be unique across the **assembled** page; inside a sub-comp, prefix ids with the composition id (`#<id>-hero`). Duplicate `<video>`/`<img>` ids render **blank** — the producer injects frames by `getElementById`, and cross-file dupes slip past `lint`. → `composition-patterns.md`
 - A full-screen scene fill goes on a full-bleed **child** (`position:absolute; inset:0`), never on the composition root itself — the producer's frame compositing can drop the root element's own `background` (the frame renders **black**) even though preview/`snapshot` show it correctly. → `composition-patterns.md`
 

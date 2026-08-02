@@ -10,7 +10,9 @@
 #     validate-skills-official.sh（单文件覆盖）
 # 排除上游仓库元数据（README.md CONTRIBUTING.md .github/ .gitignore FUNDING.yml
 # LICENSE），这些由本地市场元数据取代。
-# 本地保留：scripts/ .backup/ .claude-plugin/ skills/SYNC.md（同步文档）。
+# 本地保留：scripts/ .backup/ skills/SKILL.md（路由器） skills/SYNC.md（同步文档）。
+# 同步后执行 denest（子 skill SKILL.md → <dirname>.md，避免 auto-discovery 注册
+# 49 个独立 skill）并刷新路由器 SKILL.md 的索引表（gen-marketing-index.py）。
 # 刷新 marketing/skills/SYNC.md 的元数据。
 #
 
@@ -270,6 +272,21 @@ sync_files() {
     if [ -n "$hf_backup" ]; then
         cp -R "$hf_backup" "$TARGET_DIR/skills/hyperframes"
         log_info "  已恢复 skills/hyperframes/ 子树"
+    fi
+
+    # 恢复本地路由器 SKILL.md 并执行 denest（SKILL.md → <dirname>.md），
+    # 避免 49 个镜像子 skill 被 auto-discovery 注册成独立 skill
+    if [ -n "$router_backup" ]; then
+        cp "$router_backup" "$TARGET_DIR/skills/SKILL.md"
+        log_info "  已恢复 skills/SKILL.md 路由器"
+    else
+        log_warning "本地 skills/SKILL.md 不存在，跳过路由器恢复（denest 仍会执行）"
+    fi
+    log_info "正在 denest 子 skill（SKILL.md → <dirname>.md）..."
+    apply_denest "$TARGET_DIR/skills" || return 1
+    # 按子 skill frontmatter 刷新路由器索引表
+    if [ -f "$GEN_INDEX_SCRIPT" ]; then
+        python3 "$GEN_INDEX_SCRIPT" || log_warning "gen-marketing-index.py 失败，请手动重跑"
     fi
 
     # 恢复本地 SYNC.md 并刷新元数据

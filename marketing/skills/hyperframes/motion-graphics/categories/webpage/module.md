@@ -4,7 +4,16 @@
 
 ## Source (Step 2)
 
-Fetch the page via `hyperframes capture` (DOM + screenshots) or a provided screenshot → frozen project-local image(s)/DOM. `asset_needs`: `{ kind: web, source: <url>, treatment: none }`.
+Fetch the page via `hyperframes capture --json` (DOM + screenshots) or a provided screenshot → frozen project-local image(s)/DOM. `asset_needs`: `{ kind: web, source: <url>, treatment: none }`.
+
+Inspect the capture result before building. If `BLOCKED.md` exists, JSON reports `ok: false`, or the
+command exits non-zero, stop the URL-capture path and report the reason. Continue with a provided
+screenshot only when it was an explicit source from the user (or the user explicitly chooses it
+after the failure). Do not animate a blocked partial capture, invent missing DOM, or eyeball element
+coordinates from protection/challenge pages.
+
+This web need cannot use the generic asset-free fallback: it requires a usable captured screenshot
+or DOM, or a provided screenshot explicitly selected by the user. If none is available, stop.
 
 ## Vocabulary / leans on
 

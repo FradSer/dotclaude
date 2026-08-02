@@ -100,6 +100,10 @@ test("#1092 packets contain selected excerpts but never the full diff", () => {
   assert.doesNotMatch(codePacket, /code-scroll/);
   assert.ok(Buffer.byteLength(codePacket) < 32_000);
   assert.ok(result.every((packet) => packet.path.endsWith(".md")));
+
+  const role = readFileSync(join(project, ".hyperframes", "frame-packets", "_role.md"), "utf8");
+  assert.match(role, /# Frame worker — core contract/);
+  assert.match(role, /# Frame worker — PR-to-video delta/);
 });
 
 test("packet validation is atomic and leaves no partial output on overflow", () => {
@@ -135,6 +139,54 @@ test("code frames without an upstream-selected excerpt fail before dispatch", ()
       }),
     /Source excerpt/i,
   );
+});
+
+// The other half of this skill's frame-packets delta. The excerpt guard above is
+// pinned; the code-vocabulary injection was not — deleting `codeVocabularySection`
+// outright left all 455 skills tests green, so the section a code worker reads to
+// pick its registry block could have been dropped silently.
+test("a code frame carries the vocabulary excerpt for the block it names", () => {
+  const project = mkdtempSync(join(tmpdir(), "p2v-packets-vocab-"));
+  write(join(project, "frame.md"), "# frame\n");
+  write(
+    join(project, "STORYBOARD.md"),
+    `---\nformat: 1920x1080\n---\n\n## Frame 1 — Diff\n\n- duration: 4s\n- src: compositions/frames/01-diff.html\n- focal: code-diff\n\n### Source excerpt\n\n\`\`\`diff\n-oldCall()\n+newCall()\n\`\`\`\n`,
+  );
+
+  const [packet] = buildFramePackets({ projectDir: project });
+  const contents = readFileSync(packet.path, "utf8");
+
+  assert.match(contents, /## Code block excerpt \(code-diff\)/);
+  assert.match(contents, /`code-diff`/);
+});
+
+test("a code block the vocabulary does not describe still names itself for install", () => {
+  const project = mkdtempSync(join(tmpdir(), "p2v-packets-vocab-miss-"));
+  write(join(project, "frame.md"), "# frame\n");
+  write(
+    join(project, "STORYBOARD.md"),
+    `---\nformat: 1920x1080\n---\n\n## Frame 1 — Diff\n\n- duration: 4s\n- src: compositions/frames/01-diff.html\n- focal: code-not-in-the-vocabulary\n\n### Source excerpt\n\n\`\`\`diff\n-oldCall()\n+newCall()\n\`\`\`\n`,
+  );
+
+  const [packet] = buildFramePackets({ projectDir: project });
+
+  assert.match(
+    readFileSync(packet.path, "utf8"),
+    /## Code block\n\nUse registry block `code-not-in-the-vocabulary`\./,
+  );
+});
+
+test("a mechanism frame gets no code-block section at all", () => {
+  const project = mkdtempSync(join(tmpdir(), "p2v-packets-mechanism-"));
+  write(join(project, "frame.md"), "# frame\n");
+  write(
+    join(project, "STORYBOARD.md"),
+    `---\nformat: 1920x1080\n---\n\n## Frame 1 — Mechanism\n\n- duration: 4s\n- src: compositions/frames/01-mechanism.html\n- focal: the request-lifecycle flow\n`,
+  );
+
+  const [packet] = buildFramePackets({ projectDir: project });
+
+  assert.doesNotMatch(readFileSync(packet.path, "utf8"), /## Code block/);
 });
 
 test("CLI capability detection rejects skills newer than the available command surface", () => {

@@ -4,7 +4,14 @@ import { spawnSync } from "node:child_process";
 import { existsSync, statSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { resolve, join, extname, basename } from "node:path";
 import { parseArgs } from "node:util";
-import { appendRecord, findByPrompt, findByEntity, nextId, allocateId } from "./lib/manifest.mjs";
+import {
+  appendRecord,
+  findByPrompt,
+  findByEntity,
+  nextId,
+  withReservedFile,
+  withReservedFileSync,
+} from "./lib/manifest.mjs";
 import { regenerateIndex } from "./lib/index-gen.mjs";
 import { cacheGet, cacheGetByEntity, importFromCache, cachePut } from "./lib/cache.mjs";
 import { runCapability, listTypes, providerMatches, providerNamesFor } from "./lib/registry.mjs";
@@ -37,7 +44,19 @@ import {
 } from "./lib/heygen-cli.mjs";
 import { BundledSfxAssetsError, inspectBundledSfxAssets } from "./lib/bundled-sfx-provider.mjs";
 
-const INGEST_TYPES = [...listTypes(), "video"];
+const INGEST_TYPES = listTypes();
+const DEFAULT_EXT = {
+  bgm: ".wav",
+  sfx: ".mp3",
+  voice: ".wav",
+  image: ".jpg",
+  icon: ".svg",
+  logo: ".svg",
+  brand: ".png",
+  video: ".mp4",
+  grade: ".cube",
+  lut: ".cube",
+};
 
 // resolve shells `fetch`/`freezeUrl` and modern ESM; 18 is the floor where those
 // exist without flags. Named so the --doctor node check verifies something real
@@ -60,8 +79,11 @@ const { values: args } = parseArgs({
     from: { type: "string" },
     params: { type: "string" },
     for: { type: "string" },
+    analyze: { type: "boolean", default: false },
     "local-only": { type: "boolean", default: false },
     provider: { type: "string" },
+    "avatar-id": { type: "string" },
+    "voice-id": { type: "string" },
     json: { type: "boolean", default: false },
     help: { type: "boolean", short: "h", default: false },
   },
@@ -94,8 +116,11 @@ Options:
   --params <json> Build an explicit parametric LUT (lut/grade only)
   --for <media>   Analyze a local image/video and add measured grade adjust
                   suggestions (grade only)
+  --analyze       Return --for grade evidence without recording a candidate
   --local-only    Offline: skip every network provider
   --provider      Force one generator (e.g. codex, mflux, kokoro, heygen)
+  --avatar-id     Override the default avatar for heygen.video generation
+  --voice-id      Override the default voice for voice/heygen.video generation
   --json          Output JSON instead of one-line result
   --help, -h      Show this help`);
   process.exit(0);
@@ -172,6 +197,26 @@ if (args.reuse !== undefined) {
 // Ingest: freeze a user-supplied local file or direct public URL (no search).
 if (args.from) {
   await ingest(args.from);
+  process.exit(0);
+}
+
+if (args.analyze) {
+  if (type !== "grade" || !args.for) {
+    console.error("error: --analyze requires --type grade and --for <media>");
+    process.exit(2);
+  }
+  const mediaPath = resolve(args.for);
+  if (!existsSync(mediaPath)) {
+    console.error(`error: --for file not found: ${mediaPath}`);
+    process.exit(2);
+  }
+  const analysis = analyzeMediaGrade(mediaPath);
+  if (args.json) {
+    console.log(JSON.stringify({ ok: true, type: "grade-analysis", ...analysis }));
+  } else {
+    console.log(formatMeasuredNote(mediaPath, analysis.measured));
+    console.log(`suggested adjust: ${JSON.stringify(analysis.adjust)}`);
+  }
   process.exit(0);
 }
 
@@ -310,10 +355,8 @@ async function run() {
   const cacheHit = forced ? null : cacheGet(intent, type);
   if (cacheHit) {
     const ext = extname(cacheHit.cached_path);
-    const { id, localPath } = allocateId(projectDir, type, ext);
-    const imported = localizeImportedRecord(
-      importFromCache(cacheHit, projectDir, id, localPath),
-      localPath,
+    const imported = withReservedFileSync(projectDir, type, ext, ({ id, localPath }) =>
+      localizeImportedRecord(importFromCache(cacheHit, projectDir, id, localPath), localPath),
     );
     if (imported) {
       appendRecord(projectDir, imported);
@@ -326,10 +369,11 @@ async function run() {
     const entityCacheHit = cacheGetByEntity(entity);
     if (entityCacheHit && typesMatch(entityCacheHit.type, type)) {
       const ext = extname(entityCacheHit.cached_path);
-      const { id, localPath } = allocateId(projectDir, type, ext);
-      const imported = localizeImportedRecord(
-        importFromCache(entityCacheHit, projectDir, id, localPath),
-        localPath,
+      const imported = withReservedFileSync(projectDir, type, ext, ({ id, localPath }) =>
+        localizeImportedRecord(
+          importFromCache(entityCacheHit, projectDir, id, localPath),
+          localPath,
+        ),
       );
       if (imported) {
         appendRecord(projectDir, imported);
@@ -342,7 +386,14 @@ async function run() {
   // Offline guard: --local-only skips every remote provider (HeyGen catalog),
   // leaving the project + global cache and any local provider.
   const localOnly = args["local-only"];
-  const ctx = { entity, projectDir, localOnly, provider: args.provider };
+  const ctx = {
+    entity,
+    projectDir,
+    localOnly,
+    provider: args.provider,
+    avatarId: args["avatar-id"],
+    voiceId: args["voice-id"],
+  };
 
   // Adherence nudge (offline, no auto-reuse): the exact-cache floor missed and
   // we're about to fetch/generate. If lexically-similar assets already exist,
@@ -433,17 +484,21 @@ async function run() {
   // 5. freeze + register (atomic id+file reservation so concurrent resolves
   // can't collide on an id during the download — MU-23)
   const ext = searchResult.ext || extFromUrl(searchResult.url || "") || defaultExt(type);
-  const { id, localPath } = allocateId(projectDir, type, ext);
-  const fullPath = join(projectDir, localPath);
-
-  if (searchResult.localPath) {
-    freezeLocalFile(searchResult.localPath, fullPath);
-  } else if (searchResult.url) {
-    await freezeUrl(searchResult.url, fullPath);
-  } else {
-    console.error("error: provider returned no url or localPath");
-    process.exit(1);
-  }
+  const { id, localPath, fullPath } = await withReservedFile(
+    projectDir,
+    type,
+    ext,
+    async (reservation) => {
+      if (searchResult.localPath) {
+        freezeLocalFile(searchResult.localPath, reservation.fullPath);
+      } else if (searchResult.url) {
+        await freezeUrl(searchResult.url, reservation.fullPath);
+      } else {
+        throw new Error("provider returned no url or localPath");
+      }
+      return reservation;
+    },
+  );
 
   const record = {
     id,
@@ -522,32 +577,32 @@ function freezeGeneratedLut(
     validationErrorPrefix = "generated LUT failed validation",
   },
 ) {
-  const { id, localPath } = allocateId(projectDir, type, ".cube");
-  const fullPath = join(projectDir, localPath);
-  const tmpPath = `${fullPath}.tmp`;
-  try {
-    // Write + validate at .tmp, then atomic rename, so a crash between write and
-    // validate can't leave an invalid .cube at the final path.
-    writeFileSync(tmpPath, buildCube(params));
-    const check = validateCubeFile(tmpPath);
-    if (!check.ok) throw new Error(check.error);
-    renameSync(tmpPath, fullPath);
-  } catch (err) {
-    rmSync(tmpPath, { force: true });
-    throw new Error(`${validationErrorPrefix}: ${err.message}`);
-  }
-  return {
-    id,
-    localPath,
-    fullPath,
-    lut: { src: localPath, intensity: 1 },
-    source: "generated",
-    description,
-    metadata: {
-      provider: "cube_lut.builder",
-      provenance: { params },
-    },
-  };
+  return withReservedFileSync(projectDir, type, ".cube", ({ id, localPath, fullPath }) => {
+    const tmpPath = `${fullPath}.tmp`;
+    try {
+      // Write + validate at .tmp, then atomic rename, so a crash between write and
+      // validate can't leave an invalid .cube at the final path.
+      writeFileSync(tmpPath, buildCube(params));
+      const check = validateCubeFile(tmpPath);
+      if (!check.ok) throw new Error(check.error);
+      renameSync(tmpPath, fullPath);
+    } catch (err) {
+      rmSync(tmpPath, { force: true });
+      throw new Error(`${validationErrorPrefix}: ${err.message}`);
+    }
+    return {
+      id,
+      localPath,
+      fullPath,
+      lut: { src: localPath, intensity: 1 },
+      source: "generated",
+      description,
+      metadata: {
+        provider: "cube_lut.builder",
+        provenance: { params },
+      },
+    };
+  });
 }
 
 function exitError(message, status = 1) {
@@ -795,10 +850,16 @@ async function ingest(src) {
     process.exit(2);
   }
   const ext = extname(isUrl ? new URL(src).pathname : src) || defaultExt(type);
-  const { id, localPath } = allocateId(projectDir, type, ext);
-  const fullPath = join(projectDir, localPath);
-  if (isUrl) await freezeUrl(src, fullPath);
-  else freezeLocalFile(resolve(src), fullPath);
+  const { id, localPath, fullPath } = await withReservedFile(
+    projectDir,
+    type,
+    ext,
+    async (reservation) => {
+      if (isUrl) await freezeUrl(src, reservation.fullPath);
+      else freezeLocalFile(resolve(src), reservation.fullPath);
+      return reservation;
+    },
+  );
   if (type === "lut" || type === "grade") {
     try {
       const check = validateCubeFile(fullPath);
@@ -994,7 +1055,7 @@ function runDoctor() {
     fix: nodeOk ? "" : `upgrade Node to >= v${MIN_NODE_VERSION}`,
   });
 
-  // ffmpeg AND ffprobe are both strictly required (see SKILL.md); the exit code
+  // ffmpeg AND ffprobe are both strictly required (see references/setup-providers.md); the exit code
   // must reflect that so a script gating on `--doctor` doesn't pass with ffprobe
   // missing and then break at the first probe call.
   const ffmpeg = checks.find((check) => check.name === "ffmpeg on PATH");
@@ -1112,10 +1173,8 @@ async function reuseGlobal(shaArg) {
     process.exit(2);
   }
   const ext = extname(rec.cached_path || "") || defaultExt(type);
-  const { id, localPath } = allocateId(projectDir, type, ext);
-  const imported = localizeImportedRecord(
-    importFromCache(rec, projectDir, id, localPath),
-    localPath,
+  const imported = withReservedFileSync(projectDir, type, ext, ({ id, localPath }) =>
+    localizeImportedRecord(importFromCache(rec, projectDir, id, localPath), localPath),
   );
   if (!imported) {
     console.error(`error: cache entry for "${shaArg}" is incomplete or missing on disk`);
@@ -1186,19 +1245,6 @@ function extFromUrl(url) {
     return null;
   }
 }
-
-const DEFAULT_EXT = {
-  bgm: ".wav",
-  sfx: ".mp3",
-  voice: ".wav",
-  image: ".jpg",
-  icon: ".svg",
-  logo: ".svg",
-  brand: ".png",
-  video: ".mp4",
-  grade: ".cube",
-  lut: ".cube",
-};
 
 function defaultExt(type) {
   return DEFAULT_EXT[type] || ".bin";
