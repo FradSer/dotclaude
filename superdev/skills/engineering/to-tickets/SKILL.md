@@ -108,8 +108,8 @@ In either form, avoid specific file paths or code snippets — they go stale fas
 
 After publishing, optionally apply the tickets-quality checklist so the self-improvement loop (`/superdev:retrospective`) has spec/tickets-mode input to learn from — not just code-mode (which `/superdev:code-review` supplies).
 
-- Resolve `docs/retros/checklists/tickets-v{N}.md` (highest N). If none exists, skip — the retrospective will bootstrap it on its first run.
+- Resolve `docs/retros/checklist-tickets.md`. If it doesn't exist, skip — the retrospective will bootstrap it on its first run.
 - Apply each item to the ticket set you just published (coverage, dependency-edge correctness, test-pairing), emitting a binary PASS/FAIL per item with the ticket id as evidence.
-- Append the per-item results to the ticket set's evaluation record (a `tickets-evaluation.md` beside the tickets, or a tracker comment) so `/superdev:retrospective` can read them.
+- Report the per-item results in this conversation (no file is written — retrospective reads the outcomes from the conversation and the published tickets).
 
 This step is the spec/tickets counterpart of `/superdev:code-review` step 5.5's Standards-axis checklist scoring — it closes the loop so every checklist mode has at least one producing consumer.

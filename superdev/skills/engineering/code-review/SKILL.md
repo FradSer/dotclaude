@@ -79,11 +79,17 @@ Present the two reports under `## Standards` and `## Spec` headings, verbatim or
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes — that's the reranking the separation exists to prevent.
 
+### 5.4 Memory read-before (Standards axis)
+
+Before scoring, load the project's known traps: `Glob docs/memory/*.md`, then read every file whose frontmatter `category` is `pitfall` or `convention` and whose `summary` is topically related to this review (the diff's files, patterns, or stack). These are evaluator-verified failure modes this repo already paid for.
+
+In step 5.5's Standards scoring, treat a read memory file as a red flag: if the diff exhibits a known pitfall, the item FAILs and its evidence cites the memory file (`docs/memory/pitfall_<slug>.md`). If `docs/memory/` does not exist, skip this step.
+
 ### 5.5 Binary verdict + refute-before-PASS
 
 After presenting the two reports, emit a binary verdict per axis:
 
-- **Standards axis**: apply `docs/retros/checklists/code-v{N}.md` (highest N) if present; each item PASS/FAIL with `file:line` evidence. If no checklist exists, skip scoring and report "no code checklist seeded — run /superdev:retrospective to bootstrap."
+- **Standards axis**: apply `docs/retros/checklist-code.md` if present; each item PASS/FAIL with `file:line` evidence. If no checklist exists, skip scoring and report "no code checklist seeded — run /superdev:retrospective to bootstrap."
 - **Spec axis**: binary PASS (all Gherkin scenarios in the spec demonstrably implemented) / REWORK (any scenario missing/partial/wrong).
 
 **Refute-before-PASS (red-team protocol):** Before assigning PASS to either axis, attempt to refute your own PASS:

@@ -2,14 +2,23 @@
 
 Detailed analysis logic for the retrospective skill. Adapted from superpowers' analysis-patterns for the superdev spec/ticket workflow: `design`→`spec`, `plan`→`tickets`, `code` kept.
 
+## Evaluation Data Source
+
+There are no evaluation files on disk. The evaluation signal comes from:
+
+1. **This conversation** — the checklist PASS/FAIL outcomes of the `/superdev:code-review` runs and the self-evaluate steps of `/superdev:to-spec` / `/superdev:to-tickets` that produced the specs/tickets being analyzed.
+2. **The produced artifacts themselves** — the spec (Gherkin scenarios), tickets, and code under review, read to verify the claimed outcomes.
+3. **Git history** — post-correction commits (Phase 2 step 5) and, on cold start, the bootstrap analysis (below).
+
+Count distinct specs/tickets (not evaluation rounds) when aggregating.
+
 ## Failure Frequency Analysis
 
 For each checklist item across all input specs/tickets:
 
-1. Read all `evaluation-round-*.md` files (produced by `/superdev:code-review`)
-2. Parse the Checklist Results table for each report
-3. Count distinct specs/tickets (not evaluation rounds) where the item has at least one FAIL
-4. Sort by frequency descending
+1. Collect the checklist results from the review outcomes (per item: PASS/FAIL with evidence)
+2. Count distinct specs/tickets where the item has at least one FAIL
+3. Sort by frequency descending
 
 Output format:
 
@@ -27,7 +36,7 @@ Output format:
 A plateau ticket is one that received REWORK across 2+ consecutive evaluation rounds, with the same or similar error each time.
 
 Detection process:
-1. For each spec/ticket, read evaluation rounds sequentially
+1. For each spec/ticket, list the review rounds in order
 2. Track per-ticket verdict history: `[PASS, REWORK, REWORK, PASS]`
 3. Identify consecutive REWORK streaks of length >= 2
 4. Extract the rework item from each round -- if the same Item ID FAILs, it's a plateau
@@ -50,9 +59,9 @@ Items that have never FAILed may not be detecting genuine issues.
 Detection process:
 1. For each checklist item, count total evaluation reports where it was applied
 2. Count total FAILs for that item
-3. Items with 0 FAILs and 10+ total reports are candidates for REMOVE
+3. Items with 0 FAILs and 3+ total reports are candidates for REMOVE (the 3+ threshold matches the evolution-protocol REMOVE threshold — see its history section for why it was lowered from 10+)
 
-Caveat: Some items are legitimately easy to satisfy (e.g., "file exists"). The user must confirm that the pattern is no longer a real failure mode before removing.
+Caveat: Some items are legitimately easy to satisfy (e.g., "file exists"). Check whether the pattern is still a real failure mode before removing — the checklist should shrink only when an item is dead weight, not when it is simply cheap to satisfy.
 
 Output format:
 
@@ -61,15 +70,12 @@ Output format:
 
 | Item ID | Mode | Reports evaluated | FAILs | Candidate action |
 |---------|------|-------------------|-------|-------------------|
-| TICKETS-GRAN-01 | tickets | 12 | 0 | REMOVE candidate |
+| TICKETS-GRAN-01 | tickets | 5 | 0 | REMOVE candidate |
 ```
 
 ## Variety Gap Analysis
 
-Read completion summaries for entries matching:
-`"Spec/ticket {N}: all items PASS after {M} rework rounds"`
-
-These indicate the checklist missed the failure mode that caused rework. Cross-reference with the rework items to identify what was failing.
+Specs/tickets where all items PASS but 2+ rework rounds occurred. These indicate the checklist missed the failure mode that caused rework. Cross-reference with the rework items to identify what was failing.
 
 Output format:
 
@@ -83,7 +89,7 @@ Output format:
 
 ## Post-Correction Mining (advisory)
 
-superpowers mined post-plan git commits via a `lib/post-plan-diff.sh` script; superdev drops that lib script and folds the signal into prose advisory. When scanning, look for commits on spec/ticket-related files that arrived *after* the `/superdev:code-review` verdict:
+Scan git history for commits on spec/ticket-related files that arrived *after* the review verdict:
 
 - `fix:`, `refactor:`, `style:`, `perf:` prefixes touching files the spec/ticket covers
 - Each such commit is the user correcting superdev output the checklist did not catch
@@ -101,7 +107,7 @@ When a code-mode item (CODE-VER, CODE-QUAL) persistently FAILs, check whether th
 
 ## Bootstrap Analysis (Phase 0 Full History)
 
-Runs only on cold-start: no completed specs/tickets, no evaluation reports, ≥ 50 commits in git history. The goal is to seed v1 checklists with project-specific items drawn from the actual failure patterns the project has already corrected — so the first real evaluation run is not starting from a purely generic rubric.
+Runs only on cold-start: no completed specs/tickets, no evaluation signal, ≥ 50 commits in git history. The goal is to seed checklists with project-specific items drawn from the actual failure patterns the project has already corrected — so the first real evaluation run is not starting from a purely generic rubric.
 
 ### 1. Commit Classification
 
@@ -158,11 +164,11 @@ Item ID naming: `{MODE}-{CATEGORY}-{NN}` where CATEGORY is a 3–6 letter slug d
 
 **Check method quality bar**: prefer computational (grep/exit-code). If the pattern requires judgment, write an anchored inferential check — grep narrows candidates, the `/superdev:code-review` refutation protocol confirms. Every check must be executable by `/superdev:code-review` step 5.5 without project-specific tooling.
 
-### 6. Append to Seeded v1 Files
+### 6. Append to Seeded Checklists
 
 For each mode that received ≥ 1 item:
 
-1. Read the seeded `{mode}-v1.md`
+1. Read the seeded `checklist-{mode}.md`
 2. Insert `## Project-Specific Items (Bootstrap Analysis)` immediately before `## Evaluation Protocol`
 3. Under the new section, add a one-line preamble: `Items derived from {N} feedback commits across {M} git history commits. Generated {date}.`
 4. Append each generated item

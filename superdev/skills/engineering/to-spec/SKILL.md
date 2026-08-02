@@ -82,8 +82,8 @@ Any further notes about the feature.
 
 After publishing the spec, optionally apply the spec-quality checklist so the self-improvement loop (`/superdev:retrospective`) has spec-mode input to learn from — not just code-mode (which `/superdev:code-review` supplies).
 
-- Resolve `docs/retros/checklists/spec-v{N}.md` (highest N). If none exists, skip — the retrospective will bootstrap it on its first run.
+- Resolve `docs/retros/checklist-spec.md`. If it doesn't exist, skip — the retrospective will bootstrap it on its first run.
 - Apply each item to the spec you just wrote (scenario coverage, requirement traceability, declarative Gherkin), emitting a binary PASS/FAIL per item with the spec section/scenario as evidence.
-- Append the per-item results to the spec's evaluation record (a `spec-evaluation.md` beside the spec, or a tracker comment) so `/superdev:retrospective` can read them.
+- Report the per-item results in this conversation (no file is written — retrospective reads the outcomes from the conversation and the published spec).
 
 This step is the spec counterpart of `/superdev:code-review` step 5.5's Standards-axis checklist scoring — it closes the loop so every checklist mode has at least one producing consumer.
