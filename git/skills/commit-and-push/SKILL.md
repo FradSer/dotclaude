@@ -8,10 +8,10 @@ allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)"]
 
 CRITICAL:
 - Do NOT run `git status`, `git diff`, `git log`, or any other commands before `git-agent commit`.
-- Always pass `--co-author` to `git-agent commit`. If `$ARGUMENTS` is non-empty, use it verbatim. Otherwise self-derive from your own runtime model identity: take the model identifier from your own system prompt, map it to a provider domain via the table below, and build `<Display Name> <noreply@<domain>>`. Never run a commit without `--co-author`.
+- Always pass `--co-author` to `git-agent commit`. If `$ARGUMENTS` is non-empty, use it verbatim. Otherwise self-derive from your own runtime model identity: take the model identifier from your own system prompt, map it to a provider domain via the table below, normalize the variant (see step 2), and build `<Display Name> <noreply@<domain>>`. Never run a commit without `--co-author`.
 
 1. Derive a one-sentence intent from the conversation.
-2. Resolve `<co-author>`: if `$ARGUMENTS` is non-empty use it verbatim; otherwise pick the row below whose model-prefix matches the model named in your own system prompt, and build `<Display Name> <noreply@<domain>>` (e.g. `Claude Opus 4.7 <noreply@anthropic.com>`, `Grok 4.5 <noreply@x.ai>`, `GLM-4.5 <noreply@zhipuai.cn>`).
+2. Resolve `<co-author>`: if `$ARGUMENTS` is non-empty use it verbatim; otherwise pick the row below whose model-prefix matches the model named in your own system prompt, normalize the variant — strip `[...]` context annotations (e.g. `[1m]`), replace `-`/`_` with spaces, join consecutive digit tokens with `.`, title-case each word (e.g. `deepseek-v4-flash[1m]` → `DeepSeek V4 Flash`) — and build `<Display Name> <noreply@<domain>>` (e.g. `Claude Opus 4.7 <noreply@anthropic.com>`, `Grok 4.5 <noreply@x.ai>`, `GLM-4.5 <noreply@zhipuai.cn>`).
 
    | Model prefix | Display Name | noreply domain |
    |---|---|---|
