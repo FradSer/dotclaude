@@ -38,7 +38,6 @@ memory 层。一文件一事实，存 `docs/memory/<category>_<slug>.md`，被�
   - writing-plans — Phase 4 reflection FAIL 需返工
   - executing-plans — intra-plan-learning "variety gap"（2+ rework round 但最终 PASS）
   - systematic-debugging — 现有 3+ failed-fixes 触发，或显式 cross-cutting gotcha；单步折进完成 turn，不新增 phase/commit 义务
-  - retrospective — 现有 ADD/MODIFY 阈值 + plateau/variety 非缺口根因（2+ 轮）
 
 ## 与 Tier A 互补，不重复
 

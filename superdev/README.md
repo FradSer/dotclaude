@@ -1,6 +1,6 @@
 # Superdev Plugin
 
-BDD-first engineering skills forked from [mattpocock/skills](https://github.com/mattpocock/skills) v1.2.0, with a self-improving checklist subsystem.
+BDD-first engineering skills forked from [mattpocock/skills](https://github.com/mattpocock/skills) v1.2.0.
 
 **Version:** 0.1.0
 
@@ -10,7 +10,6 @@ A Claude Code plugin that adapts Matt Pocock's engineering skill set (grilling �
 
 - The `tdd` skill is replaced by `bdd`, merging mattpocock's seams / vertical-slice / tracer-bullet vocabulary with the Gherkin / Iron Law / discovery→formulation→automation discipline.
 - `to-spec` produces Gherkin scenarios as executable specifications; `code-review`'s Spec axis verifies against them.
-- A `retrospective` skill re-implements superpowers' self-improvement loop (checklist evolution via ADD/REMOVE/MODIFY/PROMOTE, fed by code-review verdicts), with the evaluator folded into `code-review` (no separate evaluator agent).
 
 ## Installation
 
@@ -27,16 +26,14 @@ Plugin skills are namespaced and do **not** shadow — same-name skills coexist 
 
 After disabling, `/superdev:bdd` is the only bdd/tdd-flavored skill invoked; mattpocock's `tdd` and superdev's `bdd` no longer both respond to "tdd" phrasing.
 
-## Registered skills (23)
+## Registered skills (22)
 
 **Engineering (17):** ask-matt, diagnosing-bugs, grill-with-docs, triage, improve-codebase-architecture, setup-matt-pocock-skills, bdd, to-spec, to-tickets, wayfinder, implement, prototype, research, domain-modeling, codebase-design, code-review, resolving-merge-conflicts
 
 **Productivity (5):** grill-me, grilling, handoff, teach, writing-great-skills
 
-**Self-improvement (1):** retrospective
-
 The remaining mattpocock skills (misc / in-progress / personal / deprecated) ship on disk but are unregistered, mirroring upstream's own promotion convention.
 
 ## Attribution
 
-Forked from [mattpocock/skills](https://github.com/mattpocock/skills) v1.2.0 (MIT). The original `tdd` skill was transformed into `bdd`; the self-improvement subsystem (retrospective + checklists) was re-implemented from a prior plugin. See `LICENSE`.
+Forked from [mattpocock/skills](https://github.com/mattpocock/skills) v1.2.0 (MIT). The original `tdd` skill was transformed into `bdd`. See `LICENSE`.

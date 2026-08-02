@@ -120,14 +120,15 @@
       "name": "superdev",
       "displayName": "Superdev",
       "version": "0.1.0",
-      "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0, with a self-improving checklist subsystem",
+      "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"
       },
       "source": "./superdev",
       "category": "productivity",
-      "homepage": "https://github.com/FradSer/dotclaude/tree/main/superdev"
+      "homepage": "https://github.com/FradSer/dotclaude/tree/main/superdev",
+      "keywords": []
     },
     {
       "name": "superpowers",

@@ -2,13 +2,13 @@
   "name": "superdev",
   "displayName": "Superdev",
   "version": "0.1.0",
-  "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0, with a self-improving checklist subsystem",
+  "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["bdd", "tdd", "code-review", "engineering", "self-improvement"],
+  "keywords": ["bdd", "tdd", "code-review", "engineering"],
   "skills": [
     "./skills/engineering/ask-matt",
     "./skills/engineering/diagnosing-bugs",
@@ -31,7 +31,6 @@
     "./skills/productivity/grilling",
     "./skills/productivity/handoff",
     "./skills/productivity/teach",
-    "./skills/productivity/writing-great-skills",
-    "./skills/retrospective"
+    "./skills/productivity/writing-great-skills"
   ]
 }

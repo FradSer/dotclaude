@@ -4,7 +4,6 @@
 
 | path | kind | status | summary | updated |
 |---|---|---|---|---|
-| docs/retros/README.md | retro | active | retrospective 产出索引: checklist-spec/tickets/code + 唯一报告 retrospective.md | 2026-08-02 |
 | docs/memory-layer-status.md | reference | active | memory 层约定: docs/memory/ 一文件一事实 + frontmatter 格式 | 2026-08-02 |
 | docs/memory/convention_req-trace-explicit-citation.md | memory | active | design-v3 REQ-TRACE-01 requires explicit (Req #N)/REQ-NNN citations and… | 2026-08-02 |
 | docs/memory/pitfall_bdd-specs-explicit-req-tracing.md | memory | active | bdd-specs.md needs explicit Req# tags per scenario, not just topical na… | 2026-08-02 |
