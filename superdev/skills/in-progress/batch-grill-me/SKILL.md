@@ -1,6 +1,6 @@
 ---
 name: batch-grill-me
-description: A relentless interview that asks every frontier question at once, round by round.
+description: Runs a relentless interview that asks every frontier question at once, round by round. Use when the user wants to be grilled on a design or map a design tree.
 disable-model-invocation: true
 ---
 

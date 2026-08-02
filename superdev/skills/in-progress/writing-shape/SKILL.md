@@ -1,6 +1,6 @@
 ---
 name: writing-shape
-description: Writing, exploit — shape raw material into an article, paragraph by paragraph.
+description: Exploit-phase writing — shapes raw material into an article paragraph by paragraph. Use when the user has a raw-material pile and wants the final article written.
 disable-model-invocation: true
 ---
 

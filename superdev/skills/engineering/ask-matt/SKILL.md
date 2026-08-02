@@ -1,6 +1,6 @@
 ---
 name: ask-matt
-description: Ask which skill or flow fits your situation. A router over the skills in this repo.
+description: Recommends the skill or flow that fits the user's situation. A router over the skills in this repo. Use when the user asks which skill to use, is unsure what fits, or needs a pointer to the right workflow.
 disable-model-invocation: true
 ---
 
@@ -30,6 +30,10 @@ The route most work travels. You have an idea and want it built.
 Keep steps 1–3 in **one unbroken context window** — don't compact or clear until after `/superdev:to-tickets` — so the grilling, spec, and tickets all build on the same thinking. Each `/superdev:implement` then starts fresh, working from the ticket.
 
 The limit on this is the **[smart zone](https://www.aihero.dev/ai-coding-dictionary/smart-zone)**: the window (~120k tokens on state-of-the-art models) within which the model still reasons sharply. If a session approaches it before `/superdev:to-tickets`, don't push on degraded — `/superdev:handoff` and continue in a fresh thread.
+
+## CRITICAL: Route by scenario, not by habit
+
+Wayfinder is only for work too big for one session — never a well-scoped feature. Triage is only for issues the user didn't create — never for the tickets `/superdev:to-tickets` produced. Keep steps 1–3 in one unbroken context window: no compact or clear until after `/superdev:to-tickets`.
 
 ## On-ramps
 

@@ -1,12 +1,16 @@
 ---
 name: to-spec
-description: Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed.
+description: "Turns the current conversation into a spec and publishes it to the project issue tracker, with no interview. Use when the user says \"write a spec\", \"create a PRD\", or wants the discussion captured as a spec."
 disable-model-invocation: true
 ---
 
 This skill takes the current conversation context and codebase understanding and produces a spec (you may know this document as a PRD). Do NOT interview the user — just synthesize what you already know.
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/superdev:setup-matt-pocock-skills` if not.
+
+## CRITICAL: No interview — synthesize what you already know
+
+Do NOT interview the user; the spec is a synthesis of the conversation and codebase understanding already in context. Test at the highest existing seam, preferring one seam to many — check the seams with the user before writing.
 
 ## Process
 

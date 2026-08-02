@@ -1,6 +1,6 @@
 ---
 name: wizard
-description: Generate an interactive bash wizard that walks a human through a manual procedure — third-party setup, a one-off migration, an A→B state transition — opening URLs, capturing values, confirming each step, and writing .env files and GitHub Actions secrets.
+description: "Generates an interactive bash wizard that walks a human through a manual procedure — third-party setup, one-off migration, or A→B state transition. Use when the user says \"build a wizard\" or wants a scripted step-by-step setup."
 disable-model-invocation: true
 ---
 

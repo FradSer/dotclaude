@@ -27,6 +27,10 @@ Use these terms exactly — don't substitute "component," "service," "API," or "
 
 **Locality** — what maintainers get from depth: change, bugs, knowledge, and verification concentrate in one place rather than spreading across callers. Fix once, fixed everywhere.
 
+## CRITICAL: Use the vocabulary exactly
+
+Say **module**, **interface**, **depth**, **seam**, **adapter**, **leverage**, **locality** — never "component", "service", "API", or "boundary". Consistent language is the whole point of this skill; substitution breaks the shared model every other skill relies on.
+
 ## Deep vs shallow
 
 **Deep module** = small interface + lots of implementation:

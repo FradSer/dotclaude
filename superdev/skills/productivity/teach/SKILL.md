@@ -1,6 +1,6 @@
 ---
 name: teach
-description: Teach the user a new skill or concept, within this workspace.
+description: "Teaches the user a new skill or concept within the workspace. Use when the user says \"teach me X\", wants to learn a topic over sessions, or needs a structured learning plan."
 disable-model-invocation: true
 argument-hint: "What would you like to learn about?"
 ---
@@ -33,7 +33,7 @@ Some topics may require more skills than knowledge. Learning more about theoreti
 
 ### Fluency vs Storage Strength
 
-You should be careful to split between two types of learning:
+Split between two types of learning:
 
 - **Fluency strength**: in-the-moment retrieval of knowledge
 - **Storage strength**: long-term retention of knowledge
@@ -68,11 +68,15 @@ Reuse is the default, not the exception. Before authoring a lesson, read `./asse
 
 A shared stylesheet is the first component every workspace earns: every lesson links it, so the lessons look like one consistent course rather than a pile of one-offs. As the workspace grows, so should the component library.
 
+## CRITICAL: Never trust parametric knowledge
+
+Ground every lesson in high-quality resources tracked in `RESOURCES.md`, with citations — never the model's pretrained memory. Pin down the mission before teaching: if the user is unclear about the mission or `MISSION.md` is unpopulated, questioning the user on why they want to learn is the first job.
+
 ## The Mission
 
 Every lesson should be tied into the mission - the reason that the user is interested in learning about the topic.
 
-If the user is unclear about the mission, or the `MISSION.md` is not populated, your first job should be to question the user on why they want to learn this.
+If the user is unclear about the mission, or the `MISSION.md` is not populated, your first job should be to use the AskUserQuestion tool to ask why they want to learn this (common motivations as options, "Other" for anything else).
 
 Failing to understand the mission will mean knowledge acquisition is not grounded in real-world goals. Lessons will feel too abstract. You will have no way of judging what the user should do next.
 
@@ -117,7 +121,7 @@ When the user asks a question that appears to require wisdom, your default postu
 
 A community is a place (online or offline) where the user can test their skills in the real world. This might be a forum, a subreddit, a real-world class (budget permitting) or a local interest group.
 
-You should attempt to find high-reputation communities the user can join. If the user expresses a preference that they don't want to join a community, respect it.
+Attempt to find high-reputation communities the user can join. If the user expresses a preference not to join a community, respect it.
 
 ## Reference Documents
 

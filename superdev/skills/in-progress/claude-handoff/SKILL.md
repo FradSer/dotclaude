@@ -1,6 +1,6 @@
 ---
 name: claude-handoff
-description: Hand the current conversation off to a fresh background agent that picks up the work immediately.
+description: Hands the current conversation to a fresh background agent that picks up the work immediately. Use when the user wants the work continued by a background agent.
 argument-hint: "What will the next session be used for?"
 disable-model-invocation: true
 ---

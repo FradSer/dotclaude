@@ -1,6 +1,6 @@
 ---
 name: writing-beats
-description: Writing, exploit — assemble raw material into a journey of beats, grounding each term before a beat leans on it.
+description: Exploit-phase writing — assembles raw material into a journey of beats, grounding each term before a beat leans on it. Use when the user has raw material and wants it turned into an article.
 disable-model-invocation: true
 ---
 

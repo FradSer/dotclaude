@@ -1,6 +1,6 @@
 ---
 name: writing-fragments
-description: Writing, explore — mine raw fragments, no structure yet.
+description: Explore-phase writing — mines raw fragments without committing to structure. Use when the user wants to brainstorm material or gather fragments for a later article.
 disable-model-invocation: true
 ---
 

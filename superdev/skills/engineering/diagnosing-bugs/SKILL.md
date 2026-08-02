@@ -46,7 +46,7 @@ The goal is not a clean repro but a **higher reproduction rate**. Loop the trigg
 
 ### When you genuinely cannot build a loop
 
-Stop and say so explicitly. List what you tried. Ask the user for: (a) access to whatever environment reproduces it, (b) a captured artifact (HAR file, log dump, core dump, screen recording with timestamps), or (c) permission to add temporary production instrumentation. Do **not** proceed to hypothesise without a loop.
+Stop and say so explicitly. List what you tried. Use the AskUserQuestion tool to ask the user for: (a) access to whatever environment reproduces it, (b) a captured artifact (HAR file, log dump, core dump, screen recording with timestamps), or (c) permission to add temporary production instrumentation. Do **not** proceed to hypothesise without a loop.
 
 ### Completion criterion — a tight loop that goes red
 
@@ -58,6 +58,10 @@ Phase 1 is done when the loop is **tight** and **red-capable**: you can name **o
 - [ ] **Agent-runnable** — you can run it unattended; a human in the loop only via `scripts/hitl-loop.template.sh`.
 
 If you catch yourself reading code to build a theory before this command exists, **stop — jumping straight to a hypothesis is the exact failure this skill prevents.** No red-capable command, no Phase 2.
+
+## CRITICAL: No loop, no theory
+
+The feedback loop **is** the skill. Do not hypothesise, instrument, or fix until a tight, red-capable command exists — one you have already run at least once, that drives this bug's exact symptom, deterministically and fast. No red-capable command, no Phase 2.
 
 ## Phase 2 — Reproduce + minimise
 
@@ -131,4 +135,4 @@ Required before declaring done:
 - [ ] Throwaway prototypes deleted (or moved to a clearly-marked debug location)
 - [ ] The hypothesis that turned out correct is stated in the commit / PR message — so the next debugger learns
 
-**Then ask: what would have prevented this bug?** If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) hand off to the `/superdev:improve-codebase-architecture` skill with the specifics. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.
+**Then use the AskUserQuestion tool to ask what would have prevented this bug** — options: no good test seam / tangled callers / hidden coupling / nothing worth changing, plus "Other" for anything else. If the answer involves architectural change (no good test seam, tangled callers, hidden coupling) hand off to the `/superdev:improve-codebase-architecture` skill with the specifics. Make the recommendation **after** the fix is in, not before — you have more information now than when you started.

@@ -29,7 +29,7 @@ Look for the originating spec, in this order:
 1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.) — fetch via the workflow in `docs/agents/issue-tracker.md`.
 2. A path the user passed as an argument.
 3. A PRD/spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
-4. If nothing is found, ask the user where the spec is. If they say there isn't one, the **Spec** sub-agent will skip and report "no spec available".
+4. If nothing is found, use the AskUserQuestion tool to ask where the spec is (options: in the repo / linked from the issue or PR / external document / no spec exists). If there isn't one, the **Spec** sub-agent will skip and report "no spec available".
 
 ### 3. Identify the standards sources
 
@@ -101,6 +101,10 @@ After presenting the two reports, emit a binary verdict per axis:
 A PASS without an attempted refutation is invalid — downgrade to REWORK and list the un-refuted risk.
 
 **Final verdict:** REWORK if either axis is REWORK; PASS only if both axes PASS (post-refutation).
+
+## CRITICAL: Refute-before-PASS
+
+A PASS without an attempted refutation is invalid. Before assigning PASS to either axis, state the strongest reason the work might still fail, cite the evidence (diff hunk or missing scenario) that would confirm it, and hold PASS only when concrete contrary evidence refutes it. Never merge or rerank the two axes — the separation exists to stop one axis masking the other.
 
 ## Why two axes
 

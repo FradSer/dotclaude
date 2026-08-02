@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Compact the current conversation into a handoff document for another agent to pick up.
+description: "Compacts the current conversation into a handoff document for another agent to pick up. Use when the user says \"hand this off\" or wants the work continued by a fresh session."
 argument-hint: "What will the next session be used for?"
 disable-model-invocation: true
 ---
@@ -14,3 +14,7 @@ Do not duplicate content already captured in other artifacts (specs, plans, ADRs
 Redact any sensitive information, such as API keys, passwords, or personally identifiable information.
 
 If the user passed arguments, treat them as a description of what the next session will focus on and tailor the doc accordingly.
+
+## CRITICAL: Reference, don't duplicate — and redact
+
+Do not copy content already captured in specs, plans, ADRs, issues, commits, or diffs — reference them by path or URL instead. Redact API keys, passwords, and personally identifiable information. Save to the OS temporary directory, never the workspace.

@@ -1,6 +1,6 @@
 ---
 name: setup-ts-deep-modules
-description: Wire dependency-cruiser into a TypeScript repo so each package is a deep module — implementation hidden in subfolders, reachable only through its entry-point files. User-invoked.
+description: Wires dependency-cruiser into a TypeScript repo so each package is a deep module — implementation hidden in subfolders, reachable only through entry-point files. Use when the user wants deep-module enforcement or dependency-cruiser setup.
 disable-model-invocation: true
 ---
 

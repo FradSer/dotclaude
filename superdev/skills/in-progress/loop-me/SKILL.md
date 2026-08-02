@@ -1,6 +1,6 @@
 ---
 name: loop-me
-description: Grill me about specs for the workflows I want to build, within this workspace.
+description: "Runs a stateful grilling session that produces workflow specs for workflows the user wants to build. Use when the user says \"loop me\" or wants workflow specs drawn out of them."
 disable-model-invocation: true
 argument-hint: "A workflow to design, or nothing to go find one"
 ---

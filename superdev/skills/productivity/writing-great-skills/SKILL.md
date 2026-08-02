@@ -1,6 +1,6 @@
 ---
 name: writing-great-skills
-description: Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable.
+description: "Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable. Use when the user asks \"how should I write a skill\" or wants skill-writing best practices."
 disable-model-invocation: true
 ---
 
@@ -57,6 +57,10 @@ Keep each meaning in a **single source of truth**: one authoritative place, so c
 Check every line for **relevance**: does it still bear on what the skill does?
 
 Then hunt **no-ops** sentence by sentence, not just line by line: run the no-op test on each sentence in isolation, and when one fails, delete the whole sentence rather than trim words from it. Be aggressive — most prose that fails should go, not be rewritten.
+
+## CRITICAL: One meaning, one place
+
+Keep every meaning in a single source of truth — changing the behaviour must be a one-place edit. Check every line for relevance, then run the no-op test sentence by sentence: when one fails, delete the whole sentence rather than trim words from it. Duplication inflates a meaning's prominence on the ladder; sediment is the default fate of any skill without this pruning discipline.
 
 ## Leading words
 

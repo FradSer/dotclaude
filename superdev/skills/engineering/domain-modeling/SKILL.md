@@ -63,6 +63,10 @@ When a term is resolved, update `CONTEXT.md` right there. Don't batch these up â
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
+## CRITICAL: CONTEXT.md is a glossary and nothing else
+
+Never treat `CONTEXT.md` as a spec, a scratch pad, or a home for implementation decisions â€” implementation details are forbidden there. Capture resolved terms inline the moment they crystallise, and offer an ADR only when a decision is hard to reverse, surprising without context, and the result of a real trade-off.
+
 ### Offer ADRs sparingly
 
 Only offer to create an ADR when all three are true:

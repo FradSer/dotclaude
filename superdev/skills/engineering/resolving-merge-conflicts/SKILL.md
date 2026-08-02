@@ -9,6 +9,10 @@ description: "Use when you need to resolve an in-progress git merge/rebase confl
 
 3. **Resolve each hunk.** Preserve both intents where possible. Where incompatible, pick the one matching the merge's stated goal and note the trade-off. Do **not** invent new behaviour. Always resolve; never `--abort`.
 
+## CRITICAL: Preserve intent, never invent
+
+Understand the original intent of each change before resolving it. Do **not** invent new behaviour; where intents conflict, pick the one matching the merge's stated goal and note the trade-off. Always resolve — never `--abort`.
+
 4. Discover the project's **automated checks** and run them — typically typecheck, then tests, then format. Fix anything the merge broke.
 
 5. **Finish the merge/rebase.** Stage everything and commit. If rebasing, continue the rebase process until all commits are rebased.

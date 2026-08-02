@@ -119,7 +119,7 @@
     {
       "name": "superdev",
       "displayName": "Superdev",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0",
       "author": {
         "name": "Frad LEE",
