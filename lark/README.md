@@ -11,11 +11,11 @@ Lark/Feishu CLI operations — docs, sheets, IM, calendar, approval, attendance,
 
 ## Structure
 
-- **`skills/SKILL.md` (lark router)** — local router that indexes the mirrored sub-skills; the table is regenerated from sub-skill frontmatter by `scripts/gen-lark-index.py`.
+- **`skills/SKILL.md` (lark router)** — local router that indexes the mirrored sub-skills; the table is regenerated from sub-skill frontmatter by the shared `tools/skill-sync/gen-index.py`.
 - **`skills/`** — mirrored sub-skills, each stored as `<name>/<name>.md` (denested: `SKILL.md` renamed after sync so only the router is auto-discovered). Synced from `larksuite/cli`.
 - **`scripts/sync-lark.sh`** — syncs the sub-tree, then denests sub-skills.
-- **`scripts/denest-lark-skills.py`** — renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links.
-- **`scripts/gen-lark-index.py`** — regenerates the router `SKILL.md` index table.
+- **`tools/skill-sync/denest.py`** — shared denest tool (marketing / lark / hyperframes): renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links.
+- **`tools/skill-sync/gen-index.py`** — shared router index generator: regenerates the router `SKILL.md` index table.
 - **`skills/SYNC.md`** — sync metadata and strategy.
 
 ## Installation

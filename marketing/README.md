@@ -11,7 +11,7 @@ Marketing skills for AI agents (mirrored from [coreyhaines31/marketingskills](ht
 
 ## Structure
 
-- **`skills/SKILL.md` (marketing router)** — local router that indexes all 49 mirrored marketing sub-skills; the table is regenerated from sub-skill frontmatter by `scripts/gen-marketing-index.py`.
+- **`skills/SKILL.md` (marketing router)** — local router that indexes all 49 mirrored marketing sub-skills; the table is regenerated from sub-skill frontmatter by the shared `tools/skill-sync/gen-index.py`.
 - **`skills/` (marketing)** — 49 marketing sub-skills, each stored as `<name>/<name>.md` (denested: `SKILL.md` renamed after sync so only the router is auto-discovered). Synced from `coreyhaines31/marketingskills`.
 - **`tools/`** — `REGISTRY.md`, `clis/` (zero-dependency Node CLI wrappers), `integrations/` (per-tool API guides), `composio/` (MCP integration layer). Synced with the marketing upstream.
 - **Root functional files** — `CLAUDE.md`/`AGENTS.md` (agent guidance), `VERSIONS.md` (per-skill version registry), `validate-skills.sh` / `validate-skills-official.sh` (spec audit scripts). Synced with the marketing upstream.
@@ -19,8 +19,8 @@ Marketing skills for AI agents (mirrored from [coreyhaines31/marketingskills](ht
 Excluded (marketing upstream repo metadata, superseded by this marketplace's entries): `README.md`, `CONTRIBUTING.md`, `.github/`, `.gitignore`, `FUNDING.yml`, `LICENSE`.
 
 - `scripts/sync-marketing.sh` — syncs marketing upstream (skills + tools + root files), then denests sub-skills and regenerates the router index.
-- `scripts/denest-marketing-skills.py` — renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links.
-- `scripts/gen-marketing-index.py` — regenerates the router `SKILL.md` index table from sub-skill frontmatter.
+- `tools/skill-sync/denest.py` — shared denest tool (marketing / lark / hyperframes): renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links.
+- `tools/skill-sync/gen-index.py` — shared router index generator: regenerates the router `SKILL.md` index table from sub-skill frontmatter.
 - `skills/SYNC.md` — marketing sync metadata and strategy.
 
 ## Installation
@@ -39,8 +39,8 @@ bash marketing/scripts/sync-marketing.sh             # sync with backup
 See `skills/SYNC.md` for upstream source, last-synced commit, and sync strategy. Mirrored content is not edited locally — editing would break sync fidelity (re-sync overwrites local edits). The only local transforms applied after sync are the denest rename (`SKILL.md` → `<name>.md`, so sub-skills are not auto-discovered) and the router index regeneration; both are scripted and re-runnable:
 
 ```bash
-python3 marketing/scripts/denest-marketing-skills.py --check
-python3 marketing/scripts/gen-marketing-index.py --check
+python3 tools/skill-sync/denest.py --tree marketing/skills --check
+python3 tools/skill-sync/gen-index.py --skills marketing/skills --router marketing/skills/SKILL.md --versions marketing/VERSIONS.md --check
 ```
 
 ## Validation Note
