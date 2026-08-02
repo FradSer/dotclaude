@@ -17,8 +17,5 @@
   ],
   "commands": [
     "./skills/use-acpx/"
-  ],
-  "skills": [
-    "./skills/use-acpx/"
   ]
 }
