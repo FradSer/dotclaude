@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# lib/seed-checklists.sh — Single source of truth for v1 checklist templates.
+# lib/seed-checklists.sh — Single source of truth for checklist templates.
 #
 # Seeded by:
 #   skills/retrospective/SKILL.md Phase 0 (the bootstrap caller)
@@ -9,11 +9,16 @@
 # Usage:
 #   seed-checklists.sh <spec|tickets|code> <output-path> [--force]
 #
+# Output convention: checklists are flat, unversioned files
+# (docs/retros/checklist-{mode}.md). Evolution is tracked by git — every
+# retrospective writes the current checklist in place and commits it, so
+# `git log`/`git diff` on the file IS the version history. No v{N} suffixes.
+#
 # By default the script REFUSES to overwrite an existing output file —
-# the checklists evolve through retrospectives and clobbering a hand-curated
-# 3.7K rubric with a starter stub is the worst data-loss vector in the plugin.
-# Pass --force only when you genuinely want to reset (e.g., retrospective
-# Phase 0 explicitly resetting after a major harness change).
+# a checklist is curated state and clobbering it with a starter stub is the
+# worst data-loss vector in the plugin. Pass --force only when you genuinely
+# want to reset (e.g., retrospective Phase 0 explicitly resetting after a
+# major harness change).
 #
 # Exit codes:
 #   0 — seed written
@@ -71,11 +76,11 @@ write_template() {
 case "$MODE" in
   spec)
     write_template "$OUTPUT" <<'EOF'
-# Spec Checklist v1
+# Spec Checklist
 
-- **Version:** v1
 - **Mode:** spec
-- **Note:** v1 placeholder — item bodies still reference the prior plan-folder
+- **Last evolution:** (initial seed)
+- **Note:** Initial template — item bodies still reference the prior plan-folder
   artifacts (`_index.md`, `bdd-specs.md`, `architecture.md`). Run
   `/superdev:retrospective` to evolve them toward superdev's spec artifacts
   (Gherkin scenarios published to the issue tracker) as real evaluation data
@@ -109,7 +114,7 @@ Any match is a FAIL. Zero matches is PASS.
 
 **Evidence format:** `_index.md:{line} -- "{matched line text}"`
 
-**Rework format:** Either (a) remove the NOT-JUSTIFIED status from `_index.md` after addressing the underlying activation gate, or (b) move the design folder to `docs/retros/<date>-<topic>-considered-deferred.md` (single-file reject form).
+**Rework format:** Either (a) remove the NOT-JUSTIFIED status from `_index.md` after addressing the underlying activation gate, or (b) move the design folder to `docs/retros/considered-deferred.md` (single-file reject form).
 
 **Verdict precedence:** A JUST-01 FAIL produces REWORK regardless of how content-quality items resolve. Other items still run for completeness in the report, but no combination of content-quality PASS results can override a self-declared NOT-JUSTIFIED status.
 
@@ -205,11 +210,11 @@ EOF
     ;;
   tickets)
     write_template "$OUTPUT" <<'EOF'
-# Tickets Checklist v1
+# Tickets Checklist
 
-- **Version:** v1
 - **Mode:** tickets
-- **Note:** v1 placeholder — item bodies still reference the prior plan-folder
+- **Last evolution:** (initial seed)
+- **Note:** Initial template — item bodies still reference the prior plan-folder
   artifacts (`_index.md`, `task-NNN-*.md`, depends-on graph). Run
   `/superdev:retrospective` to evolve them toward superdev's ticket artifacts
   (tracer-bullet tickets with blocking edges on the issue tracker) as real
@@ -322,10 +327,10 @@ EOF
     ;;
   code)
     write_template "$OUTPUT" <<'EOF'
-# Code Checklist v1
+# Code Checklist
 
-- **Version:** v1
 - **Mode:** code
+- **Last evolution:** (initial seed)
 - **Created:** auto-seeded
 
 ## Purpose
@@ -403,6 +408,56 @@ Each grep is run independently; any match from any grep is a failure.
 
 ---
 
+### CODE-ENV-ISO-01 -- Test subprocess calls sanitize parent shell environment
+
+**Description:** Test files that invoke bash helpers via `subprocess` (Python) or equivalent child-process mechanisms must explicitly construct a sanitized environment for the subprocess. The environment must either (a) strip all `CLAUDE_*`-prefixed variables inherited from the parent shell, or (b) construct a fresh environment from scratch containing only the variables the subprocess requires. Without this, developer shell state (e.g., `CLAUDE_CONFIG_DIR`, `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_ROOT` pointing to a different checkout) leaks into the test sandbox, causing non-reproducible behavior across machines and CI environments.
+
+**Check method:**
+For each test file produced by the batch that imports `subprocess` (or equivalent):
+```bash
+# Step 1: identify test files using subprocess
+grep -l "import subprocess" <produced-test-files> > /tmp/env_iso_candidates.txt
+
+# Step 2: for each candidate, verify environment sanitization
+while read -r f; do
+  # Check if the file constructs an explicit env for subprocess calls
+  if grep -q "subprocess.*env=" "$f" || grep -q "Popen.*env=" "$f"; then
+    # Verify it either strips CLAUDE_ vars or builds a fresh env dict
+    if ! grep -qE '(not k\.startswith\("CLAUDE_"\)|environ\s*=\s*\{|env\s*=\s*\{)' "$f"; then
+      echo "FAIL: $f uses subprocess with env= but no CLAUDE_ sanitization detected"
+    fi
+  else
+    # subprocess without explicit env — inherits full parent environment
+    echo "FAIL: $f uses subprocess without explicit env parameter"
+  fi
+done < /tmp/env_iso_candidates.txt
+```
+
+The grep patterns identify:
+- `not k.startswith("CLAUDE_")` — the strip-parent-vars idiom
+- `environ = {` or `env = {` — fresh environment construction
+
+Any `FAIL` output line means CODE-ENV-ISO-01 is FAIL. Empty output means PASS.
+
+**Anchor constraint:** A test that sets individual env vars (`env["CLAUDE_PLUGIN_ROOT"] = "..."`) without first stripping or filtering the parent environment is FAIL — the developer's other `CLAUDE_*` vars still leak. A test that uses `env = os.environ.copy()` is FAIL — it copies everything including `CLAUDE_*` vars. Only explicit filtering or fresh construction passes.
+
+**Evidence format:** `{file}:{line} -- subprocess call without CLAUDE_ environment sanitization`
+
+Example: `test_example.py:45 -- subprocess.run([...], env=os.environ.copy()) inherits parent CLAUDE_ vars`
+
+**Rework format:** "In {file}, replace the subprocess env setup with:
+```python
+env = {k: v for k, v in os.environ.items() if not k.startswith('CLAUDE_')}
+env['CLAUDE_PLUGIN_ROOT'] = '<required-path>'  # only vars the subprocess needs
+```
+Then pass `env=env` to the subprocess call."
+
+**Result:** PASS if every subprocess-using test file sanitizes its environment. FAIL on any file that inherits the parent environment unfiltered.
+
+`# Type: computational` -- grep for subprocess usage and env-construction patterns produces deterministic result; the anchor constraint (explicit filter or fresh dict) minimizes interpretive freedom.
+
+---
+
 ### CODE-TEST-LIVE-01 -- Produced tests actually run; none silently disabled or focused
 
 **Description:** A test that exists (TEST-01) and "passes" (CODE-VER-01 exits 0) verifies nothing if it is skipped, xfail-ed, disabled, or has an empty body — a false green that lets a batch claim completion without proving behavior. A focus marker (`.only`) is equally a failure: it silently disables every sibling test in the file. This item catches the gap CODE-VER-01 cannot: a green suite that does not test.
@@ -437,4 +492,4 @@ EOF
     ;;
 esac
 
-echo "Seeded ${MODE}-v1.md at ${OUTPUT}"
+echo "Seeded checklist-${MODE}.md at ${OUTPUT}"
