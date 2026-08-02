@@ -217,6 +217,14 @@ def find_components(plugin_dir: Path) -> dict[str, list[Path]]:
             if skill_md.exists():
                 components["skills"].append(skill_md)
             else:
+                # Denested entry layout: skills/<name>/<name>.md. Router plugins
+                # (marketing, office/lark) rename SKILL.md to <dirname>.md so
+                # sub-skills are not auto-discovered; the entry file gets the
+                # same frontmatter/tool/token checks as flat-layout skills.
+                denested_entry = skill_dir / f"{skill_dir.name}.md"
+                if denested_entry.exists():
+                    components["skills"].append(denested_entry)
+                    continue
                 # Bucket layout: skills/<bucket>/<skill>/SKILL.md. When a
                 # top-level subdir has no SKILL.md but contains subdirs that
                 # each hold one, descend into the bucket so its nested skills
@@ -331,6 +339,12 @@ def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult
             if not skill_dir.is_dir():
                 continue
             if not (skill_dir / "SKILL.md").exists():
+                # Denested entry layout: skills/<name>/<name>.md is the entry
+                # (router plugins rename SKILL.md to <dirname>.md to prevent
+                # auto-discovery). Validate contents instead of flagging.
+                if (skill_dir / f"{skill_dir.name}.md").exists():
+                    _check_skill_folder_contents(skill_dir, plugin_dir, result)
+                    continue
                 # Bucket layout: skills/<bucket>/<skill>/SKILL.md (used by
                 # mattpocock-fork plugins). When a top-level subdir has no
                 # SKILL.md but contains subdirs that each hold one, descend
