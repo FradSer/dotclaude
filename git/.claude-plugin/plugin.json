@@ -19,7 +19,6 @@
   "commands": [
     "./skills/commit/",
     "./skills/commit-and-push/",
-    "./skills/setup/",
     "./skills/start-feature/",
     "./skills/finish-feature/",
     "./skills/start-hotfix/",

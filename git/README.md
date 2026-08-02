@@ -2,7 +2,7 @@
 
 Conventional Git automation and advanced repository management.
 
-**Version**: 0.5.1
+**Version**: 0.6.0
 
 ## Installation
 
@@ -22,7 +22,7 @@ This plugin uses **git-agent** as the primary commit tool, with automatic fallba
 
 ## Skills
 
-This plugin provides 3 user-invocable skills:
+This plugin provides 2 user-invocable skills:
 
 ### `/commit`
 Creates atomic conventional commits using git-agent.
@@ -35,19 +35,7 @@ Creates atomic commits using git-agent and pushes to remote repository.
 - All `/commit` features
 - Automatic upstream branch configuration
 
-### `/setup`
-Initializes git-agent for the repository — generates commit scopes from git history and `.gitignore` via AI.
-- Verifies git user identity (name/email)
-- Preserves custom `.gitignore` rules when regenerating
-- Supports selective mode: `/setup scope` or `/setup gitignore`
-
 ## Configuration
-
-### Auto-Configuration
-
-Run `/setup` to auto-generate scopes and `.gitignore` via git-agent. Configuration is stored in `.git-agent/config.yml` and read directly by `git-agent commit`.
-
-### Manual Configuration
 
 Edit `.git-agent/config.yml` directly to customize scopes, hooks, or other settings. Use `git-agent config set <key> <value>` for individual fields.
 
