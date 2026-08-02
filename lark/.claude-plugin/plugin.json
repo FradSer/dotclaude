@@ -1,0 +1,24 @@
+{
+  "name": "lark",
+  "displayName": "Lark",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Feishu/Lark CLI skills, mirrored from larksuite/cli — docs, sheets, IM, calendar, approval, drive, wiki, contacts, and more",
+  "keywords": [
+    "lark",
+    "feishu",
+    "cli",
+    "docs",
+    "sheets",
+    "im",
+    "calendar",
+    "approval"
+  ],
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "skills": [
+    "./skills/"
+  ]
+}

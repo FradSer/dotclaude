@@ -11,22 +11,11 @@ A curated collection of 18 plugins for Claude Code, providing specialized agents
 
 ### [git](git/)
 
-Conventional Git automation for commits and repository management with AI code quality checks.
+Conventional Git automation for commits and repository management with AI code quality checks, plus GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning and post-finish cleanup.
 
 **Installation:**
 ```bash
 claude plugin install git@frad-dotclaude
-```
-
----
-
-### [gitflow](gitflow/)
-
-GitFlow workflow automation for feature, hotfix, and release branches with semantic versioning and post-finish cleanup.
-
-**Installation:**
-```bash
-claude plugin install gitflow@frad-dotclaude
 ```
 
 ---
@@ -88,11 +77,33 @@ claude plugin install swiftui@frad-dotclaude
 
 ### [office](office/)
 
-Patent application generation, Product Requirements Documents, image and video generation, Feishu document creation, agent-based browser automation, Lark/Feishu CLI routing (denested sub-skill entries), Remotion programmatic video authoring, and AI writing trope detection.
+Patent application generation, Product Requirements Documents, image and video generation, agent-based browser automation, Remotion programmatic video authoring, and AI writing trope detection.
 
 **Installation:**
 ```bash
 claude plugin install office@frad-dotclaude
+```
+
+---
+
+### [lark](lark/)
+
+Feishu/Lark CLI skills, mirrored from larksuite/cli — docs, sheets, IM, calendar, approval, drive, wiki, contacts, and more.
+
+**Installation:**
+```bash
+claude plugin install lark@frad-dotclaude
+```
+
+---
+
+### [hyperframes](hyperframes/)
+
+HyperFrames HTML-based video authoring skills, mirrored from heygen-com/hyperframes — keyframes, animation, captions, motion graphics, and remotion-to-hyperframes conversion.
+
+**Installation:**
+```bash
+claude plugin install hyperframes@frad-dotclaude
 ```
 
 ---

@@ -1,8 +1,8 @@
 {
   "name": "git",
   "displayName": "Git",
-  "version": "0.5.3",
-  "description": "Conventional Git automation and advanced repository management",
+  "version": "0.6.0",
+  "description": "Conventional Git automation, advanced repository management, and GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
@@ -13,12 +13,19 @@
     "conventional-commits",
     "automation",
     "workflow",
-    "version-control"
+    "version-control",
+    "gitflow"
   ],
   "commands": [
     "./skills/commit/",
     "./skills/commit-and-push/",
-    "./skills/setup/"
+    "./skills/setup/",
+    "./skills/start-feature/",
+    "./skills/finish-feature/",
+    "./skills/start-hotfix/",
+    "./skills/finish-hotfix/",
+    "./skills/start-release/",
+    "./skills/finish-release/"
   ],
   "hooks": {
     "PreToolUse": [

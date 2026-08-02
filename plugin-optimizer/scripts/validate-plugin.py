@@ -330,7 +330,7 @@ def check_structure(plugin_dir: Path, verbose: bool = False) -> ValidationResult
                 )
 
     # Check skills have SKILL.md
-    NON_SKILL_DIRS = {"references", "scripts", "examples", ".git"}
+    NON_SKILL_DIRS = {"references", "scripts", "examples", ".git", ".backup"}
     skills_dir = plugin_dir / "skills"
     if skills_dir.exists():
         for skill_dir in skills_dir.iterdir():

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Regenerate the Sub-skill Index table in office/skills/lark/SKILL.md.
+"""Regenerate the Sub-skill Index table in lark/skills/SKILL.md.
 
 Scans each lark-* subdirectory (and lark-shared) under
-office/skills/lark/, extracts the name/version/description frontmatter
+lark/skills/, extracts the name/version/description frontmatter
 from each sub-skill's <dirname>.md (nested SKILL.md is denested after
 sync so it is not auto-discovered), and rewrites the index table in the
 parent SKILL.md between the `## Sub-skill Index` and `## Routing Rules`
@@ -10,8 +10,8 @@ markers. Local-only SKILL.md/SYNC.md at the root are never overwritten;
 this script only edits the index table region.
 
 Usage:
-    python3 office/scripts/gen-lark-index.py            # rewrite
-    python3 office/scripts/gen-lark-index.py --check      # dry-run diff, exit 1 if drift
+    python3 lark/scripts/gen-lark-index.py            # rewrite
+    python3 lark/scripts/gen-lark-index.py --check      # dry-run diff, exit 1 if drift
 """
 
 from __future__ import annotations

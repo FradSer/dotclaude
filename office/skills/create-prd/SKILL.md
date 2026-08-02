@@ -97,9 +97,9 @@ allowed-tools: ["Read", "Write", "AskUserQuestion", "Glob", "Bash(lark-cli:*)", 
 
 验证通过后创建飞书文档：
 
-1. **CRITICAL** -- 先读取 `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-shared/SKILL.md` 完成认证检查
-2. 读取 `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-doc/SKILL.md` 了解文档创建指南
-3. 读取 `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-doc/references/lark-doc-create.md` 了解 `docs +create` 的完整参数和 Lark-flavored Markdown 语法
+1. **CRITICAL** -- 确认独立 `lark` 插件（`lark@frad-dotclaude`）已安装；认证检查遵循其 `lark-shared` 技能
+2. 遵循 lark 插件的 `lark-doc` 技能了解文档创建指南
+3. 遵循 lark 插件 `lark-doc` 技能的 `lark-doc-create.md` reference 了解 `docs +create` 的完整参数和 Lark-flavored Markdown 语法
 4. 将 PRD 内容转换为 Lark-flavored Markdown（参照"飞书文档增强"章节）
 5. 使用 `lark-cli docs +create` 创建文档：
    ```bash
@@ -111,7 +111,7 @@ allowed-tools: ["Read", "Write", "AskUserQuestion", "Glob", "Bash(lark-cli:*)", 
    - 先用 `docs +create` 创建文档（包含前半部分内容）
    - 再用 `docs +update --mode append` 追加剩余章节
 7. 如果文档中包含空白画板（`board_tokens` 不为空）：
-   - 读取 `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard/SKILL.md`
+   - 遵循 lark 插件的 `lark-whiteboard` 技能
    - 为每个画板填充实际内容（流程图、架构图等）
    - 确认所有画板都有实际内容后才算完成
 8. 保存后报告文档 URL
@@ -181,4 +181,4 @@ PRD 涉及以下内容时，主动插入空白画板并后续填充：
 - `references/prd-template-onepager.md` -- 单页版模板
 - `references/prd-best-practices.md` -- 最佳实践指南
 - `references/prd-examples.md` -- 高质量 PRD 示例
-- `${CLAUDE_PLUGIN_ROOT}/skills/lark/` -- Lark CLI skills（`--lark` 模式）
+- 独立 `lark` 插件（`lark@frad-dotclaude`）-- Lark CLI skills（`--lark` 模式）

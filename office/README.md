@@ -133,16 +133,6 @@ Browser automation command reference for agents and workflows.
 
 **Sync**: Use `./scripts/sync-agent-browser.sh` to update from upstream
 
-### `lark` (Internal Skill) — v1.1.0
-
-Router for Lark/Feishu CLI operations via `lark-cli`. Match user intent in `skills/lark/SKILL.md`, then Read the linked Entry file (e.g. `lark-doc/lark-doc.md`). Covers docs, markdown, sheets, base, calendar, IM, mail, tasks, OKR, drive, wiki, slides, whiteboard, apps, approval, attendance, contact, VC, minutes, note, and events.
-
-**Source**: Synced from [larksuite/cli](https://github.com/larksuite/cli) skills/
-
-**Sub-skills**: 27 denested entries (`lark-*/<dirname>.md`, not nested `SKILL.md`) so only the router is auto-discovered. Index Entry column is the load path.
-
-**Sync**: Use `./scripts/sync-lark.sh` (runs denest + index regen). `SYNC.md` tracks the current `lark-cli` version.
-
 ### `tropes` (Internal Skill)
 
 AI writing trope detection — scans generated text for common AI patterns that make content sound artificial or formulaic.
@@ -184,10 +174,6 @@ AI writing trope detection — scans generated text for common AI patterns that 
 - `-f, --force` - 强制同步,跳过备份
 - `--no-backup` - 同步时不创建备份
 
-### `scripts/sync-lark.sh`
-
-同步上游 larksuite/cli skills 的脚本。
-
 ### `scripts/search-patents.sh`
 
 Helper script for patent search with argument parsing.
@@ -220,8 +206,7 @@ office/
 │   └── progressive_env.py   # Progressive config resolver (flag → env → .env → default)
 ├── scripts/
 │   ├── search-patents.sh      # Patent search helper
-│   ├── sync-agent-browser.sh  # Agent-browser skill sync
-│   └── sync-lark.sh           # Lark CLI skills sync
+│   └── sync-agent-browser.sh  # Agent-browser skill sync
 └── skills/
     ├── patent-architect/      # Patent application generation (command)
     │   ├── SKILL.md
@@ -240,19 +225,6 @@ office/
     │   └── references/prompting.md
     ├── agent-browser/         # Browser automation (internal)
     │   └── SKILL.md
-    ├── lark/                  # Lark/Feishu CLI operations (internal)
-    │   ├── SKILL.md           # Router for 27 sub-skills
-    │   ├── lark-shared/       # Auth, identity, permissions
-    │   ├── lark-doc/          # Documents
-    │   ├── lark-sheets/       # Spreadsheets
-    │   ├── lark-base/         # Multidimensional tables
-    │   ├── lark-calendar/     # Calendar & meetings
-    │   ├── lark-im/           # Instant messaging
-    │   ├── lark-mail/         # Email
-    │   ├── lark-task/         # Tasks & reminders
-    │   ├── lark-okr/          # OKR management
-    │   ├── lark-drive/        # File management
-    │   └── ...                # 16 more sub-skills
     └── tropes/                # AI writing trope detection (internal)
         ├── SKILL.md
         └── references/

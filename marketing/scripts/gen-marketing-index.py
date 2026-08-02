@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate the Sub-skill Index table in marketing/skills/SKILL.md.
 
-Scans each skill directory under marketing/skills/ (excluding hyperframes,
-which is a separately-synced sub-tree with its own router SKILL.md), extracts
-the name/version/description frontmatter from each sub-skill's <dirname>.md
+Scans each skill directory under marketing/skills/, extracts the
+name/version/description frontmatter from each sub-skill's <dirname>.md
 (nested SKILL.md is denested after sync so it is not auto-discovered), and
 rewrites the index table in the parent SKILL.md between the `## Sub-skill
 Index` and `## Routing Rules` markers. Local-only SKILL.md/SYNC.md at the root
@@ -32,8 +31,8 @@ MARKETING_DIR = SCRIPT_DIR.parent / "skills"
 SKILL_MD = MARKETING_DIR / "SKILL.md"
 VERSIONS_MD = SCRIPT_DIR.parent / "VERSIONS.md"
 
-# Sub-trees / local files that are NOT marketing sub-skills.
-EXCLUDED_DIRS = {"hyperframes", ".backup"}
+# Local files that are NOT marketing sub-skills.
+EXCLUDED_DIRS = {".backup"}
 
 INDEX_START_MARKER = "## Sub-skill Index"
 INDEX_END_MARKER = "## Routing Rules"

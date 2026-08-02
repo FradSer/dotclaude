@@ -15,8 +15,7 @@ runtime.
 The root `CLAUDE.md`/`AGENTS.md` are the upstream agent guides (skill catalog,
 install instructions, skill-catalog maintenance rules). They are mirrored as
 **`UPSTREAM-CLAUDE.md`** / **`UPSTREAM-AGENTS.md`** (prefixed) to avoid
-colliding with the marketing plugin root's own `CLAUDE.md` (which is the
-`coreyhaines31/marketingskills` upstream guide). Read them for the authoritative
+colliding with this plugin's local guides. Read them for the authoritative
 upstream skill list and workflow descriptions.
 
 Cross-skill references in upstream bodies use backtick-quoted skill names
@@ -33,8 +32,8 @@ Upstream ships every sub-skill as `<name>/SKILL.md`. Claude Code / Cursor
 auto-discover any directory containing a file named `SKILL.md`, so leaving
 those nested files would register ~19 extra skills alongside the router.
 
-After each sync, `sync-hyperframes.sh` invokes
-`marketing/scripts/denest-marketing-skills.py` with `HF_TREE_ROOT=1` (the tree
+After each sync, `scripts/sync-hyperframes.sh` invokes
+`scripts/denest-skills.py` with `HF_TREE_ROOT=1` (the tree
 root IS the hyperframes sub-tree, so top-level dirs are sub-skills directly):
 
 1. Renames `<name>/SKILL.md` → `<name>/<name>.md` (e.g.
@@ -65,26 +64,24 @@ The following files are maintained locally and are NOT overwritten by sync:
 - `SYNC.md` -- This file
 - `LICENSE` -- Local marketplace license note
 
-## Co-habitation with the marketing skills
+## Plugin structure
 
-This sub-tree lives inside the `marketing` plugin's `skills/` directory, but is
-synced independently from `heygen-com/hyperframes` (a different upstream than
-the marketing skills, which come from `coreyhaines31/marketingskills`). The
-marketing sync script (`marketing/scripts/sync-marketing.sh`) rebuilds `skills/`
-on each run, so it **backs up and restores** this `hyperframes/` sub-tree around
-its own sync — the two sync scripts do not disturb each other's mirrors.
+This is a standalone `hyperframes` plugin: the skills tree lives at the plugin
+root's `skills/` directory and is synced independently from
+`heygen-com/hyperframes` (separate from the `marketing` plugin, which mirrors
+`coreyhaines31/marketingskills`).
 
 ## Running Sync
 
 ```bash
 # Check for updates (dry-run)
-bash marketing/scripts/sync-hyperframes.sh --check
+bash hyperframes/scripts/sync-hyperframes.sh --check
 
 # Sync with backup
-bash marketing/scripts/sync-hyperframes.sh
+bash hyperframes/scripts/sync-hyperframes.sh
 
 # Force sync, skip confirmation
-bash marketing/scripts/sync-hyperframes.sh --force
+bash hyperframes/scripts/sync-hyperframes.sh --force
 ```
 
 After a sync that adds/removes/renames a sub-skill, update the Sub-skill Index

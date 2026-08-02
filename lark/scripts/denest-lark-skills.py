@@ -2,13 +2,13 @@
 """Rename nested lark-*/SKILL.md so they are not auto-discovered as skills.
 
 Claude Code / Cursor treat any directory containing SKILL.md as a skill.
-Under office/skills/lark/ only the root router SKILL.md should be discoverable;
+Under lark/skills/ only the root router SKILL.md should be discoverable;
 upstream sub-skills ship as lark-*/SKILL.md and must be renamed after sync to
 lark-*/<dirname>.md. Relative links are rewritten to match.
 
 Usage:
-    python3 office/scripts/denest-lark-skills.py            # rename + relink
-    python3 office/scripts/denest-lark-skills.py --check     # exit 1 if any nested SKILL.md remains
+    python3 lark/scripts/denest-lark-skills.py            # rename + relink
+    python3 lark/scripts/denest-lark-skills.py --check     # exit 1 if any nested SKILL.md remains
 """
 
 from __future__ import annotations

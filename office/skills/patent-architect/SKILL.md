@@ -132,8 +132,8 @@ Save the generated form as a local Markdown file:
 
 Create the form as a Feishu cloud document:
 
-1. **CRITICAL** -- Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-shared/SKILL.md` for authentication
-2. Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-doc/references/lark-doc-create.md` for Lark-flavored Markdown syntax and `docs +create` parameters
+1. **CRITICAL** -- Confirm the standalone `lark` plugin (`lark@frad-dotclaude`) is installed; follow its `lark-shared` skill for authentication
+2. Follow the lark plugin's `lark-doc` skill `lark-doc-create.md` reference for Lark-flavored Markdown syntax and `docs +create` parameters
 3. Convert the patent form to Lark-flavored Markdown, applying these enhancements:
 
 | Section | Feishu Feature | Purpose |
@@ -154,7 +154,7 @@ Create the form as a Feishu cloud document:
    ```
 5. For long forms, split creation: `docs +create` for the first half, then `docs +update --mode append` for the rest
 6. If `board_tokens` are returned (whiteboards were created):
-   - Read `${CLAUDE_PLUGIN_ROOT}/skills/lark/lark-whiteboard/SKILL.md`
+   - Follow the lark plugin's `lark-whiteboard` skill
    - Fill each whiteboard with actual content (architecture diagrams, flowcharts)
    - All whiteboards must have real content before task is complete
 7. Report the document URL
@@ -174,7 +174,7 @@ Reference these files within this directory for detailed specifications:
 - `template.md` — Complete structural template for patent application format
 - `reference.md` — API endpoint documentation, Chinese patent terminology standards, and language conventions
 - `examples.md` — High-quality patent application example
-- `${CLAUDE_PLUGIN_ROOT}/skills/lark/` — Lark CLI skills (`--lark` mode)
+- Standalone `lark` plugin (`lark@frad-dotclaude`) — Lark CLI skills (`--lark` mode)
 
 ## Quality Principles
 

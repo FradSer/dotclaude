@@ -9,25 +9,25 @@ scopes:
       description: Code context research, environment mapping, and repository analysis in code-context/.
     - name: git
       description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow/.
-    - name: gf
-      description: Gitflow branch management, releases, and feature/hotfix workflows in gitflow/.
     - name: gh
       description: GitHub PR monitoring, triage, and feedback loops in github/.
     - name: hw
       description: KiCad CLI and OpenSCAD hardware tooling in hardware/.
+    - name: hf
+      description: Marketing HTML video authoring and HyperFrames video generation in hyperframes/; does not cover marketing/.
     - name: mkt
-      description: Marketing skills, CRO, copywriting, and HyperFrames HTML video authoring in marketing/.
+      description: Marketing skills, CRO, copywriting, and analytics in marketing/; does not cover hyperframes/.
     - name: mem
       description: Memory plugin for dual-layer sync and state consolidation in memory/.
     - name: "off"
-      description: Lark suite integration and office productivity tools in office/; does not cover coding tools.
+      description: Lark suite integration, office productivity tools, and media generation in office/; does not cover coding tools.
     - name: po
       description: Plugin optimizer framework for validation and metadata in plugin-optimizer/.
     - name: ref
       description: Code simplification and refactoring agent and skills in refactor/.
-    - name: sp
-      description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/.
     - name: storm
       description: STORM article generation pipeline and researcher agents in storm/.
+    - name: sp
+      description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/.
     - name: sw
       description: SwiftUI code review and modern API best practices in swiftui/.

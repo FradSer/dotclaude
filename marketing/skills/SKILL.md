@@ -1,7 +1,7 @@
 ---
 name: marketing
 version: 0.1.0
-description: "Marketing skills router: match marketing intent to a sub-skill, then Read its Entry file under skills/<name>/ (e.g. ads/ads.md). Covers CRO, copywriting, SEO/AEO, paid ads, ad creative, analytics, email/SMS, pricing, launches, video/image generation, and growth loops. Use for any marketing request — campaigns, content, optimization, measurement. For video/animation authoring, route to hyperframes."
+description: "Marketing skills router: match marketing intent to a sub-skill, then Read its Entry file under skills/<name>/ (e.g. ads/ads.md). Covers CRO, copywriting, SEO/AEO, paid ads, ad creative, analytics, email/SMS, pricing, launches, video/image generation, and growth loops. Use for any marketing request — campaigns, content, optimization, measurement."
 ---
 
 # Marketing Skills
@@ -65,6 +65,5 @@ This skill is a **router only**. Do not improvise marketing strategy from memory
 ## Routing Rules
 
 1. Match intent to the **Use When** column; open that row's **Entry** link (e.g. [`ads/ads.md`](ads/ads.md)) and follow it
-2. For **video / animation / motion-graphics authoring**, route to [`hyperframes/hyperframes.md`](hyperframes/hyperframes.md) — the HyperFrames router (separately-synced sub-tree)
-3. Multi-domain tasks: load each relevant Entry in task order; cross-skill references inside entries point to `<skill>/<skill>.md` paths
-4. Tools: when an Entry references a platform CLI, see [`tools/REGISTRY.md`](../tools/REGISTRY.md) for the wrapper
+2. Multi-domain tasks: load each relevant Entry in task order; cross-skill references inside entries point to `<skill>/<skill>.md` paths
+3. Tools: when an Entry references a platform CLI, see [`tools/REGISTRY.md`](../tools/REGISTRY.md) for the wrapper

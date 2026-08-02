@@ -1,9 +1,9 @@
 {
   "name": "office",
   "displayName": "Office",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "license": "MIT",
-  "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI routing (denested sub-skill entries), Remotion programmatic video authoring, and AI writing trope detection",
+  "description": "Office productivity skills for patent applications, PRD generation, image and video generation, browser automation, Remotion programmatic video authoring, and AI writing trope detection",
   "keywords": [
     "patent",
     "prd",
@@ -11,9 +11,6 @@
     "video-generation",
     "gemini",
     "seedance",
-    "feishu",
-    "lark",
-    "lark-cli",
     "remotion",
     "programmatic-video",
     "browser-automation",
@@ -26,7 +23,6 @@
   },
   "skills": [
     "./skills/agent-browser/",
-    "./skills/lark/",
     "./skills/remotion/",
     "./skills/tropes/"
   ],

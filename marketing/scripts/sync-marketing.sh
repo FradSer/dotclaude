@@ -152,10 +152,8 @@ PY
 check_diff() {
     local has_changes=false new_c=0 changed_c=0 deleted_c=0
     # 本地保留条目（skills/ 根层，不被视为上游删除）：
-    #   SKILL.md = 本地路由器；SYNC.md = 本同步文档；
-    #   hyperframes/ = 镜像自 heygen-com/hyperframes 的子树
-    #   （由 sync-hyperframes.sh 独立同步，本脚本不触碰）
-    local local_skill_keep=("SKILL.md" "SYNC.md" "hyperframes")
+    #   SKILL.md = 本地路由器；SYNC.md = 本同步文档
+    local local_skill_keep=("SKILL.md" "SYNC.md")
     for p in "${UPSTREAM_PATHS[@]}"; do
         local upstream_root="$TEMP_DIR/repo/$p"
         local local_root="$TARGET_DIR/$p"
@@ -227,8 +225,8 @@ sync_files() {
     if [ "$no_backup" != "true" ]; then create_backup; fi
     log_info "正在同步文件..."
 
-    # 备份本地 skills/SKILL.md（路由器）、skills/SYNC.md 与 skills/hyperframes/ 子树
-    # （整棵重建 skills/ 会把它们删掉；hyperframes/ 由 sync-hyperframes.sh 独立同步）
+    # 备份本地 skills/SKILL.md（路由器）与 skills/SYNC.md
+    # （整棵重建 skills/ 会把它们删掉）
     local local_router="$TARGET_DIR/skills/SKILL.md"
     local router_backup=""
     if [ -f "$local_router" ]; then
@@ -240,12 +238,6 @@ sync_files() {
     if [ -f "$local_sync_md" ]; then
         sync_md_backup="$TEMP_DIR/local-SYNC.md"
         cp "$local_sync_md" "$sync_md_backup"
-    fi
-    local local_hf="$TARGET_DIR/skills/hyperframes"
-    local hf_backup=""
-    if [ -d "$local_hf" ]; then
-        hf_backup="$TEMP_DIR/local-hyperframes"
-        cp -R "$local_hf" "$hf_backup"
     fi
 
     for p in "${UPSTREAM_PATHS[@]}"; do
@@ -267,12 +259,6 @@ sync_files() {
     done
     log_info "  已同步根层功能文件: ${UPSTREAM_FILES[*]}"
     log_success "同步完成"
-
-    # 恢复本地 hyperframes/ 子树（由 sync-hyperframes.sh 独立同步，本脚本不动）
-    if [ -n "$hf_backup" ]; then
-        cp -R "$hf_backup" "$TARGET_DIR/skills/hyperframes"
-        log_info "  已恢复 skills/hyperframes/ 子树"
-    fi
 
     # 恢复本地路由器 SKILL.md 并执行 denest（SKILL.md → <dirname>.md），
     # 避免 49 个镜像子 skill 被 auto-discovery 注册成独立 skill

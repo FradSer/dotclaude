@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 #
 # HyperFrames Skills 同步脚本
-# 从 heygen-com/hyperframes 仓库同步 skills/ 目录到本地 marketing/skills/hyperframes/
+# 从 heygen-com/hyperframes 仓库同步 skills/ 目录到本地 hyperframes/skills/
 #
-# 本子树寄居在 marketing 插件下，由本脚本独立同步；marketing 上游(coreyhaines31/
-# marketingskills)的 sync-marketing.sh 会备份并恢复此子树，互不破坏。
+# 独立插件，由本脚本单独同步。
 # 仿 office/scripts/sync-lark.sh 模式：sparse-checkout 上游 skills/，镜像全部内容，
 # 排除本地 SKILL.md / SYNC.md（顶层路由与同步文档），按需创建备份并刷新 SYNC.md 元数据。
 # 同步后执行 denest：子 skill 的 SKILL.md → <dirname>.md（仅保留顶层路由器
@@ -25,11 +24,10 @@ UPSTREAM_REPO="https://github.com/heygen-com/hyperframes.git"
 UPSTREAM_BRANCH="main"
 UPSTREAM_PATH="skills"
 # 上游根层功能文件（agent 指南），镜像到 TARGET_DIR 下并加 UPSTREAM- 前缀，
-# 避免与 marketing 插件根的 CLAUDE.md（marketingskills 上游指南）混淆。
-# 格式: "上游路径:本地文件名"
+# 避免与插件根的本地指南混淆。格式: "上游路径:本地文件名"
 UPSTREAM_FILES=("CLAUDE.md:UPSTREAM-CLAUDE.md" "AGENTS.md:UPSTREAM-AGENTS.md")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-TARGET_DIR="$SCRIPT_DIR/../skills/hyperframes"
+TARGET_DIR="$SCRIPT_DIR/../skills"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/hyperframes-sync-$$"
 
@@ -37,7 +35,7 @@ TEMP_DIR="/tmp/hyperframes-sync-$$"
 LOCAL_FILES=("SKILL.md" "SYNC.md" "LICENSE" "UPSTREAM-CLAUDE.md" "UPSTREAM-AGENTS.md")
 
 # denest 脚本：子 skill SKILL.md → <dirname>.md（仅保留顶层路由器 SKILL.md）
-DENEST_SCRIPT="$SCRIPT_DIR/denest-marketing-skills.py"
+DENEST_SCRIPT="$SCRIPT_DIR/denest-skills.py"
 
 # 对指定目录执行与生产相同的 denest（rename SKILL.md + 重写链接）
 # HF_TREE_ROOT=1：TARGET_DIR 就是 hyperframes 子树，顶层目录即子 skill
@@ -329,7 +327,7 @@ sync_files() {
     log_info "正在 denest 子 skill（SKILL.md → <dirname>.md）..."
     apply_denest "$TARGET_DIR" || return 1
 
-    # 根层功能文件（CLAUDE.md/AGENTS.md → UPSTREAM-*.md，加前缀避免与 marketing 根的 CLAUDE.md 冲突）
+    # 根层功能文件（CLAUDE.md/AGENTS.md → UPSTREAM-*.md，加前缀避免与插件根本地指南冲突）
     for entry in "${UPSTREAM_FILES[@]}"; do
         local upstream_src="${entry%%:*}"
         local local_name="${entry##*:}"
@@ -419,7 +417,7 @@ main() {
     log_success "同步完成!"
     log_info "建议执行以下命令提交更改:"
     echo ""
-    echo "    git add hyperframes/skills/hyperframes/"
+    echo "    git add hyperframes/skills/"
     echo "    git-agent commit --no-stage --intent \"sync hyperframes skills from upstream heygen-com/hyperframes\""
     echo ""
 }

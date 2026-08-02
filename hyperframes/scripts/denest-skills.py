@@ -2,18 +2,17 @@
 """Rename nested SKILL.md files so they are not auto-discovered as skills.
 
 Claude Code / Cursor treat any directory containing SKILL.md as a skill.
-Under marketing/skills/ only the root router SKILL.md should be discoverable;
-upstream sub-skills ship as <dirname>/SKILL.md and must be renamed after sync
-to <dirname>/<dirname>.md. Relative links are rewritten to match.
+Under hyperframes/skills/ only the root router SKILL.md should be
+discoverable; upstream sub-skills ship as <dirname>/SKILL.md and must be
+renamed after sync to <dirname>/<dirname>.md. Relative links are rewritten
+to match.
 
-HF_TREE_ROOT=1 mode additionally serves the standalone hyperframes plugin:
-the tree root IS the hyperframes sub-tree, so top-level dirs are sub-skills.
-hyperframes/scripts/denest-skills.py is a copy of this script; keep the two
-in sync when editing the HF_TREE_ROOT logic.
+Run with HF_TREE_ROOT=1: the tree root IS the hyperframes sub-tree, so
+top-level dirs are sub-skills directly.
 
 Usage:
-    python3 marketing/scripts/denest-marketing-skills.py
-    python3 marketing/scripts/denest-marketing-skills.py --check
+    python3 hyperframes/scripts/denest-skills.py
+    python3 hyperframes/scripts/denest-skills.py --check
 """
 
 from __future__ import annotations

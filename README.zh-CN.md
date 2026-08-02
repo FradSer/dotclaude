@@ -11,22 +11,11 @@
 
 ### [git](git/)
 
-Conventional Git 自动化工具，支持代码质量检查的提交和仓库管理。
+Conventional Git 自动化工具，支持代码质量检查的提交和仓库管理，以及 GitFlow 工作流自动化（功能分支、修复分支和发布分支的语义化版本管理，finish 后清理过期分支与 worktree）。
 
 **安装：**
 ```bash
 claude plugin install git@frad-dotclaude
-```
-
----
-
-### [gitflow](gitflow/)
-
-GitFlow 工作流自动化，支持功能分支、修复分支和发布分支的语义化版本管理，并在 finish 后清理过期分支与 worktree。
-
-**安装：**
-```bash
-claude plugin install gitflow@frad-dotclaude
 ```
 
 ---
@@ -88,11 +77,33 @@ claude plugin install swiftui@frad-dotclaude
 
 ### [office](office/)
 
-专利申请书生成、产品需求文档、图片与视频生成、飞书文档创建、智能体浏览器自动化、Lark/Feishu CLI 路由（子 skill 入口已 denest）、Remotion 编程式视频创作以及 AI 写作俗套检测。
+专利申请书生成、产品需求文档、图片与视频生成、智能体浏览器自动化、Remotion 编程式视频创作以及 AI 写作俗套检测。
 
 **安装：**
 ```bash
 claude plugin install office@frad-dotclaude
+```
+
+---
+
+### [lark](lark/)
+
+飞书/Lark CLI 技能，镜像自 larksuite/cli —— 文档、表格、IM、日历、审批、云盘、知识库、通讯录等。
+
+**安装：**
+```bash
+claude plugin install lark@frad-dotclaude
+```
+
+---
+
+### [hyperframes](hyperframes/)
+
+HyperFrames HTML 视频创作技能，镜像自 heygen-com/hyperframes —— keyframes、动画、字幕、动态图形与 remotion-to-hyperframes 转换。
+
+**安装：**
+```bash
+claude plugin install hyperframes@frad-dotclaude
 ```
 
 ---

@@ -18,7 +18,7 @@ UPSTREAM_REPO="https://github.com/larksuite/cli.git"
 UPSTREAM_BRANCH="main"
 UPSTREAM_PATH="skills"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-TARGET_DIR="$SCRIPT_DIR/../skills/lark"
+TARGET_DIR="$SCRIPT_DIR/../skills"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/lark-cli-sync-$$"
 
@@ -419,7 +419,7 @@ main() {
     log_success "同步完成!"
     log_info "建议执行以下命令提交更改:"
     echo ""
-    echo "    git add office/skills/lark/"
+    echo "    git add lark/skills/"
     echo "    git-agent commit --no-stage --intent \"sync lark skills from upstream larksuite/cli\" --co-author \"Claude Opus 4.6 <noreply@anthropic.com>\""
     echo ""
 }
