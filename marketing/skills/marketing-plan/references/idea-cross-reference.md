@@ -261,5 +261,5 @@ If `marketing-ideas` adds new ideas (it's a living skill — the 139 may become 
 
 ## Sources
 
-- `skills/marketing-ideas/SKILL.md` (in the `marketingskills` repo)
+- `skills/marketing-ideas/marketing-ideas.md` (in the `marketingskills` repo)
 - `skills/marketing-ideas/references/ideas-by-category.md` (in the `marketingskills` repo)

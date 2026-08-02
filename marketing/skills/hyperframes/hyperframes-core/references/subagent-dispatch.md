@@ -37,5 +37,5 @@ Harness-specific notes:
 ## Vocabulary mapping (older phrasing you may meet in agent prompts)
 
 - "in the same message" / `run_in_background: true` — Claude Code idioms for "concurrently / as a background child"; apply your harness's equivalent from the table.
-- "Skill `X`" / "loaded with the Skill tool" — load skill X; on harnesses without a skill-loading tool, read `<skills-root>/X/SKILL.md` directly (the skills root is the directory containing this skill family; derive it from `SKILL_DIR` in your dispatch context).
+- "Skill `X`" / "loaded with the Skill tool" — load skill X; on harnesses without a skill-loading tool, read `<skills-root>/X/X.md` directly (the skills root is the directory containing this skill family; derive it from `SKILL_DIR` in your dispatch context).
 - `Read` / `Write` / `Edit` / `Bash` — capability names (read file / write file / edit in place / run shell); map to your harness's tools.

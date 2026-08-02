@@ -1,6 +1,6 @@
 # Workflow catalog
 
-Use this catalog while routing, before the selected workflow is lazy-installed. After the routing table in `../SKILL.md` yields a candidate, read that candidate's section and confirm that its input and output match the request.
+Use this catalog while routing, before the selected workflow is lazy-installed. After the routing table in `../hyperframes.md` yields a candidate, read that candidate's section and confirm that its input and output match the request.
 
 ## Sections
 

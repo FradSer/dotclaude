@@ -118,12 +118,42 @@ create_backup() {
     fi
 }
 
+# denest 脚本：SKILL.md → <dirname>.md 重命名 + 链接重写
+DENEST_SCRIPT="$SCRIPT_DIR/denest-marketing-skills.py"
+# 索引生成脚本：按子 skill frontmatter 刷新路由器 SKILL.md 的索引表
+GEN_INDEX_SCRIPT="$SCRIPT_DIR/gen-marketing-index.py"
+
+# 对指定目录执行与生产相同的 denest（rename SKILL.md + 重写链接）
+apply_denest() {
+    local tree="$1"
+    if [ ! -f "$DENEST_SCRIPT" ]; then
+        log_error "缺少 denest 脚本: $DENEST_SCRIPT"
+        return 1
+    fi
+    MARKETING_DIR_OVERRIDE="$tree" DENEST_SCRIPT="$DENEST_SCRIPT" python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+import os
+import sys
+
+script = os.environ["DENEST_SCRIPT"]
+spec = importlib.util.spec_from_file_location("denest", script)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+mod.MARKETING_DIR = Path(os.environ["MARKETING_DIR_OVERRIDE"]).resolve()
+renamed = mod.rename_nested()
+links = mod.rewrite_links()
+print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
+PY
+}
+
 check_diff() {
     local has_changes=false new_c=0 changed_c=0 deleted_c=0
     # 本地保留条目（skills/ 根层，不被视为上游删除）：
-    #   SYNC.md = 本同步文档；hyperframes/ = 镜像自 heygen-com/hyperframes 的子树
+    #   SKILL.md = 本地路由器；SYNC.md = 本同步文档；
+    #   hyperframes/ = 镜像自 heygen-com/hyperframes 的子树
     #   （由 sync-hyperframes.sh 独立同步，本脚本不触碰）
-    local local_skill_keep=("SYNC.md" "hyperframes")
+    local local_skill_keep=("SKILL.md" "SYNC.md" "hyperframes")
     for p in "${UPSTREAM_PATHS[@]}"; do
         local upstream_root="$TEMP_DIR/repo/$p"
         local local_root="$TARGET_DIR/$p"
@@ -131,6 +161,18 @@ check_diff() {
             log_warning "本地 $p/ 不存在,将创建"
             has_changes=true
             continue
+        fi
+        # skills/ 子树：先把上游副本 denest（SKILL.md → <dirname>.md），
+        # 再与本地比较，避免 denest 被误报为变更/删除
+        if [ "$p" = "skills" ]; then
+            local compare_dir="$TEMP_DIR/denested-$p"
+            rm -rf "$compare_dir"
+            mkdir -p "$compare_dir"
+            while IFS= read -r -d '' item; do
+                cp -R "$item" "$compare_dir/"
+            done < <(find "$upstream_root" -maxdepth 1 -mindepth 1 -print0)
+            apply_denest "$compare_dir" || return 1
+            upstream_root="$compare_dir"
         fi
         while IFS= read -r -d '' uf; do
             local rel="${uf#$upstream_root/}"
@@ -183,8 +225,14 @@ sync_files() {
     if [ "$no_backup" != "true" ]; then create_backup; fi
     log_info "正在同步文件..."
 
-    # 备份本地 skills/SYNC.md 与 skills/hyperframes/ 子树
+    # 备份本地 skills/SKILL.md（路由器）、skills/SYNC.md 与 skills/hyperframes/ 子树
     # （整棵重建 skills/ 会把它们删掉；hyperframes/ 由 sync-hyperframes.sh 独立同步）
+    local local_router="$TARGET_DIR/skills/SKILL.md"
+    local router_backup=""
+    if [ -f "$local_router" ]; then
+        router_backup="$TEMP_DIR/local-SKILL.md"
+        cp "$local_router" "$router_backup"
+    fi
     local local_sync_md="$TARGET_DIR/skills/SYNC.md"
     local sync_md_backup=""
     if [ -f "$local_sync_md" ]; then
