@@ -1,7 +1,7 @@
 {
   "name": "github",
   "displayName": "GitHub",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "GitHub project operations with quality gates.",
   "author": {
     "name": "Frad LEE",
@@ -21,5 +21,17 @@
     "./skills/create-pr/",
     "./skills/resolve-issues/",
     "./skills/review-pr/"
-  ]
+  ],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/closeout-stop.sh"
+          }
+        ]
+      }
+    ]
+  }
 }

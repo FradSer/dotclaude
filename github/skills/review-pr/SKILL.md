@@ -60,16 +60,17 @@ Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `refer
 **Goal**: Once Phase 4 holds, ask the user whether to merge FIRST — before any ceremony. The summary comment and body rewrite run only on a merge choice; "Don't merge" skips the ceremony and goes straight to `TaskStop`. Full templates and ordered steps in `references/closeout.md`.
 
 **CRITICAL constraints (hold even when detail is delegated to L3)**:
-1. **Ask the merge question the moment Phase 4 holds.** Do not post the summary or rewrite the body first — the user's choice gates the ceremony. When everything is settled, the closeout ask is the next step, not more polling.
-2. The ceremony runs ONLY on a merge choice: capture the summary comment URL from `gh pr comment` stdout (`SUMMARY_URL=$(gh pr comment …)`).
-3. The Review-cycle line in the rewritten body MUST contain that literal URL — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it.
-4. Steps are ordered — the body needs the comment URL, so summary first, body second.
-5. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
-6. Do not ask to merge or run the ceremony while CI is red or comments remain open; never auto-merge past open `escalate` items.
-7. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` but still run the ceremony first, then auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: fall back to the explicit `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
-8. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
+1. **Arm the closeout state the moment Phase 4 holds — before anything else**: `bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/arm-closeout.sh "$PR"` (append `--auto-merge` when the opt-in was parsed in Phase 1). This writes the repo's `.git/review-pr-closeout.json`, arming the plugin's Stop hook: while the file exists, every turn end is blocked with a message naming the missing merge decision — the Phase 5 ask cannot be skipped by a premature stop (bounded by Claude Code's 8-consecutive-block cap per turn; a user interrupt also bypasses it). Clear it the moment the decision is resolved — `bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/clear-closeout.sh "$PR"`: after the user answers (any choice, including "Don't merge"), after the auto-merge completes, or after the opt-in aborts. A stale file blocks the next stop; its message repeats the clear path.
+2. **Ask the merge question the moment Phase 4 holds.** Do not post the summary or rewrite the body first — the user's choice gates the ceremony. When everything is settled, the closeout ask is the next step, not more polling.
+3. The ceremony runs ONLY on a merge choice: capture the summary comment URL from `gh pr comment` stdout (`SUMMARY_URL=$(gh pr comment …)`).
+4. The Review-cycle line in the rewritten body MUST contain that literal URL — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it.
+5. Steps are ordered — the body needs the comment URL, so summary first, body second.
+6. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
+7. Do not ask to merge or run the ceremony while CI is red or comments remain open; never auto-merge past open `escalate` items.
+8. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` but still run the ceremony first, then auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: **re-arm the closeout state without `--auto-merge`** (`arm-closeout.sh "$PR"`) so the hook enforces the explicit ask, fall back to the `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
+9. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
 
-`TaskStop` the Monitor after closeout completes.
+`TaskStop` the Monitor after closeout completes — with the closeout state already cleared.
 
 ## References
 

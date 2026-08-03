@@ -17,6 +17,36 @@ user — via `AskUserQuestion` — whether to merge, before writing anything. **
 hard to reverse and outward-facing**, so it requires an explicit user choice every time;
 never auto-merge, and never merge past open `escalate` comments without surfacing them.
 
+### Arm the closeout state first
+
+The moment the Phase 4 gate holds, arm the closeout state **before anything else**:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/arm-closeout.sh "$PR"                # explicit ask
+bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/arm-closeout.sh "$PR" --auto-merge   # opt-in
+```
+
+Arming writes `.git/review-pr-closeout.json` (resolved via `git rev-parse --git-dir`, so it
+works from any cwd in the repo). While the file exists, the plugin's Stop hook
+(`hooks/closeout-stop.sh`) blocks every turn end with a message naming the PR and the missing
+step — the merge ask cannot be skipped by a premature or hallucinated stop. This is the
+enforcement net for the whole closeout: turn-end stays blocked until the decision resolves
+(bounded by Claude Code's 8-consecutive-block cap per turn; a user interrupt also bypasses
+it — the hook's message always names the clear script as the escape hatch).
+
+Clear it the moment the decision is resolved:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/clear-closeout.sh "$PR"
+```
+
+Clear after the user answers (any choice, including "Don't merge"), after the auto-merge
+completes, or after the opt-in aborts (merge failure, user interrupt, or the gate no longer
+holds — auto-merge is single-shot and consumed either way). Leaving it armed blocks the next
+stop; the hook's message repeats the clear path as the escape hatch. The clear script only
+removes state matching `$PR`, so an interrupted closeout for one PR never deletes a pending
+one for another.
+
 Ask one question, four mutually exclusive options:
 
 - **Create a merge commit** (Recommended — listed first; the default merge strategy)
@@ -185,11 +215,12 @@ comment + body rewrite still run first, so the merged PR carries the record.
 3. No open `escalate` comments. ← this is the hard switch
 
 **If any `escalate` comment is still open, the auto-merge opt-in is suspended for this closeout.**
-Fall back to the explicit `AskUserQuestion` (four options, merge listed first as Recommended)
-and include the escalate count in the question text. Do not merge past escalate items just
-because the flag was set — escalate means "needs human judgment", and auto-merging past it
-is exactly the over-reach the explicit-choice rule exists to prevent. The user may still pick
-merge from the question; that is their call.
+**Re-arm the closeout state without `--auto-merge`** (`arm-closeout.sh "$PR"`) so the Stop
+hook enforces the explicit ask, then fall back to the explicit `AskUserQuestion` (four
+options, merge listed first as Recommended) and include the escalate count in the question
+text. Do not merge past escalate items just because the flag was set — escalate means "needs
+human judgment", and auto-merging past it is exactly the over-reach the explicit-choice rule
+exists to prevent. The user may still pick merge from the question; that is their call.
 
 **If the gate holds (CI green, zero open escalate), execute:**
 1. Run the ceremony first — summary comment + body rewrite (above), so the record is on the
@@ -199,13 +230,16 @@ merge from the question; that is their call.
    One line: e.g. "PR #<n>: CI green, no open comments — auto-merging with a merge commit."
 3. Run `gh pr merge "$PR" --repo "$REPO" --merge` (add `--delete-branch` only when stack-safe
    AND in the main worktree, same rule as the explicit path). Never `--auto`.
+4. Clear the closeout state (`clear-closeout.sh "$PR"`) — the opt-in is consumed by the merge.
 
 **Single-shot.** Auto-merge is a one-shot choice for this PR. If the merge fails (branch
-protection, required reviews, stale base), surface the error and stop — do not retry with
-different flags, do not force-push, and do not re-arm auto-merge; the user decides next. If
-the user interrupts and you resume, and the gate no longer holds (a new comment arrived, CI
-re-ran red), do not auto-merge — re-check the gate, and if escalate items now exist, fall
-back to the explicit question.
+protection, required reviews, stale base), surface the error, clear the closeout state, and
+stop — do not retry with different flags, do not force-push, and do not re-arm auto-merge;
+the user decides next. If the user interrupts and you resume, and the gate no longer holds (a
+new comment arrived, CI re-ran red), do not auto-merge — re-check the gate, and if escalate
+items now exist, fall back to the explicit question. Either way, clear the closeout state
+once the opt-in is resolved (completed or aborted) — while it stays armed, every turn end is
+blocked until the decision is settled.
 
 **On a successful auto-merge**, proceed to "After a successful merge" hygiene exactly as the
 explicit-choice path would. `TaskStop` the Monitor.
@@ -267,42 +301,52 @@ land docs after the code PR merges so the author can grep the real value.
 
 ## Order and idempotency
 
-1. **Ask the merge question** via `AskUserQuestion` (Phase 4 gate holds). This is the first
-   closeout step — the ceremony below runs only on a merge choice.
-2. On a merge choice: hide + resolve the fully-addressed comments (Phase 3 closeout)
+1. **Arm the closeout state** (`arm-closeout.sh "$PR"`, appending `--auto-merge` when opted
+   in) — the Stop hook enforces the merge decision from here on.
+2. **Ask the merge question** via `AskUserQuestion` (Phase 4 gate holds). This is the first
+   closeout step — the ceremony below runs only on a merge choice. Clear the closeout state
+   (`clear-closeout.sh "$PR"`) the moment the answer is in, any choice.
+3. On a merge choice: hide + resolve the fully-addressed comments (Phase 3 closeout)
    **first** — the summary comment should land on a clean PR. Re-sweep if a final CI push
    landed after the last closeout pass.
-3. Post the summary comment, capturing its URL.
-4. Rewrite the title/body, linking the Review-cycle line to that URL.
+4. Post the summary comment, capturing its URL.
+5. Rewrite the title/body, linking the Review-cycle line to that URL.
 
-Steps 3 and 4 are ordered, not merely sequential: the body needs a URL that does not exist
+Steps 4 and 5 are ordered, not merely sequential: the body needs a URL that does not exist
 until the comment is posted. Never rewrite the body first and backfill the link later.
 
-5. Merge step — depends on the opt-in:
-   - **No flag (default)**: the ask in step 1 was the question; run `gh pr merge` with the
+6. Merge step — depends on the opt-in:
+   - **No flag (default)**: the ask in step 2 was the question; run `gh pr merge` with the
      strategy the user chose (`--merge` / `--squash --subject "<title>"` / `--rebase`).
      Never `--auto`.
-   - **`--auto-merge` opt-in**: the gate held with zero open `escalate` items, so step 1
-     was skipped; after the ceremony (steps 2–4), send a `PushNotification` then run
+   - **`--auto-merge` opt-in**: the gate held with zero open `escalate` items, so step 2
+     was skipped; after the ceremony (steps 3–5), send a `PushNotification` then run
      `gh pr merge --merge` directly. If any `escalate` item is open, suspend auto-merge and
-     fall back to the explicit question.
-6. After a successful merge: head cleanup + sync `main`/`develop` (see above).
-7. `TaskStop` the Monitor.
+     fall back to the explicit question. Clear the closeout state after the merge completes
+     or after the opt-in aborts (failure, interrupt, or gate no longer holds) — it is
+     single-shot, consumed either way.
+7. After a successful merge: head cleanup + sync `main`/`develop` (see above).
+8. `TaskStop` the Monitor (the closeout state is already cleared).
 
-Steps 2–4 (the ceremony) are idempotent: re-running `gh pr edit` with the same title/body is
+Steps 3–5 (the ceremony) are idempotent: re-running `gh pr edit` with the same title/body is
 a no-op, and the marker lookup patches the existing summary rather than duplicating it (which
-also recovers `SUMMARY_URL` after an interrupt). Steps 5 and 6 are NOT idempotent — only run
+also recovers `SUMMARY_URL` after an interrupt). Steps 6 and 7 are NOT idempotent — only run
 them once, after the user's explicit merge choice (or, under `--auto-merge`, the gate
 holding). If the user interrupts and you resume, skip steps already completed; if they chose
 "don't merge" — or merge + hygiene already ran — do not repeat, and do not run the ceremony
 either (the ask gates it). Under `--auto-merge`, if the gate no longer holds on resume (new
 comment or CI re-ran red), do not auto-merge — re-check and fall back to the explicit
-question if escalate items now exist.
+question if escalate items now exist. If an interrupt left the closeout state armed, clear
+it when the closeout is resolved (ask answered or opt-in consumed); while armed, every
+turn end is blocked until then.
 
 ## Do not
 
 - Do not ask to merge or post the summary while comments are still open or CI is still red —
   the gate must hold first, and the summary would claim a merge-ready state that is not true.
+- Do not end the turn with the closeout state armed — the Stop hook blocks it. Clear it
+  (`clear-closeout.sh "$PR"`) as soon as the decision resolves; while it stays armed, every
+  turn end is blocked with a message naming the PR and the missing step.
 - Do not run the ceremony (summary comment + body rewrite) before the user's merge choice —
   the ask comes first, and "Don't merge" skips the ceremony entirely.
 - Do not rewrite the title/body to claim something the diff does not deliver.
