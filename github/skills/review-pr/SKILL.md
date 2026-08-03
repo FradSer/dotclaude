@@ -1,7 +1,7 @@
 ---
 name: review-pr
 allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop, Skill, AskUserQuestion, Read, Edit, Write
-description: Reviews a pull request with the built-in /review skill, then persists a Monitor watch over CI results and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
+description: Reviews a pull request with the built-in /review skill, then persists a Monitor watch over CI results and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt — then asks the user whether to merge. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
 argument-hint: <PR number or URL> [--auto-merge]
 user-invocable: true
 ---
@@ -51,22 +51,23 @@ The only valid skip is an explicit user opt-out ("just baseline review, don't wa
 
 Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `references/review-loop.md`:
 - **Normal stop (all three)**: every `[ci]` check terminal + passing; every comment reflected on with resolved ones hidden + threads resolved (only `escalate` items remain visible); user signals done.
-- **Hard cap (overrides the above)**: ~2h wall-clock reached OR user explicitly opts out — surface the unsettled state first (which of CI/comments is still open), then stop. Do NOT keep polling because CI is red or comments remain; the cap exists so a stuck PR cannot hold the watch open forever.
+- **Hard cap (overrides the above)**: ~2h wall-clock reached OR user explicitly opts out — surface the unsettled state first (which of CI/comments is still open), then stop. Do NOT keep polling because CI is red or comments remain; the cap exists so a stuck PR cannot hold the watch open forever. If the cap hits with everything actually settled (CI terminal + passing, comments all reflected on), that is a closeout trigger, not a stop: proceed to Phase 5's merge ask.
 
 **CRITICAL: a temporarily empty comment queue is NOT a stop signal** — other agents may post more comments later.
 
-## Phase 5: Closeout — Summary, Body Rewrite, and Merge
+## Phase 5: Closeout — Merge Decision First, Then Ceremony
 
-**Goal**: Once Phase 4 holds, post a merge-readiness summary comment (user's first-person voice), rewrite the PR title/body to link to it, then ask the user whether to merge. Full templates and ordered steps in `references/closeout.md`.
+**Goal**: Once Phase 4 holds, ask the user whether to merge FIRST — before any ceremony. The summary comment and body rewrite run only on a merge choice; "Don't merge" skips the ceremony and goes straight to `TaskStop`. Full templates and ordered steps in `references/closeout.md`.
 
 **CRITICAL constraints (hold even when detail is delegated to L3)**:
-1. Capture the summary comment URL from `gh pr comment` stdout (`SUMMARY_URL=$(gh pr comment …)`).
-2. The Review-cycle line in the rewritten body MUST contain that literal URL — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it.
-3. Steps are ordered — the body needs the comment URL, so summary first, body second.
-4. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
-5. Do not post summary / rewrite body / ask to merge while CI is red or comments remain open; never auto-merge past open `escalate` items.
-6. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` and auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: fall back to the explicit `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
-7. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
+1. **Ask the merge question the moment Phase 4 holds.** Do not post the summary or rewrite the body first — the user's choice gates the ceremony. When everything is settled, the closeout ask is the next step, not more polling.
+2. The ceremony runs ONLY on a merge choice: capture the summary comment URL from `gh pr comment` stdout (`SUMMARY_URL=$(gh pr comment …)`).
+3. The Review-cycle line in the rewritten body MUST contain that literal URL — a count with no link is not a pointer, and the quoted heredoc will not expand `$SUMMARY_URL`, so paste it.
+4. Steps are ordered — the body needs the comment URL, so summary first, body second.
+5. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
+6. Do not ask to merge or run the ceremony while CI is red or comments remain open; never auto-merge past open `escalate` items.
+7. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` but still run the ceremony first, then auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: fall back to the explicit `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
+8. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
 
 `TaskStop` the Monitor after closeout completes.
 
