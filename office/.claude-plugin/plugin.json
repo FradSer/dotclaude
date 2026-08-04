@@ -3,7 +3,7 @@
   "displayName": "Office",
   "version": "0.7.0",
   "license": "MIT",
-  "description": "Office productivity skills for patent applications, PRD generation, image and video generation, browser automation, Remotion programmatic video authoring, and AI writing trope detection",
+  "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Remotion programmatic video authoring, and AI writing trope detection",
   "keywords": [
     "patent",
     "prd",
@@ -13,7 +13,6 @@
     "seedance",
     "remotion",
     "programmatic-video",
-    "browser-automation",
     "writing",
     "productivity"
   ],
@@ -22,7 +21,6 @@
     "email": "fradser@gmail.com"
   },
   "skills": [
-    "./skills/agent-browser/",
     "./skills/remotion/",
     "./skills/tropes/"
   ],

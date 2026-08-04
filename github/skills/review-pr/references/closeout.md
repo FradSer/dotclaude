@@ -47,6 +47,28 @@ stop; the hook's message repeats the clear path as the escape hatch. The clear s
 removes state matching `$PR`, so an interrupted closeout for one PR never deletes a pending
 one for another.
 
+### When the hook fires: verify the problem is real
+
+The Stop hook blocks on the state file alone — it cannot know whether the closeout was
+already resolved and the clear step was simply missed. That happens after an interrupt (the
+ask was answered, then the turn died before the clear), a resumed session, a summary already
+posted, or a merge that already landed (manual or otherwise). So before acting on a block,
+**verify the pending closeout actually exists**:
+
+- **Simple checks — judge directly.** e.g. `gh pr view "$PR" --repo "$REPO" --json state,mergedAt`
+  (a MERGED PR means the closeout is done and the state is stale), or the
+  `<!-- review-pr:summary -->` marker lookup (a posted summary means the ask was already
+  resolved).
+- **Complex or ambiguous situations — spawn an independent subagent with clean context.**
+  e.g. reconstructing whether the merge question was asked earlier in the session, or whether
+  the gate (CI green, zero open escalate) still holds after events that landed after arming.
+  The main context is biased by sunk cost, so let a fresh agent verify and follow its verdict
+  — the same pattern as the Phase 3 triage agent.
+
+A verified-stale state means the enforcement already did its job: clear it
+(`clear-closeout.sh "$PR"`) and end the turn — do not re-ask, do not run the ceremony. A
+verified-real state: proceed with the closeout as below.
+
 Ask one question, four mutually exclusive options:
 
 - **Create a merge commit** (Recommended — listed first; the default merge strategy)

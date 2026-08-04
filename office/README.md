@@ -123,16 +123,6 @@ Generate short videos from text or stills using ByteDance Seedance on Volcengine
 
 **Prerequisites:** `uv`, and `ARK_API_KEY` ([console.volcengine.com/ark](https://console.volcengine.com/ark)).
 
-### `agent-browser` (Reference Skill)
-
-Browser automation command reference for agents and workflows.
-
-**Source**: Synced from [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)
-
-**Purpose**: Provides browser automation command reference for agents that need to interact with web pages.
-
-**Sync**: Use `./scripts/sync-agent-browser.sh` to update from upstream
-
 ### `tropes` (Internal Skill)
 
 AI writing trope detection — scans generated text for common AI patterns that make content sound artificial or formulaic.
@@ -148,31 +138,6 @@ AI writing trope detection — scans generated text for common AI patterns that 
 **Usage**: Automatically loaded when generating text content, documentation, code comments, or reviewing writing style.
 
 ## Scripts
-
-### `scripts/sync-agent-browser.sh`
-
-同步上游 agent-browser skill 的脚本。
-
-**Usage:**
-```bash
-# 检查是否有更新
-./scripts/sync-agent-browser.sh --check
-
-# 执行同步(会提示确认)
-./scripts/sync-agent-browser.sh
-
-# 强制同步,跳过确认
-./scripts/sync-agent-browser.sh --force
-
-# 同步但不创建备份
-./scripts/sync-agent-browser.sh --no-backup
-```
-
-**Options:**
-- `-h, --help` - 显示帮助信息
-- `-c, --check` - 仅检查更新,不执行同步
-- `-f, --force` - 强制同步,跳过备份
-- `--no-backup` - 同步时不创建备份
 
 ### `scripts/search-patents.sh`
 
@@ -205,8 +170,7 @@ office/
 │   ├── utils.sh             # Shared shell utilities
 │   └── progressive_env.py   # Progressive config resolver (flag → env → .env → default)
 ├── scripts/
-│   ├── search-patents.sh      # Patent search helper
-│   └── sync-agent-browser.sh  # Agent-browser skill sync
+│   └── search-patents.sh      # Patent search helper
 └── skills/
     ├── patent-architect/      # Patent application generation (command)
     │   ├── SKILL.md
@@ -223,8 +187,6 @@ office/
     │   ├── SKILL.md
     │   ├── scripts/generate_video.py
     │   └── references/prompting.md
-    ├── agent-browser/         # Browser automation (internal)
-    │   └── SKILL.md
     └── tropes/                # AI writing trope detection (internal)
         ├── SKILL.md
         └── references/
