@@ -401,4 +401,4 @@ Motion is a budget, not a garnish. Three rules decide whether an animation belon
 }
 ```
 
-Honoring `prefers-reduced-motion` is covered by the `better-accessibility` skill; apply it to every animation in this file.
+Honoring `prefers-reduced-motion` is covered by `references/accessibility/overview.md`; apply it to every animation in this file.

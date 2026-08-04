@@ -52,7 +52,7 @@ Pick a small set of alignment edges and put everything on them; the eye tracks s
 
 - Every stray edge (an icon 2px off the text edge, a card padded differently from its neighbor) reads as noise even when nobody can name the problem.
 - Use one consistent project spacing step to express hierarchy; `16px` is a useful default when no scale exists, and deeper nesting repeats the same step.
-- Numbers in tables right-align to the trailing edge (see `better-typography` for tabular figures); text left-aligns to the leading edge.
+- Numbers in tables right-align to the trailing edge (see `references/typography/overview.md` for tabular figures); text left-aligns to the leading edge.
 
 ```css
 /* Good: one shared leading edge, one indent step */
@@ -87,7 +87,7 @@ Express direction-dependent horizontal position as leading/trailing so the layou
 
 Reserve physical properties for things that genuinely refer to physical screen sides regardless of language, e.g. positioning relative to a device notch, or an element that must match a physical gesture direction.
 
-When the arrangement of elements encodes progression (star ratings, step indicators, progress bars), the sequence mirrors in RTL: stars fill from the trailing side. Flexbox and grid with logical properties mirror automatically; hand-positioned elements don't. Digit order inside numbers never reverses; that and other bidi text rules live in the `better-typography` skill.
+When the arrangement of elements encodes progression (star ratings, step indicators, progress bars), the sequence mirrors in RTL: stars fill from the trailing side. Flexbox and grid with logical properties mirror automatically; hand-positioned elements don't. Digit order inside numbers never reverses; that and other bidi text rules live in `references/typography/overview.md`.
 
 ## Order by Importance
 
@@ -118,6 +118,6 @@ Think in **leading/trailing**, not left/right: combined with logical properties,
 
 The first screenful is a table of contents, not the whole book. If everything is prominent, nothing is:
 
-- One primary action per view (see `better-colors` for how color enforces this).
+- One primary action per view (see `references/colors/overview.md` for how color enforces this).
 - Group secondary actions behind a menu once they exceed two or three.
 - Prefer a short view that links deeper over a long view that shows everything at level one.
