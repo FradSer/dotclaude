@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["google-genai>=1.55.0"]
+# dependencies = ["google-genai>=2.16.0"]
 # ///
 """Bridge Claude Code to Gemini Managed Agents (Interactions API).
 
@@ -27,6 +27,7 @@ State lives under ~/.antigravity/runs/<run-id>/:
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -81,9 +82,35 @@ def fail(msg: str, code: int = 1) -> "NoReturn":  # type: ignore[name-defined]
     raise SystemExit(code)
 
 
+def write_pid(run_id: str) -> None:
+    (run_dir(run_id) / "worker.pid").write_text(str(os.getpid()) + "\n")
+
+
+def read_pid(run_id: str) -> int | None:
+    f = run_dir(run_id) / "worker.pid"
+    if not f.exists():
+        return None
+    try:
+        return int(f.read_text().strip())
+    except ValueError:
+        return None
+
+
+def is_pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True  # process exists but we can't signal it
+
+
 # --- Request building -------------------------------------------------------
 
-def build_environment(network: str, repo: str | None) -> dict:
+def build_environment(network: str, repo: str | None, environment_id: str | None) -> dict:
     env: dict = {"type": "remote"}
     # Network enum (SDK): "disabled" blocks all outbound; omitting the field allows
     # all outbound. google_search / url_context route through Google infra and are
@@ -94,6 +121,8 @@ def build_environment(network: str, repo: str | None) -> dict:
         env["sources"] = [
             {"type": "repository", "source": repo, "target": "/workspace/repo"}
         ]
+    if environment_id:
+        env["id"] = environment_id
     return env
 
 
@@ -108,7 +137,9 @@ def build_create_kwargs(meta: dict) -> dict:
         kwargs["agent_config"] = {"type": "deep-research"}
     else:
         kwargs["tools"] = [{"type": t} for t in meta["tools"]]
-        kwargs["environment"] = build_environment(meta["network"], meta.get("repo"))
+        kwargs["environment"] = build_environment(meta["network"], meta.get("repo"), meta.get("environment_id"))
+        if meta.get("previous_interaction_id"):
+            kwargs["previous_interaction_id"] = meta["previous_interaction_id"]
         # Synchronous create() blocks until the agent finishes (minutes for real
         # work), but the SDK's default per-request timeout is only 60s (seconds) —
         # so any task over ~1 minute would abort mid-run. Bound it at the worker
@@ -159,13 +190,17 @@ def summarize_steps(steps) -> tuple[list[str], dict]:
 
 def extract_result(interaction) -> dict:
     steps = list(getattr(interaction, "steps", []) or [])
-    output_text = getattr(interaction, "output_text", None)
-    if not output_text:
-        for step in reversed(steps):
-            if getattr(step, "type", None) == "model_output":
-                output_text = text_from_step(step)
-                if output_text:
-                    break
+    # The SDK's interaction.output_text is unreliable for multi-segment
+    # responses: in real run 20260604-214750-d109c0 (2.13M tokens, 2 model_output
+    # segments), output_text contained only the LAST segment (report started at
+    # §4.2). Always reconstruct from steps to get the full report.
+    segments = []
+    for step in steps:
+        if getattr(step, "type", None) == "model_output":
+            t = text_from_step(step)
+            if t:
+                segments.append(t)
+    output_text = "\n\n".join(segments)
     step_lines, counts = summarize_steps(steps)
     usage = getattr(interaction, "usage", None)
     return {
@@ -215,6 +250,7 @@ def cmd_worker(run_id: str) -> None:
     d = run_dir(run_id)
     meta = json.loads((d / "meta.json").read_text())
     write_status(run_id, "running")
+    write_pid(run_id)
     try:
         from google import genai
 
@@ -237,6 +273,8 @@ def cmd_worker(run_id: str) -> None:
         # timeout: without one the SDK can long-poll and block the deadline check.
         deadline = time.monotonic() + WORKER_DEADLINE
         srv_status = str(getattr(interaction, "status", "") or "")
+        consecutive_poll_errors = 0
+        MAX_CONSECUTIVE_POLL_ERRORS = 10
         while meta["kind"] == "research" and srv_status not in SERVER_TERMINAL:
             if time.monotonic() >= deadline:
                 raise TimeoutError(f"worker gave up after {WORKER_DEADLINE}s (last: {srv_status})")
@@ -244,8 +282,22 @@ def cmd_worker(run_id: str) -> None:
             try:
                 interaction = client.interactions.get(iid, timeout=GET_TIMEOUT)
                 srv_status = str(getattr(interaction, "status", "") or "")
-            except Exception as poll_exc:  # noqa: BLE001 - transient poll errors must not kill a live run
-                (d / "worker.err").open("a").write(f"poll error (retrying): {poll_exc}\n")
+                consecutive_poll_errors = 0  # reset on success
+            except Exception as poll_exc:
+                consecutive_poll_errors += 1
+                error_msg = f"poll error ({consecutive_poll_errors}/{MAX_CONSECUTIVE_POLL_ERRORS}): {poll_exc}\n"
+                with (d / "worker.err").open("a") as f:
+                    f.write(error_msg)
+                # Distinguish permanent errors (4xx except 408/409) from transient (5xx, 408, 409, 429)
+                error_str = str(poll_exc).lower()
+                is_permanent = any(
+                    code in error_str
+                    for code in ["400", "401", "403", "404", "405", "422"]
+                )
+                if is_permanent or consecutive_poll_errors >= MAX_CONSECUTIVE_POLL_ERRORS:
+                    raise RuntimeError(
+                        f"poll failed permanently after {consecutive_poll_errors} attempts: {poll_exc}"
+                    )
 
         result = extract_result(interaction)
         if srv_status != "completed":
@@ -268,9 +320,13 @@ def cmd_worker(run_id: str) -> None:
 
 # --- Create (delegate / research) -------------------------------------------
 
-def start_run(kind: str, prompt: str, agent: str, tools, network: str, repo) -> None:
+def start_run(kind: str, prompt: str, agent: str, tools, network: str, repo, environment_id=None, previous_interaction_id=None) -> None:
     if not prompt or not prompt.strip():
         fail("prompt/query is empty")
+    # Early API key check: fail fast before creating run directory and spawning worker
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        fail("GEMINI_API_KEY is not set")
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
     d = run_dir(run_id)
     d.mkdir(parents=True, exist_ok=True)
@@ -282,6 +338,8 @@ def start_run(kind: str, prompt: str, agent: str, tools, network: str, repo) -> 
         "tools": tools,
         "network": network,
         "repo": repo,
+        "environment_id": environment_id,
+        "previous_interaction_id": previous_interaction_id,
         "created_at": now(),
     }
     write_json(d / "meta.json", meta)
@@ -315,6 +373,12 @@ def print_status(run_id: str, full: bool) -> None:
     status = read_status(run_id)
     print(f"status: {status}")
     if status not in TERMINAL:
+        # Check if worker process is still alive
+        pid = read_pid(run_id)
+        if pid and not is_pid_alive(pid):
+            print("(worker process died — marking as failed)")
+            write_status(run_id, "failed")
+            return
         print("(still running — poll again or use `wait`)")
         return
     out = d / "output.json"
@@ -342,6 +406,12 @@ def cmd_wait(run_id: str, interval: int, timeout: int) -> None:
         if status in TERMINAL:
             print(f"antigravity run {run_id}: {status}")
             return
+        # Check if worker process died
+        pid = read_pid(run_id)
+        if pid and not is_pid_alive(pid):
+            print(f"antigravity run {run_id}: failed (worker process died)")
+            write_status(run_id, "failed")
+            return
         if time.monotonic() >= deadline:
             print(f"antigravity run {run_id}: timeout (still {status})")
             return
@@ -363,6 +433,8 @@ def main() -> None:
     )
     pd.add_argument("--network", choices=["default", "none"], default="default")
     pd.add_argument("--repo", default=None, help="GitHub URL to mount at /workspace/repo")
+    pd.add_argument("--environment-id", default=None, help="Reuse an existing sandbox environment")
+    pd.add_argument("--previous-interaction-id", default=None, help="Continue from a previous interaction")
 
     pr = sub.add_parser("research", help="run a deep-research query")
     pr.add_argument("--query", required=True)
@@ -391,10 +463,10 @@ def main() -> None:
         bad = [t for t in tools if t not in DEFAULT_TOOLS]
         if bad:
             fail(f"unsupported tool(s): {', '.join(bad)} (allowed: {', '.join(DEFAULT_TOOLS)})")
-        start_run("delegate", args.prompt, ANTIGRAVITY_AGENT, tools, args.network, args.repo)
+        start_run("delegate", args.prompt, ANTIGRAVITY_AGENT, tools, args.network, args.repo, args.environment_id, args.previous_interaction_id)
     elif args.cmd == "research":
         agent = DEEP_RESEARCH_MAX_AGENT if args.max else DEEP_RESEARCH_AGENT
-        start_run("research", args.query, agent, [], "default", None)
+        start_run("research", args.query, agent, [], "default", None, None, None)
     elif args.cmd == "status":
         print_status(args.run, full=args.full)
     elif args.cmd == "wait":

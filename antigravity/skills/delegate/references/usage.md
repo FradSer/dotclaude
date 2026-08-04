@@ -65,7 +65,7 @@ with the server status in the error.
 
 | Agent | Use |
 |-------|-----|
-| `antigravity-preview-05-2026` | General task agent (Gemini 3.5 Flash). Code execution, search, URL reading in a sandbox. Used by `delegate`. |
+| `antigravity-preview-05-2026` | General task agent. Code execution, search, URL reading in a sandbox. Used by `delegate`. |
 | `deep-research-preview-04-2026` | Deep-research agent; manages its own browsing. Default for `research`, with `agent_config={"type": "deep-research"}`. |
 | `deep-research-max-preview-04-2026` | Max-mode deep research (slower, higher effort). Used by `research --max`. |
 
@@ -87,15 +87,25 @@ Google Maps, structured output / `response_format`.
   the safest option; search and URL tools still work because they run on Google infra.
 - `--repo URL` — mounts a GitHub repository at `/workspace/repo` via
   `environment.sources`.
-- The sandbox has a ~7-day TTL and persists `/workspace` across turns when its
-  `environment_id` is reused. The script reports the `environment_id` in the result.
+- `--environment-id ID` — reuse an existing sandbox environment (from a previous run).
+- `--previous-interaction-id ID` — continue from a previous interaction in the same sandbox.
+- The sandbox TTL is unverified; it may persist for days but this is not guaranteed by the API.
+  When `environment_id` is reused, `/workspace` may persist across turns. The script reports
+  the `environment_id` in the result.
 
-## Multi-turn (manual)
+## Multi-turn
 
-To continue in the same sandbox with prior context, a follow-up call would pass the
-previous `environment_id` to `environment=` and `previous_interaction_id=` to the
-create call. The current skills do not expose this; use the printed ids if you need to
-script a follow-up by hand.
+To continue in the same sandbox with prior context, use the `--environment-id` and
+`--previous-interaction-id` flags:
+
+```bash
+antigravity.py delegate --prompt "follow-up question" \
+  --environment-id <env-id> \
+  --previous-interaction-id <interaction-id>
+```
+
+The script reports both ids in the result output. The sandbox TTL is unverified; it may
+persist for days but this is not guaranteed by the API.
 
 ## State layout
 

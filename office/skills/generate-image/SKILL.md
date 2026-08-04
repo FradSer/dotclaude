@@ -1,6 +1,6 @@
 ---
 name: generate-image
-description: Generate or edit images from a text prompt via one of two explicit backends — Google Gemini (gemini-3-pro-image, native SDK, with aspect-ratio / image-size / multi-image compose) or any OpenAI-compatible endpoint (gpt-image-2, dall-e-3, custom base_url / api_key). Use this skill whenever the user wants to create, generate, draw, render, illustrate, or mock up an image, picture, illustration, concept art, storyboard panel, icon, logo, poster, or product shot — and also when they want to edit, restyle, retouch, combine, or extend an existing image. Triggers include "generate an image", "make a picture of", "draw me", "create an illustration", "生成图片", "画一张", "做一张图", "P 一下这张图", or any request that should produce a PNG/JPEG from a description. Prefer this skill over describing an image in text.
+description: Generate or edit images via two backends: Google Gemini (gemini-3-pro-image) or any OpenAI-compatible endpoint (gpt-image-2, dall-e-3). Use when the user wants to create, draw, illustrate, or edit an image, icon, logo, poster, or concept art — triggers include "generate an image", "draw me", "create an illustration", "生成图片", "画一张".
 user-invocable: true
 argument-hint: "\"PROMPT\" --backend gemini|openai [-o out.png] [-i input.png ...] [--aspect-ratio 16:9] [--size 2K|1024x1024] [--count N] [--model ...] [--base-url URL]"
 allowed-tools: ["Read", "Write", "AskUserQuestion", "Bash(uv run:*)", "Bash(*/generate_image.py:*)"]

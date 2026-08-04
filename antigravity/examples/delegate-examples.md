@@ -41,7 +41,7 @@ Disables search/URL tools; only code execution is offered to the agent.
 /antigravity:research Compare the energy density and safety tradeoffs of LFP vs NMC EV batteries in 2026
 ```
 
-Runs the deep-research agent (several minutes), then returns a cited report.
+Runs the deep-research agent (tens of minutes to over an hour), then returns a cited report.
 
 ## Research: max mode (deeper, slower)
 

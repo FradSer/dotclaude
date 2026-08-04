@@ -1,11 +1,11 @@
-# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-19-blue)
+# Frad's Claude Code Plugins ![](https://img.shields.io/badge/plugins-20-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 19 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 20 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -214,6 +214,17 @@ Dual-layer memory consolidation, sync, and public/private separation for Claude 
 **Installation:**
 ```bash
 claude plugin install memory@frad-dotclaude
+```
+
+---
+
+### [interfaces](interfaces/)
+
+Agent skills for building great product interfaces, from typography and color to accessibility and UX writing. Includes seven domain skills: better-interface (orchestrator), better-ui, better-typography, better-colors, better-accessibility, better-layout, and better-writing.
+
+**Installation:**
+```bash
+claude plugin install interfaces@frad-dotclaude
 ```
 
 ---

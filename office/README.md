@@ -1,8 +1,8 @@
 # Office Plugin
 
-Office productivity skills for patent applications, PRD generation, image and video generation, Feishu document creation, browser automation, Lark/Feishu CLI routing (denested sub-skill entries), Remotion programmatic video authoring, and AI writing trope detection.
+Office productivity skills for patent applications, PRD generation, image and video generation, Remotion programmatic video authoring, and AI writing trope detection.
 
-**Version**: 0.6.1
+**Version**: 0.7.2
 **Display Name**: Office
 
 ## Installation

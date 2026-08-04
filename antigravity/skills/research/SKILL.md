@@ -48,17 +48,22 @@ in the environment and `uv` on PATH. Deep research can take several minutes.
 1. Start a Monitor on the captured `wait_command`. It emits one line —
    `antigravity run <id>: completed` / `failed` / `timeout` — then exits:
    ```
-   uv run "${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py" wait --run <run_id>
+   uv run "${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py" wait --run <run_id> --timeout 1800
    ```
-   Deep research is slow: set the Monitor `timeout_ms` to 1800000 (30 min) and pass
-   `--timeout 1800` to the wait command. Use a clear description like
+   Deep research is slow: set the Monitor `timeout_ms` to 3600000 (60 min, 2x the wait
+   timeout) and pass `--timeout 1800` to the wait command. Use a clear description like
    "antigravity research <run_id>".
-2. When the Monitor event arrives, read the last word of its line:
-   - `completed` or `failed` → proceed to Phase 4.
-   - `timeout` → the research is still running (the worker keeps polling up to ~2h).
-     Start the Monitor on the same `wait_command` again to keep waiting. After a second
-     consecutive timeout, tell the user it is still running and give them
-     `... status --run <run_id> --full` to fetch it later, then stop.
+2. When the Monitor event arrives, check if the line contains `: completed`, `: failed`,
+   or `: timeout`:
+   - Contains `: completed` or `: failed` → proceed to Phase 4.
+   - Contains `: timeout` → the research is still running (the worker keeps polling up to ~2h).
+     Start the Monitor on the same `wait_command` again to keep waiting. After **four**
+     consecutive timeouts (4 hours total), tell the user it is still running and give them
+     the full command to fetch it later:
+     ```
+     uv run "${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py" status --run <run_id> --full
+     ```
+     then stop.
    Never present a `timeout` / still-running state as the report.
 
 ## Phase 4: Report the result

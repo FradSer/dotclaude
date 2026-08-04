@@ -1,11 +1,11 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-19-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-20-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 [English](README.md) | **简体中文**
 
-精心打造的 19 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 20 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -214,6 +214,17 @@ claude plugin install utils@frad-dotclaude
 **安装：**
 ```bash
 claude plugin install memory@frad-dotclaude
+```
+
+---
+
+### [interfaces](interfaces/)
+
+构建优秀产品界面的 Agent 技能集，涵盖排版、色彩、布局、无障碍、UI 打磨和 UX 文案。包含七个领域技能：better-interface（编排器）、better-ui、better-typography、better-colors、better-accessibility、better-layout 和 better-writing。
+
+**安装：**
+```bash
+claude plugin install interfaces@frad-dotclaude
 ```
 
 ---
