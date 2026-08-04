@@ -71,6 +71,7 @@ Extension → format: `stl, off, amf, 3mf, csg, dxf, svg, png, echo, ast, term, 
 
 ## Headless rendering
 
+- **Docker (recommended for remote/server):** build the `openscad-cli` image from `hardware/scripts/docker/openscad/Dockerfile` and deploy. The wrapper in SKILL.md auto-detects Docker when no local binary is found.
 - **Modern OpenSCAD (2024+):** renders PNG headlessly on Linux **without Xvfb** via EGL (issues #1798, #3857, #4613 all closed).
 - **Older OpenSCAD (pre-2022-ish):** needed an X server; wrap with `xvfb-run -a openscad ...`.
 - **macOS:** binary at `/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD`; some versions hit a Qt "cocoa" plugin error fixed by a wrapper script. Homebrew snapshot: `brew install openscad@snapshot`.

@@ -1,12 +1,9 @@
 # End-to-end workflows
 
-Resolve the binary once (see `references/cli.md`):
+The binary is resolved once by the SKILL.md wrapper. Use `openscad_run` for all invocations:
+
 ```bash
-OPENSCAD="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
-if [[ ! -x "$OPENSCAD" ]]; then
-  command -v openscad >/dev/null && OPENSCAD="openscad" || OPENSCAD="openscad-nightly"
-fi
-"$OPENSCAD" --version
+openscad_run --version
 ```
 
 ## A. Parametric box STL with CLI variables
@@ -27,7 +24,7 @@ module box(w,d,h,t,hole_r,$fn=40) {
 box(w=w, d=d, h=h, t=t, hole_r=hole_r);
 ```
 ```bash
-"$OPENSCAD" --export-format binstl \
+openscad_run --export-format binstl \
   -D 'w=60' -D 'd=40' -D 'h=25' -D 't=2' \
   -o box_60x40x25.stl box.scad
 ```
@@ -44,21 +41,21 @@ difference() {
 }
 ```
 ```bash
-"$OPENSCAD" -o plate.dxf plate.scad          # 2D → DXF
-"$OPENSCAD" -o plate.png --imgsize=1024,768 --viewall --autocenter plate.scad   # preview (add --render for accurate non-preview)
+openscad_run -o plate.dxf plate.scad          # 2D → DXF
+openscad_run -o plate.png --imgsize=1024,768 --viewall --autocenter plate.scad   # preview (add --render for accurate non-preview)
 ```
 
 ## C. Preview PNG of a model
 
 Gimbal camera (7-tuple): `translate x,y,z, rotate x,y,z, distance`:
 ```bash
-"$OPENSCAD" -o preview.png --preview --imgsize=1280,960 \
+openscad_run -o preview.png --preview --imgsize=1280,960 \
   --camera=0,0,0,25,0,35,500 --projection=ortho \
   --colorscheme=Cornfield --viewall --autocenter model.scad
 ```
 Vector camera (6-tuple): `eye x,y,z, center x,y,z`:
 ```bash
-"$OPENSCAD" -o preview.png --imgsize=1280,960 \
+openscad_run -o preview.png --imgsize=1280,960 \
   --camera=80,-80,60,0,0,0 model.scad
 ```
 For an accurate (non-preview) PNG, replace `--preview` with `--render` (only PNG image export needs `--render`; mesh exports never do).
@@ -67,14 +64,14 @@ For an accurate (non-preview) PNG, replace `--preview` with `--render` (only PNG
 
 ```bash
 for v in 2 3 4 5; do
-  "$OPENSCAD" --export-format binstl \
+  openscad_run --export-format binstl \
     -D "hole_r=${v}.0" \
     -o "bracket_hole${v}.stl" bracket.scad
 done
 ```
 Parallel + sharded animation (2025.08+):
 ```bash
-"$OPENSCAD" --animate=60 --animate_sharding=0/4 -o frame_%04d.png gear.scad
+openscad_run --animate=60 --animate_sharding=0/4 -o frame_%04d.png gear.scad
 ```
 
 ## E. Convert STL → 3MF
@@ -85,7 +82,7 @@ Re-export by importing the STL in a small `.scad`:
 import("input.stl", convexity=3);
 ```
 ```bash
-"$OPENSCAD" -o output.3mf \
+openscad_run -o output.3mf \
   -O export-3mf/unit=millimeter -O export-3mf/color-mode=model \
   reexport.scad
 ```
@@ -95,7 +92,7 @@ import("input.stl", convexity=3);
 OpenSCAD prints mesh problems to stderr even when the exit code is zero. Capture and grep:
 ```bash
 set +e
-out=$("$OPENSCAD" --export-format binstl -o part.stl part.scad 2>&1)
+out=$(openscad_run --export-format binstl -o part.stl part.scad 2>&1)
 rc=$?
 set -e
 if [ "$rc" -ne 0 ]; then echo "openscad failed (exit $rc)"; echo "$out"; exit "$rc"; fi
