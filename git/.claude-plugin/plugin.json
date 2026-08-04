@@ -1,7 +1,7 @@
 {
   "name": "git",
   "displayName": "Git",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Conventional Git automation, advanced repository management, and GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup",
   "author": {
     "name": "Frad LEE",
