@@ -1,7 +1,7 @@
 {
   "name": "hardware",
   "displayName": "Hardware",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Hardware and EDA toolkit. Drives the KiCad CLI for schematic/PCB export and checks, and OpenSCAD for parametric 3D/2D part design and STL/DXF/PNG output.",
   "author": {
     "name": "Frad LEE",

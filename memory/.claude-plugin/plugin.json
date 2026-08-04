@@ -1,7 +1,7 @@
 {
   "name": "memory",
   "displayName": "Memory",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects",
   "author": {
     "name": "Frad LEE",

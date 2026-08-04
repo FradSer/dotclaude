@@ -1,7 +1,7 @@
 {
   "name": "hyperframes",
   "displayName": "Hyperframes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "HyperFrames HTML-based video authoring skills, mirrored from heygen-com/hyperframes — keyframes, animation, captions, motion graphics, and remotion-to-hyperframes conversion",
   "keywords": [

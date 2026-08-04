@@ -11,7 +11,7 @@
     {
       "name": "git",
       "displayName": "Git",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "description": "Conventional Git automation, advanced repository management, and GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup",
       "author": {
         "name": "Frad LEE",
@@ -24,7 +24,7 @@
     {
       "name": "github",
       "displayName": "GitHub",
-      "version": "0.7.2",
+      "version": "0.7.3",
       "description": "GitHub project operations with quality gates",
       "author": {
         "name": "Frad LEE",
@@ -37,7 +37,7 @@
     {
       "name": "swiftui",
       "displayName": "SwiftUI",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "description": "SwiftUI code review with modern API best practices",
       "author": {
         "name": "Frad LEE",
@@ -50,7 +50,7 @@
     {
       "name": "office",
       "displayName": "Office",
-      "version": "0.7.0",
+      "version": "0.7.1",
       "description": "Office productivity skills for patent applications, PRD generation, image and video generation, browser automation, Remotion programmatic video authoring, and AI writing trope detection",
       "author": {
         "name": "Frad LEE",
@@ -64,7 +64,7 @@
     {
       "name": "lark",
       "displayName": "Lark",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Feishu/Lark CLI skills, mirrored from larksuite/cli — docs, sheets, IM, calendar, approval, drive, wiki, contacts, and more",
       "author": {
         "name": "Frad LEE",
@@ -78,7 +78,7 @@
     {
       "name": "marketing",
       "displayName": "Marketing",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "Marketing skills for AI agents, mirrored from coreyhaines31/marketingskills — CRO, copywriting, SEO, paid ads, ad creative, analytics, and growth",
       "author": {
         "name": "Frad LEE",
@@ -92,7 +92,7 @@
     {
       "name": "hyperframes",
       "displayName": "Hyperframes",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "HyperFrames HTML-based video authoring skills, mirrored from heygen-com/hyperframes — keyframes, animation, captions, motion graphics, and remotion-to-hyperframes conversion",
       "author": {
         "name": "Frad LEE",
@@ -106,7 +106,7 @@
     {
       "name": "refactor",
       "displayName": "Refactor",
-      "version": "1.5.6",
+      "version": "1.5.7",
       "description": "Agent and skills for code simplification and refactoring to improve code quality while preserving functionality",
       "author": {
         "name": "Frad LEE",
@@ -119,7 +119,7 @@
     {
       "name": "superdev",
       "displayName": "Superdev",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.0",
       "author": {
         "name": "Frad LEE",
@@ -133,7 +133,7 @@
     {
       "name": "superpowers",
       "displayName": "Superpowers",
-      "version": "3.8.0",
+      "version": "3.8.1",
       "description": "Advanced development workflow orchestration with BDD support and self-improving skills",
       "author": {
         "name": "Frad LEE",
@@ -146,7 +146,7 @@
     {
       "name": "plugin-optimizer",
       "displayName": "Plugin Optimizer",
-      "version": "0.13.1",
+      "version": "0.13.2",
       "description": "Validates and optimizes Claude Code plugins against official best practices and file patterns",
       "author": {
         "name": "Frad LEE",
@@ -159,7 +159,7 @@
     {
       "name": "acpx",
       "displayName": "ACPX",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "description": "Knowledge base for acpx - a headless ACP CLI for agent-to-agent communication",
       "author": {
         "name": "Frad LEE",
@@ -172,7 +172,7 @@
     {
       "name": "code-context",
       "displayName": "Code Context",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "description": "Retrieve code context for any repo, library, or natural-language query via DeepWiki, Context7, Exa, git clone, and web search+fetch",
       "author": {
         "name": "Frad LEE",
@@ -185,7 +185,7 @@
     {
       "name": "utils",
       "displayName": "Utils",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "description": "General-purpose utility skills for documentation, writing, and project maintenance",
       "author": {
         "name": "Frad LEE",
@@ -198,7 +198,7 @@
     {
       "name": "autoresearch",
       "displayName": "Autoresearch",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "description": "Autonomous research loop inspired by karpathy/autoresearch — give it a plain-language goal; it infers a recommended contract, then grills each decision with you (goal measurability, artifact, evaluator, bounds) before iterating: cheap sequential rounds that escalate to a parallel GAN tournament when they plateau",
       "author": {
         "name": "Frad LEE",
@@ -211,7 +211,7 @@
     {
       "name": "antigravity",
       "displayName": "Antigravity",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "Delegate tasks and deep research to Google Gemini Managed Agents (Antigravity) running in a remote sandbox, then read the results back",
       "author": {
         "name": "Frad LEE",
@@ -224,7 +224,7 @@
     {
       "name": "storm",
       "displayName": "STORM",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Wikipedia-style long-form article generation via multi-perspective question asking and retrieval — a Claude-native port of Stanford STORM's two-stage research-to-article pipeline",
       "author": {
         "name": "Frad LEE",
@@ -237,7 +237,7 @@
     {
       "name": "hardware",
       "displayName": "Hardware",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "Hardware and EDA toolkit. Drives the KiCad CLI for schematic/PCB export and checks, and OpenSCAD for parametric 3D/2D part design and STL/DXF/PNG output.",
       "author": {
         "name": "Frad LEE",
@@ -250,7 +250,7 @@
     {
       "name": "memory",
       "displayName": "Memory",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects",
       "author": {
         "name": "Frad LEE",
