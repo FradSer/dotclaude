@@ -1,14 +1,14 @@
 scopes:
     - name: acpx
-      description: Agent communication, task delegation, and cross-agent research in acpx/; does not cover antigravity/.
+      description: Agent communication, delegation, and subagent reflection in acpx/; does not cover antigravity.
     - name: ag
-      description: Antigravity managed agent plugin and delegate workers in antigravity/; does not cover acpx/.
+      description: Antigravity managed agent plugin and delegate workers in antigravity/; does not cover acpx.
     - name: as
-      description: Autonomous ML experimentation, GAN workflows, and rolling research in autoresearch/; does not cover plugins.
+      description: Autonomous ML experimentation, GAN workflows, and rolling research in autoresearch/; does not cover general plugins.
     - name: cctx
       description: Code context research, environment mapping, and repository analysis in code-context/.
     - name: git
-      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow/.
+      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow.
     - name: gh
       description: GitHub PR monitoring, triage, and feedback loops in github/.
     - name: hw
