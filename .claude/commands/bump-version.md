@@ -13,13 +13,18 @@ Atomically update `<plugin-name>/.claude-plugin/plugin.json` and `.claude-plugin
 
 ## Steps
 
-### No arguments — update all plugins
+### No arguments — update only plugins with changes
 
 1. Read `.claude-plugin/marketplace.json` to get the full plugin list (all `"name"` entries).
 
-2. For each plugin, run the single-plugin flow below, collecting results.
+2. For each plugin, determine whether it has updates since its last release:
+   - `V` = version in `<PLUGIN>/.claude-plugin/plugin.json` at HEAD
+   - Walk `git log --format=%H HEAD -- <PLUGIN>/.claude-plugin/plugin.json` newest→oldest. The era of `V` starts at the first commit whose version != `V`; if every commit has version == `V`, the era starts at the plugin's creation commit (the oldest commit in the walk).
+   - Has updates iff `git diff --name-only <era-start>..HEAD -- <PLUGIN>/` shows any changed file other than `<PLUGIN>/.claude-plugin/plugin.json` — uncommitted working-tree changes (`git diff --name-only HEAD -- <PLUGIN>/`) count too.
 
-3. Report a summary table: `plugin: old → new` for every plugin updated.
+3. Bump patch only for plugins with updates (run the single-plugin flow for each); skip plugins without updates.
+
+4. Report: `plugin: old → new` for every updated plugin, and `plugin: unchanged (skipped)` for every skipped one.
 
 ### Single plugin
 
