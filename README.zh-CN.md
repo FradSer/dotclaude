@@ -220,7 +220,7 @@ claude plugin install memory@frad-dotclaude
 
 ### [interfaces](interfaces/)
 
-构建优秀产品界面的 Agent 技能集，涵盖排版、色彩、布局、无障碍、UI 打磨和 UX 文案。包含七个领域技能：better-interface（编排器）、better-ui、better-typography、better-colors、better-accessibility、better-layout 和 better-writing。
+构建优秀产品界面的 Agent 技能集，涵盖排版、色彩、布局、无障碍、UI 打磨和 UX 文案。单一技能 better-interface（编排器），配六个领域参考包：accessibility、layout、writing、typography、colors 和 ui。
 
 **安装：**
 ```bash

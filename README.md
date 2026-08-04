@@ -220,7 +220,7 @@ claude plugin install memory@frad-dotclaude
 
 ### [interfaces](interfaces/)
 
-Agent skills for building great product interfaces, from typography and color to accessibility and UX writing. Includes seven domain skills: better-interface (orchestrator), better-ui, better-typography, better-colors, better-accessibility, better-layout, and better-writing.
+Agent skills for building great product interfaces, from typography and color to accessibility and UX writing. One skill, better-interface (orchestrator), with six domain reference packs: accessibility, layout, writing, typography, colors, and ui.
 
 **Installation:**
 ```bash
