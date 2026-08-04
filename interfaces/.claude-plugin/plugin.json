@@ -10,7 +10,7 @@
   "repository": "https://github.com/jakubkrehel/skills",
   "license": "MIT",
   "keywords": ["ui", "ux", "design", "accessibility", "typography", "colors", "layout", "writing", "interface", "review"],
-  "commands": ["./skills/better-interface"],
+  "commands": ["./skills/better-interface/"],
   "skills": [
     "./skills/better-ui",
     "./skills/better-typography",
