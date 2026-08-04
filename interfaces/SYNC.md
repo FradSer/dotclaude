@@ -9,7 +9,7 @@
 Uses `git sparse-checkout` to clone the upstream `skills/` directory, then
 mirrors it into this directory. The upstream `agents/` dirs (OpenAI agent
 configs, not Claude skills) are excluded, and upstream `better-interface/`
-is skipped entirely — the local `better-interface/SKILL.md` above is the
+is skipped entirely — the local `skills/better-interface/SKILL.md` is the
 authoritative router and is never overwritten. The local
 `.claude-plugin/plugin.json` and `README.md` are also local files, outside
 this tree.

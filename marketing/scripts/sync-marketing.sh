@@ -10,10 +10,10 @@
 #     validate-skills-official.sh（单文件覆盖）
 # 排除上游仓库元数据（README.md CONTRIBUTING.md .github/ .gitignore FUNDING.yml
 # LICENSE），这些由本地市场元数据取代。
-# 本地保留：scripts/ .backup/ skills/SKILL.md（路由器） skills/SYNC.md（同步文档）。
+# 本地保留：scripts/ .backup/ skills/SKILL.md（路由器）；SYNC.md（同步文档）位于插件根。
 # 同步后执行 denest（子 skill SKILL.md → <dirname>.md，避免 auto-discovery 注册
 # 49 个独立 skill）并刷新路由器 SKILL.md 的索引表（共享 tools/skill-sync/）。
-# 刷新 marketing/skills/SYNC.md 的元数据。
+# 刷新 marketing/SYNC.md 的元数据。
 #
 
 set -euo pipefail
@@ -138,8 +138,8 @@ apply_denest() {
 check_diff() {
     local has_changes=false new_c=0 changed_c=0 deleted_c=0
     # 本地保留条目（skills/ 根层，不被视为上游删除）：
-    #   SKILL.md = 本地路由器；SYNC.md = 本同步文档
-    local local_skill_keep=("SKILL.md" "SYNC.md")
+    #   SKILL.md = 本地路由器（SYNC.md 位于插件根，不在本树内）
+    local local_skill_keep=("SKILL.md")
     for p in "${UPSTREAM_PATHS[@]}"; do
         local upstream_root="$TEMP_DIR/repo/$p"
         local local_root="$TARGET_DIR/$p"
@@ -211,19 +211,13 @@ sync_files() {
     if [ "$no_backup" != "true" ]; then create_backup; fi
     log_info "正在同步文件..."
 
-    # 备份本地 skills/SKILL.md（路由器）与 skills/SYNC.md
-    # （整棵重建 skills/ 会把它们删掉）
+    # 备份本地 skills/SKILL.md（路由器）（整棵重建 skills/ 会把它删掉；
+    # SYNC.md 位于插件根，不受影响）
     local local_router="$TARGET_DIR/skills/SKILL.md"
     local router_backup=""
     if [ -f "$local_router" ]; then
         router_backup="$TEMP_DIR/local-SKILL.md"
         cp "$local_router" "$router_backup"
-    fi
-    local local_sync_md="$TARGET_DIR/skills/SYNC.md"
-    local sync_md_backup=""
-    if [ -f "$local_sync_md" ]; then
-        sync_md_backup="$TEMP_DIR/local-SYNC.md"
-        cp "$local_sync_md" "$sync_md_backup"
     fi
 
     for p in "${UPSTREAM_PATHS[@]}"; do
@@ -265,22 +259,18 @@ sync_files() {
             || log_warning "gen-index.py 失败，请手动重跑"
     fi
 
-    # 恢复本地 SYNC.md 并刷新元数据
-    local sync_md="$TARGET_DIR/skills/SYNC.md"
-    if [ -n "$sync_md_backup" ]; then
-        cp "$sync_md_backup" "$sync_md"
-    elif [ ! -f "$sync_md" ]; then
-        log_warning "本地 skills/SYNC.md 不存在，跳过元数据刷新"
+    # 刷新插件根 SYNC.md 元数据（不在 skills/ 树内，整棵重建不影响它）
+    local sync_md="$TARGET_DIR/SYNC.md"
+    if [ ! -f "$sync_md" ]; then
+        log_warning "本地 SYNC.md 不存在，跳过元数据刷新"
         return 0
     fi
-    if [ -f "$sync_md" ]; then
-        local synced_commit today
-        today=$(date +%Y-%m-%d)
-        synced_commit=$(git -C "$TEMP_DIR/repo" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-        update_sync_md_field "$sync_md" "Last sync" "$today"
-        update_sync_md_field "$sync_md" "Synced commit" "$synced_commit"
-        log_info "已更新 SYNC.md (date=$today, commit=$synced_commit)"
-    fi
+    local synced_commit today
+    today=$(date +%Y-%m-%d)
+    synced_commit=$(git -C "$TEMP_DIR/repo" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    update_sync_md_field "$sync_md" "Last sync" "$today"
+    update_sync_md_field "$sync_md" "Synced commit" "$synced_commit"
+    log_info "已更新 SYNC.md (date=$today, commit=$synced_commit)"
 }
 
 show_help() {

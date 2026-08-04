@@ -15,7 +15,7 @@ HTML-based video authoring and rendering skills — compositions, animation, key
 - **`skills/`** — mirrored sub-skills, each stored as `<name>/<name>.md` (denested: `SKILL.md` renamed after sync so only the router is auto-discovered), plus binary assets (fonts/SVG). Synced from `heygen-com/hyperframes`.
 - **`scripts/sync-hyperframes.sh`** — syncs the sub-tree, then denests sub-skills.
 - **`tools/skill-sync/denest.py`** — shared denest tool (marketing / lark / hyperframes): renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links (`--hf-root` mode for this tree).
-- **`skills/SYNC.md`** — sync metadata and strategy.
+- **`SYNC.md`** — sync metadata and strategy (plugin root).
 
 ## Installation
 

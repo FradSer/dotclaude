@@ -24,7 +24,7 @@ the top-level router table. These are resolved by skill **name**, so they work
 unchanged once the skills are mirrored here — the sync script does NOT rewrite
 them. The mirrored upstream router lives at `hyperframes/hyperframes.md` (the
 `hyperframes` sub-skill directory); it is kept for fidelity but is NOT the
-loaded entry point — the local top-level `SKILL.md` above is.
+loaded entry point — the local router at `skills/SKILL.md` is.
 
 ### Sub-skill denest (required)
 

@@ -16,7 +16,7 @@ Lark/Feishu CLI operations — docs, sheets, IM, calendar, approval, attendance,
 - **`scripts/sync-lark.sh`** — syncs the sub-tree, then denests sub-skills.
 - **`tools/skill-sync/denest.py`** — shared denest tool (marketing / lark / hyperframes): renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links.
 - **`tools/skill-sync/gen-index.py`** — shared router index generator: regenerates the router `SKILL.md` index table.
-- **`skills/SYNC.md`** — sync metadata and strategy.
+- **`SYNC.md`** — sync metadata and strategy (plugin root).
 
 ## Installation
 

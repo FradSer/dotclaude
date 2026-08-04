@@ -35,8 +35,8 @@ TARGET_DIR="$SCRIPT_DIR/../skills"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/interfaces-sync-$$"
 
-# 本地保留的顶层条目（不被覆盖）
-LOCAL_FILES=("$ROUTER" "SYNC.md")
+# 本地保留的顶层条目（不被覆盖）；SYNC.md 位于插件根，不在本树内
+LOCAL_FILES=("$ROUTER")
 
 # 共享 ref-pack 工具（repo 根 tools/skill-sync/）：子 skill → references/ 包
 REF_PACK_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/denest.py"
@@ -275,7 +275,8 @@ sync_files() {
     apply_ref_pack "$TARGET_DIR" || return 1
 
     # 更新 SYNC.md 元数据：同步日期 / 上游分支 / 同步到的 commit
-    local sync_md="$TARGET_DIR/SYNC.md"
+    # （SYNC.md 位于插件根目录，不在 skills/ 树内）
+    local sync_md="$SCRIPT_DIR/../SYNC.md"
     if [ -f "$sync_md" ]; then
         local synced_commit today
         today=$(date +%Y-%m-%d)
@@ -381,7 +382,7 @@ main() {
     log_success "同步完成!"
     log_info "建议执行以下命令提交更改:"
     echo ""
-    echo "    git add interfaces/skills/"
+    echo "    git add interfaces/"
     echo "    git-agent commit --no-stage --intent \"sync interfaces skills from upstream jakubkrehel/skills\""
     echo ""
 }

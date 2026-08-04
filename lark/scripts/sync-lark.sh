@@ -23,7 +23,8 @@ BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/lark-cli-sync-$$"
 
 # 本地文件（不被覆盖）
-LOCAL_FILES=("SKILL.md" "SYNC.md")
+# 本地文件（不被覆盖）；SYNC.md 位于插件根目录（$SCRIPT_DIR/../SYNC.md），不在本树内
+LOCAL_FILES=("SKILL.md")
 
 # 共享 denest / 索引生成工具（repo 根 tools/skill-sync/）
 DENEST_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/denest.py"
@@ -345,7 +346,8 @@ sync_files() {
     fi
 
     # 更新 SYNC.md 元数据：同步日期 / 已装 lark-cli 版本 / 同步到的 commit
-    local sync_md="$TARGET_DIR/SYNC.md"
+    # （SYNC.md 位于插件根目录，不在 skills/ 树内）
+    local sync_md="$SCRIPT_DIR/../SYNC.md"
     if [ -f "$sync_md" ]; then
         local lark_ver synced_commit today
         today=$(date +%Y-%m-%d)
@@ -436,7 +438,7 @@ main() {
     log_success "同步完成!"
     log_info "建议执行以下命令提交更改:"
     echo ""
-    echo "    git add lark/skills/"
+    echo "    git add lark/"
     echo "    git-agent commit --no-stage --intent \"sync lark skills from upstream larksuite/cli\" --co-author \"Claude Opus 4.6 <noreply@anthropic.com>\""
     echo ""
 }

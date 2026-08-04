@@ -5,7 +5,7 @@
 #
 # 独立插件，由本脚本单独同步。
 # 仿 office/scripts/sync-lark.sh 模式：sparse-checkout 上游 skills/，镜像全部内容，
-# 排除本地 SKILL.md / SYNC.md（顶层路由与同步文档），按需创建备份并刷新 SYNC.md 元数据。
+# 排除本地 SKILL.md（顶层路由），按需创建备份并刷新插件根 SYNC.md 元数据。
 # 同步后执行 denest：子 skill 的 SKILL.md → <dirname>.md（仅保留顶层路由器
 # SKILL.md），避免 19 个镜像子 skill 被 auto-discovery 注册成独立 skill。
 #
@@ -31,8 +31,9 @@ TARGET_DIR="$SCRIPT_DIR/../skills"
 BACKUP_DIR="$TARGET_DIR/.backup"
 TEMP_DIR="/tmp/hyperframes-sync-$$"
 
-# 本地文件（不被覆盖）——位于 TARGET_DIR 根层，不含子目录
-LOCAL_FILES=("SKILL.md" "SYNC.md" "LICENSE" "UPSTREAM-CLAUDE.md" "UPSTREAM-AGENTS.md")
+# 本地文件（不被覆盖）——位于 TARGET_DIR 根层，不含子目录；
+# SYNC.md 位于插件根目录（$SCRIPT_DIR/../SYNC.md），不在本树内
+LOCAL_FILES=("SKILL.md" "LICENSE" "UPSTREAM-CLAUDE.md" "UPSTREAM-AGENTS.md")
 
 # 共享 denest 工具（repo 根 tools/skill-sync/）：子 skill SKILL.md → <dirname>.md
 DENEST_SCRIPT="$SCRIPT_DIR/../../tools/skill-sync/denest.py"
@@ -324,7 +325,8 @@ sync_files() {
     log_info "  已同步根层功能文件 (UPSTREAM-CLAUDE.md, UPSTREAM-AGENTS.md)"
 
     # 更新 SYNC.md 元数据：同步日期 / 上游分支 / 同步到的 commit
-    local sync_md="$TARGET_DIR/SYNC.md"
+    # （SYNC.md 位于插件根目录，不在 skills/ 树内）
+    local sync_md="$SCRIPT_DIR/../SYNC.md"
     if [ -f "$sync_md" ]; then
         local synced_commit today
         today=$(date +%Y-%m-%d)
@@ -403,7 +405,7 @@ main() {
     log_success "同步完成!"
     log_info "建议执行以下命令提交更改:"
     echo ""
-    echo "    git add hyperframes/skills/"
+    echo "    git add hyperframes/"
     echo "    git-agent commit --no-stage --intent \"sync hyperframes skills from upstream heygen-com/hyperframes\""
     echo ""
 }

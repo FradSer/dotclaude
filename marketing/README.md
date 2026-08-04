@@ -21,7 +21,7 @@ Excluded (marketing upstream repo metadata, superseded by this marketplace's ent
 - `scripts/sync-marketing.sh` — syncs marketing upstream (skills + tools + root files), then denests sub-skills and regenerates the router index.
 - `tools/skill-sync/denest.py` — shared denest tool (marketing / lark / hyperframes): renames `<name>/SKILL.md` → `<name>/<name>.md` and rewrites relative links.
 - `tools/skill-sync/gen-index.py` — shared router index generator: regenerates the router `SKILL.md` index table from sub-skill frontmatter.
-- `skills/SYNC.md` — marketing sync metadata and strategy.
+- `SYNC.md` — marketing sync metadata and strategy (plugin root).
 
 ## Installation
 
@@ -36,7 +36,7 @@ bash marketing/scripts/sync-marketing.sh --check     # dry-run
 bash marketing/scripts/sync-marketing.sh             # sync with backup
 ```
 
-See `skills/SYNC.md` for upstream source, last-synced commit, and sync strategy. Mirrored content is not edited locally — editing would break sync fidelity (re-sync overwrites local edits). The only local transforms applied after sync are the denest rename (`SKILL.md` → `<name>.md`, so sub-skills are not auto-discovered) and the router index regeneration; both are scripted and re-runnable:
+See `SYNC.md` for upstream source, last-synced commit, and sync strategy. Mirrored content is not edited locally — editing would break sync fidelity (re-sync overwrites local edits). The only local transforms applied after sync are the denest rename (`SKILL.md` → `<name>.md`, so sub-skills are not auto-discovered) and the router index regeneration; both are scripted and re-runnable:
 
 ```bash
 python3 tools/skill-sync/denest.py --tree marketing/skills --check
