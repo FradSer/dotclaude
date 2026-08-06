@@ -251,7 +251,7 @@
       "name": "memory",
       "displayName": "Memory",
       "version": "0.1.1",
-      "description": "Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects",
+      "description": "Consolidates a Claude Code project's memory — private harness and repo-local — as one unlayered store",
       "author": {
         "name": "Frad LEE",
         "email": "fradser@gmail.com"

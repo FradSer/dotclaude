@@ -209,7 +209,7 @@ claude plugin install utils@frad-dotclaude
 
 ### [memory](memory/)
 
-Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects. Auto-consolidates the private harness memory (Tier A) on Stop with a 24h per-project debounce, with a single manual skill to consolidate either layer, bidirectionally sync facts, or promote a private fact to public.
+Consolidates a Claude Code project's memory — the private harness memory (~/.claude/projects/<escaped-cwd>/memory) and the repo-local memory (docs/memory/) — as one unlayered store, auto-consolidating on Stop with a 24h debounce and via a single no-argument skill.
 
 **Installation:**
 ```bash
