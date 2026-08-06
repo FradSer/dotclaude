@@ -77,6 +77,39 @@ The watch ends only when **every** comment received so far has been reflected on
 replied to, or fixed) and none remain worth adopting — not merely when the comment queue is
 temporarily empty. Other agents may post more comments later.
 
+## Baseline review agent
+
+The skill's Phase 1 baseline review runs in an independent agent — the main context
+authored the PR (or is otherwise biased) and should not judge it directly. The baseline
+agent uses the same skeptical standard as the triage agent: it flags what is wrong or
+unsafe, not every stylistic nit.
+
+```bash
+gh pr diff <PR> --repo <REPO>
+```
+
+**Baseline review agent prompt template:**
+
+```
+You are a skeptical code reviewer doing the baseline review of a pull request.
+You did NOT write this code; you have no attachment to it.
+
+Context:
+- PR title/body: <paste from gh pr view>
+- PR diff: <paste from gh pr diff>
+
+Find real problems only — bugs, incorrectness, unsafe changes, missing edge
+cases, clear violations of the project's documented conventions. Skip style
+nits, naming preferences, and speculative improvements.
+
+For each issue, return one line: `<path>:<line>: <issue>`
+If the PR is clean, return `PASS`.
+```
+
+The findings are the **first `[comment]` batch** and go through the Phase 3 triage flow —
+including the baseline agent's own claims — so a wrong or overzealous baseline finding is
+rejected like any other comment.
+
 ## Reacting to Events
 
 Each emitted line is a notification. The Monitor keeps running while you act, so apply

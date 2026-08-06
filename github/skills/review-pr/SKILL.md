@@ -1,14 +1,14 @@
 ---
 name: review-pr
 allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop, Skill, AskUserQuestion, Read, Edit, Write
-description: Reviews a pull request with the built-in /review skill, then persists a Monitor watch over CI results and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt — then asks the user whether to merge. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
+description: Reviews a pull request: runs its own baseline review of the PR diff, then a persistent Monitor watches CI and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt — then asks whether to merge. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
 argument-hint: <PR number or URL> [--auto-merge]
 user-invocable: true
 ---
 
 # Review a Pull Request
 
-Run a baseline review with the built-in `/review`, then keep a persistent watch over CI and new reviewer comments until the PR settles.
+Run the baseline review of the PR diff, then keep a persistent watch over CI and new reviewer comments until the PR settles.
 
 ## Context
 
@@ -23,7 +23,7 @@ Run a baseline review with the built-in `/review`, then keep a persistent watch 
 
 **Actions**:
 1. Parse the PR number or URL from `$ARGUMENTS`. If absent, list open PRs with `gh pr list` and ask the user which to review. **Normalize `PR` to the bare number** before any `gh api` REST call: `gh pr *` commands accept a URL, but `gh api repos/$REPO/issues/$PR/...` interpolates `$PR` into the URL path and breaks on a full URL — run `PR=$(gh pr view "$ARGUMENTS" --json number -q .number)` (the Context block already fetches `--json number`) and use `$PR` as the number everywhere downstream. **Parse `--auto-merge` from `$ARGUMENTS` and strip it before resolving the PR number** — it is a closeout opt-in (see Phase 5), not part of the PR identifier; treat its absence as the default (explicit `AskUserQuestion` merge).
-2. Invoke `Skill("review", "<PR#>")` once for the baseline review. Treat its findings as the **first `[comment]` batch** — feed them straight into the Phase 3 triage flow before launching the Monitor. Do not act on them inline; the main context is biased (it likely authored the PR) and the same skeptical gatekeeping must apply to the baseline as to live comments.
+2. **Run the baseline review** — spawn an independent review agent via `Task` with clean context (it did not author the code) to review the PR diff. Pull the diff with `gh pr diff <PR>`; pass the agent the PR title/body and the diff, and ask for findings as `path:line: issue` lines (full prompt in `references/review-loop.md`, Baseline review agent). Treat its findings as the **first `[comment]` batch** — feed them straight into the Phase 3 triage flow before launching the Monitor. Do not act on them inline; the main context is biased (it likely authored the PR) and the same skeptical gatekeeping must apply to the baseline as to live comments.
 3. Resolve `REPO=<owner>/<repo>` from the PR metadata above (fallback: `git remote get-url origin` parsed into `owner/repo`).
 4. Read PR size from `additions+deletions` and pick `INTERVAL` (seconds) from the size table in `references/review-loop.md`: 180 / 300 / 480 for small / medium / large; floor 60s, cap 7200s (~2h).
 

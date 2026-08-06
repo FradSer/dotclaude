@@ -289,7 +289,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 | Argument Hint | `<PR number or URL>` |
 
 **What it does:**
-1. Runs a baseline review with the built-in `/review`, treating its findings as the first comment batch
+1. Runs its own baseline review of the PR diff via an independent agent, treating the findings as the first comment batch
 2. Launches one persistent background `Monitor` polling CI and new comments, with the interval sized to the PR
 3. On each event:
    - **CI failure** → fetches logs, fixes, commits + pushes (stops and reports for auth, secret, flaky, or infra failures)
