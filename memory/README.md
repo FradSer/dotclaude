@@ -1,8 +1,8 @@
 # Memory Plugin
 
-Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects. Manages the private harness memory (Tier A) and the repo-local memory (Tier B) — auto-consolidating Tier A on Stop, with manual skills to consolidate either layer, bidirectionally sync facts, promote a private fact to public, and recall across both.
+Dual-layer memory consolidation, sync, and public/private separation for Claude Code projects. Manages the private harness memory (Tier A) and the repo-local memory (Tier B) — auto-consolidating Tier A on Stop, with a single manual skill to consolidate either layer, bidirectionally sync facts, or promote a private fact to public.
 
-**Version**: 0.1.0
+**Version**: 0.1.1
 
 ## Installation
 
@@ -17,25 +17,23 @@ Two memory systems coexist in a Claude Code project:
 - **Tier A** — private harness memory at `~/.claude/projects/<escaped-cwd>/memory/`, loaded as session memory, consolidated on Stop with a 24h per-project debounce.
 - **Tier B** — repo-local `docs/memory/`, git-tracked, indexed by `superpowers/lib/docs-index.sh` into `docs/README.md`, consumed by `reflect-skills-from-memory`.
 
-This plugin automates Tier A consolidation and provides the manual operations the two layers were missing: consolidate, sync, publish, recall. A `visibility` field (`public` / `private` / `redacted`) gates what crosses the boundary; secret-bearing files are auto-redacted and never synced.
+This plugin automates Tier A consolidation and provides the manual operations the two layers were missing: consolidate, sync, publish. A `visibility` field (`public` / `private` / `redacted`) gates what crosses the boundary; secret-bearing files are auto-redacted and never synced.
 
-## Skills
+## Skill
 
-### `/memory:consolidate <a|b|both>`
+### `/memory:consolidate <a|b|both|sync|publish [target]>`
 
-Runs the 5-phase consolidation pass (Read → Normalize → Dedupe/Resolve → Prune → Rebuild) over Tier A, Tier B, or both. The manual, foreground, no-debounce counterpart to the Stop hook.
+The single entry point for memory maintenance across both layers. The mode selects the operation:
 
-### `/memory:sync <a-to-b|b-to-a|both>`
+| Mode | What it does |
+|---|---|
+| `a` (default) | 5-phase consolidation pass (Read → Normalize → Dedupe/Resolve → Prune → Rebuild) over Tier A only |
+| `b` | 5-phase pass over Tier B only |
+| `both` | 5-phase pass over Tier A then B |
+| `sync` | Bidirectional A<->B translation of `visibility: public` facts |
+| `publish` | One-shot: flip one Tier A fact to public and create its Tier B copy |
 
-Bidirectionally syncs `visibility: public` facts between the two layers, translating frontmatter and body shape across the schemas. Private and redacted facts stay put.
-
-### `/memory:publish <tier-a-file>`
-
-One-shot promotion: sets `visibility: public` on a Tier A file and immediately creates its Tier B copy. Refuses on redacted (secret-bearing) files.
-
-### `/memory:recall <query>`
-
-Read-only lookup across both layers by free-text query. Returns matches labeled by layer and visibility; never prints the body of a redacted match.
+`sync` takes a direction (`a-to-b` default, `b-to-a`, `both`); `publish` takes the Tier A file path or `name:` slug. Private and redacted facts stay put — never synced or published. The manual, foreground, no-debounce counterpart to the Stop hook.
 
 ## Hooks
 

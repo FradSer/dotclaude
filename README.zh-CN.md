@@ -209,7 +209,7 @@ claude plugin install utils@frad-dotclaude
 
 ### [memory](memory/)
 
-双层记忆整理、同步与公开/私有分离。在 Stop 时自动整理私有 harness 记忆（Tier A），按项目 24 小时去重；提供手动 skill 整理任一层、双向同步事实、把私有记忆发布为公开、以及跨层查询。
+双层记忆整理、同步与公开/私有分离。在 Stop 时自动整理私有 harness 记忆（Tier A），按项目 24 小时去重；提供统一 skill 整理任一层、双向同步事实、把私有记忆发布为公开。
 
 **安装：**
 ```bash
