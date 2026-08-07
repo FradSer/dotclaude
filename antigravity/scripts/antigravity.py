@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["google-genai>=2.16.0"]
+# dependencies = ["google-genai>=2.17.0"]
 # ///
 """Bridge Claude Code to Gemini Managed Agents (Interactions API).
 
