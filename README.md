@@ -33,7 +33,7 @@ claude plugin install github@frad-dotclaude
 
 ### [superdev](superdev/)
 
-BDD-first engineering skills forked from mattpocock/skills v1.2.0, with a self-improving checklist subsystem.
+BDD-first engineering skills forked from mattpocock/skills v1.2.3, with a self-improving checklist subsystem.
 
 **Installation:**
 ```bash

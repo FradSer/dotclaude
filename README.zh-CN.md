@@ -33,7 +33,7 @@ claude plugin install github@frad-dotclaude
 
 ### [superdev](superdev/)
 
-以 BDD 为先的工程 skills，fork 自 mattpocock/skills v1.2.0，附带自我改进的 checklist 子系统。
+以 BDD 为先的工程 skills，fork 自 mattpocock/skills v1.2.3，附带自我改进的 checklist 子系统。
 
 **安装：**
 ```bash
