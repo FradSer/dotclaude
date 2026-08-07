@@ -68,7 +68,7 @@ Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `refer
 6. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
 7. Do not ask to merge or run the ceremony while CI is red or comments remain open; never auto-merge past open `escalate` items.
 8. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` but still run the ceremony first, then auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: **re-arm the closeout state without `--auto-merge`** (`arm-closeout.sh "$PR"`) so the hook enforces the explicit ask, fall back to the `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
-9. Never force long-lived branch updates; `--delete-branch` only when stack-safe AND in the main worktree.
+9. Never force long-lived branch updates; `--delete-branch` is the default (omitted only in linked worktrees).
 
 `TaskStop` the Monitor after closeout completes — with the closeout state already cleared.
 

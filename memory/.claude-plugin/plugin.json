@@ -2,7 +2,7 @@
   "name": "memory",
   "displayName": "Memory",
   "version": "0.1.1",
-  "description": "Consolidates a Claude Code project's memory — private harness and repo-local — as one unlayered store",
+  "description": "Consolidates a Claude Code project's memory as one unlayered store",
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"

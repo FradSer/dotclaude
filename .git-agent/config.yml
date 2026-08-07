@@ -1,33 +1,35 @@
 scopes:
     - name: acpx
-      description: Agent communication, delegation, and subagent reflection in acpx/; does not cover antigravity.
+      description: Agent communication, subagent delegation, and reflection protocols in acpx/; does not cover antigravity.
     - name: ag
-      description: Antigravity managed agent plugin and delegate workers in antigravity/; does not cover acpx.
+      description: Antigravity plugin, delegate-based researcher agents, and research workflows in antigravity/; does not cover acpx.
     - name: as
-      description: Autonomous ML experimentation, GAN workflows, and rolling research in autoresearch/; does not cover general plugins.
+      description: Autonomous ML experimentation, GAN tournament workflows, and model training research in autoresearch/.
     - name: cctx
-      description: Code context research, environment mapping, and repository analysis in code-context/.
+      description: Code context research, codebase-wide dependency tracking, and environment mapping in code-context/.
     - name: git
-      description: Git repository configuration, setup utilities, and commit hooks in git/; does not cover gitflow.
+      description: Git repository configuration, commit hygiene, hooks, and changelog generation in git/; does not cover GitHub integration.
     - name: gh
-      description: GitHub PR monitoring, triage, and feedback loops in github/.
+      description: GitHub PR management, review loops, issue triage, and workflow automation in github/.
     - name: hw
-      description: KiCad CLI and OpenSCAD hardware tooling in hardware/.
+      description: Hardware engineering CLI tools for KiCad and OpenSCAD in hardware/.
     - name: hf
-      description: Marketing HTML video authoring and HyperFrames video generation in hyperframes/; does not cover marketing/.
+      description: Marketing video authoring and HyperFrames generation engines in hyperframes/; does not cover marketing/.
     - name: mkt
-      description: Marketing skills, CRO, copywriting, and analytics in marketing/; does not cover hyperframes/.
+      description: Marketing automation, copy-editing, SEO, attribution, and landing page conversion skills in marketing/; does not cover hyperframes/.
     - name: mem
-      description: Memory plugin for dual-layer sync and state consolidation in memory/.
+      description: Dual-layer memory sync, plugin state consolidation, and recall systems in memory/.
     - name: "off"
-      description: Lark suite integration, office productivity tools, and media generation in office/; does not cover coding tools.
+      description: Lark integration suite, agent-browser, media generation, and office productivity tools in office/; does not cover coding-specific plugins.
     - name: po
-      description: Plugin optimizer framework for validation and metadata in plugin-optimizer/.
+      description: Plugin optimizer, validation framework, and structural metadata integrity in plugin-optimizer/.
     - name: ref
-      description: Code simplification and refactoring agent and skills in refactor/.
+      description: Code simplification agents, refactoring logic, and architectural redesigns in refactor/.
     - name: storm
-      description: STORM article generation pipeline and researcher agents in storm/.
+      description: STORM article generation, knowledge research, and outlining pipeline in storm/.
+    - name: sd
+      description: SuperDev engineering skills, bug diagnosis, domain modeling, and developer productivity tools in superdev/.
     - name: sp
-      description: Superpowers autonomous planning, evaluation loops, and task execution in superpowers/.
+      description: Autonomous superpower planning, evaluation harness, task orchestration, and BDD testing in superpowers/.
     - name: sw
-      description: SwiftUI code review and modern API best practices in swiftui/.
+      description: SwiftUI code review standards and design guidelines in swiftui/.

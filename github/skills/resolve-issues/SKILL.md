@@ -55,15 +55,16 @@ Use isolated worktrees to avoid disrupting main development. Follow TDD cycle (r
    - Append `--no-monitor` only when the user explicitly opts out of the review loop
 3. **This skill does not resume here.** `/github:create-pr` reports the PR URL, and `/github:review-pr` then owns the PR for the rest of its life: a persistent Monitor spanning turns, the triage/fix/push rounds, and the merge decision it asks the user to make. Do NOT wait inline, do NOT re-report the URL, and do NOT run Phase 4 speculatively.
 
-## Phase 4: Post-Merge Cleanup (later turn)
+## Phase 4: Post-Merge Cleanup (later turn, mandatory)
 
 **Trigger**: The PR from Phase 3 has actually merged — normally a later turn, after `/github:review-pr` completed its merge decision. Verify with `gh pr view <PR#> --json state -q .state` returning `MERGED`; never assume.
 
 **Actions**:
 1. **CRITICAL: confirm still on the issue branch** before `ExitWorktree action:"remove"`. If checkout drifted onto `main`/`develop`, stop — removing would delete a long-lived branch. Remote head may already be gone; that is fine.
-2. Use the ExitWorktree tool with action "remove" to clean up worktree and branch
+2. Use the ExitWorktree tool with action "remove" to clean up worktree and branch — mandatory cleanup, not optional.
    - If uncommitted changes exist, ExitWorktree refuses; confirm with the user before setting `discard_changes: true`
-3. Document resolution and any follow-up tasks
+3. `git fetch --prune` to sync remote-tracking branches.
+4. Document resolution and any follow-up tasks
 
 ## References
 

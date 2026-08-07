@@ -9,8 +9,8 @@
 #   3. debounces per project (24h);
 #   4. backgrounds a headless `claude -p` that reads the instructions in
 #      skills/consolidate/SKILL.md (the single source of truth) and runs the
-#      full consolidation pass: the private harness memory at $MEMORY_DIR and
-#      the repo memory at docs/memory/.
+#      full consolidation pass over both memory locations: the private harness
+#      memory at $MEMORY_DIR and the repo memory at docs/memory/.
 #
 # Contract: never break a turn. Always exit 0. No memory dir / no cwd ->
 # silent skip + log line. A clean pass is silent.

@@ -1,13 +1,13 @@
 ---
 name: consolidate
-description: This skill should be used when the user asks to "consolidate memory", "tidy memory", "整理记忆", "consolidate memory", "rebuild MEMORY.md", "sync memory", "sync memories", "双向同步记忆", "push memory to repo", "pull memory from repo", "promote a memory to public", "publish a memory", "发布记忆", "公开某条记忆", "move memory to repo", or wants to normalize, deduplicate, prune, rebuild, or sync project memory. Consolidates the project's memory — the private harness memory (~/.claude/projects/<escaped-cwd>/memory) and the repo-local memory (docs/memory/) — as one unlayered store.
+description: This skill should be used when the user asks to "consolidate memory", "tidy memory", "整理记忆", "rebuild MEMORY.md", or wants to normalize, deduplicate, prune, or rebuild project memory. Consolidates the project's memory as one unlayered store — the private harness memory (~/.claude/projects/<escaped-cwd>/memory) and the repo-local memory (docs/memory/).
 user-invocable: true
 allowed-tools: ["Read", "Write", "Glob", "Grep"]
 ---
 
 # Consolidate Memory
 
-One command, no options. The project's memory lives in two places but is one unlayered store; the AI decides what needs doing and does it.
+One command, no options. The project's memory lives in two physical locations but is one unlayered store; the AI decides what needs doing and does it.
 
 - **Private harness memory** — `~/.claude/projects/<escaped-cwd>/memory` (`/`→`-`; space handling is inconsistent, probe both `/→-`+` →-` and `/→-`+space-kept). Index: `MEMORY.md`.
 - **Repo memory** — `docs/memory/` in the project's git root. Files `<category>_<slug>.md`, frontmatter `name/category/summary/source/created/updated`, body `## Fact`/`## Why`/`## How to apply`/`## Related`. Indexed as a row in `docs/README.md`.
