@@ -304,3 +304,6 @@ Thumbs.db
 # doesn't survive a fresh clone, so a worktree directory would show as untracked
 # on any other machine. Tracked here instead.
 **/.claude/worktrees/
+
+# Plugin local settings (user-specific, not shared)
+**/.claude/*.local.*

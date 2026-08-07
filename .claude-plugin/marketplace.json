@@ -261,6 +261,19 @@
    "homepage": "https://github.com/FradSer/dotclaude/tree/main/memory"
   },
   {
+   "name": "pi",
+   "displayName": "Pi",
+   "version": "0.1.0",
+   "description": "Bridges to pi (dev/pi), a minimal terminal coding harness. Delegates coding tasks to the pi CLI for execution with full file and git context.",
+   "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+   },
+   "source": "./pi",
+   "category": "development",
+   "homepage": "https://github.com/FradSer/dotclaude/tree/main/pi"
+  },
+  {
    "name": "interfaces",
    "displayName": "Interfaces",
    "version": "1.0.0",
