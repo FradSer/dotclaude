@@ -64,17 +64,30 @@ Two model-invoked references that run *beneath* the other skills — each the si
 
 ## Crossing sessions
 
-- **`/superdev:handoff`** — when a thread is full or you need to branch off (e.g. into a `/superdev:prototype` session), this compacts the conversation into a markdown file. You don't continue in place — you **open a new session and reference that file** to carry the context across. It's the bridge between context windows, in either direction. Use it when you want a **fresh session** but need the **current conversation preserved**.
-- **`/compact`** (built-in) — stay in the **same conversation**, letting the earlier turns be summarized. Use it at **intentional breaks between phases**, when you don't mind losing the verbatim history. Don't compact mid-phase — the agent can lose its way. `/superdev:handoff` forks; `/compact` continues.
+A **phase** is a chunk of work inside a session — the grilling, the implementation, the QA. At the **boundary** between two of them you have five options, and picking between them is the fuzziest decision in this whole map:
+
+- **Continue** — stay put. Costs nothing, loses nothing.
+- **`/clear`** — empty the window, when nothing here matters to what's next.
+- **`/superdev:handoff`** — write a portable markdown file. Narrow: only for a **new harness**, a **new directory**, a **colleague**, or forking a side task **mid-phase**. What it buys is portability. It's the bridge between context windows, in either direction.
+- **Subagent** — send a tightly-scoped task to its own window and get a report back.
+- **`/compact`** (built-in) — compress this context and seed a fresh session with it. The **default**, at the bottom of the tree rather than the first reach.
+
+Read [PHASE-BOUNDARIES.md](PHASE-BOUNDARIES.md) for the ordered tree — the five questions, the reasoning behind each branch, and why the primary-source cost makes **Continue** the one to rule out first. Make the decision **at** a boundary; mid-phase, continue or split the rest into subagents. `/superdev:handoff` forks; `/compact` continues.
 
 ## Standalone
 
 Off the main flow entirely.
 
 - **`/superdev:grill-me`** — the same relentless interview as `/superdev:grill-with-docs`, but for when you have **no codebase**. Stateless: it saves nothing locally, builds no `CONTEXT.md`. Reach for it to sharpen any plan or design that doesn't live in a repo.
-- **`/superdev:prototype`** — a small, throwaway program that answers one design question: does this state model feel right, or what should this UI look like. Throwaway from day one — keep the answer, delete the code. It's the detour in step 2 of the main flow, but reach for it any time a design question is hard to settle on paper.
+- **`/superdev:grilling`** — the interview primitive itself: one question at a time via the AskUserQuestion tool, facts are the agent's job and decisions are yours. `/superdev:grill-me` and `/superdev:grill-with-docs` are the two named ways in, and `/superdev:triage`, `/superdev:wayfinder` and `/superdev:improve-codebase-architecture` all run it internally. Reach for it directly only when you want the interview with no wrapper around it.
+- **`/superdev:resolving-merge-conflicts`** — work an in-progress merge or rebase conflict hunk by hunk, resolving by **intent** traced to each side's primary source rather than by picking lines, then finish the operation. It never runs `--abort`. Standalone and off every flow: reach for it when you are already mid-conflict.
+- **`/superdev:prototype`** — a small, throwaway program that answers one design question: does this state model feel right, or what should this UI look like. It's the detour in step 2 of the main flow, but reach for it any time a design question is hard to settle on paper.
 - **`/superdev:research`** — delegate reading legwork to a **background agent**: it investigates a question against **primary sources**, then leaves a cited Markdown file in the repo. Keep working while it reads. The file it produces is something to take *into* the main flow at `/superdev:grill-with-docs` — research feeds the thinking, it doesn't replace it.
+- **`/superdev:to-questionnaire`** — when the thing blocking you isn't in your head or the codebase but in **someone else's**, this writes them a questionnaire to fill in. It's the inverse of `/superdev:grill-me`: instead of interviewing you about the subject, it interviews you about the **send** — who it's going to, what you need back — and aims the questions at the gap. What comes back is material for `/superdev:grill-with-docs` or `/superdev:to-spec`.
+- **`/superdev:wizard`** — for the steps only a **human** can take: provisioning infrastructure, setting up credentials or CI secrets, clicking through an unfamiliar third-party dashboard, running a one-off migration or cutover. It generates an interactive bash script that opens each URL, captures each value, and writes it into `.env` and GitHub secrets — so the procedure stops being something you re-explain to an agent every time. Model-invoked, so the agent reaches for it the moment it hits a wall only you can pass. If the agent could just do it itself, it should; this is for where a human is genuinely in the loop.
+- **`/superdev:wait-what`** — the corrective for a message that didn't land. Use it mid-conversation, inside any other skill, and the agent re-pitches what it just said with the context you were missing, in plain English, using the `CONTEXT.md` vocabulary. It works after the fact; `/superdev:grill-with-docs` is the upfront cure, because a shared language agreed early is what stops the jargon arriving at all.
 - **`/superdev:teach`** — learn a concept over multiple sessions, using the current directory as a stateful workspace.
+- **`/superdev:writing-for-agents`** — reference for writing documents agents consume: skills, `AGENTS.md`/`CLAUDE.md`, pointed-at docs.
 - **`/superdev:writing-great-skills`** — reference for writing and editing skills well.
 
 ## Precondition
