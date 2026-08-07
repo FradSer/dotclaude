@@ -1,11 +1,11 @@
-# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-20-blue)
+# Frad 的 Claude Code 插件集 ![](https://img.shields.io/badge/plugins-21-blue)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-v0.6+-purple)](https://claude.ai/code)
 
 [English](README.md) | **简体中文**
 
-精心打造的 20 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 21 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -214,6 +214,17 @@ claude plugin install utils@frad-dotclaude
 **安装：**
 ```bash
 claude plugin install memory@frad-dotclaude
+```
+
+---
+
+### [pi](pi/)
+
+桥接到 pi (dev/pi)，一个极简终端编程助手。`/pi:delegate` 将编码任务附带文件和 Git 上下文发送给 pi 执行。支持三层持久化配置和通过 `~/.pi/agent/models.json` 的自定义 base URL。
+
+**安装：**
+```bash
+claude plugin install pi@frad-dotclaude
 ```
 
 ---
