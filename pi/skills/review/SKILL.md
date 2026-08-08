@@ -1,13 +1,15 @@
 ---
 name: review
-description: Reviews code using pi CLI with read-only tools. Delegates the review to pi (dev/pi) with a structured review rubric, running in read-only mode (--tools read,grep,find,ls) to prevent accidental edits. Use when the user asks to "review code with pi", "pi review", "have pi review", "let pi review", or invokes /pi:review.
+description: Reviews code using pi CLI with read-only tools. Delegates the review to pi (dev/pi) with a structured review rubric, running in read-only mode to prevent accidental edits. By default reviews uncommitted working tree changes (git diff HEAD) with pi restricted to the read tool; explicit targets (--branch/--diff/@file/PR) or --explore widen pi to read,grep,find,ls. Use when the user asks to "review code with pi", "pi review", "have pi review", "let pi review", or invokes /pi:review.
 user-invocable: true
-argument-hint: "[@target] [--branch BRANCH] [--diff RANGE] [--endpoint ENDPOINT] [--model MODEL] [--thinking LEVEL] | --edit-config [--local|--shared|--global] | --list-models"
-allowed-tools: ["Bash(git:*)", "Bash(jq:*)", "Bash(ls:*)", "Bash(find:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(echo:*)", "Bash(command:*)", "Bash(pi:*)", "Read", "Grep", "Glob"]
+argument-hint: "[@target] [--branch BRANCH] [--diff RANGE] [--endpoint ENDPOINT] [--model MODEL] [--thinking LEVEL] [--explore] | --edit-config [--local|--shared|--global] | --list-models"
+allowed-tools: ["Bash(git:*)", "Bash(jq:*)", "Bash(ls:*)", "Bash(find:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(echo:*)", "Bash(command:*)", "Bash(mktemp:*)", "Bash(rm:*)", "Bash(pi:*)", "Read", "Grep", "Glob"]
 ---
 # CRITICAL: pi Code Review
 
-This skill delegates a code review to the `pi` CLI tool (`@earendil-works/pi-coding-agent`). pi runs with **read-only tools** (`--tools read,grep,find,ls`) to prevent accidental edits — it analyzes code and returns findings as text.
+This skill delegates a code review to the `pi` CLI tool (`@earendil-works/pi-coding-agent`). pi runs with **read-only tools** to prevent accidental edits — it analyzes code and returns findings as text.
+
+**CRITICAL: The default review target is the uncommitted working tree (`git diff HEAD`), and pi must NOT be able to explore the whole codebase or run git itself.** pi's `--tools` flag is a hard allowlist — only listed tools are registered (pi's built-in tools are `read, grep, find, ls, bash, edit, write`; there is no standalone `git` tool, but `bash` can run `git diff`). By default restrict pi to `read` only so it can inspect files mentioned in the diff but cannot `find`/`grep`/`ls` the repo or run `bash`/`git`. Only expand to `read,grep,find,ls` when an explicit target (`--branch`, `--diff`, PR number) or `--explore` requires it.
 
 ## Before Execution: Check Installation
 
@@ -26,13 +28,7 @@ User preferences persist across invocations via JSON files. The resolution chain
 3. **`~/.claude/pi.local.json`** — global user-wide defaults
 4. **Built-in defaults** (listed below)
 
-### Settings file format
-
-The settings file maps **named endpoint configurations** (user-defined keys) to pi's known providers. Each key can have its own `baseUrl`, `apiKey`, and `models` list. At runtime, the skill writes the chosen endpoint's `baseUrl` into `~/.pi/agent/models.json` under a known provider (default `openai`), then calls pi with `--provider openai`.
-
-Values can reference environment variables using `$VAR` or `${VAR}` syntax — they are resolved at read time. This is useful for API keys: `"apiKey": "$MY_API_KEY"` reads from the environment variable at runtime.
-
-All fields are optional. The example below shows the format — fill in your own endpoints:
+Settings files use the format below. Load `references/settings.md` for the full format, reading logic, `--edit-config`, and `--list-models`:
 
 ```json
 {
@@ -48,121 +44,11 @@ All fields are optional. The example below shows the format — fill in your own
 }
 ```
 
-Each endpoint entry has:
-- `provider` (required) — pi's known provider name (`openai`, `anthropic`, `google`, etc.). This is what pi's `--provider` flag receives.
-- `baseUrl` (optional) — custom API endpoint. When present, the skill writes it to `~/.pi/agent/models.json` for the specified `provider` before running.
-- `models` — array of model IDs available via this endpoint.
+Each endpoint key has `provider` (required), optional `baseUrl`, and `models`. Values may reference env vars via `$VAR`. Read the merged settings with the `Reading settings` snippet in `references/settings.md` — it yields `ENDPOINT`, `MODEL`, `THINKING`, `PROVIDER`, `BASE_URL`, `API_KEY`.
 
-Only include fields the user wants to override. Partial files are fine — the chain merges per-field.
-
-### Reading settings
-
-Before parsing `$ARGUMENTS`, read the settings files in priority order (lowest first, so each overrides the previous):
-
-```bash
-# Start with empty config
-CONFIG='{}'
-
-# 1. Global personal (lowest priority)
-if [ -f "$HOME/.claude/pi.local.json" ]; then
-  CONFIG=$(jq -s '.[0] * .[1]' /dev/stdin "$HOME/.claude/pi.local.json" 2>/dev/null <<<"$CONFIG" || echo "$CONFIG")
-fi
-
-# 2. Project shared
-if [ -f ".claude/pi.json" ]; then
-  CONFIG=$(jq -s '.[0] * .[1]' /dev/stdin ".claude/pi.json" 2>/dev/null <<<"$CONFIG" || echo "$CONFIG")
-fi
-
-# 3. Project personal (highest file priority)
-if [ -f ".claude/pi.local.json" ]; then
-  CONFIG=$(jq -s '.[0] * .[1]' /dev/stdin ".claude/pi.local.json" 2>/dev/null <<<"$CONFIG" || echo "$CONFIG")
-fi
-```
-
-Then extract values, resolving environment variable references:
-
-```bash
-# Resolve env vars in a JSON value: "$VAR" or "${VAR}" → actual value
-resolve_env() {
-  local val="$1"
-  while [[ "$val" =~ \$\{?([a-zA-Z_][a-zA-Z0-9_]*)\}? ]]; do
-    local var_name="${BASH_REMATCH[1]}"
-    local var_value="${!var_name:-}"
-    val="${val//${BASH_REMATCH[0]}/$var_value}"
-  done
-  echo "$val"
-}
-
-ENDPOINT=$(resolve_env "$(echo "$CONFIG" | jq -r '.defaultEndpoint // ""')")
-MODEL=$(resolve_env "$(echo "$CONFIG" | jq -r '.defaultModel // ""')")
-THINKING=$(resolve_env "$(echo "$CONFIG" | jq -r '.thinking // "low"')")
-PROVIDER=$(resolve_env "$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].provider // "openai"')")
-BASE_URL=$(resolve_env "$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].baseUrl // ""')")
-API_KEY=$(resolve_env "$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].apiKey // ""')")
-# If model not set, use first model from the endpoint
-if [ -z "$MODEL" ] || [ "$MODEL" = "null" ]; then
-  MODEL=$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].models[0] // ""')
-fi
-```
-
-### `--edit-config` flag
-
-When `$ARGUMENTS` is exactly `--edit-config` (with optional scope flag), open the settings file for editing. Three scopes matching the three priority tiers:
-
-| Scope | Flag | Path | Description | Git |
-|-------|------|------|-------------|-----|
-| Project personal | `--edit-config` (default) or `--edit-config --local` | `.claude/pi.local.json` | Per-project overrides | gitignored |
-| Project shared | `--edit-config --shared` | `.claude/pi.json` | Team defaults, committed | tracked |
-| Global personal | `--edit-config --global` or `--edit-config -g` | `~/.claude/pi.local.json` | User-wide across all projects | user home |
-
-```bash
-# Detect scope
-if [[ "$ARGUMENTS" == *"--global"* || "$ARGUMENTS" == *"-g"* ]]; then
-  CONFIG_PATH="$HOME/.claude/pi.local.json"
-elif [[ "$ARGUMENTS" == *"--shared"* ]]; then
-  CONFIG_PATH=".claude/pi.json"
-else
-  CONFIG_PATH=".claude/pi.local.json"
-fi
-
-# Create if not exists
-mkdir -p "$(dirname "$CONFIG_PATH")"
-if [ ! -f "$CONFIG_PATH" ]; then
-  cat > "$CONFIG_PATH" << 'EOF'
-{
-  "endpoints": {},
-  "defaultEndpoint": "",
-  "defaultModel": "",
-  "thinking": ""
-}
-EOF
-fi
-
-# Open in editor
-${EDITOR:-vi} "$CONFIG_PATH"
-```
-
-Report: "Settings file created/opened at `<path>`. Changes take effect on the next `/pi:review` invocation."
-
-### `--list-models` flag
-
-When `$ARGUMENTS` is exactly `--list-models`, read the merged config and display all configured endpoints and their models:
-
-```bash
-echo "$CONFIG" | jq -r '
-  .defaultEndpoint as $def |
-  .defaultModel as $defm |
-  (.endpoints | to_entries[] |
-    "\(.key)" + if .key == $def then " (default)" else "" end +
-    " → " + .value.provider +
-    ":" +
-    (.value.models | join(", ")) +
-    if .key == $def and $defm != "" then "  ← active: " + $defm else "" end
-  )
-'
-```
-
-Then stop — do not proceed to review.
+Before parsing review targets, handle the two settings-only flags from `references/settings.md` and stop (do not proceed to review):
+- `$ARGUMENTS` is exactly `--edit-config` (with optional scope flag) → open the settings file (see `references/settings.md`).
+- `$ARGUMENTS` is exactly `--list-models` → print configured endpoints and models (see `references/settings.md`).
 
 ## Argument Parsing
 
@@ -173,6 +59,7 @@ Parse `$ARGUMENTS` to extract the review target and optional flags. The target i
 | `--endpoint` | Endpoint key name (must match a key in settings `endpoints`) | CLI > settings > `defaultEndpoint` |
 | `--model` | Model ID to use for this review | CLI > settings > (endpoint's first model) |
 | `--thinking` | Thinking level (off/minimal/low/medium/high/xhigh/max) | CLI > settings > `low` |
+| `--explore` | Force full read-only exploration tools (`read,grep,find,ls`) even for the default working-tree review. Without this, the default review gets `read` only. | CLI flag |
 
 ### Resolution order per flag
 
@@ -211,23 +98,25 @@ fi
 
 Determine what to review from the parsed arguments. The target can be:
 
-| Pattern | What it reviews | Example |
+| Pattern | What it reviews | pi tools |
 |---------|----------------|---------|
-| No target | pi explores codebase with its tools | `/pi:review` |
-| `--branch <name>` | `git diff main...<branch>` | `/pi:review --branch feat/foo` |
-| `--diff <range>` | `git diff <range>` | `/pi:review --diff HEAD~3..HEAD` |
-| `@filepath` | Specific file(s) | `/pi:review @src/index.ts` |
-| PR number | `gh pr diff <n>` | `/pi:review 42` (numeric = PR) |
+| No target (default) | `git diff HEAD` — uncommitted working tree changes (staged + unstaged) | `read` only |
+| `--branch <name>` | `git diff main...<branch>` | `read,grep,find,ls` |
+| `--diff <range>` | `git diff <range>` | `read,grep,find,ls` |
+| `@filepath` | Specific file(s) | `read,grep,find,ls` |
+| PR number | `gh pr diff <n>` | `read,grep,find,ls` |
+| `--explore` (any target) | Overrides the tool set to full read-only exploration | `read,grep,find,ls` |
 
 ### Resolution logic
 
 1. **CRITICAL: Do NOT use `@.`** — pi does not support passing a directory path as `@.`. It will error with `EISDIR`.
-2. **By default, do NOT pass file references** — pi has `read`, `grep`, `find`, and `ls` tools and can explore the codebase on its own. Just pass the task description.
+2. **By default (no target), review uncommitted working tree changes** — capture `git diff HEAD` (staged + unstaged vs HEAD) and pass it to pi. If the diff is empty, report that the working tree is clean and stop. Restrict pi to `--tools read` so it cannot scan the codebase or run git.
 3. Only pass `@filepath` references when the user explicitly names specific files (target starts with `@`).
 4. If the target is a number (e.g. `42`), treat it as a GitHub PR number — fetch the diff with `gh pr diff <n>`.
 5. If the target starts with `--branch`, extract the branch name and capture `git diff main...<branch>`.
 6. If the target starts with `--diff`, extract the range and capture `git diff <range>`.
-7. Otherwise, pass the remaining arguments as the task description.
+7. Otherwise (free-text task description, e.g. `/pi:review "check the auth flow"`), pass the text as the task description and still capture `git diff HEAD` as context so pi reviews your current changes in service of the stated task.
+8. **Tool selection**: default (no target) → `--tools read`. Any explicit target (`--branch`, `--diff`, `@filepath`, PR number) → `--tools read,grep,find,ls`. If `--explore` appears in `$ARGUMENTS` → force `--tools read,grep,find,ls` regardless of target. Never include `bash` — the read-only review must not let pi run `git` or edit files.
 
 ### File references (when user specifies @filepath)
 
@@ -289,19 +178,47 @@ git log --oneline -20
 git branch --show-current
 ```
 
-### 2. Capture the diff (for targeted review)
+### 3. Capture the diff
 
-If `--branch` or `--diff` was specified, capture the diff directly:
+Capture the diff for the resolved target into a temp file, then pass its path via `--append-system-prompt` (pi reads file paths directly):
 
 ```bash
+DIFF_FILE=$(mktemp /tmp/pi-review-diff.XXXXXX)
+HAS_EXPLICIT_TARGET=""
+
+# No target (default): uncommitted working tree changes (staged + unstaged vs HEAD)
+git diff HEAD > "$DIFF_FILE"
+
 # For --branch <name>: diff against main
-git diff main...<BRANCH_NAME>
+if [[ "$ARGUMENTS" == *"--branch"* ]]; then
+  HAS_EXPLICIT_TARGET="1"
+  BRANCH_NAME=$(echo "$ARGUMENTS" | sed -n 's/.*--branch[= ]\([^ ]*\).*/\1/p')
+  git diff main...${BRANCH_NAME//\"/} > "$DIFF_FILE"
+fi
 
 # For --diff <range>
-git diff <RANGE>
+if [[ "$ARGUMENTS" == *"--diff"* ]]; then
+  HAS_EXPLICIT_TARGET="1"
+  RANGE=$(echo "$ARGUMENTS" | sed -n 's/.*--diff[= ]\([^ ]*\).*/\1/p')
+  git diff "${RANGE//\"/}" > "$DIFF_FILE"
+fi
+
+# For a PR number (numeric target, not a flag)
+if [[ "$ARGUMENTS" =~ ^[0-9]+(\ |$) ]] || [[ "$ARGUMENTS" =~ \ [0-9]+$ ]]; then
+  HAS_EXPLICIT_TARGET="1"
+  PR_NUM=$(echo "$ARGUMENTS" | grep -oE '[0-9]+' | head -1)
+  gh pr diff "$PR_NUM" > "$DIFF_FILE"
+fi
+
+# For @filepath references (user-named files): explicit target, no diff to capture
+if [[ "$ARGUMENTS" == *"@"* ]]; then
+  HAS_EXPLICIT_TARGET="1"
+fi
 ```
 
-Include the diff text in `--append-system-prompt` alongside the git context.
+Then build `DIFF_CONTEXT="--append-system-prompt $DIFF_FILE"` and include it in the pi command alongside the git context.
+
+**Empty-diff guard (default target only):** if `git diff HEAD` produces no output and no explicit target was given, the working tree is clean — report "No uncommitted changes to review — the working tree is clean. Use `/pi:review --branch <name>`, `/pi:review --diff <range>`, or `/pi:review <PR>` to review committed code." and stop before invoking pi.
 
 ## Execution
 
@@ -317,20 +234,29 @@ if [ -f "CLAUDE.md" ]; then
   CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
 fi
 
-# Build the pi review command with resolved variables
-# Do NOT pass @file references by default — pi explores the codebase with its own tools
-# Only add @file.ts when the user explicitly named files
-PI_CMD="pi -p --provider $PROVIDER --model $MODEL${API_KEY:+ --api-key $API_KEY} --thinking ${THINKING:-low} --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git context: ...\" \"Review the code. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
+# Tool selection — see "Review Target" resolution logic
+# Default (no target): read only, so pi cannot scan the codebase or run git.
+# Explicit target or --explore: read,grep,find,ls. Never include bash.
+if [[ "$ARGUMENTS" == *"--explore"* ]] || [ -n "$HAS_EXPLICIT_TARGET" ]; then
+  TOOLS="read,grep,find,ls"
+else
+  TOOLS="read"
+fi
 
-# Run in background — no timeout
-bash -c "$PI_CMD 2>&1" &
+# Build the pi review command with resolved variables
+# $DIFF_CONTEXT carries the captured diff (see "Capture the diff"); empty when no diff applies
+# Do NOT pass @file references unless the user explicitly named files
+PI_CMD="pi -p --provider $PROVIDER --model $MODEL${API_KEY:+ --api-key $API_KEY} --thinking ${THINKING:-low} --tools $TOOLS --no-session --no-context-files --approve $CLAUDE_CONTEXT $DIFF_CONTEXT --append-system-prompt \"Git context: ...\" \"Review the code in the provided diff. Use your tools only to read the files mentioned in the diff for context — do NOT search the rest of the codebase, do NOT run git. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
+
+# Run in background — no timeout; clean up the temp diff when pi exits
+bash -c "$PI_CMD 2>&1; rm -f '$DIFF_FILE'" &
 ```
 
 ## Handling Output
 
 ### CRITICAL: pi's stdout is the review text
 
-Unlike `/pi:delegate` where pi edits files, review mode uses `--tools read,grep,find,ls` — pi cannot write files. **Its stdout IS the review output.** Capture it and present it to the user.
+Unlike `/pi:delegate` where pi edits files, review mode uses read-only tools (`read`, or `read,grep,find,ls` with an explicit target) — pi cannot write files or run bash. **Its stdout IS the review output.** Capture it and present it to the user.
 
 ### On Success (exit code 0)
 
@@ -349,11 +275,13 @@ Show the error message from stderr. Common causes:
 
 ## Usage Examples
 
-### Review the whole working directory (default)
+### Review uncommitted working tree changes (default)
 
 ```
 /pi:review
 ```
+
+Reviews `git diff HEAD` — all staged and unstaged changes vs the last commit. If the working tree is clean, reports so and stops.
 
 ### Review with a specific endpoint
 
@@ -391,6 +319,14 @@ Show the error message from stderr. Common causes:
 /pi:review @src/core/agent.ts
 ```
 
+### Let pi freely explore the codebase (default review, expanded tools)
+
+```
+/pi:review --explore
+```
+
+Overrides the default `read`-only restriction to `read,grep,find,ls` for the working-tree review. pi still cannot edit files or run bash.
+
 ### List configured endpoints
 
 ```
@@ -405,8 +341,9 @@ Show the error message from stderr. Common causes:
 
 ## Important Notes
 
-- pi runs with `--tools read,grep,find,ls` — **read-only**. It cannot edit files.
-- **Do NOT use `@.`** — pi does not support directory paths. pi has `read`, `grep`, `find`, `ls` tools and explores the codebase on its own.
+- pi runs with **read-only tools** — it cannot edit files or run bash.
+- **Default review is restricted to `--tools read`** — pi can read files mentioned in the diff but cannot `grep`/`find`/`ls` the codebase or run `git`, so it cannot silently review the whole repo. Explicit targets (`--branch`, `--diff`, `@filepath`, PR number) or `--explore` expand it to `read,grep,find,ls`.
+- **Default behavior reviews uncommitted working tree changes** (`git diff HEAD`, staged + unstaged). If the working tree is clean, the skill reports it and stops — use `--branch <name>`, `--diff <range>`, or a PR number to review committed code.
 - **CLAUDE.md context is always passed** via `--append-system-prompt` as file paths — `~/.claude/CLAUDE.md` (user global) and `./CLAUDE.md` (project). pi reads them automatically.
 - **pi only knows built-in provider names** (`openai`, `anthropic`, `google`, etc.). The settings `endpoints` map is just for user convenience. The skill writes `baseUrl` to `~/.pi/agent/models.json` under the endpoint's `provider` field, then passes `--provider <provider>` to pi.
 - No shell `timeout` — reviews can be heavy and should run to completion.
