@@ -6,8 +6,9 @@ This reference is loaded by `SKILL.md` when `/pi:review` needs the full settings
 
 1. **CLI flag** (from `$ARGUMENTS`)
 2. **`.claude/pi.local.json`** — project-specific overrides, gitignored
-3. **`~/.claude/pi.local.json`** — global user-wide defaults
-4. **Built-in defaults** (listed in SKILL.md)
+3. **`.claude/pi.json`** — project shared defaults, committed
+4. **`~/.claude/pi.local.json`** — global user-wide defaults
+5. **Built-in defaults** (listed in SKILL.md)
 
 ## Settings file format
 

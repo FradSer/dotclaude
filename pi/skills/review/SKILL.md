@@ -3,7 +3,7 @@ name: review
 description: Reviews code using pi CLI with read-only tools. Delegates the review to pi (dev/pi) with a structured review rubric, running in read-only mode to prevent accidental edits. By default reviews uncommitted working tree changes (git diff HEAD) with pi restricted to the read tool; explicit targets (--branch/--diff/@file/PR) or --explore widen pi to read,grep,find,ls. Use when the user asks to "review code with pi", "pi review", "have pi review", "let pi review", or invokes /pi:review.
 user-invocable: true
 argument-hint: "[@target] [--branch BRANCH] [--diff RANGE] [--endpoint ENDPOINT] [--model MODEL] [--thinking LEVEL] [--explore] | --edit-config [--local|--shared|--global] | --list-models"
-allowed-tools: ["Bash(git:*)", "Bash(jq:*)", "Bash(ls:*)", "Bash(find:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(echo:*)", "Bash(command:*)", "Bash(mktemp:*)", "Bash(rm:*)", "Bash(pi:*)", "Read", "Grep", "Glob"]
+allowed-tools: ["Bash(git:*)", "Bash(jq:*)", "Bash(ls:*)", "Bash(find:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(echo:*)", "Bash(command:*)", "Bash(mktemp:*)", "Bash(rm:*)", "Bash(mv:*)", "Bash(sed:*)", "Bash(grep:*)", "Bash(head:*)", "Bash(gh:*)", "Bash(bash:*)", "Bash(pi:*)", "Read", "Grep", "Glob"]
 ---
 # CRITICAL: pi Code Review
 
@@ -25,8 +25,9 @@ User preferences persist across invocations via JSON files. The resolution chain
 
 1. **CLI flag** (from `$ARGUMENTS`)
 2. **`.claude/pi.local.json`** — project-specific overrides, gitignored
-3. **`~/.claude/pi.local.json`** — global user-wide defaults
-4. **Built-in defaults** (listed below)
+3. **`.claude/pi.json`** — project shared defaults, committed
+4. **`~/.claude/pi.local.json`** — global user-wide defaults
+5. **Built-in defaults** (listed below)
 
 Settings files use the format below. Load `references/settings.md` for the full format, reading logic, `--edit-config`, and `--list-models`:
 
@@ -115,7 +116,7 @@ Determine what to review from the parsed arguments. The target can be:
 4. If the target is a number (e.g. `42`), treat it as a GitHub PR number — fetch the diff with `gh pr diff <n>`.
 5. If the target starts with `--branch`, extract the branch name and capture `git diff main...<branch>`.
 6. If the target starts with `--diff`, extract the range and capture `git diff <range>`.
-7. Otherwise (free-text task description, e.g. `/pi:review "check the auth flow"`), pass the text as the task description and still capture `git diff HEAD` as context so pi reviews your current changes in service of the stated task.
+7. Otherwise (free-text task description, e.g. `/pi:review "check the auth flow"`), pass the text as the task description and still capture `git diff HEAD` as context so pi reviews your current changes in service of the stated task. Free-text only applies when there is no explicit target and no `@file` reference — leading tokens up to the first `--` flag (so `check auth --explore` → task "check auth").
 8. **Tool selection**: default (no target) → `--tools read`. Any explicit target (`--branch`, `--diff`, `@filepath`, PR number) → `--tools read,grep,find,ls`. If `--explore` appears in `$ARGUMENTS` → force `--tools read,grep,find,ls` regardless of target. Never include `bash` — the read-only review must not let pi run `git` or edit files.
 
 ### File references (when user specifies @filepath)
@@ -185,6 +186,8 @@ Capture the diff for the resolved target into a temp file, then pass its path vi
 ```bash
 DIFF_FILE=$(mktemp /tmp/pi-review-diff.XXXXXX)
 HAS_EXPLICIT_TARGET=""
+TASK_TEXT=""        # free-text task description, if any
+FILE_REFS=""        # @file references, if any
 
 # No target (default): uncommitted working tree changes (staged + unstaged vs HEAD)
 git diff HEAD > "$DIFF_FILE"
@@ -203,28 +206,56 @@ if [[ "$ARGUMENTS" == *"--diff"* ]]; then
   git diff "${RANGE//\"/}" > "$DIFF_FILE"
 fi
 
-# For a PR number (numeric target, not a flag)
-if [[ "$ARGUMENTS" =~ ^[0-9]+(\ |$) ]] || [[ "$ARGUMENTS" =~ \ [0-9]+$ ]]; then
+# For a PR number: only when the FIRST token of $ARGUMENTS is all digits
+FIRST_TOKEN=$(echo "$ARGUMENTS" | awk '{print $1}')
+if [[ "$FIRST_TOKEN" =~ ^[0-9]+$ ]]; then
   HAS_EXPLICIT_TARGET="1"
-  PR_NUM=$(echo "$ARGUMENTS" | grep -oE '[0-9]+' | head -1)
-  gh pr diff "$PR_NUM" > "$DIFF_FILE"
+  gh pr diff "$FIRST_TOKEN" > "$DIFF_FILE"
 fi
 
 # For @filepath references (user-named files): explicit target, no diff to capture
 if [[ "$ARGUMENTS" == *"@"* ]]; then
   HAS_EXPLICIT_TARGET="1"
+  : > "$DIFF_FILE"       # clear: @file reviews pass files, not a diff
+  FILE_REFS=$(echo "$ARGUMENTS" | grep -oE '@[^ ]+' | tr '\n' ' ')
+fi
+
+# Free-text task description: only when there is no explicit target and no @file refs.
+# Take the leading tokens up to the first `--` flag, so `check auth --explore` → "check auth",
+# and `--model gemini-3.6-pro` → "" (starts with a flag).
+if [ -z "$HAS_EXPLICIT_TARGET" ] && [[ "$ARGUMENTS" != *"@"* ]]; then
+  TASK_TEXT=$(echo "$ARGUMENTS" | sed -E 's/[[:space:]]*--.*$//' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')
 fi
 ```
 
-Then build `DIFF_CONTEXT="--append-system-prompt $DIFF_FILE"` and include it in the pi command alongside the git context.
+Then build the diff context — this MUST be run as actual commands in the same shell, not left as prose:
 
-**Empty-diff guard (default target only):** if `git diff HEAD` produces no output and no explicit target was given, the working tree is clean — report "No uncommitted changes to review — the working tree is clean. Use `/pi:review --branch <name>`, `/pi:review --diff <range>`, or `/pi:review <PR>` to review committed code." and stop before invoking pi.
+```bash
+# Diff context: only add the --append-system-prompt for the diff when a diff exists
+DIFF_CONTEXT=""
+if [ -s "$DIFF_FILE" ]; then
+  DIFF_CONTEXT="--append-system-prompt $DIFF_FILE"
+fi
+```
+
+**Empty-diff guard (default target only):** if `git diff HEAD` produces no output and no explicit target was given (`HAS_EXPLICIT_TARGET` empty), the working tree is clean — report "No uncommitted changes to review — the working tree is clean. Use `/pi:review --branch <name>`, `/pi:review --diff <range>`, or `/pi:review <PR>` to review committed code." and stop before invoking pi. Run the guard as a command:
+
+```bash
+if [ ! -s "$DIFF_FILE" ] && [ -z "$HAS_EXPLICIT_TARGET" ]; then
+  echo "No uncommitted changes to review — the working tree is clean. Use --branch, --diff, or a PR number."
+  exit 0
+fi
+```
 
 ## Execution
 
 Always use `Bash` with `run_in_background` — pi -p is a single-shot command, not a continuous stream. **Do not add a shell `timeout`** — reviews can be heavy. **Do not use Monitor.**
 
 ```bash
+# PREREQUISITE: run the "Reading settings" snippet from references/settings.md first.
+# It defines $PROVIDER, $MODEL, $API_KEY, $THINKING used below. Without it, pi has no
+# provider/model and fails. Run those commands in the SAME shell as this block.
+
 # Build CLAUDE.md context — pass file paths, pi reads them
 CLAUDE_CONTEXT=""
 if [ -f "$HOME/.claude/CLAUDE.md" ]; then
@@ -243,13 +274,19 @@ else
   TOOLS="read"
 fi
 
-# Build the pi review command with resolved variables
-# $DIFF_CONTEXT carries the captured diff (see "Capture the diff"); empty when no diff applies
-# Do NOT pass @file references unless the user explicitly named files
-PI_CMD="pi -p --provider $PROVIDER --model $MODEL${API_KEY:+ --api-key $API_KEY} --thinking ${THINKING:-low} --tools $TOOLS --no-session --no-context-files --approve $CLAUDE_CONTEXT $DIFF_CONTEXT --append-system-prompt \"Git context: ...\" \"Review the code in the provided diff. Use your tools only to read the files mentioned in the diff for context — do NOT search the rest of the codebase, do NOT run git. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
+# Collect git context (status/stat/log/branch) into a temp file, passed like the diff
+GIT_FILE=$(mktemp /tmp/pi-review-git.XXXXXX)
+{ git status --short; git diff --stat; git log --oneline -20; git branch --show-current; } > "$GIT_FILE"
 
-# Run in background — no timeout; clean up the temp diff when pi exits
-bash -c "$PI_CMD 2>&1; rm -f '$DIFF_FILE'" &
+# Build the pi review command with resolved variables
+# $DIFF_CONTEXT / $GIT_CONTEXT carry the captured files via --append-system-prompt; empty when not applicable
+# $FILE_REFS carries @file references; empty unless the user named files
+# $TASK_TEXT carries the free-text task description; empty otherwise
+PI_CMD="pi -p --provider $PROVIDER --model $MODEL${API_KEY:+ --api-key $API_KEY} --thinking ${THINKING:-low} --tools $TOOLS --no-session --no-context-files --approve $CLAUDE_CONTEXT $DIFF_CONTEXT --append-system-prompt $GIT_FILE $FILE_REFS ${TASK_TEXT:+$TASK_TEXT }\"Review the code in the provided diff${TASK_TEXT:+ (task: $TASK_TEXT)}. Use your tools only to read the files mentioned in the diff for context — do NOT search the rest of the codebase, do NOT run git. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
+
+# Run via run_in_background (no trailing & — the tool backgrounds it; pi stdout must be captured)
+# Clean up the temp files when pi exits
+bash -c "$PI_CMD 2>&1; rm -f '$DIFF_FILE' '$GIT_FILE'"
 ```
 
 ## Handling Output
