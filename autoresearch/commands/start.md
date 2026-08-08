@@ -31,7 +31,7 @@ Inspect the repo (list files; read `package.json` / `Makefile` / `pyproject.toml
 
 ## Phase 3: Grill the contract (one decision at a time)
 
-Phase 2's inferences are **recommendations, not decisions**. The contract decides an overnight run — grill each decision with the user before launching. Method (from the superdev grilling skill):
+Phase 2's inferences are **recommendations, not decisions**. The contract decides an overnight run — grill each decision with the user before launching. Method (from the mattpocock grilling skill):
 
 - **One question at a time.** Ask via AskUserQuestion, wait for the answer, then continue. Multiple questions at once is bewildering.
 - **Each question leads with your recommended answer** (first option, marked Recommended) — the user confirms, edits, or defers to your choice.
