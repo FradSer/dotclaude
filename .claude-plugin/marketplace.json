@@ -263,7 +263,7 @@
   {
    "name": "pi",
    "displayName": "Pi",
-   "version": "0.1.0",
+   "version": "0.1.1",
    "description": "Bridges to pi (dev/pi), a minimal terminal coding harness. Delegates coding tasks to the pi CLI for execution with full file and git context.",
    "author": {
     "name": "Frad LEE",

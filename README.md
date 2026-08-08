@@ -220,7 +220,7 @@ claude plugin install memory@frad-dotclaude
 
 ### [pi](pi/)
 
-Bridges to pi (dev/pi), a minimal terminal coding harness. `/pi:delegate` sends coding tasks with file and git context for execution. Supports three-tier persistent settings and custom base URLs via `~/.pi/agent/models.json`.
+Bridges to pi (dev/pi), a minimal terminal coding harness. `/pi:delegate` sends coding tasks with file and git context for execution; `/pi:review` runs read-only code reviews via pi; `/pi:setup` configures provider, model, and base URL. Supports three-tier persistent settings and custom base URLs via `~/.pi/agent/models.json`.
 
 **Installation:**
 ```bash

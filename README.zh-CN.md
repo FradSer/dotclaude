@@ -220,7 +220,7 @@ claude plugin install memory@frad-dotclaude
 
 ### [pi](pi/)
 
-桥接到 pi (dev/pi)，一个极简终端编程助手。`/pi:delegate` 将编码任务附带文件和 Git 上下文发送给 pi 执行。支持三层持久化配置和通过 `~/.pi/agent/models.json` 的自定义 base URL。
+桥接到 pi (dev/pi)，一个极简终端编程助手。`/pi:delegate` 将编码任务附带文件和 Git 上下文发送给 pi 执行；`/pi:review` 通过 pi 以只读工具进行代码审查；`/pi:setup` 配置 provider、model 和 base URL。支持三层持久化配置和通过 `~/.pi/agent/models.json` 的自定义 base URL。
 
 **安装：**
 ```bash
