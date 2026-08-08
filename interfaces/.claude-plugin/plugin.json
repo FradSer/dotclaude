@@ -1,6 +1,6 @@
 {
   "name": "interfaces",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent skills for building great product interfaces, from typography and color to accessibility and UX writing.",
   "author": {
     "name": "Jakub Krehel",
@@ -9,6 +9,19 @@
   "homepage": "https://interfaces.dev/",
   "repository": "https://github.com/jakubkrehel/skills",
   "license": "MIT",
-  "keywords": ["ui", "ux", "design", "accessibility", "typography", "colors", "layout", "writing", "interface", "review"],
-  "commands": ["./skills/better-interface/"]
+  "keywords": [
+    "ui",
+    "ux",
+    "design",
+    "accessibility",
+    "typography",
+    "colors",
+    "layout",
+    "writing",
+    "interface",
+    "review"
+  ],
+  "commands": [
+    "./skills/better-interface/"
+  ]
 }

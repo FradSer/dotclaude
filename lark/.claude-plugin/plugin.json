@@ -1,7 +1,7 @@
 {
   "name": "lark",
   "displayName": "Lark",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "description": "Feishu/Lark CLI skills, mirrored from larksuite/cli — docs, sheets, IM, calendar, approval, drive, wiki, contacts, and more",
   "keywords": [

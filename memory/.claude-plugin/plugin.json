@@ -1,7 +1,7 @@
 {
   "name": "memory",
   "displayName": "Memory",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Consolidates a Claude Code project's memory as one unlayered store",
   "author": {
     "name": "Frad LEE",

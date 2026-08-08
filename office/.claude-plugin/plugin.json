@@ -1,7 +1,7 @@
 {
   "name": "office",
   "displayName": "Office",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "license": "MIT",
   "description": "Office productivity skills for patent applications, PRD generation, image and video generation, Remotion programmatic video authoring, and AI writing trope detection",
   "keywords": [
