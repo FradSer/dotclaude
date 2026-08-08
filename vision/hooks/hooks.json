@@ -1,5 +1,5 @@
 {
-  "description": "Vision Bridge UserPromptSubmit hook: auto-describe image file paths in the prompt",
+  "description": "Vision Bridge hooks: auto-describe image file paths (UserPromptSubmit) and keep the screenshot-bridging proxy running (SessionStart)",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -7,6 +7,16 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/bridge_file_paths.py"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/ensure_proxy.py"
           }
         ]
       }
