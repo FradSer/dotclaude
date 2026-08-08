@@ -289,8 +289,8 @@
   {
    "name": "vision",
    "displayName": "Vision Bridge",
-   "version": "0.1.1",
-   "description": "Gives non-vision models (deepseek, ...) eyes: a UserPromptSubmit hook auto-describes image file paths, and a transparent local proxy replaces pasted-screenshot image blocks with text from an independent vision provider. Fixes 'unknown variant image_url' 400 errors.",
+   "version": "0.2.0",
+   "description": "Gives non-vision models (deepseek, ...) eyes for image files: a UserPromptSubmit hook auto-describes image file paths, and a /vision bridge command describes an image on demand. Uses an independent vision provider.",
    "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"

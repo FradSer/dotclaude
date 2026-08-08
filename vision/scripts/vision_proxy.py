@@ -3,59 +3,46 @@
 # requires-python = ">=3.10"
 # dependencies = ["httpx>=0.27.0"]
 # ///
-"""Vision Bridge proxy — give non-vision models eyes via a gateway vision model.
+"""Vision helper — describe images for non-vision models.
 
-Claude Code sends Anthropic Messages API requests to this proxy
-(ANTHROPIC_BASE_URL pointing here). When the active model cannot see images
-(a "non-vision" model, matched by nonVisionModels) and the request body
-contains image blocks, the proxy describes each image with a vision-capable
-model from an independent vision provider (model by default), replaces
-the image block with the resulting text, and streams the request upstream. All
-other requests pass through byte-for-byte.
+Two entry points share one config and one describe engine:
 
-Why a proxy and not a hook: a UserPromptSubmit hook cannot see or remove image
-blocks from the outbound messages[] — the only interception point is the layer
-ANTHROPIC_BASE_URL points at. Verified 2026-08 against the Claude Code hooks,
-env-vars and LLM-gateway-protocol documentation (see the plugin README).
+- The UserPromptSubmit hook (`hooks/bridge_file_paths.py`) imports the describe
+  functions here to auto-describe image file paths mentioned in prompts.
+- The `describe` subcommand describes a single local image on demand.
+
+The on-demand describe goes to an independent vision provider (OpenAI-compatible
+endpoint) configured under the three-layer `vision.json` — never the Claude Code
+gateway credentials.
+
+Why no proxy: pasted screenshots (image blocks) were previously bridged by a
+transparent local proxy that replaced image blocks with vision-described text.
+That layer is removed — non-vision models (deepseek) cannot receive pasted
+screenshots; use a vision-capable model or describe the file path instead.
 
 Configuration is read from three layers of `vision.json` files (process env
 still wins over all of them; see the _load_config docstring):
 
-    port                     listen port                          (default 8731)
-    baseUrl                 upstream gateway base URL. If unset, ANTHROPIC_BASE_URL
-                             at request time is used; when the proxy is itself the
-                             ANTHROPIC_BASE_URL, this MUST be set explicitly.
-    nonVisionModels          list or comma-separated string; replaced by `blockedModels`.
-                             deprecated, kept for backward compatibility.
-    blockedModels           list or comma-separated string; a request whose model
-                             matches any is bridged (default ["deepseek"]). An
-                             explicit empty list disables bridging.
-    visionBaseUrl           INDEPENDENT vision provider base URL. Deprecated:
-                             now uses `baseUrl` (the upstream gateway).
-    model                   comma-separated fallback chain of vision models
+    port                     unused (kept for config compatibility)
+    baseUrl                  vision provider base URL (OpenAI-compatible).
+    model                    comma-separated fallback chain of vision models
                              (default "gemini-3.1-flash-image,gemini-3-flash-agent").
-    apiKey                  key for the vision provider (required).
-    prompt                  deprecated (built-in).
+    apiKey                   key for the vision provider (required).
     describeFilePaths        also describe image file paths in text (default true).
-    hookEnabled              false disables the UserPromptSubmit hook (default true).
     maxImageBytes            refuse to describe image files larger than this
                              (default 20971520 / 20 MiB).
 
-Legacy flat `VB_*` env vars still work as overrides (VB_PORT, VB_UPSTREAM_URL,
-VB_NON_VISION_MODELS, VB_VISION_BASE_URL, VB_VISION_MODEL, VB_VISION_API_KEY,
-VB_VISION_PROMPT, VB_DESCRIBE_FILE_PATHS, VB_MAX_IMAGE_BYTES).
+Legacy flat `VB_*` env vars still work as overrides (VB_PORT, VB_VISION_BASE_URL,
+VB_VISION_MODEL, VB_VISION_API_KEY, VB_VISION_PROMPT, VB_DESCRIBE_FILE_PATHS,
+VB_MAX_IMAGE_BYTES).
 
-Legacy keys `upstreamUrl`, `upstream.url`, `visionBaseUrl`, `visionModel`,
-`visionApiKey`, `visionPrompt`, `vision.baseUrl`, `vision.model`,
-`vision.apiKey`, `vision.prompt` still work for backward compatibility.
+Legacy keys `visionBaseUrl`, `visionModel`, `visionApiKey`, `visionPrompt`,
+`vision.baseUrl`, `vision.model`, `vision.apiKey`, `vision.prompt` still work for
+backward compatibility.
 
 Subcommands:
-    serve            run the proxy in the foreground (the worker for `start`)
-    start [--port N] detach a serve process, write a PID file, log to ~/.vb
-    stop             terminate the process recorded in the PID file
-    status           report whether the proxy is running
-    doctor           verify configuration, upstream and vision endpoints
     describe PATH    describe a single local image (standalone utility)
+    doctor           verify configuration and the vision endpoint
 """
 
 from __future__ import annotations
@@ -66,13 +53,8 @@ import json
 import mimetypes
 import os
 import re
-import signal
-import subprocess
 import sys
-import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
 
 import httpx
 
@@ -87,8 +69,6 @@ import httpx
 #
 # Each file is a nested JSON object:
 #   {
-#     "upstream":      { "url": "http://gateway:8317" },
-#     "nonVisionModels": ["deepseek"],                  // or "deepseek" string
 #     "vision":        { "model": "...", "prompt": "...", "apiKey": "...",
 #                        "baseUrl": "..." },
 #     "maxImageBytes": 20971520,
@@ -198,12 +178,9 @@ def _cfg_bool(path: str) -> bool | None:
 class Cfg:
     """Snapshot of the runtime configuration."""
 
-    def __init__(self, *, port: int | None = None, load_env: bool = True) -> None:
+    def __init__(self, *, load_env: bool = True) -> None:
         if not load_env:
             # Unit-test / describe-only path: everything must be explicit.
-            self.port = port or 8731
-            self.upstream = ""
-            self.non_vision = []
             self.vision_base = ""
             self.vision_model = ""
             self.vision_key = ""
@@ -211,31 +188,13 @@ class Cfg:
             self.describe_file_paths = False
             self.max_image_bytes = 20 * 1024 * 1024
             return
-        self.port = int(port or _env("VB_PORT") or _cfg_int("port") or 8731)
-        self.upstream = (
-            _env("VB_UPSTREAM_URL")
-            or _cfg_str("baseUrl") or _cfg_str("upstreamUrl") or _cfg_str("upstream.url")
-            or _env("ANTHROPIC_BASE_URL") or ""
+        # Vision provider is an independent OpenAI-compatible endpoint. Flat keys
+        # preferred; dotted fallback for backward compatibility.
+        self.vision_base = (
+            _env("VB_VISION_BASE_URL")
+            or _cfg_str("baseUrl") or _cfg_str("visionBaseUrl") or _cfg_str("vision.baseUrl")
+            or ""
         ).rstrip("/")
-        # Strip trailing /v1 — the proxy appends its own path including /v1/
-        if self.upstream.endswith("/v1"):
-            self.upstream = self.upstream[:-3]
-
-        # blockedModels: list or comma-separated string. Models matching any
-        # substring are bridged (described via vision endpoint). An explicit
-        # empty list disables bridging; absent falls back to ["deepseek"].
-        bm = _cfg_raw("blockedModels") or _cfg_raw("nonVisionModels")
-        if bm is not None:
-            if isinstance(bm, list):
-                self.non_vision = [str(s).strip() for s in bm if str(s).strip()]
-            else:
-                self.non_vision = [s.strip() for s in str(bm).split(",") if s.strip()]
-        else:
-            self.non_vision = ["deepseek"]
-
-        # Vision provider reuses the upstream gateway. Flat keys preferred;
-        # dotted fallback for backward compatibility.
-        self.vision_base = self.upstream or ""
         self.vision_model = (
             _env("VB_VISION_MODEL")
             or _cfg_str("model") or _cfg_str("visionModel") or _cfg_str("vision.model")
@@ -261,46 +220,14 @@ class Cfg:
             _env("VB_MAX_IMAGE_BYTES") or str(_cfg_int("maxImageBytes") or 20 * 1024 * 1024)
         )
 
-    @property
-    def listens(self) -> tuple[str, int]:
-        return "127.0.0.1", self.port
-
-    def should_bridge(self, model: str) -> bool:
-        """Blacklist match: bridge when the model matches any configured substring."""
-        if not self.non_vision or not model:
-            return False
-        m = model.lower()
-        return any(sub.lower() in m for sub in self.non_vision)
-
-    def loop_detected(self) -> bool:
-        """True when the configured upstream is this proxy itself."""
-        try:
-            up = urlparse(self.upstream)
-        except ValueError:
-            return False
-        if not up.hostname:
-            return False
-        host, port = up.hostname, up.port or 80
-        return host in ("127.0.0.1", "localhost", "::1") and port == self.port
-
     def errors(self) -> list[str]:
         errs: list[str] = []
-        if not self.upstream:
-            errs.append("baseUrl (or ANTHROPIC_BASE_URL) is not set — no upstream to forward to.")
-        elif self.loop_detected():
-            errs.append(
-                f"baseUrl points at this proxy ({self.upstream}). "
-                "Set baseUrl to the real gateway (the value ANTHROPIC_BASE_URL had before the proxy)."
-            )
-        # Vision config only matters when bridging is enabled; a passthrough-only
-        # setup (nonVisionModels: []) must be able to start without it.
-        if self.non_vision:
-            if not self.vision_base:
-                errs.append("No vision endpoint: set baseUrl (upstream gateway).")
-            if not self.vision_key:
-                errs.append("No vision key: set apiKey.")
-            if not self.vision_model:
-                errs.append("No vision model: set model.")
+        if not self.vision_base:
+            errs.append("No vision endpoint: set baseUrl.")
+        if not self.vision_key:
+            errs.append("No vision key: set apiKey.")
+        if not self.vision_model:
+            errs.append("No vision model: set model.")
         return errs
 
     @property
@@ -339,7 +266,7 @@ def describe_image(data: str, media_type: str, cfg: Cfg, index: int = 1, total: 
 
     Tries each model in the `cfg.vision_models` chain in order; the first that
     returns a description wins. A gateway can rate-limit or cool down a model,
-    so a fallback chain keeps bridging alive.
+    so a fallback chain keeps describing alive.
     """
     if not media_type.startswith("image/"):
         media_type = f"image/{media_type.lstrip('.')}" if media_type else "image/png"
@@ -399,364 +326,7 @@ def _describe_local_file(path_str: str, cfg: Cfg) -> tuple[str, str] | None:
     return text, str(p)
 
 
-# --- request rewriting -------------------------------------------------------- #
-def rewrite_body(body: dict, cfg: Cfg) -> tuple[dict, list[dict]]:
-    """Replace image blocks with vision-described text. Returns (body, audit list)."""
-    audit: list[dict] = []
-    model = body.get("model", "")
-    if not cfg.should_bridge(model):
-        return body, audit
-    messages = body.get("messages", [])
-    for msg in messages:
-        content = msg.get("content")
-        if isinstance(content, str):
-            if cfg.describe_file_paths:
-                descs: list[str] = []
-                for token in _find_image_paths(content):
-                    res = _describe_local_file(token, cfg)
-                    if res:
-                        desc, fpath = res
-                        audit.append({"type": "file", "path": fpath})
-                        descs.append(desc)
-                if descs:
-                    msg["content"] = content + "\n\n" + "\n\n".join(descs)
-            continue
-        if not isinstance(content, list):
-            continue
-        msg["content"] = _rewrite_content_list(content, cfg, audit)
-    return body, audit
-
-
-def _rewrite_content_list(
-    blocks: list, cfg: Cfg, audit: list[dict], label: str = ""
-) -> list:
-    """Rewrite image blocks in a nested content list (e.g. inside tool_result)."""
-    out: list = []
-    image_no = 0
-    image_count = sum(1 for b in blocks if isinstance(b, dict) and b.get("type") == "image")
-    for block in blocks:
-        if not isinstance(block, dict):
-            out.append(block)
-            continue
-        if block.get("type") == "image":
-            image_no += 1
-            try:
-                src = block.get("source", {})
-                data = src.get("data", "")
-                media = src.get("media_type", "image/png")
-                text = describe_image(data, media, cfg, index=image_no, total=image_count)
-                audit.append({"type": "image", "media_type": media, "replaced_with": len(text), "in": label or "message"})
-                out.append({"type": "text", "text": text})
-            except Exception as exc:
-                audit.append({"type": "image", "error": str(exc)})
-                out.append(
-                    {"type": "text", "text": f"[Image block: description failed ({exc}) — image was removed.]"}
-                )
-            continue
-        if block.get("type") == "text" and cfg.describe_file_paths:
-            out.append(block)
-            text = block.get("text", "")
-            for token in _find_image_paths(text):
-                res = _describe_local_file(token, cfg)
-                if res:
-                    desc, fpath = res
-                    audit.append({"type": "file", "path": fpath})
-                    out.append({"type": "text", "text": desc})
-            continue
-        if block.get("type") == "tool_result":
-            inner = block.get("content")
-            if isinstance(inner, list):
-                block = dict(block)
-                block["content"] = _rewrite_content_list(inner, cfg, audit, label="tool_result")
-            out.append(block)
-            continue
-        out.append(block)
-    return out
-
-
-# --- HTTP server -------------------------------------------------------------- #
-class ProxyHandler(BaseHTTPRequestHandler):
-    cfg: Cfg  # set by the server factory
-
-    protocol_version = "HTTP/1.1"
-    server_version = "VisionBridge/0.1"
-
-    def log_message(self, fmt: str, *args):  # quiet by default
-        if os.environ.get("VB_DEBUG"):
-            sys.stderr.write("[vb] " + (fmt % args) + "\n")
-
-    def _do(self) -> None:
-        if self.path == "/__health":
-            self._send(200, "application/json", json.dumps({"ok": True}).encode())
-            return
-        upstream = self.cfg.upstream
-        if not upstream:
-            self._send(500, "application/json", json.dumps({"error": "no upstream configured"}).encode())
-            return
-        body_bytes = self.rfile.read(int(self.headers.get("Content-Length") or 0))
-        path = self.path
-        body = None
-        headers_out = dict(self.headers.items())
-        # Case-insensitive: Node/undici clients (Claude Code) send lowercase headers.
-        content_type = self.headers.get_content_type()
-
-        # Only Messages POST bodies are candidates for image rewriting.
-        if self.command == "POST" and content_type.startswith("application/json") and body_bytes:
-            try:
-                body = json.loads(body_bytes.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                body = None
-            if body is not None:
-                body, audit = rewrite_body(body, self.cfg)
-                if audit:
-                    new_bytes = json.dumps(body).encode()
-                    # Content-Length changes; strip so the upstream trusts the new body.
-                    headers_out.pop("Content-Length", None)
-                    headers_out.pop("content-length", None)
-                    body_bytes = new_bytes
-                    sys.stderr.write(f"[vb] bridged {len(audit)} image(s) for model {body.get('model')!r}\n")
-                    for item in audit:
-                        sys.stderr.write(f"[vb]   {item}\n")
-
-        stream = body.get("stream", False) if isinstance(body, dict) else False
-        headers_out.setdefault("Content-Length", str(len(body_bytes)))
-        # The upstream must see its own host, not the proxy's.
-        headers_out["Host"] = urlparse(upstream).netloc
-        url = f"{upstream}{path}"
-        try:
-            with httpx.Client(timeout=300) as client:
-                with client.stream(
-                    self.command, url, content=body_bytes, headers=headers_out
-                ) as up:
-                    ctype = up.headers.get("content-type", "")
-                    is_stream = "text/event-stream" in ctype or stream
-                    # content-encoding must be dropped: httpx already decodes the
-                    # body, so forwarding the header would make the client gunzip
-                    # already-decoded bytes.
-                    skip = {"content-length", "transfer-encoding", "connection", "host", "content-encoding"}
-                    if is_stream:
-                        self.send_response(up.status_code)
-                        for key, value in up.headers.items():
-                            if key.lower() in skip:
-                                continue
-                            self.send_header(key, value)
-                        self.send_header("Transfer-Encoding", "chunked")
-                        self.end_headers()
-                        for chunk in up.iter_bytes():
-                            if not chunk:
-                                continue
-                            self.wfile.write(f"{len(chunk):X}\r\n".encode("ascii") + chunk + b"\r\n")
-                            self.wfile.flush()
-                        self.wfile.write(b"0\r\n\r\n")
-                        self.wfile.flush()
-                    else:
-                        payload = up.read()
-                        self.send_response(up.status_code)
-                        for key, value in up.headers.items():
-                            if key.lower() in skip:
-                                continue
-                            self.send_header(key, value)
-                        self.send_header("Content-Length", str(len(payload)))
-                        self.end_headers()
-                        self.wfile.write(payload)
-        except Exception as exc:
-            sys.stderr.write(f"[vb] forward error: {exc}\n")
-            try:
-                self._send(502, "application/json", json.dumps({"type": "error", "error": {"type": "api_error", "message": f"vision-bridge forward error: {exc}"}}).encode())
-            except Exception:
-                pass
-
-    def _send(self, code: int, ctype: str, data: bytes) -> None:
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    do_GET = do_POST = do_PUT = do_PATCH = do_DELETE = _do
-
-
-def serve(port: int, cfg: Cfg | None = None) -> None:
-    cfg = cfg or Cfg()
-    errs = cfg.errors()
-    if errs:
-        for e in errs:
-            print(f"Error: {e}", file=sys.stderr)
-        raise SystemExit(1)
-
-    class QuietServer(ThreadingHTTPServer):
-        def handle_error(self, request, client_address):
-            # Client aborts (broken pipe / connection reset) are normal for
-            # streaming; don't log a scary traceback for them.
-            typ = sys.exc_info()[0]
-            if typ is not None and issubclass(typ, (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)):
-                return
-            super().handle_error(request, client_address)
-
-    server = QuietServer(cfg.listens, ProxyHandler)
-    ProxyHandler.cfg = cfg
-    print(f"[vb] listening on {cfg.listens[0]}:{cfg.listens[1]} -> {cfg.upstream}", flush=True)
-    print(f"[vb] bridging models matching: {cfg.non_vision or '(disabled)'}; vision model {cfg.vision_model}", flush=True)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-
-# --- process management ------------------------------------------------------- #
-def _runtime_dir() -> Path:
-    d = Path.home() / ".vb"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
-def _pid_file() -> Path:
-    return _runtime_dir() / "proxy.pid"
-
-
-def _log_file() -> Path:
-    return _runtime_dir() / "proxy.log"
-
-
-def _pid_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True  # running, just not ours to signal
-
-
-def cmd_start(port: int) -> int:
-    # Refuse to clobber a running proxy.
-    pid_file = _pid_file()
-    if pid_file.is_file():
-        old_pid = int(pid_file.read_text().strip())
-        if _pid_alive(old_pid):
-            print(f"[vb] already running (pid {old_pid}). Stop it first, or the PID file is stale.")
-            return 1
-        pid_file.unlink(missing_ok=True)
-    # Validate config before spawning so a bad setup fails fast in the foreground.
-    errs = Cfg(port=port).errors()
-    if errs:
-        for e in errs:
-            print(f"Error: {e}", file=sys.stderr)
-        print("Run `vision_proxy.py doctor` for details.", file=sys.stderr)
-        return 1
-    # Inherit env so VB_* and ANTHROPIC_* resolve inside the child.
-    env = dict(os.environ)
-    argv = [sys.executable, str(Path(__file__).resolve()), "serve"]
-    if port is not None:
-        argv += ["--port", str(port)]
-    pid = subprocess.Popen(
-        argv,
-        env=env,
-        stdout=open(_log_file(), "a"),
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-    ).pid
-    _pid_file().write_text(str(pid))
-    # Give the child a moment to bind the port, then confirm it survived.
-    time.sleep(0.5)
-    if not _pid_alive(pid):
-        print(f"[vb] started pid {pid} but it exited immediately. Check {_log_file()}.")
-        return 1
-    print(f"[vb] started pid {pid} on 127.0.0.1:{port or 8731}")
-    print(f"[vb] log: {_log_file()}")
-    return 0
-
-
-def cmd_stop() -> int:
-    pid_file = _pid_file()
-    if not pid_file.is_file():
-        print("[vb] not running (no pid file)")
-        return 1
-    pid = int(pid_file.read_text().strip())
-    try:
-        os.kill(pid, signal.SIGTERM)
-        print(f"[vb] stopped pid {pid}")
-    except ProcessLookupError:
-        print(f"[vb] pid {pid} already gone")
-    except PermissionError:
-        print(f"[vb] no permission to signal pid {pid}")
-        return 1
-    pid_file.unlink(missing_ok=True)
-    return 0
-
-
-def cmd_status() -> int:
-    pid_file = _pid_file()
-    if pid_file.is_file():
-        pid = int(pid_file.read_text().strip())
-        try:
-            os.kill(pid, 0)
-            print(f"[vb] running (pid {pid})")
-            return 0
-        except ProcessLookupError:
-            print("[vb] pid file exists but process is gone")
-            return 1
-    print("[vb] not running")
-    return 1
-
-
-def cmd_doctor() -> int:
-    cfg = Cfg()
-    print("== Vision Bridge config ==")
-    for key, val in {
-        "port": cfg.port,
-        "baseUrl": cfg.upstream or "(unset)",
-        "blockedModels": cfg.non_vision or "(bridging disabled)",
-        "model": cfg.vision_model,
-        "apiKey": ("set" if cfg.vision_key else "(unset)"),
-        "describeFilePaths": cfg.describe_file_paths,
-    }.items():
-        print(f"  {key} = {val}")
-    errs = cfg.errors()
-    ok = True
-    if errs:
-        ok = False
-        print("Errors:")
-        for e in errs:
-            print(f"  - {e}")
-    if ok:
-        print("Configuration: OK")
-        upstream_key = os.environ.get("ANTHROPIC_AUTH_TOKEN") or os.environ.get("ANTHROPIC_API_KEY") or ""
-        if cfg.upstream:
-            print(f"  upstream POST {cfg.upstream}/v1/messages (Anthropic) ...")
-            try:
-                with httpx.Client(timeout=10) as c:
-                    r = c.post(
-                        f"{cfg.upstream}/v1/messages",
-                        json={"model": "ping", "max_tokens": 1, "messages": [{"role": "user", "content": "ping"}]},
-                        headers={"Authorization": f"Bearer {upstream_key}", "anthropic-version": "2023-06-01"},
-                    )
-                print(f"    HTTP {r.status_code}")
-                ok = ok and r.status_code in (200, 400)  # 400 = reachable, model rejected
-            except Exception as exc:
-                print(f"    failed: {exc}")
-                ok = False
-        if cfg.vision_base:
-            base = cfg.vision_base.rstrip("/")
-            vurl = f"{base}/v1/chat/completions" if not base.endswith("/v1") else f"{base}/chat/completions"
-            print(f"  vision POST {vurl} ...")
-            try:
-                with httpx.Client(timeout=10) as c:
-                    r = c.post(
-                        vurl,
-                        json={"model": cfg.vision_model, "messages": [{"role": "user", "content": "ping"}]},
-                        headers={"Authorization": f"Bearer {cfg.vision_key}"},
-                    )
-                print(f"    HTTP {r.status_code}")
-                ok = ok and r.status_code == 200
-            except Exception as exc:
-                print(f"    failed: {exc}")
-                ok = False
-    return 0 if ok else 1
-
-
 def cmd_describe(path: str, prompt: str | None) -> int:
-    # Use the full layered config so vision.* (independent provider) applies.
     cfg = Cfg(load_env=True)
     if prompt:
         cfg.vision_prompt = prompt
@@ -779,39 +349,72 @@ def cmd_describe(path: str, prompt: str | None) -> int:
     return 0
 
 
+def cmd_doctor() -> int:
+    cfg = Cfg()
+    print("== Vision config ==")
+    for key, val in {
+        "baseUrl": cfg.vision_base or "(unset)",
+        "model": cfg.vision_model,
+        "apiKey": ("set" if cfg.vision_key else "(unset)"),
+        "describeFilePaths": cfg.describe_file_paths,
+    }.items():
+        print(f"  {key} = {val}")
+    errs = cfg.errors()
+    ok = True
+    if errs:
+        ok = False
+        print("Errors:")
+        for e in errs:
+            print(f"  - {e}")
+    if ok:
+        print("Configuration: OK")
+        if cfg.vision_base:
+            base = cfg.vision_base.rstrip("/")
+            vurl = f"{base}/v1/chat/completions" if not base.endswith("/v1") else f"{base}/chat/completions"
+            print(f"  vision POST {vurl} ...")
+            # Probe each model in the fallback chain; one success is enough.
+            models = cfg.vision_models
+            tried = 0
+            for model in models:
+                try:
+                    with httpx.Client(timeout=10) as c:
+                        r = c.post(
+                            vurl,
+                            json={"model": model, "messages": [{"role": "user", "content": "ping"}]},
+                            headers={"Authorization": f"Bearer {cfg.vision_key}"},
+                        )
+                    tried += 1
+                    print(f"    {model}: HTTP {r.status_code}")
+                    if r.status_code == 200:
+                        ok = True
+                        break
+                    ok = False
+                except Exception as exc:
+                    tried += 1
+                    print(f"    {model}: failed: {exc}")
+                    ok = False
+            if not models:
+                print("    (no models configured)")
+                ok = False
+            elif not tried:
+                print("    (probe skipped)")
+    return 0 if ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="vision_proxy", description="Vision Bridge proxy")
+    ap = argparse.ArgumentParser(prog="vision_proxy", description="Vision helper (describe + doctor)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("serve").add_argument("--port", type=int, default=None)
-    p_start = sub.add_parser("start")
-    p_start.add_argument("--port", type=int, default=None)
-    sub.add_parser("stop")
-    sub.add_parser("status")
     sub.add_parser("doctor")
     p_desc = sub.add_parser("describe")
     p_desc.add_argument("path")
     p_desc.add_argument("--prompt", default=None)
     args = ap.parse_args(argv)
 
-    if args.cmd == "serve":
-        _serve_with_port(args.port)
-        return 0
-    if args.cmd == "start":
-        return cmd_start(args.port)
-    if args.cmd == "stop":
-        return cmd_stop()
-    if args.cmd == "status":
-        return cmd_status()
     if args.cmd == "doctor":
         return cmd_doctor()
     if args.cmd == "describe":
         return cmd_describe(args.path, args.prompt)
     return 2
-
-
-def _serve_with_port(port: int | None) -> None:
-    cfg = Cfg(port=port)
-    serve(cfg.port, cfg)
 
 
 if __name__ == "__main__":

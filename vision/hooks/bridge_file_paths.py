@@ -11,13 +11,13 @@ returns the descriptions in `hookSpecificOutput.additionalContext` so a
 non-vision model can answer "what's in /path/to/img.png" without seeing it.
 
 Scope: this hook covers image *file paths* in text. It cannot see or remove
-pasted-screenshot image blocks (they are not part of the hook input) — that is
-the proxy's job (scripts/vision_proxy.py). Together they give non-vision models
-eyes in both scenarios, fully automatically.
+pasted-screenshot image blocks (they are not part of the hook input). Non-vision
+models (deepseek) cannot receive pasted screenshots; use a vision-capable model
+or describe the file path instead.
 
-Config: reuses the proxy's layered `vision.json` (see vision_proxy.py). The vision
-provider is an independent service configured under `vision.*` — never falls
-back to ANTHROPIC_* credentials.
+Config: layered `vision.json` (see scripts/vision_proxy.py). The vision provider
+is an independent service configured under `vision.*` — never falls back to
+ANTHROPIC_* credentials.
 """
 
 from __future__ import annotations
@@ -54,10 +54,8 @@ def main() -> None:
         return _noop()
 
     # The vision provider is fully independent (its own baseUrl + apiKey); never
-    # fall back to ANTHROPIC_* creds. We need vision config only — reuse the
-    # proxy's layered config, but ignore the upstream (may be the proxy itself).
+    # fall back to ANTHROPIC_* creds. We need vision config only.
     cfg = Cfg(load_env=True)
-    cfg.upstream = ""  # describe-only: no upstream forwarding needed
 
     if not (cfg.vision_base and cfg.vision_key):
         return _noop()
