@@ -6,14 +6,16 @@ layers:
 1. **UserPromptSubmit hook** (`hooks/bridge_file_paths.py`) — when you type an
    image file path (e.g. "what's in `/tmp/photo.png`?"), the hook describes it
    with a vision model and injects the text. No proxy required for this path.
-2. **Transparent local proxy** (`scripts/vb_proxy.py`) — sits between Claude
+2. **Transparent local proxy** (`scripts/vision_proxy.py`) — sits between Claude
    Code and your gateway (`ANTHROPIC_BASE_URL`). For **pasted screenshots** the
    proxy replaces the image block with vision-described text before forwarding.
    A hook cannot do this — it cannot see or remove image blocks from the
    outbound request.
 
-Both use a vision-capable model on your gateway (`gemini-3.1-flash-image` by
-default). Everything else passes through byte-for-byte.
+Both use an **independent vision provider** (a separate multimodal service,
+configured under `vision.*` — never your Claude Code gateway credentials). The
+vision model chain defaults to `gemini-3.1-flash-image,gemini-3-flash-agent`.
+Everything else passes through byte-for-byte.
 
 Fixes: `400 invalid_request_error: Failed to deserialize the JSON body ... unknown variant 'image_url', expected 'text'`.
 
@@ -21,15 +23,16 @@ Fixes: `400 invalid_request_error: Failed to deserialize the JSON body ... unkno
 
 ```
 Claude Code ──ANTHROPIC_BASE_URL──▶ vision proxy (127.0.0.1:8731)
-                                        │  model matches VB_NON_VISION_MODELS
+                                        │  model matches nonVisionModels
                                         │  + messages contain image blocks?
-                                        │    → describe via gateway vision model
+                                        │    → describe via independent vision
+                                        │      provider (vision.baseUrl/model)
                                         ▼  (image block → text block)
                                     your gateway (upstream)
 ```
 
 - Bridging is **opt-in per model**: only requests whose model matches
-  `VB_NON_VISION_MODELS` (default `deepseek`) are bridged. All other models
+  `nonVisionModels` (default `["deepseek"]`) are bridged. All other models
   (vision-capable or unknown) pass through untouched.
 - Handles both **pasted screenshots** (Anthropic `image` content blocks) and
   **image file paths** mentioned in text (e.g. `/path/to/photo.png`), described
@@ -51,22 +54,21 @@ Claude Code docs.)
 ## Requirements
 
 - Python 3.10+ with `httpx` (installed automatically via `uv run`).
-- A gateway that exposes:
-  - an **Anthropic Messages** endpoint (`POST /v1/messages`) — your upstream;
-  - a **vision model** reachable as an OpenAI-compatible endpoint
-    (`POST /v1/chat/completions` with an `image_url` content part). The same
-    gateway works for both (the `vb` plugin was tested against a CLI Proxy API
-    gateway that serves `gemini-3.1-flash-image`).
-- Auth token for both endpoints (`ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_API_KEY`,
-  or `VB_VISION_API_KEY` for the vision endpoint).
+- **Upstream** — your Claude Code gateway, exposing an Anthropic Messages
+  endpoint (`POST /v1/messages`), with its own auth (`ANTHROPIC_AUTH_TOKEN` or
+  `ANTHROPIC_API_KEY`).
+- **Vision provider** — a separate multimodal service, reachable as an
+  OpenAI-compatible endpoint (`POST /v1/chat/completions` with an `image_url`
+  content part), with its **own** `vision.apiKey`. This is deliberately
+  independent of the upstream gateway and its credentials.
 
 ## Installation
 
 1. Install the plugin from the `frad-dotclaude` marketplace (or add this
    directory to your plugin dirs).
-2. Make `scripts/vb_proxy.py` executable:
+2. Make `scripts/vision_proxy.py` executable:
    ```bash
-   chmod +x scripts/vb_proxy.py
+   chmod +x scripts/vision_proxy.py
    ```
 3. Note the real upstream gateway URL — the value of `ANTHROPIC_BASE_URL`
    **before** you point it at the proxy. Example: `http://10.10.0.195:8317`.
@@ -76,11 +78,12 @@ Claude Code docs.)
 ### 1. Start the proxy
 
 ```bash
-export VB_UPSTREAM_URL="http://<your-gateway>:<port>"   # the REAL upstream
-export ANTHROPIC_AUTH_TOKEN="..."                        # auth for gateway + vision
-scripts/vb_proxy.py start        # detach; logs to ~/.vb/proxy.log
-scripts/vb_proxy.py status       # running?
-scripts/vb_proxy.py doctor       # verify config, upstream, vision endpoint
+# The proxy reads the three-layer vision.json; env vars also work as overrides.
+# upstream = Claude Code's real gateway; vision = independent provider.
+export ANTHROPIC_AUTH_TOKEN="..."    # auth for the upstream gateway only
+scripts/vision_proxy.py start        # detach; logs to ~/.vb/proxy.log
+scripts/vision_proxy.py status       # running?
+scripts/vision_proxy.py doctor       # verify config, upstream, vision endpoint
 ```
 
 `doctor` prints the effective config and probes both endpoints. Exit 0 = ready.
@@ -98,9 +101,9 @@ Set in `~/.claude/settings.json` (or your project's `.claude/settings.json`):
 ```
 
 **Important:** once Claude Code points at the proxy, the proxy must know the
-real gateway — `VB_UPSTREAM_URL` must be set explicitly (it can no longer fall
-back to `ANTHROPIC_BASE_URL`, which is now the proxy itself). `doctor` detects
-this loop and tells you.
+real gateway — `upstream.url` must be set explicitly (it can no longer fall back
+to `ANTHROPIC_BASE_URL`, which is now the proxy itself). `doctor` detects this
+loop and tells you.
 
 ### 3. Use it
 
@@ -110,13 +113,13 @@ this loop and tells you.
 **Pasted screenshots (proxy):** paste a screenshot and chat normally with a
 `deepseek-*` model — the proxy describes it and answers.
 
-**Standalone:** `scripts/vb_proxy.py describe /path/img.png` prints a
+**Standalone:** `scripts/vision_proxy.py describe /path/img.png` prints a
 description on demand.
 
 ### 4. Stop the proxy
 
 ```bash
-scripts/vb_proxy.py stop
+scripts/vision_proxy.py stop
 ```
 
 ## Hook setup
@@ -124,46 +127,64 @@ scripts/vb_proxy.py stop
 The hook (`hooks/bridge_file_paths.py`) needs no `ANTHROPIC_BASE_URL` change —
 it only needs the vision config so it can describe files. The plugin's
 `plugin.json` registers it automatically when the plugin is installed. It
-reuses the same config as the proxy:
+reuses the exact same `vision.json` config as the proxy (`vision.baseUrl`,
+`vision.model`, `vision.apiKey`, `maxImageBytes`), so one config file covers
+both. Set `hookEnabled: false` to disable the hook's work.
 
-| Variable | Purpose |
-|---|---|
-| `VB_HOOK_ENABLED` | `0` to disable the hook's work (default `1`) |
-| `VB_VISION_BASE_URL` | Vision endpoint (else `VB_UPSTREAM_URL`) |
-| `VB_VISION_MODEL` / `VB_VISION_API_KEY` / `VB_VISION_PROMPT` | Vision model, key, prompt |
-| `VB_MAX_IMAGE_BYTES` | Skip image files larger than this |
+## Configuration: three-layer `vision.json`
 
-Set these in the environment or `~/.vb.env` so the hook process sees them.
+The plugin mirrors Claude Code's own settings layering. Config lives in
+**`vision.json`** files (JSON objects whose keys are the config names below),
+read from three layers, later layers overriding earlier ones:
 
-## Configuration (proxy)
-
-All variables are resolved progressively: **process env → `~/.vb.env` (script
-dir, then cwd, then home; home wins) → default**.
-
-| Variable | Purpose | Default |
+| Layer | File | Scope |
 |---|---|---|
-| `VB_PORT` | Listen port | `8731` |
-| `VB_UPSTREAM_URL` | Upstream gateway base URL (required) | `ANTHROPIC_BASE_URL` |
-| `VB_NON_VISION_MODELS` | Comma-separated substrings; model matches any → bridged. `""` disables bridging | `deepseek` |
-| `VB_VISION_BASE_URL` | Vision endpoint base URL | `VB_UPSTREAM_URL` |
-| `VB_VISION_MODEL` | Vision model served by the gateway | `gemini-3.1-flash-image` |
-| `VB_VISION_API_KEY` | Key for vision endpoint | `ANTHROPIC_AUTH_TOKEN` → `ANTHROPIC_API_KEY` |
-| `VB_VISION_PROMPT` | Instruction sent with each image | "Describe this image faithfully…" |
-| `VB_DESCRIBE_FILE_PATHS` | Also describe image file paths in text | `1` |
-| `VB_MAX_IMAGE_BYTES` | Skip image files larger than this | `20971520` (20 MiB) |
+| 1. Global | `~/.claude/vision.json` | user-wide defaults |
+| 2. Project | `<project>/.claude/vision.json` | checked into the project |
+| 3. Local | `<project>/.claude/vision.local.json` | gitignored, machine-local overrides |
 
-Example `~/.vb.env`:
+Resolution order for every variable: **process env → layer 1 → layer 2 →
+layer 3 → default**. Process env vars always win; the local layer wins over
+project and global. Values can reference environment variables using `$VAR` or
+`${VAR}` syntax — resolved at read time. This is useful for API keys: `"apiKey": "$MY_API_KEY"` reads from the environment variable at runtime.
 
-```bash
-VB_UPSTREAM_URL=http://10.10.0.195:8317
-VB_NON_VISION_MODELS=deepseek
-VB_VISION_MODEL=gemini-3.1-flash-image
+```json
+// <project>/.claude/vision.local.json — copy examples/vision.local.example.json
+{
+  "baseUrl": "http://your-gateway-host:port",
+  "blockedModels": ["deepseek"],
+  "model": "gemini-3.1-flash-image,gemini-3-flash-agent",
+  "apiKey": "$VISION_API_KEY"
+}
 ```
+
+### Configuration keys
+
+| Key | Purpose | Default |
+|---|---|---|
+| `port` | Listen port | `8731` |
+| `baseUrl` | Upstream gateway and vision provider base URL. **Required**. | `ANTHROPIC_BASE_URL` |
+| `blockedModels` | List (or comma string) of model substrings to bridge. Empty list disables bridging. | `["deepseek"]` |
+| `model` | Comma-separated fallback chain of vision models. | `gemini-3.1-flash-image,gemini-3-flash-agent` |
+| `apiKey` | Key for the vision provider. Supports `$VAR` / `${VAR}` env var syntax. | *(required)* |
+| `describeFilePaths` | Also describe image file paths in text | `true` |
+| `maxImageBytes` | Skip image files larger than this | `20971520` (20 MiB) |
+| `hookEnabled` | `false` disables the UserPromptSubmit hook | `true` |
+
+The vision provider reuses the upstream gateway — `baseUrl` serves both. The
+hook and proxy read the same three layers, so one config file covers both. A
+template lives at `examples/vision.local.example.json`. Legacy keys
+(`nonVisionModels`, `visionBaseUrl`, `visionPrompt`, `upstreamUrl`,
+`upstream.url`, `vision.baseUrl`, `vision.model`, `vision.apiKey`,
+`vision.prompt`) still work for backward compatibility.
+
+Most of this config is sensitive (gateway URL, provider key) — keep it in the
+gitignored `vision.local.json` layer.
 
 ## Manual describe (no proxy)
 
 ```bash
-scripts/vb_proxy.py describe /path/to/image.png --prompt "What color is this?"
+scripts/vision_proxy.py describe /path/to/image.png --prompt "What color is this?"
 # [Image 1/1 (image/png, described by gemini-3.1-flash-image)]
 # Green
 ```
@@ -172,10 +193,10 @@ scripts/vb_proxy.py describe /path/to/image.png --prompt "What color is this?"
 
 - **`400 ... unknown variant 'image_url'`** — still happens directly against
   the gateway. Make sure requests go through the proxy and the model matches
-  `VB_NON_VISION_MODELS`.
-- **`doctor` says "points at this proxy"** — `VB_UPSTREAM_URL` is unset and
-  `ANTHROPIC_BASE_URL` is the proxy. Set `VB_UPSTREAM_URL` to the real gateway.
-- **Proxy won't start** — run `scripts/vb_proxy.py doctor`; it names the missing
+  `nonVisionModels`.
+- **`doctor` says "points at this proxy"** — `upstream.url` is unset and
+  `ANTHROPIC_BASE_URL` is the proxy. Set `upstream.url` to the real gateway.
+- **Proxy won't start** — run `scripts/vision_proxy.py doctor`; it names the missing
   config.
 - **Log** — `~/.vb/proxy.log` shows each bridged image (`[vb] bridged 1 image(s)
   for model ...`).
@@ -184,5 +205,5 @@ scripts/vb_proxy.py describe /path/to/image.png --prompt "What color is this?"
 
 - `hooks/bridge_file_paths.py` — UserPromptSubmit hook; auto-describes image
   file paths in the prompt (no proxy needed).
-- `scripts/vb_proxy.py` — the proxy (`uv run` single file; deps auto-install).
+- `scripts/vision_proxy.py` — the proxy (`uv run` single file; deps auto-install).
 - `skills/bridge/SKILL.md` — management command (`/vision:bridge`).

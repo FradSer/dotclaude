@@ -2,7 +2,7 @@
   "name": "vision",
   "displayName": "Vision Bridge",
   "version": "0.1.0",
-  "description": "Gives non-vision models (deepseek, ...) eyes: a UserPromptSubmit hook auto-describes image file paths, and a transparent local proxy replaces pasted-screenshot image blocks with text from a gateway vision model before forwarding upstream. Includes a /vision bridge management command.",
+  "description": "Gives non-vision models (deepseek, ...) eyes: a UserPromptSubmit hook auto-describes image file paths, and a transparent local proxy replaces pasted-screenshot image blocks with text from an independent vision provider before forwarding upstream. Includes a /vision bridge management command.",
   "keywords": [
     "vision",
     "multimodal",

@@ -242,7 +242,7 @@ claude plugin install interfaces@frad-dotclaude
 
 ### [vision](vision/)
 
-Vision Bridge（视觉桥接）。让不支持视觉的模型（如 deepseek）拥有"眼睛"：UserPromptSubmit hook 自动描述图片文件路径，透明本地代理将粘贴截图的 image block 替换为网关视觉模型的文字描述后转发上游。修复非视觉模型收到截图时出现的 `unknown variant 'image_url'` 400 错误。含 `/vision:bridge` 管理命令。
+Vision Bridge（视觉桥接）。让不支持视觉的模型（如 deepseek）拥有"眼睛"：UserPromptSubmit hook 自动描述图片文件路径，透明本地代理将粘贴截图的 image block 替换为独立视觉服务商的文字描述后转发上游。修复非视觉模型收到截图时出现的 `unknown variant 'image_url'` 400 错误。含 `/vision:bridge` 管理命令。
 
 **安装：**
 ```bash

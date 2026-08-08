@@ -2,7 +2,7 @@
 
 GitHub project operations with quality gates, TDD workflows, and comprehensive issue management.
 
-**Version**: 0.5.0
+**Version**: 0.7.4
 
 ## Installation
 
@@ -242,8 +242,8 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
    - Implement fixes
    - Refactor while keeping tests green
 4. **Quality Validation**: Runs project-specific lint, test, and build commands for fast local feedback
-5. **PR Creation**: Pushes the branch, then delegates to `/github:create-pr` with the issue reference — which runs the authoritative quality gate and enters the `/github:review-pr` loop. This skill does not resume inline; `/github:review-pr` owns the PR through merge and post-merge hygiene.
-6. **Cleanup** (later turn, after the PR actually merges): verifies the worktree is still on the issue branch, then removes worktree and branch with documentation
+5. **PR Creation**: Pushes the branch, then delegates to `/github:create-pr` with the issue reference — which runs the authoritative quality gate and enters the `/github:review-pr` loop. This skill does not resume inline; `/github:review-pr` owns the PR through merge, the post-merge worktree removal, and the switch/sync to `main`.
+6. **Cleanup** (fallback only): `/github:review-pr`'s closeout removes the linked worktree and syncs `main` after a merge. This step runs only if that cleanup was skipped (e.g. "Don't merge", an interrupt, or a fresh session) — verify `git worktree list` first and `ExitWorktree action:"remove"` only if the worktree persists
 
 **Usage:**
 ```bash
@@ -264,7 +264,7 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 # - Run quality checks
 # - Delegate to /github:create-pr with \"Fixes #123\"
 #   └─ which hands off to /github:review-pr for the loop
-# - Clean up worktree in a later turn, once the PR has merged
+# - review-pr closeout removes the worktree, switches to main, syncs origin
 ```
 
 **Features:**
@@ -272,7 +272,7 @@ Resolves GitHub issues using isolated worktrees and TDD workflow with comprehens
 - **TDD workflow**: Red → Green → Refactor cycle
 - **Quality gates**: All checks must pass
 - **Review loop**: Reaches `/github:review-pr` via `/github:create-pr`
-- **Auto-cleanup**: Removes worktrees after completion
+- **Auto-cleanup**: review-pr closeout removes the worktree and syncs `main` after merge
 - **Documentation**: Tracks all decisions and actions
 
 ---
@@ -285,7 +285,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 
 | Field | Value |
 |-------|-------|
-| Allowed Tools | `Task`, `Bash(gh:*)`, `Bash(git:*)`, `Monitor`, `PushNotification`, `TaskStop`, `Skill`, `AskUserQuestion`, `Read`, `Edit`, `Write` |
+| Allowed Tools | `Task`, `Bash(gh:*)`, `Bash(git:*)`, `ExitWorktree`, `Monitor`, `PushNotification`, `TaskStop`, `Skill`, `AskUserQuestion`, `Read`, `Edit`, `Write` |
 | Argument Hint | `<PR number or URL>` |
 
 **What it does:**
@@ -298,7 +298,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 5. Commits + pushes each round, which triggers fresh CI that the same Monitor re-emits — the loop continues
 6. Hides resolved comments and resolves their threads
 7. Once CI is green and every comment is triaged: posts a summary comment, rewrites the PR body to link it, and asks whether to merge
-8. After merge: cleans up the head branch when safe, syncs `main`/`develop`, prunes stale locals
+8. After merge: removes the linked worktree, cleans up the head branch when safe, switches to `main`, syncs `main`/`develop`, prunes stale locals
 
 **Usage:**
 ```bash
@@ -311,7 +311,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 - **Independent context**: The triage agent never sees the authoring context, so it can't rationalize the diff
 - **Persistent watch**: Survives across turns; a quiet comment queue is not a stop signal
 - **Never auto-merges**: Merging always requires an explicit user choice
-- **Post-merge hygiene**: Head cleanup + sync `main`/`develop`
+- **Post-merge hygiene**: Worktree removal + head cleanup + switch to `main` + sync `main`/`develop`
 
 ## Best Practices
 

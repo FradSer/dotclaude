@@ -242,7 +242,7 @@ claude plugin install interfaces@frad-dotclaude
 
 ### [vision](vision/)
 
-Vision Bridge. Gives non-vision models (deepseek, ...) eyes: a UserPromptSubmit hook auto-describes image file paths, and a transparent local proxy replaces pasted-screenshot image blocks with text from a gateway vision model before forwarding upstream. Fixes `unknown variant 'image_url'` 400 errors. Includes a `/vision:bridge` management command.
+Vision Bridge. Gives non-vision models (deepseek, ...) eyes: a UserPromptSubmit hook auto-describes image file paths, and a transparent local proxy replaces pasted-screenshot image blocks with text from an independent vision provider before forwarding upstream. Fixes `unknown variant 'image_url'` 400 errors. Includes a `/vision:bridge` management command.
 
 **Installation:**
 ```bash

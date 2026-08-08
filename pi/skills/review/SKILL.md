@@ -28,29 +28,23 @@ User preferences persist across invocations via JSON files. The resolution chain
 
 ### Settings file format
 
-The settings file maps **named endpoint configurations** (user-defined keys) to pi's known providers. Each key can have its own `baseUrl` and `models` list. At runtime, the skill writes the chosen endpoint's `baseUrl` into `~/.pi/agent/models.json` under a known provider (default `openai`), then calls pi with `--provider openai`.
+The settings file maps **named endpoint configurations** (user-defined keys) to pi's known providers. Each key can have its own `baseUrl`, `apiKey`, and `models` list. At runtime, the skill writes the chosen endpoint's `baseUrl` into `~/.pi/agent/models.json` under a known provider (default `openai`), then calls pi with `--provider openai`.
+
+Values can reference environment variables using `$VAR` or `${VAR}` syntax — they are resolved at read time. This is useful for API keys: `"apiKey": "$MY_API_KEY"` reads from the environment variable at runtime.
+
+All fields are optional. The example below shows the format — fill in your own endpoints:
 
 ```json
 {
   "endpoints": {
-    "local-proxy": {
+    "my-proxy": {
       "provider": "openai",
       "baseUrl": "http://10.10.0.195:8317/v1",
-      "models": ["gemini-3.6-flash", "gemini-3.6-pro"]
-    },
-    "openrouter": {
-      "provider": "openai",
-      "baseUrl": "https://openrouter.ai/api/v1",
-      "models": ["openai/gpt-4o", "anthropic/claude-opus-4"]
-    },
-    "anthropic-direct": {
-      "provider": "anthropic",
-      "models": ["claude-sonnet-4-20250514"]
+      "models": ["gemini-3.6-flash-high", "gemini-3.6-pro"]
     }
   },
-  "defaultEndpoint": "local-proxy",
-  "defaultModel": "gemini-3.6-flash",
-  "thinking": "low"
+  "defaultEndpoint": "my-proxy",
+  "defaultModel": "gemini-3.6-flash-high"
 }
 ```
 
@@ -85,14 +79,26 @@ if [ -f ".claude/pi.local.json" ]; then
 fi
 ```
 
-Then extract values:
+Then extract values, resolving environment variable references:
 
 ```bash
-ENDPOINT=$(echo "$CONFIG" | jq -r '.defaultEndpoint // ""')
-MODEL=$(echo "$CONFIG" | jq -r '.defaultModel // ""')
-THINKING=$(echo "$CONFIG" | jq -r '.thinking // "low"')
-PROVIDER=$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].provider // "openai"')
-BASE_URL=$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].baseUrl // ""')
+# Resolve env vars in a JSON value: "$VAR" or "${VAR}" → actual value
+resolve_env() {
+  local val="$1"
+  while [[ "$val" =~ \$\{?([a-zA-Z_][a-zA-Z0-9_]*)\}? ]]; do
+    local var_name="${BASH_REMATCH[1]}"
+    local var_value="${!var_name:-}"
+    val="${val//${BASH_REMATCH[0]}/$var_value}"
+  done
+  echo "$val"
+}
+
+ENDPOINT=$(resolve_env "$(echo "$CONFIG" | jq -r '.defaultEndpoint // ""')")
+MODEL=$(resolve_env "$(echo "$CONFIG" | jq -r '.defaultModel // ""')")
+THINKING=$(resolve_env "$(echo "$CONFIG" | jq -r '.thinking // "low"')")
+PROVIDER=$(resolve_env "$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].provider // "openai"')")
+BASE_URL=$(resolve_env "$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].baseUrl // ""')")
+API_KEY=$(resolve_env "$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].apiKey // ""')")
 # If model not set, use first model from the endpoint
 if [ -z "$MODEL" ] || [ "$MODEL" = "null" ]; then
   MODEL=$(echo "$CONFIG" | jq -r --arg e "$ENDPOINT" '.endpoints[$e].models[0] // ""')
@@ -124,20 +130,10 @@ mkdir -p "$(dirname "$CONFIG_PATH")"
 if [ ! -f "$CONFIG_PATH" ]; then
   cat > "$CONFIG_PATH" << 'EOF'
 {
-  "endpoints": {
-    "local-proxy": {
-      "provider": "openai",
-      "baseUrl": "http://10.10.0.195:8317/v1",
-      "models": ["gemini-3.6-flash"]
-    },
-    "anthropic-direct": {
-      "provider": "anthropic",
-      "models": ["claude-sonnet-4-20250514"]
-    }
-  },
-  "defaultEndpoint": "local-proxy",
-  "defaultModel": "gemini-3.6-flash",
-  "thinking": "low"
+  "endpoints": {},
+  "defaultEndpoint": "",
+  "defaultModel": "",
+  "thinking": ""
 }
 EOF
 fi
@@ -324,7 +320,7 @@ fi
 # Build the pi review command with resolved variables
 # Do NOT pass @file references by default — pi explores the codebase with its own tools
 # Only add @file.ts when the user explicitly named files
-PI_CMD="pi -p --provider $PROVIDER --model $MODEL --thinking ${THINKING:-low} --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git context: ...\" \"Review the code. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
+PI_CMD="pi -p --provider $PROVIDER --model $MODEL${API_KEY:+ --api-key $API_KEY} --thinking ${THINKING:-low} --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git context: ...\" \"Review the code. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
 
 # Run in background — no timeout
 bash -c "$PI_CMD 2>&1" &
@@ -374,7 +370,7 @@ Show the error message from stderr. Common causes:
 ### Review a specific branch
 
 ```
-/pi:review --branch feat/new-widget --endpoint local-proxy --model gemini-3.6-flash
+/pi:review --branch feat/new-widget --endpoint local-proxy --model gemini-3.6-flash-high
 ```
 
 ### Review recent changes
@@ -419,3 +415,4 @@ Show the error message from stderr. Common causes:
 - PR review requires `gh` CLI to be installed and authenticated.
 - For large codebases, consider targeting a specific branch, diff range, or file to keep the review focused.
 - Settings are shared with `/pi:delegate` via the same file chain (`.claude/pi.local.json`, `~/.claude/pi.local.json`). Both skills read the same files, but each uses its own format — you can keep both in the same file.
+- To configure pi (provider, model, base URL), run `/pi:setup` instead of passing flags manually.

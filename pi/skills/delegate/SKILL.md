@@ -2,7 +2,7 @@
 name: delegate
 description: Delegates a coding task to pi (dev/pi), a minimal terminal coding harness. This skill should be used when the user asks to "use pi", "run pi", "delegate to pi", "let pi handle this", "ask pi to", "have pi do", or invokes /pi:delegate. It bridges the current Claude Code context to pi CLI for execution, passing relevant files, git state, and the task description.
 user-invocable: true
-argument-hint: "<task description> [--provider PROVIDER] [--model MODEL] [--base-url URL] [--thinking LEVEL] [--tools TOOL_LIST] [--exclude-tools TOOL_LIST] [--no-files] [--no-git] | --edit-config [--local|--shared|--global]"
+argument-hint: "<task description> [--provider PROVIDER] [--model MODEL] [--api-key KEY] [--thinking LEVEL] [--tools TOOL_LIST] [--exclude-tools TOOL_LIST] [--no-files] [--no-git] | --edit-config [--local|--shared|--global] | --doctor"
 allowed-tools: ["Bash(git:*)", "Bash(jq:*)", "Bash(ls:*)", "Bash(find:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(echo:*)", "Bash(command:*)", "Bash(pi:*)", "Read", "Grep", "Glob"]
 ---
 
@@ -35,19 +35,25 @@ Then stop — do not proceed without pi installed.
 User preferences persist across invocations via JSON files. The resolution chain (highest priority first):
 
 1. **CLI flag** (from `$ARGUMENTS`)
-2. **`.claude/pi.local.json`** — project-specific overrides, gitignored
-3. **`~/.claude/pi.local.json`** — global user-wide defaults
-4. **Built-in defaults** (listed below)
+2. **Process env** — `PI_PROVIDER`, `PI_MODEL`, `PI_API_KEY`, `PI_BASE_URL`, `PI_THINKING`, `PI_TOOLS`
+3. **`.claude/pi.local.json`** — project-specific overrides, gitignored
+4. **`~/.claude/pi.local.json`** — global user-wide defaults
+5. **pi's own defaults** (pi decides its own default provider and model)
 
 ### Settings file format
 
+Settings files only override what the user wants to change. All fields are optional — omit any field to let pi's own default apply.
+
+Values can reference environment variables using `$VAR` or `${VAR}` syntax — they are resolved at read time.
+
 ```json
 {
-  "provider": "anthropic",
-  "model": "claude-sonnet-4-20250514",
-  "baseUrl": "https://my-proxy.example.com/v1",
-  "thinking": "low",
-  "tools": "read,bash,write,edit,grep,find,ls",
+  "provider": "",
+  "model": "",
+  "baseUrl": "",
+  "apiKey": "",
+  "thinking": "",
+  "tools": "",
   "excludeTools": "",
   "noFiles": false,
   "noGit": false
@@ -80,7 +86,29 @@ if [ -f ".claude/pi.local.json" ]; then
 fi
 ```
 
-Then extract values: `echo "$CONFIG" | jq -r '.provider // "anthropic"'`
+Then extract values, resolving environment variable references. After file-based config, process env vars (`PI_*`) override any JSON value:
+
+```bash
+# Resolve env vars in a JSON value: "$VAR" or "${VAR}" → actual value
+resolve_env() {
+  local val="$1"
+  while [[ "$val" =~ \$\{?([a-zA-Z_][a-zA-Z0-9_]*)\}? ]]; do
+    local var_name="${BASH_REMATCH[1]}"
+    local var_value="${!var_name:-}"
+    val="${val//${BASH_REMATCH[0]}/$var_value}"
+  done
+  echo "$val"
+}
+
+# Read from merged config (files), then let process env override
+PROVIDER=$(resolve_env "${PI_PROVIDER:-$(echo "$CONFIG" | jq -r '.provider // ""')}")
+MODEL=$(resolve_env "${PI_MODEL:-$(echo "$CONFIG" | jq -r '.model // ""')}")
+BASE_URL=$(resolve_env "${PI_BASE_URL:-$(echo "$CONFIG" | jq -r '.baseUrl // ""')}")
+API_KEY=$(resolve_env "${PI_API_KEY:-$(echo "$CONFIG" | jq -r '.apiKey // ""')}")
+THINKING=$(resolve_env "${PI_THINKING:-$(echo "$CONFIG" | jq -r '.thinking // "low"')}")
+TOOLS=$(resolve_env "${PI_TOOLS:-$(echo "$CONFIG" | jq -r '.tools // ""')}")
+EXCLUDE_TOOLS=$(resolve_env "${PI_EXCLUDE_TOOLS:-$(echo "$CONFIG" | jq -r '.excludeTools // ""')}")
+```
 
 ### `--edit-config` flag
 
@@ -108,11 +136,12 @@ mkdir -p "$(dirname "$CONFIG_PATH")"
 if [ ! -f "$CONFIG_PATH" ]; then
   cat > "$CONFIG_PATH" << 'EOF'
 {
-  "provider": "anthropic",
+  "provider": "",
   "model": "",
   "baseUrl": "",
-  "thinking": "low",
-  "tools": "read,bash,write,edit,grep,find,ls",
+  "apiKey": "",
+  "thinking": "",
+  "tools": "",
   "excludeTools": "",
   "noFiles": false,
   "noGit": false
@@ -126,15 +155,19 @@ ${EDITOR:-vi} "$CONFIG_PATH"
 
 Report: "Settings file created/opened at `<path>`. Changes take effect on the next `/pi:delegate` invocation."
 
+### `--doctor` flag
+
+When `$ARGUMENTS` is exactly `--doctor`, run a comprehensive configuration check. See `references/doctor.md` for the script.
+
 ## Argument Parsing
 
 Parse `$ARGUMENTS` to extract the task description and optional flags. The task description is everything before the first `--` flag. If no flags are present, the entire argument is the task description.
 
 | Flag | Description | Source Priority |
 |------|-------------|-----------------|
-| `--provider` | LLM provider (anthropic, openai, google, etc.) | CLI > settings > `anthropic` |
-| `--model` | Model pattern or ID (e.g. `claude-sonnet-4-20250514`, `openai/gpt-4o`) | CLI > settings > (pi's default) |
-| `--base-url` | Custom API base URL for OpenAI-compatible endpoint | CLI > settings > (none) |
+| `--provider` | LLM provider (anthropic, openai, google, etc.) | CLI > settings > pi's default |
+| `--model` | Model pattern or ID (e.g. `claude-sonnet-4-20250514`, `openai/gpt-4o`) | CLI > settings > pi's default |
+| `--api-key` | API key for the provider | CLI > settings > env var or config file |
 | `--thinking` | Thinking level (off/minimal/low/medium/high/xhigh/max) | CLI > settings > `low` |
 | `--tools` | Comma-separated allowed tools list | CLI > settings > `read,bash,write,edit,grep,find,ls` |
 | `--exclude-tools` | Comma-separated blocked tools list | CLI > settings > (none) |
@@ -143,15 +176,16 @@ Parse `$ARGUMENTS` to extract the task description and optional flags. The task 
 
 ### Resolution order per flag
 
-For each flag, resolve the value by checking CLI flag first, then settings file, then built-in default:
+For each flag, resolve the value by checking CLI flag first, then settings file, then pi's built-in default:
 
 1. Parse `$ARGUMENTS` for that flag. If present, use it.
 2. Otherwise, read from `$CONFIG` (the merged settings). If non-null/non-empty, use it.
-3. Otherwise, use the built-in default.
+3. Otherwise, use pi's built-in default (see below).
 
 ### Defaults behavior
 
-- **provider**: Default to `anthropic` (Claude Code users typically have `ANTHROPIC_API_KEY` set).
+- **provider**: No default — let pi's own default decide. The settings chain (CLI > config file > pi's internal default) resolves the value.
+- **model**: No default — let pi's own default decide. Only pass `--model` if the user explicitly specified it or the settings file has a value.
 - **thinking**: Default to `low` to keep responses fast and cheap.
 - **tools**: Default to full toolset `read,bash,write,edit,grep,find,ls`.
 - **base-url**: When resolved, write to `~/.pi/agent/models.json` for the provider (defaults to `openai`). The user can override the provider explicitly via CLI flag.
@@ -205,11 +239,12 @@ find . -maxdepth 2 -type f 2>/dev/null | head -50
 Build the pi command with these components in order:
 
 1. **Base**: `pi -p` (print mode, non-interactive)
-2. **Provider/Model flags** (only if user specified or default):
-   - `--provider anthropic` (default, only pass if needed)
-   - `--model <value>` (only if user specified)
+2. **Provider/Model flags** (use resolved values from settings chain, only pass if non-default):
+   - `--provider <value>` (from settings or pi's default)
+   - `--model <value>` (only if specified in settings or CLI)
+   - `--api-key <value>` (only if resolved from settings or CLI flag)
    - `--thinking low` (default, only pass if needed)
-3. **Custom base URL**: If `--base-url` is resolved, write it to `~/.pi/agent/models.json` for the provider (see Base URL section below).
+3. **Custom base URL**: If `baseUrl` is resolved from settings or CLI flag, write it to `~/.pi/agent/models.json` for the provider before calling pi (see Base URL section below). Never pass `--base-url` to pi — pi does not support it as a CLI flag.
 4. **Tool restrictions** (only if user specified):
    - `--tools <value>` (only if user wants to restrict)
    - `--exclude-tools <value>` (only if user specified)
@@ -220,7 +255,7 @@ Build the pi command with these components in order:
 
 ### Default provider note
 
-pi itself defaults to `google` provider (Gemini), but Claude Code users typically have `ANTHROPIC_API_KEY` set. The skill defaults to `--provider anthropic`. If the user explicitly passes `--provider`, respect that over the default. If they pass `--base-url`, write to `models.json` for the resolved provider — defaulting to `openai` (unless they also pass `--provider`).
+Do not hardcode a provider. Resolve from the settings chain (CLI flag > config file > pi's built-in default). pi's own default is `google` (Gemini). If the user has set `"provider": "google"` in `~/.claude/pi.local.json`, that takes effect without needing CLI flags.
 
 ### Pattern for appended context
 
@@ -268,7 +303,7 @@ if [ -f "CLAUDE.md" ]; then
 fi
 
 # Build the pi command — no file references, pi uses its tools to explore
-PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"task description\""
+PI_CMD="pi -p --thinking low${API_KEY:+ --api-key $API_KEY} --no-session --no-context-files --approve $CLAUDE_CONTEXT \"task description\""
 
 # Run in background — no timeout, let pi finish naturally
 bash -c "$PI_CMD 2>&1" &
@@ -276,11 +311,11 @@ bash -c "$PI_CMD 2>&1" &
 
 ### Important: Pi's Default Provider
 
-pi defaults to the `google` provider (Gemini). This skill defaults to `--provider anthropic` since Claude Code users typically have `ANTHROPIC_API_KEY` set. Respect the user's explicit choices; if they don't specify a provider, use `anthropic`.
+Do not hardcode a provider. Resolve from the settings chain (CLI flag > config file > pi's built-in default). pi's own default is `google` (Gemini). If the user has set `"provider": "google"` in `~/.claude/pi.local.json`, that takes effect without needing CLI flags.
 
 ### Base URL via models.json
 
-pi does not support `OPENAI_BASE_URL` environment variable. Custom API endpoints are configured through `~/.pi/agent/models.json`. When `--base-url` is resolved (from CLI flag or settings), the skill ensures the provider's baseUrl is set in pi's models.json.
+pi does not support `--base-url` CLI flag or `OPENAI_BASE_URL` environment variable. Custom API endpoints are configured through `~/.pi/agent/models.json`. When `baseUrl` is resolved from settings or CLI flag, the skill writes it to pi's models.json before calling pi — then calls pi without `--base-url`.
 
 ```bash
 # When base-url is resolved, write/merge into pi's models.json
@@ -350,7 +385,7 @@ if [ -f "CLAUDE.md" ]; then
   CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
 fi
 
-PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"review the TypeScript types in src/\""
+PI_CMD="pi -p --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"review the TypeScript types in src/\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
@@ -367,14 +402,14 @@ if [ -f "CLAUDE.md" ]; then
   CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
 fi
 
-PI_CMD="pi -p --provider anthropic --model claude-sonnet-4-20250514 --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"refactor this component\""
+PI_CMD="pi -p --model claude-sonnet-4-20250514 --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"refactor this component\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
-### Custom base URL (OpenAI-compatible proxy)
-User: `/pi:delegate write unit tests for this module --base-url http://10.10.0.195:8317/v1 --model gemini-3.6-flash`
+### Custom base URL (OpenAI-compatible proxy via models.json)
+User: `/pi:delegate write unit tests for this module --provider openai --model gemini-3.6-flash-high`
 
-Claude: Writes baseUrl to `~/.pi/agent/models.json` for the `openai` provider, builds CLAUDE.md context, then runs:
+Claude: Checks `~/.claude/pi.local.json` for `baseUrl`, writes it to `~/.pi/agent/models.json` for the `openai` provider, then runs:
 ```bash
 CLAUDE_CONTEXT=""
 if [ -f "$HOME/.claude/CLAUDE.md" ]; then
@@ -384,7 +419,7 @@ if [ -f "CLAUDE.md" ]; then
   CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
 fi
 
-PI_CMD="pi -p --provider openai --model gemini-3.6-flash --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"write unit tests for this module\""
+PI_CMD="pi -p --provider openai --model gemini-3.6-flash-high --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"write unit tests for this module\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
@@ -401,7 +436,7 @@ if [ -f "CLAUDE.md" ]; then
   CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
 fi
 
-PI_CMD="pi -p --provider anthropic --thinking low --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT \"audit the security of this codebase\""
+PI_CMD="pi -p --thinking low --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT \"audit the security of this codebase\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
@@ -418,7 +453,7 @@ if [ -f "CLAUDE.md" ]; then
   CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
 fi
 
-PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"explain how React reconciliation works\""
+PI_CMD="pi -p --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"explain how React reconciliation works\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
@@ -432,4 +467,5 @@ bash -c "$PI_CMD 2>&1" &
 - `--no-context-files` prevents pi from reading its own AGENTS.md/CLAUDE.md (which could conflict with the current project's context).
 - `--approve` skips any project trust prompts (non-interactive mode).
 - **CLAUDE.md context is always passed** via `--append-system-prompt` as file paths — `~/.claude/CLAUDE.md` (user global) and `./CLAUDE.md` (project). pi reads them automatically.
+- To configure pi (provider, model, base URL), run `/pi:setup` instead of passing flags manually.
 - Git context is passed via `--append-system-prompt` as structured text.

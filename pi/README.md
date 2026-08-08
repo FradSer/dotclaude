@@ -16,14 +16,14 @@ Bridges [pi](https://github.com/earendil-works/pi) (dev/pi), a minimal terminal 
 ### `/pi:delegate` — Delegate a task to pi
 
 ```
-/pi:delegate <task description> [--provider PROVIDER] [--model MODEL] [--base-url URL] [--thinking LEVEL] [--tools TOOL_LIST] [--exclude-tools TOOL_LIST] [--no-files] [--no-git]
+/pi:delegate <task description> [--provider PROVIDER] [--model MODEL] [--api-key KEY] [--thinking LEVEL] [--tools TOOL_LIST] [--exclude-tools TOOL_LIST] [--no-files] [--no-git]
 ```
 
 **Examples:**
 
 ```
 /pi:delegate refactor this component --model claude-sonnet-4-20250514
-/pi:delegate write unit tests --base-url http://10.10.0.195:8317/v1 --model gemini-3.6-flash
+/pi:delegate write unit tests --provider openai --model gemini-3.6-flash-high
 /pi:delegate explain how React reconciliation works --no-files
 ```
 
@@ -55,10 +55,29 @@ Read-only code review via pi CLI. Runs pi with `--tools read,grep,find,ls` to pr
 /pi:review --diff HEAD~5..HEAD    Review recent commits
 /pi:review @src/index.ts          Review a specific file
 /pi:review 42                     Review GitHub PR #42
-/pi:review --endpoint local-proxy --model gemini-3.6-flash  Review with a specific endpoint/model
+/pi:review --endpoint local-proxy --model gemini-3.6-flash-high  Review with a specific endpoint/model
 /pi:review --list-models          List all configured endpoints and models
 /pi:review --edit-config          Edit review settings
 ```
+
+### `/pi:setup` — Configure pi
+
+Guides you through setting up pi's provider, model, and base URL. Human-only — never auto-invoked.
+
+```
+/pi:setup [--provider PROVIDER] [--model MODEL] [--api-key KEY] | --edit-config | --list-models | --test
+```
+
+**Examples:**
+
+```
+/pi:setup --provider openai --model gemini-3.6-flash-high
+/pi:setup --list-models              View current configuration
+/pi:setup --test                     Test the current configuration
+/pi:setup --edit-config              Edit configuration manually
+```
+
+After setup, both `/pi:delegate` and `/pi:review` will use these settings by default.
 
 **Note:** Unlike `/pi:delegate`, pi's stdout IS the review output (read-only mode, no file edits).
 
@@ -67,7 +86,7 @@ Read-only code review via pi CLI. Runs pi with `--tools read,grep,find,ls` to pr
 ### `/pi:delegate`
 
 1. The skill checks if `pi` is installed globally.
-2. It reads persistent settings from `.claude/pi.local.json` (project) and `~/.claude/pi.local.json` (global), then merges with CLI flags. `--base-url` writes to `~/.pi/agent/models.json` (pi's global provider config) — one-time setup per endpoint.
+2. It reads persistent settings from `.claude/pi.local.json` (project) and `~/.claude/pi.local.json` (global), then merges with CLI flags. Custom base URLs are configured via `~/.pi/agent/models.json` — written automatically by the skill when `baseUrl` is set in the config file.
 3. It collects context from the current working directory (relevant files, git status, directory structure).
 4. It calls `pi -p` (print mode) via `run_in_background` with the collected context and your task description. No timeout — pi tasks run to completion naturally.
 5. pi executes the task — its real output is **file edits in the working directory**, not stdout text. Always check `git diff --stat` after completion.
@@ -83,9 +102,9 @@ Read-only code review via pi CLI. Runs pi with `--tools read,grep,find,ls` to pr
 
 | Flag | Description | Source Priority |
 |------|-------------|-----------------|
-| `--provider` | LLM provider (anthropic, openai, google, etc.) | CLI > settings > `anthropic` |
-| `--model` | Model pattern or ID | CLI > settings > (pi's default) |
-| `--base-url` | Custom API base URL for OpenAI-compatible endpoint | CLI > settings > (none) |
+| `--provider` | LLM provider (anthropic, openai, google, etc.) | CLI > settings > pi's default |
+| `--model` | Model pattern or ID | CLI > settings > pi's default |
+| `--api-key` | API key for the provider | CLI > settings > env var or config file |
 | `--thinking` | Thinking level (off/minimal/low/medium/high/xhigh/max) | CLI > settings > `low` |
 | `--tools` | Comma-separated allowed tools list | CLI > settings > `read,bash,write,edit,grep,find,ls` |
 | `--exclude-tools` | Comma-separated blocked tools list | CLI > settings > (none) |
@@ -109,14 +128,9 @@ Both skills share the same settings files, but use different formats:
 - **`/pi:delegate`** uses flat format (single provider + model):
   ```json
   {
-    "provider": "anthropic",
-    "model": "claude-sonnet-4-20250514",
-    "baseUrl": "http://10.10.0.195:8317/v1",
-    "thinking": "low",
-    "tools": "read,bash,write,edit,grep,find,ls",
-    "excludeTools": "",
-    "noFiles": false,
-    "noGit": false
+    "provider": "openai",
+    "model": "gemini-3.6-flash-high",
+    "baseUrl": "http://10.10.0.195:8317/v1"
   }
   ```
 
@@ -127,23 +141,15 @@ Both skills share the same settings files, but use different formats:
       "local-proxy": {
         "provider": "openai",
         "baseUrl": "http://10.10.0.195:8317/v1",
-        "models": ["gemini-3.6-flash", "gemini-3.6-pro"]
-      },
-      "openrouter": {
-        "provider": "openai",
-        "baseUrl": "https://openrouter.ai/api/v1",
-        "models": ["openai/gpt-4o", "anthropic/claude-opus-4"]
-      },
-      "anthropic-direct": {
-        "provider": "anthropic",
-        "models": ["claude-sonnet-4-20250514"]
+        "models": ["gemini-3.6-flash-high", "gemini-3.6-pro"]
       }
     },
     "defaultEndpoint": "local-proxy",
-    "defaultModel": "gemini-3.6-flash",
-    "thinking": "low"
+    "defaultModel": "gemini-3.6-flash-high"
   }
   ```
+
+Values can reference environment variables using `$VAR` or `${VAR}` syntax — they are resolved at read time. This is useful for API keys: `"apiKey": "$MY_API_KEY"` reads from the environment variable at runtime.
 
 You can include both formats in the same file — the `jq` merge will combine them. The review skill reads `endpoints` and `defaultEndpoint`, while the delegate skill reads `provider` and `model`.
 

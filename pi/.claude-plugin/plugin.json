@@ -8,5 +8,5 @@
   },
   "license": "MIT",
   "keywords": ["pi", "coding-agent", "ai-agent", "bridge"],
-  "commands": ["./skills/delegate/", "./skills/review/"]
+  "commands": ["./skills/delegate/", "./skills/review/", "./skills/setup/"]
 }
