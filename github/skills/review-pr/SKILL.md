@@ -1,6 +1,6 @@
 ---
 name: review-pr
-allowed-tools: Task, Bash(gh:*), Bash(git:*), Monitor, PushNotification, TaskStop, Skill, AskUserQuestion, Read, Edit, Write
+allowed-tools: Task, Bash(gh:*), Bash(git:*), ExitWorktree, Monitor, PushNotification, TaskStop, Skill, AskUserQuestion, Read, Edit, Write
 description: Reviews a pull request: runs its own baseline review of the PR diff, then a persistent Monitor watches CI and incoming reviewer comments, triages each comment through an independent skeptical agent, applies only verified fixes, and commits+pushes via /git:commit-and-push until CI passes and no comments remain to adopt — then asks whether to merge. Use this skill when the user asks to "review a PR", "monitor PR review comments", "address reviewer feedback on #123", or "watch CI on a pull request".
 argument-hint: <PR number or URL> [--auto-merge]
 user-invocable: true
@@ -57,7 +57,7 @@ Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `refer
 
 ## Phase 5: Closeout — Merge Decision First, Then Ceremony
 
-**Goal**: Once Phase 4 holds, ask the user whether to merge FIRST — before any ceremony. The summary comment and body rewrite run only on a merge choice; "Don't merge" skips the ceremony and goes straight to `TaskStop`. Full templates and ordered steps in `references/closeout.md`.
+**Goal**: Once Phase 4 holds, ask the user whether to merge FIRST — before any ceremony. The summary comment and body rewrite run only on a merge choice; "Don't merge" skips the ceremony and goes straight to `TaskStop`. On a merge choice, post-merge hygiene (linked-worktree removal, switch to `main`, sync with origin) runs unconditionally. Full templates and ordered steps in `references/closeout.md`.
 
 **CRITICAL constraints (hold even when detail is delegated to L3)**:
 1. **Arm the closeout state the moment Phase 4 holds — before anything else**: `bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/arm-closeout.sh "$PR"` (append `--auto-merge` when the opt-in was parsed in Phase 1). This writes the repo's `.git/review-pr-closeout.json`, arming the plugin's Stop hook: while the file exists, every turn end is blocked with a message naming the missing merge decision — the Phase 5 ask cannot be skipped by a premature stop (bounded by Claude Code's 8-consecutive-block cap per turn; a user interrupt also bypasses it). **When the hook blocks, first verify the pending closeout is real** — a stale state file (ask already answered, summary posted, or PR merged without clearing) is a false alarm: judge simple checks directly (`gh pr view --json state,mergedAt`, the `<!-- review-pr:summary -->` marker lookup), spawn an independent subagent with clean context for complex or ambiguous situations — see `references/closeout.md` (When the hook fires). A verified-stale state is cleared, not re-asked. Clear it the moment the decision is resolved — `bash ${CLAUDE_PLUGIN_ROOT}/skills/review-pr/scripts/clear-closeout.sh "$PR"`: after the user answers (any choice, including "Don't merge"), after the auto-merge completes, or after the opt-in aborts. A stale file blocks the next stop; its message repeats the clear path.
@@ -68,7 +68,7 @@ Stop the Monitor with `TaskStop` when EITHER holds — full conditions in `refer
 6. Do not sign the summary as AI-generated; body describes the change, comment records the review cycle — keep them distinct.
 7. Do not ask to merge or run the ceremony while CI is red or comments remain open; never auto-merge past open `escalate` items.
 8. Merge only after an explicit `AskUserQuestion` choice (merge [Recommended]/squash/rebase/don't); never `--auto`. **`--auto-merge` opt-in**: when the flag was parsed in Phase 1, skip the `AskUserQuestion` but still run the ceremony first, then auto-merge with `gh pr merge --merge` (NOT `--auto`) once CI is green AND every non-escalate comment is triaged — see `references/closeout.md` (Merge decision → Auto-merge branch). If any `escalate` comment remains open, the opt-in is suspended: **re-arm the closeout state without `--auto-merge`** (`arm-closeout.sh "$PR"`) so the hook enforces the explicit ask, fall back to the `AskUserQuestion` and surface the escalate items in the question text. Auto-merge is a single-shot choice for this PR; it does not re-arm after a failure or an interrupt.
-9. Never force long-lived branch updates; `--delete-branch` is the default (omitted only in linked worktrees).
+9. Never force long-lived branch updates; `--delete-branch` is the default (omitted only in linked worktrees). Post-merge hygiene runs unconditionally: remove the linked worktree (`ExitWorktree action:"remove"`), switch to `main`, and fast-forward-sync `main`/`develop` with origin — see `references/closeout.md` (After a successful merge).
 
 `TaskStop` the Monitor after closeout completes — with the closeout state already cleared.
 

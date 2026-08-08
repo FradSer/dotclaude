@@ -255,7 +255,9 @@ exists to prevent. The user may still pick merge from the question; that is thei
    outward-facing, so warn the user before it lands (they may still interrupt to stop it).
    One line: e.g. "PR #<n>: CI green, no open comments — auto-merging with a merge commit."
 3. Run `gh pr merge "$PR" --repo "$REPO" --merge --delete-branch` (safe only in the main
-   worktree when no open PR still bases on that head). Never `--auto`.
+   worktree when no open PR still bases on that head; in a linked worktree, omit
+   `--delete-branch` — delete the remote head separately if stack-safe, leave the local
+   branch for `ExitWorktree`). Never `--auto`.
 4. Clear the closeout state (`clear-closeout.sh "$PR"`) — the opt-in is consumed by the merge.
 
 **Single-shot.** Auto-merge is a one-shot choice for this PR. If the merge fails (branch
@@ -275,11 +277,24 @@ retry with different flags or force-push.
 
 ## After a successful merge
 
-Default cleanup — run all of these unconditionally (no opt-out):
+Default cleanup — run all of these unconditionally on a merge choice (no opt-out):
 
-1. Ensure remote head is gone when stack-safe (and local head in the main worktree).
-2. `fetch --prune`, then fast-forward local `main` and `develop` when present on origin,
-   plus the PR's `baseRefName` if it is neither. Never force long-lived branches.
+1. **Remove the linked worktree first, before any switch.** Detect whether the closeout is
+   running in a linked worktree (`/github:resolve-issues`):
+   ```bash
+   [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ] && echo "linked worktree"
+   ```
+   If linked, `ExitWorktree action:"remove"` — it deletes the worktree and its local branch
+   and returns the session to the main worktree. If it refuses (uncommitted changes), confirm
+   with the user before `discard_changes: true`. Then delete the remote head separately if
+   stack-safe (no open PR still bases on it).
+2. **Switch to `main` and sync.** Now in the main worktree, run:
+   ```bash
+   git fetch --prune
+   git checkout main && git pull --ff-only
+   ```
+   Repeat the `--ff-only` pull for `develop` and the PR's `baseRefName` when present on
+   origin (check each out first, then land back on `main`). Never force long-lived branches.
 3. Delete every local branch already merged into `main`/`develop` (except the current branch).
    ```bash
    git branch --merged main | grep -v '^\*\|main\|develop' | xargs -r git branch -d
@@ -287,13 +302,6 @@ Default cleanup — run all of these unconditionally (no opt-out):
 4. `git worktree prune` to remove stale administrative records.
 5. Scan `.claude/worktrees/` for stale worktree directories whose branch is already merged
    or no longer exists. Report them to the user and suggest manual `rm -rf` removal.
-
-**Linked worktree** (from `/github:resolve-issues`): do NOT switch onto `main`/`develop` or
-delete the issue head from within the closeout — the linked worktree's own branch and worktree
-are cleaned up by resolve-issues Phase 4 (`ExitWorktree action:"remove"`), which should run
-in a later turn. The closeout's job is limited to: fetch + prune on the main worktree side.
-If the linked worktree persists with a stale branch already merged, report it to the user
-as a reminder to run resolve-issues Phase 4.
 
 ## Stacked / chained PRs (base branch is a shared dependency)
 
@@ -354,11 +362,12 @@ until the comment is posted. Never rewrite the body first and backfill the link 
      the linked-worktree caveat). Never `--auto`.
    - **`--auto-merge` opt-in**: the gate held with zero open `escalate` items, so step 2
      was skipped; after the ceremony (steps 3–5), send a `PushNotification` then run
-     `gh pr merge --merge --delete-branch` directly. If any `escalate` item is open, suspend
+     `gh pr merge --merge --delete-branch` directly (omitting `--delete-branch` in a linked
+     worktree, same rule as the explicit path). If any `escalate` item is open, suspend
      auto-merge and fall back to the explicit question. Clear the closeout state after the
      merge completes or after the opt-in aborts (failure, interrupt, or gate no longer holds)
      — it is single-shot, consumed either way.
-7. After a successful merge: head cleanup + sync `main`/`develop` + delete merged local branches + `git worktree prune` + scan stale worktrees (see "After a successful merge" above).
+7. After a successful merge: remove the linked worktree (`ExitWorktree action:"remove"`) + switch to `main` + sync `main`/`develop` + delete merged local branches + `git worktree prune` + scan stale worktrees (see "After a successful merge" above).
 8. `TaskStop` the Monitor (the closeout state is already cleared).
 
 Steps 3–5 (the ceremony) are idempotent: re-running `gh pr edit` with the same title/body is
