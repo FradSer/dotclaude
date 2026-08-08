@@ -108,10 +108,16 @@ def _load_config() -> dict:
     merged: dict = {}
 
     def expand(value):
-        """Resolve `$VAR` and `${VAR}` strings against the process environment."""
-        if isinstance(value, str) and value.startswith("$"):
-            var = value[2:-1] if value.startswith("${") else value[1:]
-            return os.environ.get(var, "")
+        """Resolve `$VAR` and `${VAR}` strings against the process environment.
+        Handles embedded vars too (e.g. \"http://$BASE_URL/path\")."""
+        if isinstance(value, str):
+            import re
+            result = value
+            for match in re.finditer(r'\$\{?(\w+)\}?', value):
+                var_name = match.group(1)
+                var_value = os.environ.get(var_name, "")
+                result = result.replace(match.group(0), var_value)
+            return result
         if isinstance(value, dict):
             return {k: expand(v) for k, v in value.items()}
         if isinstance(value, list):
@@ -135,6 +141,7 @@ def _load_config() -> dict:
 
     # Lowest priority first; later files override earlier ones.
     merge_file(Path.home() / ".claude" / "vision.json")
+    merge_file(Path.home() / ".claude" / "vision.local.json")
     for d in [Path.cwd(), *Path.cwd().parents]:
         if (d / ".claude").is_dir():
             merge_file(d / ".claude" / "vision.json")
@@ -210,6 +217,9 @@ class Cfg:
             or _cfg_str("baseUrl") or _cfg_str("upstreamUrl") or _cfg_str("upstream.url")
             or _env("ANTHROPIC_BASE_URL") or ""
         ).rstrip("/")
+        # Strip trailing /v1 — the proxy appends its own path including /v1/
+        if self.upstream.endswith("/v1"):
+            self.upstream = self.upstream[:-3]
 
         # blockedModels: list or comma-separated string. Models matching any
         # substring are bridged (described via vision endpoint). An explicit
