@@ -1,0 +1,46 @@
+{
+  "name": "mattpocock",
+  "displayName": "Matt Pocock Skills",
+  "version": "0.1.3",
+  "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.3",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "bdd",
+    "tdd",
+    "code-review",
+    "engineering"
+  ],
+  "skills": [
+    "./skills/engineering/ask-matt",
+    "./skills/engineering/diagnosing-bugs",
+    "./skills/engineering/grill-with-docs",
+    "./skills/engineering/triage",
+    "./skills/engineering/improve-codebase-architecture",
+    "./skills/engineering/setup-matt-pocock-skills",
+    "./skills/engineering/bdd",
+    "./skills/engineering/tdd",
+    "./skills/engineering/to-spec",
+    "./skills/engineering/to-tickets",
+    "./skills/engineering/wayfinder",
+    "./skills/engineering/implement",
+    "./skills/engineering/prototype",
+    "./skills/engineering/research",
+    "./skills/engineering/domain-modeling",
+    "./skills/engineering/codebase-design",
+    "./skills/engineering/code-review",
+    "./skills/engineering/resolving-merge-conflicts",
+    "./skills/engineering/wizard",
+    "./skills/productivity/grill-me",
+    "./skills/productivity/grilling",
+    "./skills/productivity/handoff",
+    "./skills/productivity/teach",
+    "./skills/productivity/to-questionnaire",
+    "./skills/productivity/wait-what",
+    "./skills/productivity/writing-for-agents",
+    "./skills/productivity/writing-great-skills"
+  ]
+}

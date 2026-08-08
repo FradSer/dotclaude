@@ -8,7 +8,7 @@ scopes:
     - name: cctx
       description: Code context research, codebase-wide dependency tracking, and environment mapping in code-context/.
     - name: git
-      description: Git repository configuration, commit hygiene, hooks, and changelog generation in git/; does not cover GitHub integration.
+      description: Git repository configuration, commit hygiene, hooks, and changelog generation in git/; does not cover github/.
     - name: gh
       description: GitHub PR management, review loops, issue triage, and workflow automation in github/.
     - name: hw
@@ -16,20 +16,14 @@ scopes:
     - name: hf
       description: Marketing video authoring and HyperFrames generation engines in hyperframes/; does not cover marketing/.
     - name: mkt
-      description: Marketing automation, copy-editing, SEO, attribution, and landing page conversion skills in marketing/; does not cover hyperframes/.
+      description: Marketing automation, SEO, attribution, and landing page conversion in marketing/; does not cover hyperframes/.
     - name: mem
       description: Dual-layer memory sync, plugin state consolidation, and recall systems in memory/.
     - name: "off"
-      description: Lark integration suite, agent-browser, media generation, and office productivity tools in office/; does not cover coding-specific plugins.
+      description: Lark integration, office productivity, and media generation in office/; does not cover coding plugins.
     - name: po
       description: Plugin optimizer, validation framework, and structural metadata integrity in plugin-optimizer/.
     - name: ref
       description: Code simplification agents, refactoring logic, and architectural redesigns in refactor/.
-    - name: storm
-      description: STORM article generation, knowledge research, and outlining pipeline in storm/.
-    - name: sd
-      description: SuperDev engineering skills, bug diagnosis, domain modeling, and developer productivity tools in superdev/.
     - name: sp
       description: Autonomous superpower planning, evaluation harness, task orchestration, and BDD testing in superpowers/.
-    - name: sw
-      description: SwiftUI code review standards and design guidelines in swiftui/.

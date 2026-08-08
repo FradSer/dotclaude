@@ -42,7 +42,7 @@ channel / read-rate 证据 / meta-retrospective skill），4 condition 全未达
 `retro-2026-07-04-docs-index-plan.md`、`2026-05-09-v3-considered-deferred.md`）已删。
 这些是 superpowers v2.8.x 工作流（bail-log、post-plan-diff、SessionStart dispatcher、
 using-superpowers 路由）的快照——v3.8.0 删 SessionStart hook + using-superpowers dispatcher，
-superdev 从头重实现自改进（只 `jsonl-emit` + `seed-checklists` 存活）。
+mattpocock 从头重实现自改进（只 `jsonl-emit` + `seed-checklists` 存活）。
 
 产出未丢：所有 ADD/MODIFY 已沉淀进 `docs/retros/checklists/{design,plan,code}-v{N}.md`，
 `evolution-log.jsonl` 保留 `item_added`/`item_modified` 行。可迁移教训（`repo_root()` fallback

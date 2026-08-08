@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 18 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, github, refactor, swiftui, office, lark, hyperframes, plugin-optimizer, superdev, superpowers, antigravity
+**Active plugins:** git, github, refactor, swiftui, office, lark, hyperframes, plugin-optimizer, mattpocock, superpowers, antigravity
 
 **Non-active plugins:** acpx, code-context, utils, meeseeks-vetted
 

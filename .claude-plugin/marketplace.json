@@ -117,17 +117,17 @@
    "homepage": "https://github.com/FradSer/dotclaude/tree/main/refactor"
   },
   {
-   "name": "superdev",
-   "displayName": "Superdev",
+   "name": "mattpocock",
+   "displayName": "Mattpocock",
    "version": "0.1.3",
    "description": "BDD-first engineering skills forked from mattpocock/skills v1.2.3",
    "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
    },
-   "source": "./superdev",
+   "source": "./mattpocock",
    "category": "productivity",
-   "homepage": "https://github.com/FradSer/dotclaude/tree/main/superdev",
+   "homepage": "https://github.com/FradSer/dotclaude/tree/main/mattpocock",
    "keywords": []
   },
   {

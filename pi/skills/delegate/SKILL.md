@@ -3,7 +3,7 @@ name: delegate
 description: Delegates a coding task to pi (dev/pi), a minimal terminal coding harness. This skill should be used when the user asks to "use pi", "run pi", "delegate to pi", "let pi handle this", "ask pi to", "have pi do", or invokes /pi:delegate. It bridges the current Claude Code context to pi CLI for execution, passing relevant files, git state, and the task description.
 user-invocable: true
 argument-hint: "<task description> [--provider PROVIDER] [--model MODEL] [--base-url URL] [--thinking LEVEL] [--tools TOOL_LIST] [--exclude-tools TOOL_LIST] [--no-files] [--no-git] | --edit-config [--local|--shared|--global]"
-allowed-tools: ["Bash(pi:*)", "Read", "Grep", "Glob"]
+allowed-tools: ["Bash(git:*)", "Bash(jq:*)", "Bash(ls:*)", "Bash(find:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(echo:*)", "Bash(command:*)", "Bash(pi:*)", "Read", "Grep", "Glob"]
 ---
 
 # CRITICAL: pi CLI Integration
@@ -66,17 +66,17 @@ CONFIG='{}'
 
 # 1. Global personal (lowest priority)
 if [ -f "$HOME/.claude/pi.local.json" ]; then
-  CONFIG=$(jq -s '.[0] * .[1]' <<<"$CONFIG" "$HOME/.claude/pi.local.json" 2>/dev/null || echo "$CONFIG")
+  CONFIG=$(jq -s '.[0] * .[1]' /dev/stdin "$HOME/.claude/pi.local.json" 2>/dev/null <<<"$CONFIG" || echo "$CONFIG")
 fi
 
 # 2. Project shared
 if [ -f ".claude/pi.json" ]; then
-  CONFIG=$(jq -s '.[0] * .[1]' <<<"$CONFIG" ".claude/pi.json" 2>/dev/null || echo "$CONFIG")
+  CONFIG=$(jq -s '.[0] * .[1]' /dev/stdin ".claude/pi.json" 2>/dev/null <<<"$CONFIG" || echo "$CONFIG")
 fi
 
 # 3. Project personal (highest file priority)
 if [ -f ".claude/pi.local.json" ]; then
-  CONFIG=$(jq -s '.[0] * .[1]' <<<"$CONFIG" ".claude/pi.local.json" 2>/dev/null || echo "$CONFIG")
+  CONFIG=$(jq -s '.[0] * .[1]' /dev/stdin ".claude/pi.local.json" 2>/dev/null <<<"$CONFIG" || echo "$CONFIG")
 fi
 ```
 
@@ -160,15 +160,9 @@ For each flag, resolve the value by checking CLI flag first, then settings file,
 
 Collect context from the current working directory before calling pi. The goal is to give pi the same situational awareness that Claude Code has.
 
-### 1. Collect File Context (unless `--no-files`)
+### 1. Pass the Whole Branch Context
 
-Use Glob to find relevant files in the current directory. Collect:
-
-- **Modified files** (from git status)
-- **Key project files**: README.md, CLAUDE.md, AGENTS.md, package.json, pyproject.toml, go.mod, Cargo.toml, etc.
-- **Files the user explicitly mentioned** in their request
-
-For each file, use `@filepath` syntax when passing to pi. Do NOT read the file contents yourself — pi will handle that.
+**pi has `read`, `grep`, `find`, and `ls` tools** — it can explore the codebase on its own. Do not pass `@.` file references (pi errors on directory paths). Just pass the task description and let pi use its tools to read what it needs.
 
 ### 2. Collect Git Context (unless `--no-git`)
 
@@ -207,7 +201,7 @@ Build the pi command with these components in order:
    - `--tools <value>` (only if user wants to restrict)
    - `--exclude-tools <value>` (only if user specified)
 5. **Session control**: `--no-session --no-context-files --approve`
-6. **File references**: `@file1.ts @file2.ts @README.md` (for each collected file, relative paths)
+6. **File references**: `@.` (pass the entire working directory — pi reads what it needs). Only use specific `@filepath` references when the user explicitly names particular files.
 7. **Appended context**: `--append-system-prompt "context block"` (for git status, directory listing, etc.)
 8. **Task description**: The quoted task description as the final argument
 
@@ -233,15 +227,17 @@ Current branch: $(git branch --show-current 2>/dev/null || echo '')"
 
 ### Execute
 
+Always use `Bash` with `run_in_background` — pi -p is a single-shot command, not a continuous stream. Monitor is designed for event streams (like `tail -f`) and will timeout when pi's output is delayed or batched.
+
+**Do not add a shell `timeout`** — pi tasks can be heavy and may run for a long time. Let pi run to completion naturally.
+
 ```bash
-# Default: anthropic provider, low thinking, full tools
-pi -p --provider anthropic --thinking low --no-session --no-context-files --approve @file1.ts @file2.ts "task description"
+# Build the pi command — no file references, pi uses its tools to explore
+PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve \"task description\""
 
-# With custom base URL (OpenAI-compatible endpoint) — models.json already configured
-pi -p --provider openai --model gemini-3.6-flash --thinking low --no-session --no-context-files --approve @file1.ts "task description"
+# Run in background — no timeout, let pi finish naturally
+bash -c "$PI_CMD 2>&1" &
 ```
-
-For long-running tasks, use Monitor with a timeout (default 300s, extend with `--timeout` if the task is expected to be long).
 
 ### Important: Pi's Default Provider
 
@@ -273,29 +269,46 @@ The `--provider` defaults to `openai` when `--base-url` is used (since custom en
 
 ## Handling Output
 
+### CRITICAL: pi's Real Output Is File Edits, Not stdout
+
+**pi writes code by editing files in the working directory. Its stdout is secondary — often empty or minimal, especially with long `--append-system-prompt`.** Do not judge success by stdout content.
+
+| Signal | Meaning |
+|--------|---------|
+| Exit code 0 | pi completed successfully |
+| Exit code 1 | pi failed (check stderr) |
+| stdout empty | Normal — pi already applied edits to files |
+| Modified files exist | Reliable indicator of work done |
+
 ### On Success (exit code 0)
 
-Present pi's output as the result. If the output is a single block of text, show it directly. If it contains structured information (file changes, analysis results), format it clearly.
+**Always check for modified files first** — this is where pi's real output lives:
 
-### On Error (exit code 1)
+```bash
+git diff --stat
+```
+
+- If git shows changes, present those changes to the user. Describe what pi modified (additions, deletions, file count).
+- If git shows no changes and exit was 0, the task was understood but resulted in no modifications (read-only analysis, conceptual questions, or the task was already satisfied).
+
+Include pi's stdout in the report if it's non-empty, but the file changes are the primary deliverable.
+
+### On Error (exit code 1+)
 
 Show the error message from stderr. Common error causes:
 - pi not configured (no API key)
 - Provider/model not available
-- Task interrupted or timed out
-
-### On Timeout
-
-If the Monitor times out, report: "pi task timed out after N seconds. The task may still be running. Consider using a more specific task description or passing --timeout with a larger value."
+- Task interrupted or killed
 
 ## Usage Examples
 
 ### Basic task with file context
 User: `/pi:delegate review the TypeScript types in src/`
 
-Claude: Collects all .ts files in src/ via Glob, builds git context, then runs:
+Claude: Collects git context, passes the whole directory, then runs:
 ```bash
-pi -p --provider anthropic --thinking low --no-session --no-context-files --approve @src/types.ts @src/index.ts --append-system-prompt "Git status: ..." "review the TypeScript types in src/"
+PI_CMD='pi -p --provider anthropic --thinking low --no-session --no-context-files --approve --append-system-prompt "Git status: ..." "review the TypeScript types in src/"'
+bash -c "$PI_CMD 2>&1" &
 ```
 
 ### Specific model
@@ -303,7 +316,8 @@ User: `/pi:delegate refactor this component --model claude-sonnet-4-20250514`
 
 Claude: Collects context, passes --model flag:
 ```bash
-pi -p --provider anthropic --model claude-sonnet-4-20250514 --thinking low --no-session --no-context-files --approve @src/component.tsx "refactor this component"
+PI_CMD='pi -p --provider anthropic --model claude-sonnet-4-20250514 --thinking low --no-session --no-context-files --approve --append-system-prompt "Git status: ..." "refactor this component"'
+bash -c "$PI_CMD 2>&1" &
 ```
 
 ### Custom base URL (OpenAI-compatible proxy)
@@ -311,7 +325,8 @@ User: `/pi:delegate write unit tests for this module --base-url http://10.10.0.1
 
 Claude: Writes baseUrl to `~/.pi/agent/models.json` for the `openai` provider, then runs:
 ```bash
-pi -p --provider openai --model gemini-3.6-flash --thinking low --no-session --no-context-files --approve @src/module.ts "write unit tests for this module"
+PI_CMD='pi -p --provider openai --model gemini-3.6-flash --thinking low --no-session --no-context-files --approve --append-system-prompt "Git status: ..." "write unit tests for this module"'
+bash -c "$PI_CMD 2>&1" &
 ```
 
 ### Read-only analysis
@@ -319,7 +334,8 @@ User: `/pi:delegate audit the security of this codebase --tools read,grep,find,l
 
 Claude: Passes --tools to restrict pi to read-only tools:
 ```bash
-pi -p --provider anthropic --thinking low --tools read,grep,find,ls --no-session --no-context-files --approve @src/ "audit the security of this codebase"
+PI_CMD='pi -p --provider anthropic --thinking low --tools read,grep,find,ls --no-session --no-context-files --approve "audit the security of this codebase"'
+bash -c "$PI_CMD 2>&1" &
 ```
 
 ### No file context, just conceptual
@@ -327,7 +343,8 @@ User: `/pi:delegate explain how React reconciliation works --no-files`
 
 Claude: Skips file collection, just sends the prompt:
 ```bash
-pi -p --provider anthropic --thinking low --no-session --no-context-files --approve "explain how React reconciliation works"
+PI_CMD='pi -p --provider anthropic --thinking low --no-session --no-context-files --approve "explain how React reconciliation works"'
+bash -c "$PI_CMD 2>&1" &
 ```
 
 ## Important Notes
@@ -339,6 +356,6 @@ pi -p --provider anthropic --thinking low --no-session --no-context-files --appr
 - `--no-session` prevents pi from creating session files.
 - `--no-context-files` prevents pi from reading its own AGENTS.md/CLAUDE.md (which could conflict with the current project's context).
 - `--approve` skips any project trust prompts (non-interactive mode).
-- File paths are passed as `@filepath` (relative to cwd) — pi handles reading and embedding them.
+- File paths are passed as `@filepath` (relative to cwd) — pi handles reading and embedding them. Use `@.` to pass the entire working directory.
 - Git context is passed via `--append-system-prompt` as structured text.
 - For very large file sets, be selective: only pass the most relevant files (key source files, configuration, and files the user mentioned). Passing too many files can hit context limits.
