@@ -14,7 +14,7 @@ Launch a `code-context:context-researcher` agent that executes the full workflow
 
 1. **Split `$ARGUMENTS`** into positional targets and the optional `--method` flag.
    - `--method=` accepts a comma-separated list from `deepwiki,context7,exa,clone,web,all`. Default: `all`.
-   - Quoted strings are one target: `"对比 zustand vs jotai 状态管理"` is a single natural-language query.
+   - Quoted strings are one target: `"compare zustand vs jotai state management"` is a single natural-language query.
    - Multiple positional tokens are multiple targets: `facebook/react zustand` = two targets.
 2. **Classify each target**:
    - GitHub slug (`owner/repo`) or git URL → repo target (DeepWiki / clone).

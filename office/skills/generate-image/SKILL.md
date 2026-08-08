@@ -1,6 +1,6 @@
 ---
 name: generate-image
-description: Generate or edit images via two backends: Google Gemini (gemini-3-pro-image) or any OpenAI-compatible endpoint (gpt-image-2, dall-e-3). Use when the user wants to create, draw, illustrate, or edit an image, icon, logo, poster, or concept art — triggers include "generate an image", "draw me", "create an illustration", "生成图片", "画一张".
+description: Generate or edit images via two backends: Google Gemini (gemini-3-pro-image) or any OpenAI-compatible endpoint (gpt-image-2, dall-e-3). Use when the user wants to create, draw, illustrate, or edit an image, icon, logo, poster, or concept art.
 user-invocable: true
 argument-hint: "\"PROMPT\" --backend gemini|openai [-o out.png] [-i input.png ...] [--aspect-ratio 16:9] [--size 2K|1024x1024] [--count N] [--model ...] [--base-url URL]"
 allowed-tools: ["Read", "Write", "AskUserQuestion", "Bash(uv run:*)", "Bash(*/generate_image.py:*)"]

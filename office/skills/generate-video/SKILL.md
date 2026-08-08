@@ -1,6 +1,6 @@
 ---
 name: generate-video
-description: Generate short videos from a text prompt or from still images using ByteDance Seedance on Volcengine Ark (火山方舟). Use this skill whenever the user wants to create, generate, render, or animate a video, clip, animation, motion graphic, or product demo — including text-to-video ("a drone shot over a forest at sunrise") and image-to-video, where a still becomes the first frame, or two stills are morphed start-to-end. Triggers include "generate a video", "make a clip", "animate this image", "turn this storyboard into video", "生成视频", "做个视频", "让这张图动起来", "图生视频", "首尾帧生成视频". Prefer this skill over describing a video in text.
+description: Generate short videos from a text prompt or from still images using ByteDance Seedance on Volcengine Ark. Use this skill whenever the user wants to create, generate, render, or animate a video, clip, animation, motion graphic, or product demo — including text-to-video ("a drone shot over a forest at sunrise") and image-to-video, where a still becomes the first frame, or two stills are morphed start-to-end. Prefer this skill over describing a video in text.
 user-invocable: true
 argument-hint: "\"PROMPT\" [-o out.mp4] [--first-frame img] [--last-frame img] [--duration 5] [--resolution 720p] [--ratio 16:9] [--no-audio] [--seed N]"
 allowed-tools: ["Read", "Write", "AskUserQuestion", "Bash(uv run:*)", "Bash(*/generate_video.py:*)"]
