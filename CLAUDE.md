@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 18 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 21 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, github, refactor, swiftui, office, lark, hyperframes, plugin-optimizer, mattpocock, superpowers, antigravity
+**Active plugins:** git, github, refactor, swiftui, office, lark, hyperframes, plugin-optimizer, mattpocock, superpowers, antigravity, pi, interfaces, storm, hardware, autoresearch, memory
 
 **Non-active plugins:** acpx, code-context, utils, meeseeks-vetted
 
@@ -55,16 +55,6 @@ Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
 
 **`strict` field in marketplace.json:** Default is `true`. Set `"strict": false` on a plugin entry (see `office`) to relax marketplace validation for plugins that intentionally bundle non-standard content.
 
-**Token budgets (official best practices):**
-- Level 1 (Metadata): ~100 tokens for name + description - always loaded at startup
-- Level 2 (Instructions): Under 5k tokens for SKILL.md body - loaded when skill triggered
-- Level 3 (Resources): Effectively unlimited - loaded as needed via bash
-
-Validation script enforces these limits with exit codes:
-- 0 = passed (no MUST violations)
-- 1 = failed (MUST violations detected)
-- 2 = critical (token budget exceeded, MUST refactor)
-
 **Creating a New Plugin:**
 1. `mkdir -p plugin-name/{.claude-plugin,skills,agents}`
 2. Add `plugin.json` with name, description, author, version, keywords, license
@@ -72,24 +62,9 @@ Validation script enforces these limits with exit codes:
 4. Run `/utils:update-readme` to sync `README.md` and `README.zh-CN.md`
 5. Validate with plugin-optimizer before committing
 
-**Required plugin.json fields:**
-```json
-{
-  "name": "plugin-name",
-  "version": "0.1.0",
-  "description": "Brief description",
-  "author": {
-    "name": "Frad LEE",
-    "email": "fradser@gmail.com"
-  },
-  "license": "MIT",
-  "keywords": ["keyword1", "keyword2"]
-}
-```
-
 ## Git Commit Conventions
 
-**Scopes:** acpx, ag, as, cctx, fe, git, github, hw, hyperframes, lark, marketing, mem, office, po, refactor, sd, sp, storm, swiftui, utils
+**Scopes:** acpx, ag, as, cctx, fe, git, github, hw, hyperframes, lark, marketing, mem, office, pi, po, refactor, sd, sp, storm, swiftui, utils
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 
@@ -99,59 +74,10 @@ Validation script enforces these limits with exit codes:
 
 ## Plugin Development Patterns
 
-### Commands (instructions FOR Claude)
+Reference materials for plugin development patterns live in `plugin-optimizer/skills/plugin-best-practices/` and `plugin-optimizer/examples/`. The `.research/` directory (gitignored) contains upstream Anthropic plugin references for comparison.
 
-```yaml
----
-description: "Short description for /help"
-argument-hint: "<required> [optional]"
-allowed-tools: ["Read", "Bash(git:*)"]  # NEVER bare Bash
----
-```
-
-- Write directives TO Claude, not descriptions FOR users
-- Dynamic context: `` !`git status` `` (backticks required)
-- Variables: `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}`
-
-### Agents (autonomous subprocesses)
-
-```yaml
----
-name: agent-name
-description: Use this agent when... <example>blocks required</example>
-model: inherit  # or sonnet/opus/haiku
-color: blue     # blue/cyan/green/yellow/magenta/red
-tools: ["Read", "Grep", "Glob"]
----
-You are an expert... (second person system prompt)
-```
-
-- **Must include 2-4 `<example>` blocks** with Context, user, assistant, commentary
-- Structure: Role → Responsibilities → Process → Standards → Output Format
-
-### Skills (domain knowledge)
-
-```yaml
----
-name: skill-name
-description: This skill should be used when... (third person, trigger phrases)
-user-invocable: true  # false for internal-only skills
----
-```
-
-- Imperative body style ("Parse the file...", not "You should...")
-- Keep under 2000 words; move details to `references/`
-- Reference files explicitly: "See `references/advanced.md` for details"
-
-## Tool Invocation Rules (Critical)
-
-| Tool Category | In Plugin Content |
-|--------------|-------------------|
-| File ops (Read, Write, Edit, Glob, Grep) | Describe actions directly, never "Use X tool" |
-| Bash | Describe commands directly: "Run `git diff`" |
-| Skill | **Always explicit**: "Load X skill using the Skill tool" |
-| Task | Describe agent launch: "Launch explore agent" |
-
-## Reference Materials
-
-Best practices and file pattern examples live inside `plugin-optimizer/skills/plugin-best-practices/` and `plugin-optimizer/examples/`. The `.research/` directory (gitignored) contains upstream Anthropic plugin references for comparison.
+### Key rules
+- **Commands** write directives TO Claude, not descriptions FOR users. Use `$ARGUMENTS`, `${CLAUDE_PLUGIN_ROOT}` for dynamic context. Never use bare `Bash` in `allowed-tools`.
+- **Agents** must include 2-4 `<example>` blocks. Structure: Role → Responsibilities → Process → Standards → Output Format.
+- **Skills** under 2000 words; move details to `references/`. Imperative body style ("Parse the file...", not "You should...").
+- **Tool invocation** in plugin content: file ops → describe directly; Bash → run the command; Skill → "Load X skill using the Skill tool"; Task → "Launch explore agent".

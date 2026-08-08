@@ -1,0 +1,23 @@
+{
+  "name": "vision",
+  "displayName": "Vision Bridge",
+  "version": "0.1.0",
+  "description": "Gives non-vision models (deepseek, ...) eyes: a UserPromptSubmit hook auto-describes image file paths, and a transparent local proxy replaces pasted-screenshot image blocks with text from a gateway vision model before forwarding upstream. Includes a /vision bridge management command.",
+  "keywords": [
+    "vision",
+    "multimodal",
+    "proxy",
+    "gemini",
+    "bridge",
+    "non-vision",
+    "image"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Frad LEE",
+    "email": "fradser@gmail.com"
+  },
+  "commands": [
+    "./skills/bridge/"
+  ]
+}

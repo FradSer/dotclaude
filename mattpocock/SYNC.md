@@ -1,14 +1,14 @@
 # SYNC.md — 与上游 mattpocock/skills 的同步手册
 
-本文档记录 mattpocock 插件如何与上游 [mattpocock/skills](https://github.com/mattpocock/skills) 保持同步。**每次同步前先读此文档**——它包含上次同步（2026-08-07，v1.2.0 → v1.2.3）踩过的坑和固化的决策。
+本文档记录 mattpocock 插件如何与上游 [mattpocock/skills](https://github.com/mattpocock/skills) 保持同步。**每次同步前先读此文档**——它包含历次同步/改造踩过的坑和固化的决策。
 
 ## 当前基线
 
 | 项 | 值 |
 |---|---|
 | 上游 tag | **v1.2.3**（检查最新：`git ls-remote --tags https://github.com/mattpocock/skills.git`） |
-| 本地插件版本 | **0.1.3**（`mattpocock/.claude-plugin/plugin.json`） |
-| 注册 skill 数 | **27**（新增 tdd 作为 BDD Automation 参考） |
+| 本地插件版本 | **0.1.3**（`mattpocock/.claude-plugin/plugin.json`，2026-08-08 改名+tdd 改制未 bump） |
+| 注册 skill 数 | **27**（bdd + BDD-driven tdd 取代上游 tdd 镜像） |
 
 ## 核心原则
 
@@ -71,7 +71,7 @@ diff -rq /tmp/skills-new/skills mattpocock/skills | grep "differ"
 - **`agents/openai.yaml`**：上游每个 skill 都有（35 个），本地若缺全部补齐。`find <上游>/skills -name openai.yaml`
 - **`ask-matt/PHASE-BOUNDARIES.md`**（上游有，本地曾缺）
 - **整目录 skill**：`wait-what`、`writing-for-agents`（上游注册，本地曾缺）
-- **`engineering/tdd`**：上游注册；本地刻意用 `bdd` 替代——**tdd 完整镜像但不注册**（见决策）
+- **`engineering/tdd`**：上游注册；本地改写成 **BDD-driven TDD**（BDD Automation 阶段实现参考），**已注册**（见决策）
 
 检查命令：
 ```bash
@@ -134,9 +134,45 @@ python3 plugin-optimizer/scripts/validate-plugin.py mattpocock
 3. **多文件核心变更后跑独立审计 agent**——51 个文件变更，自审通过后仍由无实现上下文的 agent 抓到 wizard flag 缺陷。符合项目"fresh-agent audit for multi-file changes"规则。
 4. **CI 的 bypass 提示是正常的**——直接 push main 时 GitHub 提示 "Required status check ci-success is expected" 是 push 时点的异步提示，CI 随后跑完且通过。不是失败信号。
 
+## 2026-08-08 改造：superdev→mattpocock 改名 + tdd 改制 + 交叉引用修复
+
+### 改名
+- 插件目录 `superdev/` → `mattpocock/`（git mv，134 文件）
+- plugin name `superdev` → `mattpocock`，displayName → `Matt Pocock Skills`
+- skill 前缀 `/superdev:` → `/mattpocock:`
+- marketplace.json、SYNC.md、README、CLAUDE.md 等元数据同步
+- 记忆文件 `project_superdev_fork.md` → `project_mattpocock_fork.md`
+
+### tdd 改制
+- 上游 tdd 镜像不再保留，重写为 **BDD-driven TDD**（BDD Automation 阶段实现参考）
+- 注册到 plugin.json（skill 数 26→27），不再镜像上游 tdd
+- 所有流程中 tdd 均为 bdd 驱动的 Automation 阶段，非独立实践
+- bdd 的 SKILL.md 引言更新为 Discovery→Formulation→Automation 生命周期，Automation 委托给 tdd
+- tdd 顶部新增 CRITICAL 检查：直接调用时先问用户 Gherkin 场景是否已定义，否则 redirect 到 bdd
+
+### 交叉引用修复
+- `code-review`：Spec 轴明确"Gherkin scenarios (from `/mattpocock:bdd`) are authoritative acceptance criteria"
+- `to-tickets`：开篇增加"each ticket should map to one or more scenarios"
+- `diagnosing-bugs`：修复后增加"run `/mattpocock:code-review` over the fix"
+- `to-spec`：Gherkin 场景引用从 `tdd` 改为 `bdd`（Formulation 归 bdd，非 Automation）
+- `ask-matt`：Standalone 节增加 bdd 和 tdd 条目；主流程描述改为 `bdd`(Discovery→Formulation)→`tdd`(Automation)；移除 Crossing sessions 中的误放
+- `writing-great-skills`：示例从 TDD 改为 BDD
+- `bdd/references/bdd-best-practices.md`：BDD vs TDD 段改为 BDD→TDD 统一管道描述
+
+### 交叉引用验证
+- `ask-matt` 引用 26 个 skill，全部已注册，无遗漏
+- 由独立审计 agent 在隔离 worktree 中核验 8 条关键流程，全部 PASS
+- `python3 validate-plugin.py mattpocock` → PASSED no issues
+
+### 教训
+1. **tdd 的 `disable-model-invocation` 不宜加**——另一个 skill 无法加载 user-invoked skill，bdd/implement 需要能调 tdd。用 SKILL.md 顶部 CRITICAL 检查替代技术门控。
+2. **bdd 和 tdd 的职责划分必须显式写入各自的 SKILL.md 引言**——bdd 说"Automation 委托给 tdd"，tdd 说"若直接调用先检查场景是否已定义"。否则模型可能独立调 tdd 跳过 BDD 场景定义。
+3. **ask-matt 的 Standalone 节容易遗漏新 skill**——新增/注册 skill 后必须检查 ask-matt 是否提及。
+4. **skill 的引用位置语义重要**——bdd/tdd 放在 Crossing sessions 下是错误（它们不是 session 边界选项），应放在 Standalone。每次新增 skill 要确认归类正确。
+
 ## 决策记录（勿擅自更改）
 
-- **tdd 历史**：最初（2026-08-07）完整镜像上游 engineering/tdd 但不注册，作为参考优化 bdd。2026-08-08 重写为 **BDD-driven TDD**（BDD Automation 阶段实现参考），注册到 plugin.json。bdd 的 Automation 阶段委托给 tdd，两者构成统一 BDD 管道。
+- **tdd 历史**：最初（2026-08-07）完整镜像上游 engineering/tdd 但不注册，作为参考优化 bdd。2026-08-08 重写为 **BDD-driven TDD**（BDD Automation 阶段实现参考：red-green 循环、seams、mocking、anti-patterns），注册到 plugin.json。所有流程中 tdd 均为 bdd 驱动的 Automation 阶段，非独立实践。不再镜像上游 tdd——上游 tdd 的 diff 内容需手动审阅吸收，不整文件覆盖。
 - **为什么 wizard/to-questionnaire 移到上游位置**：用户明确要求"移到上游位置并注册"（wizard → engineering/，to-questionnaire → productivity/）。
 - **bdd 为什么新建 agents**：用户要求"参考 tdd 建 bdd 的 agents"，已按 tdd 极简形态建好。
-- **2026-08-08 tdd 改造**：上游 tdd 镜像不再保留，重写为 **BDD-driven TDD**（BDD Automation 阶段实现参考：red-green 循环、seams、mocking、anti-patterns），注册到 plugin.json。所有流程中 tdd 均为 bdd 驱动的 Automation 阶段，非独立实践。SYNC.md 决策表同步。
+- **tdd 的 `disable-model-invocation` 不加**：bdd/implement 的 SKILL.md 依赖加载 tdd，user-invoked 会阻断。用 SKILL.md 顶部 CRITICAL 检查替代技术门控。
