@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # To Tickets
 
-Break a plan, spec, or conversation into a set of **tickets** — tracer-bullet vertical slices, each declaring the tickets that **block** it.
+Break a plan, spec, or conversation into a set of **tickets** — tracer-bullet vertical slices, each declaring the tickets that **block** it. If the spec contains Gherkin scenarios (from `/mattpocock:bdd`), each ticket should map to one or more scenarios; the scenarios are the authoritative acceptance criteria.
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/mattpocock:setup-matt-pocock-skills` if not.
 

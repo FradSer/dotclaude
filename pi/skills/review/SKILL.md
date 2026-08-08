@@ -269,7 +269,22 @@ The review prompt given to pi must cover these dimensions. Embed them as part of
 
 ## Context Collection
 
-### 1. Git Context
+### 1. Pass CLAUDE.md as System Prompt Context
+
+Always pass the CLAUDE.md files as system prompt context so pi understands the project and user conventions. `--append-system-prompt` accepts file paths directly — pi reads them automatically.
+
+```bash
+# Build CLAUDE.md context — pass file paths, pi reads them
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+```
+
+### 2. Git Context
 
 ```bash
 git status --short
@@ -297,10 +312,19 @@ Include the diff text in `--append-system-prompt` alongside the git context.
 Always use `Bash` with `run_in_background` — pi -p is a single-shot command, not a continuous stream. **Do not add a shell `timeout`** — reviews can be heavy. **Do not use Monitor.**
 
 ```bash
+# Build CLAUDE.md context — pass file paths, pi reads them
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
 # Build the pi review command with resolved variables
 # Do NOT pass @file references by default — pi explores the codebase with its own tools
 # Only add @file.ts when the user explicitly named files
-PI_CMD="pi -p --provider $PROVIDER --model $MODEL --thinking ${THINKING:-low} --tools read,grep,find,ls --no-session --no-context-files --approve --append-system-prompt \"Git context: ...\" \"Review the code. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
+PI_CMD="pi -p --provider $PROVIDER --model $MODEL --thinking ${THINKING:-low} --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git context: ...\" \"Review the code. Focus on correctness, code quality, security, architecture, and testing. For each issue found, report: file:line: severity (HIGH/MEDIUM/LOW) + description + suggested fix. Group findings by severity. If no issues found, explicitly state that the code looks clean.\""
 
 # Run in background — no timeout
 bash -c "$PI_CMD 2>&1" &
@@ -387,6 +411,7 @@ Show the error message from stderr. Common causes:
 
 - pi runs with `--tools read,grep,find,ls` — **read-only**. It cannot edit files.
 - **Do NOT use `@.`** — pi does not support directory paths. pi has `read`, `grep`, `find`, `ls` tools and explores the codebase on its own.
+- **CLAUDE.md context is always passed** via `--append-system-prompt` as file paths — `~/.claude/CLAUDE.md` (user global) and `./CLAUDE.md` (project). pi reads them automatically.
 - **pi only knows built-in provider names** (`openai`, `anthropic`, `google`, etc.). The settings `endpoints` map is just for user convenience. The skill writes `baseUrl` to `~/.pi/agent/models.json` under the endpoint's `provider` field, then passes `--provider <provider>` to pi.
 - No shell `timeout` — reviews can be heavy and should run to completion.
 - The review rubric is embedded in the task description, not `--append-system-prompt`, to keep it in pi's context window.

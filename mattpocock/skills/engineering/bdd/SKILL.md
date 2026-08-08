@@ -5,7 +5,7 @@ description: "Behavior-driven development: Discovery → Formulation → Automat
 
 # Behavior-Driven Development (BDD)
 
-BDD is not just about tools; it's a methodology for shared understanding and high-quality implementation. This skill is the reference that makes the loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.
+BDD is not just about tools; it's a methodology for shared understanding and high-quality implementation. This skill governs the **Discovery → Formulation → Automation** lifecycle: Gherkin scenarios define the behavior, and the Automation phase (red-green loop) is delegated to `/mattpocock:tdd` (BDD-driven).
 
 When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
 
@@ -40,7 +40,7 @@ See `./references/gherkin-guide.md` for syntax and storage structure.
 
 ## Automation Phase
 
-The Automation phase (red-green loop) is governed by the `/mattpocock:tdd` skill. When the Gherkin scenario is defined and the seam is agreed, invoke `/mattpocock:tdd` for:
+The Automation phase (red-green loop) is governed by the `/mattpocock:tdd` skill (BDD-driven). When the Gherkin scenario is defined and the seam is agreed, invoke `/mattpocock:tdd` for:
 
 - **Seams** — where tests go at the public boundary
 - **Test quality** — what makes a good test, anti-patterns
@@ -80,7 +80,7 @@ Delete it and re-derive it from a failing test — do not keep it "as reference,
 | "I'll write the test after — same coverage either way" | A test written against working code always passes on the first run. That proves the test doesn't crash, not that it verifies the right behavior. Only a test that failed first, for the stated reason, has been shown capable of catching a regression. |
 | "I already manually verified it works" | Manual verification is not repeatable and leaves no regression guard. It answers "did this work once," not "will this keep working." |
 | "This is too simple to need a test" | Simple code changes behavior just as easily as complex code. The Iron Law has no complexity threshold — it has the three named exceptions below and nothing else. |
-| "I'll be pragmatic, not dogmatic, about TDD" | This is the rationalization, not an alternative to it. Every one of these tables' entries is someone being "pragmatic" about skipping the Red step. |
+| "I'll be pragmatic, not dogmatic, about BDD-driven TDD" | This is the rationalization, not an alternative to it. Every one of these tables' entries is someone being "pragmatic" about skipping the Red step. |
 | "I already spent an hour on this, deleting it is wasteful" | Sunk cost. The hour is already spent whether you delete the code or keep it; keeping untested code doesn't recover that hour, it just adds an unverified regression risk on top of it. |
 
 The only legitimate exceptions are named in `./references/bdd-best-practices.md` (one-off prototypes, generated code, config files) — and even those should be raised with the user, not silently assumed.
@@ -91,7 +91,7 @@ A test-first test encodes "this is what the system is contracted to do." A test-
 
 ## Rules of the loop
 
-See `/mattpocock:tdd` for the full red-green loop rules, anti-patterns, and test quality guidance. The key points:
+See `/mattpocock:tdd` (BDD-driven) for the full red-green loop rules, anti-patterns, and test quality guidance. The key points:
 
 - **Red before green.** Write the failing test first, then only enough code to pass it.
 - **One slice at a time.** One seam, one test, one minimal implementation per cycle.
@@ -102,4 +102,4 @@ See `/mattpocock:tdd` for the full red-green loop rules, anti-patterns, and test
 - `./references/bdd-best-practices.md` - BDD methodology: discovery, formulation, automation
 - `./references/gherkin-guide.md` - Gherkin syntax, storage structure, examples
 - `./references/testing-anti-patterns.md` - Mocking pitfalls and vacuous-passing tests
-- `/mattpocock:tdd` - Test implementation reference: seams, mocking, test quality, red-green loop
+- `/mattpocock:tdd` - BDD-driven test implementation: seams, mocking, test quality, red-green loop

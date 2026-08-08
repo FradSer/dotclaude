@@ -32,7 +32,7 @@ After disabling, `/mattpocock:bdd` is the only bdd/tdd-flavored skill invoked; m
 
 **Productivity (8):** grill-me, grilling, handoff, teach, to-questionnaire, wait-what, writing-for-agents, writing-great-skills
 
-The `tdd` skill is now a first-class BDD Automation reference, registered alongside `bdd`. The remaining mattpocock skills (misc / in-progress / personal / deprecated) ship on disk but are unregistered, mirroring upstream's own promotion convention.
+The `tdd` skill is now a BDD-driven Automation reference, registered alongside `bdd` as part of the unified BDD pipeline. The remaining mattpocock skills (misc / in-progress / personal / deprecated) ship on disk but are unregistered, mirroring upstream's own promotion convention.
 
 ## Attribution
 

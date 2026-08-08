@@ -23,7 +23,7 @@ The route most work travels. You have an idea and want it built.
    - **Yes** → **`/mattpocock:to-spec`** (turn the thread into a spec), then **`/mattpocock:to-tickets`** to split it into tracer-bullet tickets, each declaring its **blocking edges**. On a local tracker that's one file per ticket under `.scratch/<feature>/issues/`, worked blockers-first by hand; on a real tracker the edges become native blocking links, so any ticket whose blockers are done can be grabbed — kick off **`/mattpocock:implement`** per ticket, **clearing context between each one**.
    - **No** → **`/mattpocock:implement`** right here, in the same context window.
 
-   Either way, **`/mattpocock:implement`** builds each issue by driving **`/mattpocock:bdd`** internally — one red-green slice at a time — then closes out by running **`/mattpocock:code-review`**, a two-axis review (Standards + Spec) of the diff, before committing. Reach for **`/mattpocock:bdd`** on its own when you just want to build a concrete behaviour test-first without a full spec, and **`/mattpocock:code-review`** on its own whenever you want to review a branch or PR against a fixed point.
+   Either way, **`/mattpocock:implement`** builds each issue by driving **`/mattpocock:bdd`** internally (Discovery → Formulation, then Automation delegated to `/mattpocock:tdd`) — one vertical slice at a time — then closes out by running **`/mattpocock:code-review`**, a two-axis review (Standards + Spec) of the diff, before committing. Reach for **`/mattpocock:bdd`** on its own when you want to define Gherkin scenarios for a feature, and **`/mattpocock:tdd`** on its own when you want to write tests within the BDD Automation phase. Reach for **`/mattpocock:code-review`** on its own whenever you want to review a branch or PR against a fixed point.
 
 ### Context hygiene
 
@@ -57,11 +57,10 @@ Not feature work — upkeep.
 
 ## Vocabulary underneath
 
-Two model-invoked references that run *beneath* the other skills — each the single source of truth for its vocabulary. Reach for them directly when the **words**, not the process, are the problem; or let the skills above pull them in.
+Model-invoked references that run *beneath* the other skills — each the single source of truth for its vocabulary. Reach for them directly when the **words**, not the process, are the problem; or let the skills above pull them in.
 
+- **`/mattpocock:codebase-design`** — the deep-module vocabulary (module, interface, depth, seam, adapter, leverage, locality) for designing a module's *shape*: a lot of behaviour behind a small interface at a clean seam. `/mattpocock:bdd`, `/mattpocock:tdd` (BDD-driven), and `/mattpocock:improve-codebase-architecture` all speak it.
 - **`/mattpocock:domain-modeling`** — sharpen the project's *domain* language: challenge a fuzzy term, resolve an overloaded word ("account" doing three jobs), record a hard-to-reverse decision as an ADR. It's the active discipline `/mattpocock:grill-with-docs` drives to keep `CONTEXT.md` a clean glossary.
-- **`/mattpocock:codebase-design`** — the deep-module vocabulary (module, interface, depth, seam, adapter, leverage, locality) for designing a module's *shape*: a lot of behaviour behind a small interface at a clean seam. `/mattpocock:bdd`, `/mattpocock:tdd`, and `/mattpocock:improve-codebase-architecture` all speak it.
-- **`/mattpocock:tdd`** — the Automation-phase reference for `/mattpocock:bdd`: test quality, seams, mocking, anti-patterns, and the red-green loop rules. Invoked during `/mattpocock:implement` and `/mattpocock:bdd` for test implementation guidance.
 
 ## Crossing sessions
 
@@ -90,6 +89,8 @@ Off the main flow entirely.
 - **`/mattpocock:teach`** — learn a concept over multiple sessions, using the current directory as a stateful workspace.
 - **`/mattpocock:writing-for-agents`** — reference for writing documents agents consume: skills, `AGENTS.md`/`CLAUDE.md`, pointed-at docs.
 - **`/mattpocock:writing-great-skills`** — reference for writing and editing skills well.
+- **`/mattpocock:bdd`** — the BDD lifecycle: Discovery → Formulation → Automation (delegated to `/mattpocock:tdd`). Reach for it directly when you want to define feature behavior via Gherkin scenarios.
+- **`/mattpocock:tdd`** — the BDD-driven Automation phase: test quality, seams, mocking, anti-patterns, and the red-green loop rules. Reach for it directly when you want to write or improve tests during BDD implementation.
 
 ## Precondition
 

@@ -24,8 +24,8 @@ Model- or user-reachable (rich trigger phrasing so the model can reach for them)
 
 - **[diagnosing-bugs](./diagnosing-bugs/SKILL.md)** — Disciplined diagnosis loop for hard bugs and performance regressions: reproduce → minimise → hypothesise → instrument → fix → regression-test.
 - **[research](./research/SKILL.md)** — Investigate a question against high-trust primary sources and capture the findings as a cited Markdown file in the repo, run as a background agent.
-- **[bdd](./bdd/SKILL.md)** — Behavior-driven development: Gherkin scenarios driving a red-green-refactor loop. Builds features or fixes bugs one vertical slice at a time.
-- **[tdd](./tdd/SKILL.md)** — Test implementation reference for BDD's Automation phase: red-green loop mechanics, seams, mocking, and test quality. Model-invoked during `/mattpocock:bdd` and `/mattpocock:implement`.
+- **[bdd](./bdd/SKILL.md)** — Behavior-driven development: Discovery → Formulation → Automation. Gherkin scenarios define behavior; Automation delegates to `/mattpocock:tdd` (BDD-driven).
+- **[tdd](./tdd/SKILL.md)** — BDD-driven test implementation: red-green loop mechanics, seams, mocking, and test quality as BDD Automation. Model-invoked during `/mattpocock:bdd` and `/mattpocock:implement`.
 - **[domain-modeling](./domain-modeling/SKILL.md)** — Actively build and sharpen a project's domain model — challenge terms, stress-test with scenarios, update `CONTEXT.md` and ADRs inline.
 - **[codebase-design](./codebase-design/SKILL.md)** — Shared discipline and vocabulary for designing deep modules: small interfaces, clean seams, testable through the interface.
 - **[code-review](./code-review/SKILL.md)** — Two-axis review of the diff since a fixed point: **Standards** (does it follow the repo's coding standards, plus a Fowler smell baseline?) and **Spec** (does it faithfully implement the originating issue/PRD?), run as parallel sub-agents.

@@ -86,7 +86,7 @@ done
 | 决策 | 规则 |
 |---|---|
 | **tdd** | 重写为 BDD Automation 阶段实现参考（red-green 循环、seams、mocking、anti-patterns），注册到 plugin.json 作为 `/mattpocock:tdd`。不再镜像上游 tdd。 |
-| **bdd** | 本地替代 upstream tdd，注册；Discovery→Formulation→Automation 中 Automation 阶段委托给 `/mattpocock:tdd` |
+| **bdd** | BDD 生命周期（Discovery→Formulation→Automation），注册；Automation 阶段委托给 BDD-driven `/mattpocock:tdd` |
 | **wizard** | 在 `skills/engineering/`（不在 in-progress），注册，**model-invoked**（无 `disable-model-invocation`） |
 | **to-questionnaire** | 在 `skills/productivity/`，注册，user-invoked（保留 `disable-model-invocation: true`） |
 | **wait-what / writing-for-agents** | 在 `skills/productivity/`，注册，镜像上游 |
@@ -136,7 +136,7 @@ python3 plugin-optimizer/scripts/validate-plugin.py mattpocock
 
 ## 决策记录（勿擅自更改）
 
-- **为什么要 tdd 镜像而不注册**：用户明确要求"完整镜像上游 engineering/tdd（含 agents/），但 tdd 不注册到 plugin.json，仅作镜像保留。参考 TDD，优化我的 BDD，尤其是 agents"。bdd 是 tdd 的 BDD 化替代，两者并存会导致 tdd/bdd 触发歧义，故 tdd 仅镜像。
+- **tdd 历史**：最初（2026-08-07）完整镜像上游 engineering/tdd 但不注册，作为参考优化 bdd。2026-08-08 重写为 **BDD-driven TDD**（BDD Automation 阶段实现参考），注册到 plugin.json。bdd 的 Automation 阶段委托给 tdd，两者构成统一 BDD 管道。
 - **为什么 wizard/to-questionnaire 移到上游位置**：用户明确要求"移到上游位置并注册"（wizard → engineering/，to-questionnaire → productivity/）。
 - **bdd 为什么新建 agents**：用户要求"参考 tdd 建 bdd 的 agents"，已按 tdd 极简形态建好。
-- **2026-08-08 tdd 改造**：上游 tdd 镜像不再保留，重写为 BDD Automation 阶段实现参考（red-green 循环、seams、mocking、anti-patterns），注册到 plugin.json。bdd 的 Automation 阶段委托给 tdd，ask-matt 和 implement 引用已更新。SYNC.md 决策表同步。
+- **2026-08-08 tdd 改造**：上游 tdd 镜像不再保留，重写为 **BDD-driven TDD**（BDD Automation 阶段实现参考：red-green 循环、seams、mocking、anti-patterns），注册到 plugin.json。所有流程中 tdd 均为 bdd 驱动的 Automation 阶段，非独立实践。SYNC.md 决策表同步。

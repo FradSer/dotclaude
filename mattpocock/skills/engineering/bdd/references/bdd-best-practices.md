@@ -18,7 +18,7 @@ Convert those examples into structured scenarios using Gherkin syntax (Given/Whe
 *   **Standard:** Write *declarative* scenarios that describe business behavior, not UI implementation details.
 *   **Reference:** See [Gherkin Guide](./gherkin-guide.md).
 
-### Automation (TDD & Red-Green-Refactor)
+### Automation (BDD-Driven TDD / Red-Green-Refactor)
 Implement the scenarios using the Red-Green-Refactor cycle.
 
 ## 2. The Red-Green-Refactor Cycle
@@ -48,13 +48,13 @@ This is the engine of implementation.
 *   **Integration:** Run BDD scenarios in your CI/CD pipeline.
 *   **Test Behavior, Not Implementation:** Tests should survive refactoring. If renaming a private variable breaks a test, the test was too coupled to implementation.
 
-## 4. BDD → TDD (Automation)
+## 4. BDD-Driven TDD (Automation)
 
-In this plugin, TDD is the **Automation** phase of the BDD lifecycle:
+In this plugin, TDD is always **BDD-driven** — the Automation phase of the BDD lifecycle:
 
-*   **BDD** (`/mattpocock:bdd`) — Discovery (conversations → examples) → Formulation (Gherkin scenarios) → Automation (red-green loop).
-*   **TDD** (`/mattpocock:tdd`) — The Automation phase reference: test quality, seams, mocking, anti-patterns, and the red-green loop rules. It is invoked during `/mattpocock:bdd` and `/mattpocock:implement` for test implementation guidance.
-*   **Usage:** BDD defines *what* to build (the requirements via Gherkin). TDD ensures the *implementation* is correct and robust via the red-green loop. They work best together as a unified pipeline.
+*   **BDD** (`/mattpocock:bdd`) — Discovery (conversations → examples) → Formulation (Gherkin scenarios) → Automation (BDD-driven red-green loop).
+*   **TDD** (`/mattpocock:tdd`) — The BDD-driven Automation phase reference: test quality, seams, mocking, anti-patterns, and the red-green loop rules. It is invoked during `/mattpocock:bdd` and `/mattpocock:implement` for test implementation guidance.
+*   **Usage:** BDD defines *what* to build (the Gherkin scenarios). BDD-driven TDD ensures the *implementation* is correct and robust via the red-green loop. They are a unified pipeline, not two practices.
 
 ## 5. Iron Law Exceptions
 

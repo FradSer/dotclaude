@@ -1,3 +1,3 @@
 interface:
-  display_name: "TDD (BDD Automation)"
-  short_description: "BDD Automation phase — test quality, seams, mocking, red-green loop"
+  display_name: "BDD-Driven TDD (Automation)"
+  short_description: "BDD-driven Automation: test quality, seams, mocking, red-green loop"

@@ -160,9 +160,22 @@ For each flag, resolve the value by checking CLI flag first, then settings file,
 
 Collect context from the current working directory before calling pi. The goal is to give pi the same situational awareness that Claude Code has.
 
-### 1. Pass the Whole Branch Context
+### 1. Pass CLAUDE.md as System Prompt Context
 
 **pi has `read`, `grep`, `find`, and `ls` tools** — it can explore the codebase on its own. Do not pass `@.` file references (pi errors on directory paths). Just pass the task description and let pi use its tools to read what it needs.
+
+However, **always pass the CLAUDE.md files** as system prompt context so pi understands the project and user conventions. `--append-system-prompt` accepts file paths directly — pi reads them automatically.
+
+```bash
+# Build CLAUDE.md context — pass file paths, pi reads them
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+```
 
 ### 2. Collect Git Context (unless `--no-git`)
 
@@ -201,7 +214,7 @@ Build the pi command with these components in order:
    - `--tools <value>` (only if user wants to restrict)
    - `--exclude-tools <value>` (only if user specified)
 5. **Session control**: `--no-session --no-context-files --approve`
-6. **File references**: `@.` (pass the entire working directory — pi reads what it needs). Only use specific `@filepath` references when the user explicitly names particular files.
+6. **CLAUDE.md context**: `$CLAUDE_CONTEXT` (built above — passes `~/.claude/CLAUDE.md` and `./CLAUDE.md` as `--append-system-prompt` file paths, pi reads them automatically)
 7. **Appended context**: `--append-system-prompt "context block"` (for git status, directory listing, etc.)
 8. **Task description**: The quoted task description as the final argument
 
@@ -211,7 +224,20 @@ pi itself defaults to `google` provider (Gemini), but Claude Code users typicall
 
 ### Pattern for appended context
 
-Format the git/project context as a single block:
+First build the CLAUDE.md context, then format the git/project context as a single block:
+
+```bash
+# Build CLAUDE.md context — pass file paths, pi reads them
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+```
+
+Then format the git context:
 
 ```
 --append-system-prompt "Project context at $(pwd):
@@ -232,8 +258,17 @@ Always use `Bash` with `run_in_background` — pi -p is a single-shot command, n
 **Do not add a shell `timeout`** — pi tasks can be heavy and may run for a long time. Let pi run to completion naturally.
 
 ```bash
+# Build CLAUDE.md context — pass file paths, pi reads them
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
 # Build the pi command — no file references, pi uses its tools to explore
-PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve \"task description\""
+PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"task description\""
 
 # Run in background — no timeout, let pi finish naturally
 bash -c "$PI_CMD 2>&1" &
@@ -305,45 +340,85 @@ Show the error message from stderr. Common error causes:
 ### Basic task with file context
 User: `/pi:delegate review the TypeScript types in src/`
 
-Claude: Collects git context, passes the whole directory, then runs:
+Claude: Builds CLAUDE.md context, collects git context, then runs:
 ```bash
-PI_CMD='pi -p --provider anthropic --thinking low --no-session --no-context-files --approve --append-system-prompt "Git status: ..." "review the TypeScript types in src/"'
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
+PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"review the TypeScript types in src/\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
 ### Specific model
 User: `/pi:delegate refactor this component --model claude-sonnet-4-20250514`
 
-Claude: Collects context, passes --model flag:
+Claude: Builds CLAUDE.md context, passes --model flag:
 ```bash
-PI_CMD='pi -p --provider anthropic --model claude-sonnet-4-20250514 --thinking low --no-session --no-context-files --approve --append-system-prompt "Git status: ..." "refactor this component"'
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
+PI_CMD="pi -p --provider anthropic --model claude-sonnet-4-20250514 --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"refactor this component\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
 ### Custom base URL (OpenAI-compatible proxy)
 User: `/pi:delegate write unit tests for this module --base-url http://10.10.0.195:8317/v1 --model gemini-3.6-flash`
 
-Claude: Writes baseUrl to `~/.pi/agent/models.json` for the `openai` provider, then runs:
+Claude: Writes baseUrl to `~/.pi/agent/models.json` for the `openai` provider, builds CLAUDE.md context, then runs:
 ```bash
-PI_CMD='pi -p --provider openai --model gemini-3.6-flash --thinking low --no-session --no-context-files --approve --append-system-prompt "Git status: ..." "write unit tests for this module"'
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
+PI_CMD="pi -p --provider openai --model gemini-3.6-flash --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT --append-system-prompt \"Git status: ...\" \"write unit tests for this module\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
 ### Read-only analysis
 User: `/pi:delegate audit the security of this codebase --tools read,grep,find,ls`
 
-Claude: Passes --tools to restrict pi to read-only tools:
+Claude: Builds CLAUDE.md context, passes --tools to restrict pi to read-only tools:
 ```bash
-PI_CMD='pi -p --provider anthropic --thinking low --tools read,grep,find,ls --no-session --no-context-files --approve "audit the security of this codebase"'
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
+PI_CMD="pi -p --provider anthropic --thinking low --tools read,grep,find,ls --no-session --no-context-files --approve $CLAUDE_CONTEXT \"audit the security of this codebase\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
 ### No file context, just conceptual
 User: `/pi:delegate explain how React reconciliation works --no-files`
 
-Claude: Skips file collection, just sends the prompt:
+Claude: Builds CLAUDE.md context, sends the prompt:
 ```bash
-PI_CMD='pi -p --provider anthropic --thinking low --no-session --no-context-files --approve "explain how React reconciliation works"'
+CLAUDE_CONTEXT=""
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt $HOME/.claude/CLAUDE.md"
+fi
+if [ -f "CLAUDE.md" ]; then
+  CLAUDE_CONTEXT="$CLAUDE_CONTEXT --append-system-prompt CLAUDE.md"
+fi
+
+PI_CMD="pi -p --provider anthropic --thinking low --no-session --no-context-files --approve $CLAUDE_CONTEXT \"explain how React reconciliation works\""
 bash -c "$PI_CMD 2>&1" &
 ```
 
@@ -356,6 +431,5 @@ bash -c "$PI_CMD 2>&1" &
 - `--no-session` prevents pi from creating session files.
 - `--no-context-files` prevents pi from reading its own AGENTS.md/CLAUDE.md (which could conflict with the current project's context).
 - `--approve` skips any project trust prompts (non-interactive mode).
-- File paths are passed as `@filepath` (relative to cwd) — pi handles reading and embedding them. Use `@.` to pass the entire working directory.
+- **CLAUDE.md context is always passed** via `--append-system-prompt` as file paths — `~/.claude/CLAUDE.md` (user global) and `./CLAUDE.md` (project). pi reads them automatically.
 - Git context is passed via `--append-system-prompt` as structured text.
-- For very large file sets, be selective: only pass the most relevant files (key source files, configuration, and files the user mentioned). Passing too many files can hit context limits.
