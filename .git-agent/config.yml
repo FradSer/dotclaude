@@ -1,29 +1,29 @@
 scopes:
     - name: acpx
-      description: Agent communication, subagent delegation, and reflection protocols in acpx/; does not cover antigravity.
+      description: Agent communication, delegation, and reflection protocols in acpx/; does not cover antigravity.
     - name: ag
-      description: Antigravity plugin, delegate-based researcher agents, and research workflows in antigravity/; does not cover acpx.
+      description: Antigravity plugin, delegate-based research agents, and workflows in antigravity/; does not cover acpx.
     - name: as
-      description: Autonomous ML experimentation, GAN tournament workflows, and model training research in autoresearch/.
+      description: Autonomous ML experimentation, gan tournaments, and model training in autoresearch/; does not cover superpowers.
     - name: cctx
-      description: Code context research, codebase-wide dependency tracking, and environment mapping in code-context/.
+      description: Code context research, codebase-wide dependency tracking, and mcp integration in code-context/.
     - name: git
-      description: Git repository configuration, commit hygiene, hooks, and changelog generation in git/; does not cover github/.
+      description: Git hooks, commit hygiene, and changelog generation in git/; does not cover github/.
     - name: gh
-      description: GitHub PR management, review loops, issue triage, and workflow automation in github/.
+      description: GitHub PR review loops, issue management, and workflow automation in github/.
     - name: hw
-      description: Hardware engineering CLI tools for KiCad and OpenSCAD in hardware/.
+      description: Hardware engineering CLI tooling for KiCad and OpenSCAD in hardware/.
     - name: hf
-      description: Marketing video authoring and HyperFrames generation engines in hyperframes/; does not cover marketing/.
+      description: HyperFrames video authoring, captioning, and animation engines in hyperframes/; does not cover marketing/.
     - name: mkt
-      description: Marketing automation, SEO, attribution, and landing page conversion in marketing/; does not cover hyperframes/.
+      description: Marketing automation, SEO, attribution, and analytics in marketing/; does not cover hyperframes/.
     - name: mem
-      description: Dual-layer memory sync, plugin state consolidation, and recall systems in memory/.
+      description: Memory storage layers, state consolidation, and recall systems in memory/.
     - name: "off"
-      description: Lark integration, office productivity, and media generation in office/; does not cover coding plugins.
+      description: Lark integrations, office productivity, and remotion video workflows in office/.
     - name: po
-      description: Plugin optimizer, validation framework, and structural metadata integrity in plugin-optimizer/.
+      description: Plugin optimization, validation framework, and structural metadata integrity in plugin-optimizer/.
     - name: ref
-      description: Code simplification agents, refactoring logic, and architectural redesigns in refactor/.
+      description: Code simplification agents, refactoring logic, and architectural redesign tools in refactor/.
     - name: sp
-      description: Autonomous superpower planning, evaluation harness, task orchestration, and BDD testing in superpowers/.
+      description: Autonomous planning, evaluation harness, task orchestration, and BDD testing in superpowers/.
