@@ -285,19 +285,6 @@
    "source": "./interfaces",
    "category": "development",
    "homepage": "https://github.com/FradSer/dotclaude/tree/main/interfaces"
-  },
-  {
-   "name": "vision",
-   "displayName": "Vision Bridge",
-   "version": "0.2.0",
-   "description": "Gives non-vision models (deepseek, ...) eyes for image files: a UserPromptSubmit hook auto-describes image file paths, and a /vision bridge command describes an image on demand. Uses an independent vision provider.",
-   "author": {
-    "name": "Frad LEE",
-    "email": "fradser@gmail.com"
-   },
-   "source": "./vision",
-   "category": "development",
-   "homepage": "https://github.com/FradSer/dotclaude/tree/main/vision"
   }
  ]
 }

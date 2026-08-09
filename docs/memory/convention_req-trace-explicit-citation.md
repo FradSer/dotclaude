@@ -1,17 +1,17 @@
 ---
 name: req-trace-explicit-citation
 category: convention
-summary: design-v3 REQ-TRACE-01 requires explicit (Req #N)/REQ-NNN citations and a full-set scan
+summary: REQ-TRACE-01 requires explicit (Req #N)/REQ-NNN citations + full scan
 source: docs/retros/retro-2026-07-09-memory-layer-and-agentbook.md
 created: 2026-07-09
-updated: 2026-07-09
+updated: 2026-08-09
 ---
 
-# REQ-TRACE-01 (design-v3) enforces explicit citations + full-set scan
+# REQ-TRACE-01 enforces explicit citations + full-set scan
 
 ## Fact
 
-`docs/retros/checklists/design-v3.md` rewrites REQ-TRACE-01 so that:
+REQ-TRACE-01（`docs/retros/checklists/design-v1.md` 存活版本，历史上经 design-v3 修订）要求：
 
 1. Requirement IDs are extracted from `_index.md` in either form — `REQ-NNN` **or** a numbered list (`1.`, `#1`, `Requirement #20`, `Item 12`).
 2. Every extracted ID must appear as an explicit citation in `bdd-specs.md` — `(Req #N)`, `Req #N`, or `REQ-NNN`. Topical scenario naming alone is FAIL.
@@ -30,7 +30,6 @@ Under design-v1/v2 the mechanical script grepped only `REQ-NNN`. Designs that us
 
 ## Related
 
-- Checklist: `docs/retros/checklists/design-v3.md` (REQ-TRACE-01)
+- Checklist: `docs/retros/checklists/design-v1.md` (REQ-TRACE-01)
 - Authoring-side pitfall (complement, not duplicate): `docs/memory/pitfall_bdd-specs-explicit-req-tracing.md`
-- Driving retro: `docs/retros/retro-2026-07-09-memory-layer-and-agentbook.md`
-- Driving plans: `docs/plans/2026-07-04-superpowers-memory-layer-design/`, `docs/plans/2026-07-06-agentbook-memory-design/`
+- 历史驱动 retro/plan 已随 `d71a99a2` retrospective 简化删除，设计要点转存 `docs/orphaned-designs.md`
