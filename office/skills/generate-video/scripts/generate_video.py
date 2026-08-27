@@ -3,7 +3,7 @@
 # requires-python = ">=3.10"
 # dependencies = ["requests>=2.31.0"]
 # ///
-"""Generate video with ByteDance Seedance on Volcengine Ark (火山方舟).
+"""Generate video with ByteDance Seedance on Volcengine Ark or Atlas Cloud.
 
 Submits an async generation task, polls until it succeeds, and downloads the
 result. Supports pure text-to-video and image-to-video, where reference images
@@ -22,6 +22,9 @@ Configuration (each resolved progressively — flag, then env, then .env, then d
     ARK_API_KEY     required  — Volcengine Ark key (https://console.volcengine.com/ark)
     SEEDANCE_MODEL  default doubao-seedance-2-0-260128 — set this to switch model versions
     ARK_BASE_URL    default https://ark.cn-beijing.volces.com/api/v3 — e.g. an int'l region
+    ATLASCLOUD_API_KEY required with --provider atlas
+    ATLAS_SEEDANCE_MODEL default bytedance/seedance-2.0/text-to-video
+    ATLAS_BASE_URL  default https://api.atlascloud.ai/api/v1
 """
 
 import argparse
@@ -58,8 +61,15 @@ MODELS = {
 }
 DEFAULT_MODEL = "pro"
 DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+ATLAS_MODELS = {
+    "pro": "bytedance/seedance-2.0/text-to-video",
+    "fast": "bytedance/seedance-2.0-fast/text-to-video",
+    "mini": "bytedance/seedance-2.0-mini/text-to-video",
+}
+DEFAULT_ATLAS_BASE_URL = "https://api.atlascloud.ai/api/v1"
 ROLES = {"first_frame", "last_frame", "reference_image"}
 POLL_INTERVAL = 10
+ATLAS_MAX_POLLS = 120
 
 
 def encode_image(path: str) -> str:
@@ -103,6 +113,82 @@ def poll_task(session, base_url, task_id) -> dict:
         time.sleep(POLL_INTERVAL)
 
 
+def unwrap_atlas_response(response: dict) -> dict:
+    data = response.get("data", response)
+    if not isinstance(data, dict):
+        fail(f"unexpected Atlas Cloud response: {response}")
+    return data
+
+
+def atlas_model(model_sel: str, has_images: bool) -> str:
+    model = ATLAS_MODELS.get(model_sel, model_sel)
+    if has_images and model.endswith("/text-to-video"):
+        model = model.removesuffix("/text-to-video") + "/image-to-video"
+    return model
+
+
+def build_atlas_payload(prompt: str, images: list[tuple[str, str]], args) -> dict:
+    by_role: dict[str, list[str]] = {}
+    for path, role in images:
+        by_role.setdefault(role, []).append(path)
+    if by_role.get("reference_image"):
+        fail("Atlas Cloud supports first/last frames here; use Ark for reference_image inputs")
+    if len(by_role.get("first_frame", [])) > 1 or len(by_role.get("last_frame", [])) > 1:
+        fail("Atlas Cloud accepts at most one first frame and one last frame")
+    if by_role.get("last_frame") and not by_role.get("first_frame"):
+        fail("Atlas Cloud requires a first frame when a last frame is provided")
+
+    payload = {
+        "model": atlas_model(args.model_sel, bool(images)),
+        "prompt": prompt,
+        "ratio": args.ratio,
+        "duration": args.duration,
+        "resolution": args.resolution,
+        "watermark": args.watermark,
+        "generate_audio": args.audio,
+    }
+    if args.seed is not None:
+        payload["seed"] = args.seed
+    if by_role.get("first_frame"):
+        payload["image"] = encode_image(by_role["first_frame"][0])
+    if by_role.get("last_frame"):
+        payload["last_image"] = encode_image(by_role["last_frame"][0])
+    return payload
+
+
+def create_atlas_task(session, base_url, payload) -> str:
+    # Generation is billable, so this POST is deliberately issued exactly once.
+    resp = session.post(f"{base_url}/model/generateVideo", json=payload, timeout=60)
+    if resp.status_code >= 400:
+        fail(f"task creation failed ({resp.status_code}): {resp.text}")
+    resp.raise_for_status()
+    result = unwrap_atlas_response(resp.json())
+    task_id = result.get("id")
+    if not task_id:
+        fail(f"task creation returned no id: {result}")
+    return task_id
+
+
+def poll_atlas_task(session, base_url, task_id) -> dict:
+    for attempt in range(ATLAS_MAX_POLLS):
+        if attempt:
+            time.sleep(POLL_INTERVAL)
+        try:
+            resp = session.get(f"{base_url}/model/prediction/{task_id}", timeout=30)
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"  Poll attempt {attempt + 1} failed: {exc}", file=sys.stderr)
+            continue
+        result = unwrap_atlas_response(resp.json())
+        status = result.get("status", "unknown")
+        print(f"  Status: {status}", file=sys.stderr)
+        if status in ("completed", "succeeded"):
+            return result
+        if status in ("failed", "cancelled", "expired", "timeout"):
+            fail(f"task {status}: {result.get('error') or result}")
+    fail(f"task still processing after {ATLAS_MAX_POLLS * POLL_INTERVAL} seconds")
+
+
 def download(url: str, output: Path) -> None:
     resp = requests.get(url, timeout=300)
     resp.raise_for_status()
@@ -129,7 +215,7 @@ def collect_images(args) -> list[tuple[str, str]]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Generate video with Seedance on Volcengine Ark.")
+    ap = argparse.ArgumentParser(description="Generate video with Seedance on Ark or Atlas Cloud.")
     ap.add_argument("prompt", help="Text prompt describing the shot / motion.")
     ap.add_argument("-o", "--output", default="output.mp4", help="Output path (default: output.mp4)")
     ap.add_argument("--first-frame", metavar="IMG", help="Start-frame image (image-to-video).")
@@ -143,47 +229,62 @@ def main() -> int:
     ap.add_argument("--no-audio", dest="audio", action="store_false",
                     help="Disable native audio (Seedance 2.0 generates synced audio by default).")
     ap.add_argument("--seed", type=int, help="Seed for reproducible output (optional).")
-    ap.add_argument("--model", help="Model: pro|fast|mini alias, or a full id (else SEEDANCE_MODEL). Default: pro.")
-    ap.add_argument("--api-key", help="Override the API key (else ARK_API_KEY).")
+    ap.add_argument("--model", help="Model: pro|fast|mini alias or a provider model id (default: pro).")
+    ap.add_argument("--provider", choices=("ark", "atlas"), default="ark",
+                    help="API provider (default: ark).")
+    ap.add_argument("--api-key", help="Override the selected provider's API key.")
     args = ap.parse_args()
 
+    key_var = "ATLASCLOUD_API_KEY" if args.provider == "atlas" else "ARK_API_KEY"
+    key_console = "https://www.atlascloud.ai/console" if args.provider == "atlas" else "https://console.volcengine.com/ark"
     try:
         api_key = resolve_secret(
-            "ARK_API_KEY",
+            key_var,
             cli=args.api_key,
-            hint="ARK_API_KEY is not set. Create one at https://console.volcengine.com/ark, "
-                 "then `export ARK_API_KEY=...` or add it to a .env file.",
+            hint=f"{key_var} is not set. Create one at {key_console}, "
+                 f"then `export {key_var}=...` or add it to a .env file.",
         )
     except MissingConfig as e:
         return fail(str(e)) or 1
 
-    model_sel = resolve("SEEDANCE_MODEL", cli=args.model, default=DEFAULT_MODEL)
-    model = MODELS.get(model_sel, model_sel)  # expand alias; pass a raw id through
-    base_url = resolve("ARK_BASE_URL", default=DEFAULT_BASE_URL).rstrip("/")
-
     images = collect_images(args)
-    payload = {
-        "model": model,
-        "content": build_content(args.prompt, images),
-        "ratio": args.ratio,
-        "duration": args.duration,
-        "resolution": args.resolution,
-        "watermark": args.watermark,
-        "generate_audio": args.audio,
-    }
-    if args.seed is not None:
-        payload["seed"] = args.seed
+    model_var = "ATLAS_SEEDANCE_MODEL" if args.provider == "atlas" else "SEEDANCE_MODEL"
+    args.model_sel = resolve(model_var, cli=args.model, default=DEFAULT_MODEL)
+    if args.provider == "atlas":
+        base_url = resolve("ATLAS_BASE_URL", default=DEFAULT_ATLAS_BASE_URL).rstrip("/")
+        payload = build_atlas_payload(args.prompt, images, args)
+        model = payload["model"]
+    else:
+        model = MODELS.get(args.model_sel, args.model_sel)
+        base_url = resolve("ARK_BASE_URL", default=DEFAULT_BASE_URL).rstrip("/")
+        payload = {
+            "model": model,
+            "content": build_content(args.prompt, images),
+            "ratio": args.ratio,
+            "duration": args.duration,
+            "resolution": args.resolution,
+            "watermark": args.watermark,
+            "generate_audio": args.audio,
+        }
+        if args.seed is not None:
+            payload["seed"] = args.seed
 
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"})
 
     mode = "image-to-video" if images else "text-to-video"
     print(f"Creating {mode} task with {model} ({args.resolution}, {args.duration}s, {args.ratio})...", file=sys.stderr)
-    task_id = create_task(session, base_url, payload)
+    task_id = (create_atlas_task if args.provider == "atlas" else create_task)(session, base_url, payload)
     print(f"  Task: {task_id}", file=sys.stderr)
 
-    result = poll_task(session, base_url, task_id)
-    video_url = (result.get("content") or {}).get("video_url")
+    result = (poll_atlas_task if args.provider == "atlas" else poll_task)(session, base_url, task_id)
+    if args.provider == "atlas":
+        outputs = result.get("outputs") or result.get("output") or []
+        if isinstance(outputs, str):
+            outputs = [outputs]
+        video_url = outputs[0] if outputs else None
+    else:
+        video_url = (result.get("content") or {}).get("video_url")
     if not video_url:
         return fail(f"task succeeded but no video_url in response: {result}") or 1
 
