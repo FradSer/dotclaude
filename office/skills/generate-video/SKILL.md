@@ -1,12 +1,12 @@
 ---
 name: generate-video
-description: Generate short videos from a text prompt or from still images using ByteDance Seedance on Volcengine Ark (火山方舟). Use this skill whenever the user wants to create, generate, render, or animate a video, clip, animation, motion graphic, or product demo — including text-to-video ("a drone shot over a forest at sunrise") and image-to-video, where a still becomes the first frame, or two stills are morphed start-to-end. Triggers include "generate a video", "make a clip", "animate this image", "turn this storyboard into video", "生成视频", "做个视频", "让这张图动起来", "图生视频", "首尾帧生成视频". Prefer this skill over describing a video in text.
+description: Generate short videos from a text prompt or from still images using ByteDance Seedance on Volcengine Ark or Atlas Cloud. Use this skill whenever the user wants to create, generate, render, or animate a video, clip, animation, motion graphic, or product demo — including text-to-video ("a drone shot over a forest at sunrise") and image-to-video, where a still becomes the first frame, or two stills are morphed start-to-end. Triggers include "generate a video", "make a clip", "animate this image", "turn this storyboard into video", "生成视频", "做个视频", "让这张图动起来", "图生视频", "首尾帧生成视频". Prefer this skill over describing a video in text.
 user-invocable: true
 argument-hint: "\"PROMPT\" [-o out.mp4] [--first-frame img] [--last-frame img] [--duration 5] [--resolution 720p] [--ratio 16:9] [--no-audio] [--seed N]"
 allowed-tools: ["Read", "Write", "AskUserQuestion", "Bash(uv run:*)", "Bash(*/generate_video.py:*)"]
 ---
 
-# Generate Video (Seedance on Volcengine Ark)
+# Generate Video (Seedance)
 
 Turn a text prompt — optionally anchored by a first frame, a last frame, or reference
 images — into a short video. The script submits an async task, polls until it finishes,
@@ -15,10 +15,12 @@ and downloads the `.mp4`. Generation takes a few minutes, so set expectations an
 ## Prerequisites
 
 - `uv` available (self-contained `uv run` script; deps install on first run).
-- A Volcengine Ark key. Resolved progressively, so any one works:
+- A key for the selected provider. Ark remains the default. Resolve it progressively from:
   - `export ARK_API_KEY=...` in the shell, or
   - a `.env` file (checked in order: `$PWD/.env`, then `${CLAUDE_PLUGIN_ROOT}/.env`), or
   - `--api-key ...` on the command line.
+
+  For Atlas Cloud, pass `--provider atlas` and configure `ATLASCLOUD_API_KEY` instead.
 
   **CRITICAL** -- Never paste the API key into chat or commit a `.env`. If the key is missing,
   the script prints exactly how to set it — relay that instead of guessing.
@@ -66,6 +68,7 @@ Flags:
 | `--no-audio` | Disable native audio (2.0 generates synced audio by default) | audio on |
 | `--seed` | Integer seed for reproducibility | random |
 | `--model` | `pro`, `fast`, `mini`, or a raw id (else `SEEDANCE_MODEL`) | `pro` |
+| `--provider` | `ark` or `atlas` | `ark` |
 
 **Models** (pass the alias to `--model` or set `SEEDANCE_MODEL`):
 
@@ -77,6 +80,11 @@ Flags:
 
 The script blocks while polling (status prints to stderr). For batch work, prefer longer
 single runs over many tiny ones — each task has fixed overhead, and the API bills per task.
+
+Atlas Cloud uses the matching Seedance 2.0 text-to-video or image-to-video route. It accepts
+one first frame and one optional last frame; use Ark for `reference_image` inputs. Set
+`ATLAS_SEEDANCE_MODEL` or pass a raw Atlas model id to override the provider-specific alias.
+The generation POST is sent once, then result polling stops after a bounded timeout.
 
 ### 4. Report
 
@@ -99,6 +107,6 @@ Two consequences worth knowing:
 
 ## Files
 
-- `scripts/generate_video.py` — the generator (Seedance via Ark REST, async + poll + download).
+- `scripts/generate_video.py` — the generator (Seedance via Ark or Atlas Cloud REST).
 - `references/prompting.md` — prompt-writing guide and full parameter reference.
 - `${CLAUDE_PLUGIN_ROOT}/lib/progressive_env.py` — shared progressive config resolver.
