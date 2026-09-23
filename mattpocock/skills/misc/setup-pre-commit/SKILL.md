@@ -82,7 +82,7 @@ Only create if no Prettier config exists. Use these defaults:
 
 Stage all changed/created files and commit with message: `Add pre-commit hooks (husky + lint-staged + prettier)`
 
-This will run through the new pre-commit hooks — a good smoke test that everything works.
+This will run through the new pre-commit hooks: a good smoke test that everything works.
 
 ## Notes
 

@@ -1,8 +1,8 @@
 # Mattpocock Plugin
 
-BDD-first engineering skills forked from [mattpocock/skills](https://github.com/mattpocock/skills) v1.2.3.
+BDD-first engineering skills forked from [mattpocock/skills](https://github.com/mattpocock/skills) (synced 2026-09-23, baseline v1.2.3 + 50 commits).
 
-**Version:** 0.1.3
+**Version:** 0.1.5
 
 ## What this is
 
@@ -36,4 +36,4 @@ The `tdd` skill is now a BDD-driven Automation reference, registered alongside `
 
 ## Attribution
 
-Forked from [mattpocock/skills](https://github.com/mattpocock/skills) v1.2.3 (MIT). The original `tdd` skill was transformed into `bdd`. See `LICENSE`.
+Forked from [mattpocock/skills](https://github.com/mattpocock/skills) (baseline v1.2.3 + 50 commits, synced 2026-09-23, MIT). The original `tdd` skill was transformed into `bdd`. See `LICENSE`.

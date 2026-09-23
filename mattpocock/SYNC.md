@@ -6,8 +6,8 @@
 
 | 项 | 值 |
 |---|---|
-| 上游 tag | **v1.2.3**（检查最新：`git ls-remote --tags https://github.com/mattpocock/skills.git`） |
-| 本地插件版本 | **0.1.3**（`mattpocock/.claude-plugin/plugin.json`，2026-08-08 改名+tdd 改制未 bump） |
+| 上游 tag | **v1.2.3 + 50 commits**（2026-09-23 同步至 HEAD，无新 tag；检查最新：`git ls-remote --tags https://github.com/mattpocock/skills.git`） |
+| 本地插件版本 | **0.1.5**（`mattpocock/.claude-plugin/plugin.json`，2026-09-23 上游同步） |
 | 注册 skill 数 | **27**（bdd + BDD-driven tdd 取代上游 tdd 镜像） |
 
 ## 核心原则
@@ -169,6 +169,38 @@ python3 plugin-optimizer/scripts/validate-plugin.py mattpocock
 2. **bdd 和 tdd 的职责划分必须显式写入各自的 SKILL.md 引言**——bdd 说"Automation 委托给 tdd"，tdd 说"若直接调用先检查场景是否已定义"。否则模型可能独立调 tdd 跳过 BDD 场景定义。
 3. **ask-matt 的 Standalone 节容易遗漏新 skill**——新增/注册 skill 后必须检查 ask-matt 是否提及。
 4. **skill 的引用位置语义重要**——bdd/tdd 放在 Crossing sessions 下是错误（它们不是 session 边界选项），应放在 Standalone。每次新增 skill 要确认归类正确。
+
+## 2026-09-23 上游同步（v1.2.3 + 50 commits → HEAD）
+
+### 新增文件（7 个，全部 in-progress，未注册）
+
+- `in-progress/implement-spec/`：spec 实现编排（task graph + subagent 并发）
+- `in-progress/pr/`：PR body 模板（from humanlayer/show-me）
+- `in-progress/retro/`：编码回顾（navigation、automated checks、coding standards 等维度）
+
+### 全局变更
+
+1. **Em-dash 移除**：全仓库 `—` 替换为 `:`/`,`/`;`/括号（约 60 个文件受影响）
+2. **跨 skill 调用术语标准化**：从 "Run the `/skill` skill" 改为 "Call the Skill tool with `skill-name`"
+3. **User-invoked skill 互调限制**：skills 不再调用其他 user-invoked skills
+4. **YAML frontmatter 冒号修复**：description 中含未引用冒号的已加引号
+
+### 具体 skill 更新
+
+- **domain-modeling**：trigger 改为 "discussing codebase terminology, writing CONTEXT.md, or recording ADR"；移除 "another skill needs to maintain" caveat
+- **code-review**：implementation steps 措辞澄清
+- **grilling**：questions 间加 HR；em-dash 移除
+- **grill-me**：移除 "holds decisions" 措辞
+- **grill-with-docs**：移除 "single writer" 段落
+- **wait-what**：CONTEXT-MAP.md 修复
+- **diagnosing-bugs**：Phase 6 标题从 "Cleanup + post-mortem" 改为 "Cleanup"
+- **wayfinder/triage/improve-codebase-architecture**：跨 skill 调用术语更新
+
+### 教训
+
+1. **上游无新 tag 时同步到 HEAD**：v1.2.3 后有 50+ commits，包含 3 个新 skill 和大量术语/格式统一。即使无新 tag，也应定期同步以保持 fork 一致性。
+2. **Em-dash 移除是机械变更**：可批量处理，但需注意本地 CRITICAL 块和 frontmatter 中的 em-dash 应保留（本地定制）。
+3. **新增 in-progress skill 不自动注册**：遵循上游约定，in-progress bucket 的 skill 不上架，仅当成熟后移到 engineering/productivity 才注册。
 
 ## 决策记录（勿擅自更改）
 

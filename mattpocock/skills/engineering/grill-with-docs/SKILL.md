@@ -4,7 +4,7 @@ description: Runs a relentless interview that sharpens a plan or design and crea
 disable-model-invocation: true
 ---
 
-Run a `/mattpocock:grilling` session, using the `/mattpocock:domain-modeling` skill.
+Call the Skill tool twice, for "mattpocock:grilling" and "mattpocock:domain-modeling".
 
 ## CRITICAL: Grill with the docs skills loaded
 
