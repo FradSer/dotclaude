@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **antigravity** — Vertex AI credential path alongside the existing API-key path. `ANTIGRAVITY_AUTH` selects `vertex` (Application Default Credentials plus project and location) or `api-key`, and `auto` prefers Vertex whenever it is fully configured so an ambient key cannot silently redirect billing. Vertex forces `background=true` because the API rejects synchronous agent interactions there.
+- **antigravity** — Cost, model and steering options on `delegate`: `--max-tokens` (`agent_config.max_total_tokens`, the only real cap on an autonomous loop), `--model`, `--system` (with an anti-fabrication default), `--tier` (`service_tier`, including the cheap `flex` tier), `--label`, `--image` (inline base64 multimodal input) and `--json` (`response_format`). Research gains `--collaborative-planning`, `--visualization`, `--thinking-summaries` and `--bigquery`.
+- **antigravity** — `status --progress` prints the tail of a new `progress.log`, which the worker fills from the interaction's server-sent event stream (best-effort; polling still decides run state).
+- **antigravity** — `cleanup [--older-than-days N] [--remote] [--dry-run]` prunes finished run directories and, with `--remote`, deletes the stored interactions.
+
+### Changed
+
+- **antigravity** — `google-genai` floor raised to `>=2.25.0` (the version whose interactions module routes Vertex requests), and the resolved credential path is now printed on start and recorded in `meta.json` as `auth` / `auth_label`.
+- **antigravity** — Delegate now sends a default `system_instruction` forbidding claims about content no tool actually retrieved, after live runs showed the agent answering from memory and describing an empty fetch as a successful read. `--system ""` disables it.
+
+### Fixed
+
+- **antigravity** — Deep research was broken: the plugin sent its default `system_instruction` on every run, and the deep-research agent rejects that parameter outright (`400 ... not supported for the deep-research-preview-04-2026 agent`). Research never sends one now, and an explicit `--system` is refused with a pointer to `--query` instead of silently rewriting the question.
+- **antigravity** — Report citations were dropped. Text content carries `url_citation` annotations (the live research run had 43, deduping to 9 sources) that the report's inline `[cite: N]` markers refer to; `output.md` now renders them under `## Sources`, `output.json` carries them as `citations`, and the header records the count.
+- **antigravity** — `cleanup --remote` treated an already-deleted interaction as a failure, so the run directory was kept forever while retrying a delete that could never succeed. A `404` (retention, or an earlier cleanup) now counts as done; only a genuine refusal keeps the run for a later retry.
+- **antigravity** — `--environment-id` never reused a sandbox: the plugin sent the id inside a config object and the server ignored it, silently provisioning a fresh sandbox with none of the files. Reuse is the bare environment id, which was verified live to return the same environment with its files intact. The plugin now also refuses to combine reuse with `--repo` or `--network none` rather than dropping them.
+- **antigravity** — Chaining with only `--previous-interaction-id` started a fresh sandbox, because managed-agent chaining requires the environment in the same request. The worker now reads the previous interaction's `environment_id` and reuses it, and since the configured `--max-tokens` / `--model` go into `agent_config` the request also carries the budget it claims to.
+- **antigravity** — A run waiting on `requires_action` was treated as "still working" and polled until the 2-hour worker deadline. It now fails immediately, explaining that the agent asked for a client-side function call this plugin cannot serve.
+- **antigravity** — The tool trace was always empty against `google-genai` 2.25.0: Vertex reports every tool as a generic `function_call` (`step.name` plus dict arguments) instead of the per-tool `code_execution_call` / `google_search_call` / `url_context_call` step types, so `summarize_steps` matched nothing. Both shapes now render.
+- **antigravity** — Model output was joined with a blank line between `model_output` steps, splitting text that streams across steps (a live run turned `2**64` into `184467440737095516` + `16`) and duplicating the consolidated message the server re-sends after a run of deltas. Fragments now concatenate with no separator, and only an exact re-send of the text accumulated since the last non-model_output step is dropped.
+- **antigravity** — A dead worker could leave a run non-terminal forever: the liveness check skipped runs with no `worker.pid` yet (a worker killed before it wrote its pid), and trusted a recorded pid that an unrelated process had recycled. Worker identity is now confirmed against the run id in the process command line, and a run with no pid past `WORKER_START_GRACE` is declared failed. When the command line cannot be read the pid is trusted, so a live run is never reported as failed.
+- **antigravity** — The delegate skill's re-arm guidance said four consecutive `wait` timeouts covered "2 hours" (it is 1 hour at 15 minutes each), and both skills now state that deep research has no token cap.
+
 ## [v1.13.0] - 2026-06-23
 
 ### Added

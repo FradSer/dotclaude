@@ -1,7 +1,7 @@
 ---
 name: delegate
 description: Delegates a self-contained task to a Google Gemini Managed Agent (Antigravity) running in a remote sandbox with code execution, web search, and URL reading. This skill should be used when the user asks to "delegate to Gemini", "offload to Antigravity", "run this in a remote sandbox", or wants a task executed in an isolated Linux sandbox with Google Search and code execution, then the result read back. Invoked via "/antigravity:delegate".
-argument-hint: "<task prompt> [--tools code_execution,google_search,url_context] [--network default|none] [--repo URL]"
+argument-hint: "<task prompt> [--tools code_execution,google_search,url_context] [--network default|none] [--repo URL] [--max-tokens N] [--model M] [--system TEXT] [--tier flex|standard|priority|deferred] [--label k=v] [--image PATH] [--json] [--environment-id ID] [--previous-interaction-id ID]"
 allowed-tools: ["Bash(uv:*)", "Monitor", "Read"]
 user-invocable: true
 ---
@@ -14,7 +14,10 @@ Gemini sandbox, wait for it to finish, and report the result.
 The script is at `${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py`. It is self-daemonizing:
 `delegate` returns immediately with a `run_id`, a detached worker performs the
 interaction, and a `status` file flips to `completed` / `failed` when done.
-Requires `GEMINI_API_KEY` in the environment and `uv` on PATH.
+Requires credentials and `uv` on PATH. Two credential paths are supported: Vertex
+AI via ADC plus `ANTIGRAVITY_PROJECT` / `ANTIGRAVITY_LOCATION`, or an API key
+(`GEMINI_API_KEY` / `GOOGLE_API_KEY`); see the Authentication section of
+`references/usage.md`.
 
 ## Phase 1: Parse arguments
 
@@ -38,7 +41,13 @@ Requires `GEMINI_API_KEY` in the environment and `uv` on PATH.
    uv run "${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py" delegate --prompt "<task>" [flags]
    ```
 2. Capture `run_id`, `output_file`, and `wait_command` from stdout.
-3. If stdout reports an error (for example a missing `GEMINI_API_KEY`), surface it and stop.
+3. If stdout reports an error (for example no credentials configured, or a forced
+   `ANTIGRAVITY_AUTH` path that is incomplete), surface it and stop.
+4. For work that could run long, pass `--max-tokens` (an Antigravity run is an
+   autonomous loop, so this is the only cap) and consider `--tier flex`. To have the
+   agent read a local image, pass `--image PATH`; for machine-readable output, `--json`.
+   `--system` replaces the built-in instruction that forbids claiming content no tool
+   actually retrieved.
 
 ## Phase 3: Wait for completion
 
@@ -57,7 +66,7 @@ Requires `GEMINI_API_KEY` in the environment and `uv` on PATH.
    - Contains `: completed` or `: failed` → proceed to Phase 4.
    - Contains `: timeout` → the run is NOT done; the detached worker is still going.
      Start the Monitor on the same `wait_command` again to keep waiting. After **four**
-     consecutive timeouts (2 hours total), tell the user it is still running and give them
+     consecutive timeouts (1 hour total), tell the user it is still running and give them
      the full command to fetch it later:
      ```
      uv run "${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py" status --run <run_id> --full
@@ -77,8 +86,9 @@ Requires `GEMINI_API_KEY` in the environment and `uv` on PATH.
    Or read the rendered `output_file` directly.
 2. Summarize for the user: the agent's output text, the tool trace (code/search/url steps),
    the `interaction_id` and `environment_id` (useful for follow-up), and token usage.
-3. If the status is `failed`, report the recorded error and likely cause
-   (missing API key, unsupported tool, network policy).
+3. If the status is `failed`, report the recorded error and likely cause (no credentials
+   configured or a forced `ANTIGRAVITY_AUTH` path that is incomplete, unsupported tool,
+   network policy, or a dead worker).
 
 ## Notes
 

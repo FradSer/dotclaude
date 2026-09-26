@@ -1,7 +1,7 @@
 ---
 name: research
 description: Runs a deep-research query on Google Gemini's deep-research managed agent and returns a cited report. This skill should be used when the user asks to "deep research with Gemini", "run Gemini deep research", "have Antigravity research X", or wants a thorough, multi-source web research report produced by a remote Gemini agent. Invoked via "/antigravity:research". Supports a higher-effort max mode via "--max".
-argument-hint: "<research question> [--max]"
+argument-hint: "<research question> [--max] [--collaborative-planning] [--visualization off|auto] [--thinking-summaries auto|none] [--bigquery] [--system TEXT] [--tier flex|standard|priority|deferred] [--label k=v]"
 allowed-tools: ["Bash(uv:*)", "Monitor", "Read"]
 user-invocable: true
 ---
@@ -15,8 +15,10 @@ wait for it to finish, and report the cited result. Two models are available:
 
 The script is at `${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py`. It is self-daemonizing:
 `research` returns immediately with a `run_id`, a detached worker runs the research,
-and a `status` file flips to `completed` / `failed` when done. Requires `GEMINI_API_KEY`
-in the environment and `uv` on PATH. Deep research can take several minutes.
+and a `status` file flips to `completed` / `failed` when done. Requires credentials and `uv` on PATH. Two credential paths are supported: Vertex
+AI via ADC plus `ANTIGRAVITY_PROJECT` / `ANTIGRAVITY_LOCATION`, or an API key
+(`GEMINI_API_KEY` / `GOOGLE_API_KEY`); see the Authentication section of
+`../delegate/references/usage.md`. Deep research can take several minutes.
 
 ## Phase 1: Frame the query
 
@@ -38,7 +40,11 @@ in the environment and `uv` on PATH. Deep research can take several minutes.
    uv run "${CLAUDE_PLUGIN_ROOT}/scripts/antigravity.py" research --query "<question>" [--max]
    ```
 2. Capture `run_id`, `output_file`, and `wait_command` from stdout.
-3. If stdout reports an error (for example a missing `GEMINI_API_KEY`), surface it and stop.
+3. If stdout reports an error (for example no credentials configured, or a forced
+   `ANTIGRAVITY_AUTH` path that is incomplete), surface it and stop.
+   Note: deep research has **no** token cap (`DeepResearchAgentConfig` accepts no
+   `max_total_tokens`), so `--max-tokens` is deliberately absent here — never imply to
+   the user that a research run is bounded.
 
 ## Phase 3: Wait for completion
 
