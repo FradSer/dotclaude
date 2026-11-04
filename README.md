@@ -44,7 +44,7 @@ claude plugin install git-agent@frad-dotclaude
 
 ### [mattpocock](mattpocock/)
 
-BDD-first engineering skills forked from mattpocock/skills v1.2.3, with a self-improving checklist subsystem.
+BDD-first engineering skills forked from mattpocock/skills v1.3.2, with a self-improving checklist subsystem and an upstream-sync checker.
 
 **Installation:**
 ```bash

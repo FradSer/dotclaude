@@ -5,9 +5,9 @@ description: Grill the user relentlessly about a plan, decision, or idea. Use wh
 
 Interview me relentlessly about every aspect of this until we reach a shared understanding. Walk down each branch of the decision tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
 
-Use the AskUserQuestion tool to ask each question; one question per call, waiting for the answer before continuing. Give 2–4 options per question, put your recommended option first marked "(Recommended)", and rely on the tool's built-in "Other" option for answers you didn't anticipate. Asking multiple questions at once is bewildering.
+Use the AskUserQuestion tool to ask each question; one question per call, waiting for the answer before continuing. Give 2–4 options per question, put your recommended option first marked "(Recommended)", and rely on the tool's built-in "Other" option for answers you didn't anticipate. Word each question so "yes" accepts your recommended answer: with AskUserQuestion, that means the recommended option is the single affirmative step, and a hesitant user should not have to parse the question twice. Asking multiple questions at once is bewildering.
 
-If a *fact* can be found by exploring the environment (filesystem, tools, etc.), look it up rather than asking me. The *decisions*, though, are mine: put each one to me via the AskUserQuestion tool and wait for my answer.
+If a *fact* can be found by exploring the environment (filesystem, tools, etc.), look it up with a fresh context window rather than asking me. The *decisions*, though, are mine: put each one to me via the AskUserQuestion tool and wait for my answer.
 
 Do not act on it until I confirm we have reached a shared understanding.
 

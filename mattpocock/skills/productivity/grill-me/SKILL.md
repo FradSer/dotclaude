@@ -4,7 +4,7 @@ description: Runs a relentless interview that sharpens a plan or design. Use whe
 disable-model-invocation: true
 ---
 
-Call the Skill tool with "grilling".
+Call the Skill tool with "mattpocock:grilling".
 
 ## CRITICAL: One question at a time, with a recommendation
 

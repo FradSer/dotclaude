@@ -8,4 +8,4 @@ Call the Skill tool twice, for "mattpocock:grilling" and "mattpocock:domain-mode
 
 ## CRITICAL: Grill with the docs skills loaded
 
-Run the `/mattpocock:grilling` session with the `/mattpocock:domain-modeling` skill active. Every sharpened term and locked decision lands in `CONTEXT.md` or an ADR as it crystallises — the paper trail is what distinguishes this skill from `/mattpocock:grill-me`. Interview questions go through the AskUserQuestion tool, one per call, as `/mattpocock:grilling` dictates.
+Run the `/mattpocock:grilling` session with the `/mattpocock:domain-modeling` skill active. Every sharpened term and locked decision lands in `GLOSSARY.md` or an ADR as it crystallises — the paper trail is what distinguishes this skill from `/mattpocock:grill-me`. Interview questions go through the AskUserQuestion tool, one per call, as `/mattpocock:grilling` dictates.

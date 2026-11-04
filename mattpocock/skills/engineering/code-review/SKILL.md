@@ -8,9 +8,9 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 - **Standards**: does the code conform to this repo's documented coding standards?
 - **Spec**: does the code faithfully implement the originating issue / PRD / spec? If the spec contains Gherkin scenarios (from `/mattpocock:bdd`), those are the authoritative acceptance criteria.
 
-Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
+Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings. Start every sub-agent with a fresh context window.
 
-The issue tracker should have been provided to you. If `docs/agents/issue-tracker.md` is missing, tell the user to run `/mattpocock:setup-matt-pocock-skills`.
+The issue tracker should have been provided to you. If not, tell the user to run `/mattpocock:setup-matt-pocock-skills`.
 
 ## Process
 
@@ -26,14 +26,14 @@ Before going further, confirm the fixed point resolves (`git rev-parse <fixed-po
 
 Look for the originating spec, in this order:
 
-1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.), fetched via the workflow in `docs/agents/issue-tracker.md`.
+1. Issue references in the commit messages (`#123`, `Closes #45`, GitLab `!67`, etc.), fetched via the workflow in the tracker doc.
 2. A path the user passed as an argument.
 3. A PRD/spec file under `docs/`, `specs/`, or `.scratch/` matching the branch name or feature.
 4. If nothing is found, use the AskUserQuestion tool to ask where the spec is (options: in the repo / linked from the issue or PR / external document / no spec exists). If there isn't one, the **Spec** sub-agent will skip and report "no spec available".
 
 ### 3. Identify the standards sources
 
-Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
+Search the repo for every file that documents how code should be written. When `CODING_STANDARDS.md` or `CONTRIBUTING.md` exists, it must be on the list.
 
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 
@@ -55,15 +55,27 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+### AI slop baseline
+
+Language-model-generated code tends to emit low-evidence, low-signal patterns regardless of language. The smell baseline's two binding rules apply unchanged: the repo overrides, and skip any pattern that tooling already enforces (for example, a repository running dedicated anti-slop lint rules). Each pattern reads *what it is* → *how to fix it*:
+
+- **Fabricated evidence**: casts or suppressions that assert a type or invariant the code never established: chained `as`/`as unknown as`, `cast(Any, x)`, `# type: ignore`, unjustified `@ts-ignore`, `unsafe` blocks or `.unwrap()` standing in for real handling. → parse at the boundary or guard the type; require a written invariant justification for any suppression.
+- **Evidence widening**: known precise values funneled into `unknown`/`any`/`object`/`interface{}`/open dictionaries, or finite records degraded to open maps. → preserve the precise type end to end; widen only at an unparsed boundary.
+- **Defensive clutter**: `try/except: pass`, redundant null checks in trusted codepaths, conditional empty-spread omission tricks, silent fallbacks. → delete the check; validate at the boundary once.
+- **Mock patching**: tests that mock or monkey-patch the module's own internals instead of exercising real seams. → test through an injected adapter or the public interface.
+- **Vacuous names**: symbols named after their type or shape (`data`, `info`, `obj`, `helper`, `manager`, `*Shape`) instead of their domain meaning. → rename to the domain concept; no honest name means the design is murky.
+
+Match each pattern against the diff the same way as the smell baseline: labelled judgement calls, hard only when a documented standard forbids them, and skipped when repository tooling enforces the pattern.
+
 ### 4. Spawn both sub-agents in parallel
 
-Send a single message with two `Agent` tool calls.
+Send a single message with two `Agent` tool calls, in the foreground, and aggregate the reports they return.
 
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
-- The list of standards-source files you found in step 3, **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+- The list of standards-source files you found in step 3, **plus the smell and AI slop baselines from step 3** pasted in full (the sub-agent has no other access to them).
+- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell or AI slop pattern you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells and AI slop patterns are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
 
 **Spec sub-agent prompt** should include:
 
@@ -78,6 +90,12 @@ If the spec is missing, skip the Spec sub-agent and note this in the final repor
 Present the two reports under `## Standards` and `## Spec` headings, verbatim or lightly cleaned. Do **not** merge or rerank findings, because the two axes are deliberately separate (see _Why two axes_).
 
 End with a one-line summary: total findings per axis, and the worst issue _within each axis_ (if any). Don't pick a single winner across axes: that's the reranking the separation exists to prevent.
+
+### Evidence for causal claims
+
+Before calling a concurrency guard load-bearing, show a reachable interleaving using the actual public API: which operation replaces or deletes the entry, when each callback runs, and how the guard changes the observable result. A hypothetical future invalidation or replacement operation is not evidence about this candidate. If no such operation exists, describe the guard as redundant or a deliberate readability preference, not as a verified race fix. Apply the same standard to other causal claims: distinguish an observed failure, a source-supported possibility, and an untested hypothesis. Green tests alone do not prove the explanation.
+
+A judgement call changes confidence, not the verdict: once the report identifies an unresolved smell, Standards is REWORK even if no lint rule prohibits it. If current evidence shows the candidate is not a smell, explain that refutation and remove it from the findings; naming it a deliberate preference or a safeguard for a hypothetical future API does not resolve it. Do not let a necessary rejection handler justify a separate redundant identity guard by association.
 
 ### 5.4 Memory read-before (Standards axis)
 

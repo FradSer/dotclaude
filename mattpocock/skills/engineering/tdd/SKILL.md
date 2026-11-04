@@ -7,6 +7,8 @@ description: "BDD-driven test implementation: red-green loop mechanics, seams, m
 
 BDD cycles through three phases: **Discovery** (conversations → examples), **Formulation** (Gherkin scenarios), **Automation** (red-green-refactor, driven by BDD). This skill is the **BDD-driven Automation** reference — the how of test implementation, once `/mattpocock:bdd` has defined the what.
 
+When exploring the codebase, read `GLOSSARY.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
+
 When invoked during `/mattpocock:implement` or `/mattpocock:bdd`, use this skill as the test-writing authority. The `/mattpocock:bdd` skill governs the scenario design and Iron Law; this skill governs the test code quality under BDD discipline.
 
 ## CRITICAL: BDD scenarios come first
@@ -28,7 +30,7 @@ A **seam** is the public boundary you test at: the interface where you observe b
 
 **Test only at pre-agreed seams.** Before writing any test, write down the seams under test and confirm them with the user. No test is written at an unconfirmed seam. You can't test everything, so agreeing the seams up front is how testing effort lands on the critical paths and complex logic instead of every edge case.
 
-Ask: "What's the public interface, and which seams should we test?"
+Ask: "What's the public interface, and which seams should we test?" Give each proposed seam a one-line note on what it catches and what it misses.
 
 When the shape of that interface is itself in question (how deep the module is, where the seam belongs, what the interface should expose), call the Skill tool with "mattpocock:codebase-design" for the vocabulary. It is the shared source of the module, interface, depth, seam, adapter, leverage and locality terms, and it is a reference to consult, not a session to run.
 

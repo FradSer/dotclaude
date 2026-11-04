@@ -7,6 +7,18 @@ Reference for writing any document an agent consumes: a skill, an `AGENTS.md` / 
 
 When the document you're writing is a skill, read [`SKILL-MECHANICS.md`](SKILL-MECHANICS.md) for frontmatter, invocation choice, and router skills.
 
+## Model-aware instruction audit
+
+Apply these principles when authoring or auditing skills, `AGENTS.md`, `CLAUDE.md`, and task prompts. Revisit instructions against the models actually used by contributors; do not assume scaffolding that helped one model helps all of them. Preserve instructions that encode real project constraints.
+
+- **Narrow triggers.** Keep skill descriptions as short as possible while naming the actual workflow and its trigger conditions. Long, overlapping descriptions compete for context and load irrelevant guidance.
+- **Minimal routing.** For a multi-workflow skill, make the root a minimal router to supporting docs with clear loading conditions. Load only the branch the task needs; unnecessary guidance spends context and brings compaction closer.
+- **Outcomes over itineraries.** Specify constraints and completion criteria; leave implementation choices to the agent unless a particular sequence is essential.
+- **Contextual repository guidance.** Revisit always-loaded instruction files after model upgrades. Replace blanket pre-reading with targeted pointers, and keep reading proportional to the task: a typo fix needs no full repository tour.
+- **Evidence-based pruning.** Remove stale workarounds, conflicting guidance, and reminders already satisfied by the model's default behavior. Retain task-specific verification requirements and explicit repository contracts.
+- **Safe autonomy and decision boundaries.** State what may proceed without repeated approval and where approval is required. Only claim a check is safe when verified true. Retain explicit approval boundaries for production writes, destructive operations, and external publication: perceived model capability does not grant permission.
+- **Persistence with a finish line.** Define completion before work begins. If delivery includes running it, inspecting the result, fixing failures, and rerunning affected checks, say so: a first implementation is not that finish line. Keep a stop-for-review gate only when a human decision is genuinely needed, and name the exploration scope and stopping condition for work beyond the first pass.
+
 ## Context pointers
 
 A **context pointer** is a reference held in the agent's context that names some out-of-context material and encodes the condition for reaching it. A skill's description is one; a line in `AGENTS.md` naming a doc is the same object. The pointer's _wording_, not its target, decides when the agent reaches the material, and how reliably. A must-have target behind a weakly worded pointer is a variance bug: sharpen the wording first, and inline the material only if sharpening fails.

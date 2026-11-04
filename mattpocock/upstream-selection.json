@@ -1,0 +1,338 @@
+{
+ "schemaVersion": 1,
+ "repository": "mattpocock/skills",
+ "comparedCommit": "c55ee46073ed923f86ce59a5eb3b6d895095d1b7",
+ "comparisonTag": "v1.3.2",
+ "resolvedTagCommit": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
+ "latestCheckedCommit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+ "selected": [
+  {
+   "upstreamSkill": "ask-matt",
+   "upstreamPath": "skills/engineering/ask-matt/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/ask-matt",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "code-review",
+   "upstreamPath": "skills/engineering/code-review/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/code-review",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "codebase-design",
+   "upstreamPath": "skills/engineering/codebase-design/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/codebase-design",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "diagnosing-bugs",
+   "upstreamPath": "skills/engineering/diagnosing-bugs/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/diagnosing-bugs",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "domain-modeling",
+   "upstreamPath": "skills/engineering/domain-modeling/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/domain-modeling",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "grill-with-docs",
+   "upstreamPath": "skills/engineering/grill-with-docs/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/grill-with-docs",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "implement-spec",
+   "upstreamPath": "skills/engineering/implement-spec/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/implement-spec",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "implement",
+   "upstreamPath": "skills/engineering/implement/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/implement",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "improve-codebase-architecture",
+   "upstreamPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/improve-codebase-architecture",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "pr",
+   "upstreamPath": "skills/engineering/pr/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/pr",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "prototype",
+   "upstreamPath": "skills/engineering/prototype/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/prototype",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "research",
+   "upstreamPath": "skills/engineering/research/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/research",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "retro",
+   "upstreamPath": "skills/engineering/retro/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/retro",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "setup-matt-pocock-skills",
+   "upstreamPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/setup-matt-pocock-skills",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "tdd",
+   "upstreamPath": "skills/engineering/tdd/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/tdd",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "to-spec",
+   "upstreamPath": "skills/engineering/to-spec/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/to-spec",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "to-tickets",
+   "upstreamPath": "skills/engineering/to-tickets/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/to-tickets",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "triage",
+   "upstreamPath": "skills/engineering/triage/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/triage",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "wayfinder",
+   "upstreamPath": "skills/engineering/wayfinder/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "engineering/wayfinder",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "wizard",
+   "upstreamPath": "skills/engineering/wizard/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "engineering/wizard",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "chief-of-staff",
+   "upstreamPath": "skills/in-progress/chief-of-staff/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/chief-of-staff",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "claude-handoff",
+   "upstreamPath": "skills/in-progress/claude-handoff/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/claude-handoff",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "loop-me",
+   "upstreamPath": "skills/in-progress/loop-me/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/loop-me",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "setup-ts-deep-modules",
+   "upstreamPath": "skills/in-progress/setup-ts-deep-modules/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/setup-ts-deep-modules",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "software-factory",
+   "upstreamPath": "skills/in-progress/software-factory/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/software-factory",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "writing-beats",
+   "upstreamPath": "skills/in-progress/writing-beats/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/writing-beats",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "writing-fragments",
+   "upstreamPath": "skills/in-progress/writing-fragments/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/writing-fragments",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "writing-shape",
+   "upstreamPath": "skills/in-progress/writing-shape/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "in-progress/writing-shape",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "git-guardrails-claude-code",
+   "upstreamPath": "skills/misc/git-guardrails-claude-code/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "misc/git-guardrails-claude-code",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "migrate-to-shoehorn",
+   "upstreamPath": "skills/misc/migrate-to-shoehorn/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "misc/migrate-to-shoehorn",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "scaffold-exercises",
+   "upstreamPath": "skills/misc/scaffold-exercises/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "misc/scaffold-exercises",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "setup-pre-commit",
+   "upstreamPath": "skills/misc/setup-pre-commit/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "misc/setup-pre-commit",
+   "registered": false
+  },
+  {
+   "upstreamSkill": "grill-me",
+   "upstreamPath": "skills/productivity/grill-me/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "productivity/grill-me",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "grilling",
+   "upstreamPath": "skills/productivity/grilling/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "productivity/grilling",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "handoff",
+   "upstreamPath": "skills/productivity/handoff/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "productivity/handoff",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "teach",
+   "upstreamPath": "skills/productivity/teach/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "productivity/teach",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "to-questionnaire",
+   "upstreamPath": "skills/productivity/to-questionnaire/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "productivity/to-questionnaire",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "wait-what",
+   "upstreamPath": "skills/productivity/wait-what/SKILL.md",
+   "upstreamInvocation": "user",
+   "localSkill": "productivity/wait-what",
+   "registered": true
+  },
+  {
+   "upstreamSkill": "writing-for-agents",
+   "upstreamPath": "skills/productivity/writing-for-agents/SKILL.md",
+   "upstreamInvocation": "model",
+   "localSkill": "productivity/writing-for-agents",
+   "registered": true
+  }
+ ],
+ "excluded": [],
+ "localOnly": [
+  {
+   "localSkill": "deprecated/design-an-interface",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "deprecated/qa",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "deprecated/request-refactor-plan",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "deprecated/ubiquitous-language",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "engineering/bdd",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "engineering/deslop",
+   "reason": "Adapted from pi-matt-pocock procedures/deslop.md; no upstream mattpocock/skills counterpart."
+  },
+  {
+   "localSkill": "engineering/resolving-merge-conflicts",
+   "reason": "Removed upstream in v1.3.0 but deliberately kept and registered in this fork with a local CRITICAL block; see deletedUpstream."
+  },
+  {
+   "localSkill": "in-progress/batch-grill-me",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "personal/edit-article",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "personal/obsidian-vault",
+   "reason": "Fork-local skill with no upstream counterpart."
+  },
+  {
+   "localSkill": "productivity/writing-great-skills",
+   "reason": "Fork-local skill with no upstream counterpart."
+  }
+ ],
+ "deletedUpstream": [
+  {
+   "upstreamSkill": "resolving-merge-conflicts",
+   "upstreamPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
+   "preservedLocalSkill": "engineering/resolving-merge-conflicts",
+   "reason": "Deleted upstream in v1.3.0; the fork keeps this registered, customized CRITICAL-block version for compatibility (also listed in localOnly)."
+  }
+ ]
+}

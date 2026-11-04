@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 Implement the work described by the user in the spec or tickets.
 
+If the user passes a ticket reference, fetch it from the issue tracker and state its title before starting. If the reference is ambiguous, use the AskUserQuestion tool to ask which ticket they mean, proposing the matching references as options.
+
 Use /mattpocock:bdd where possible, at pre-agreed seams. During the Automation phase, load `/mattpocock:tdd` (BDD-driven) for test quality, seams, and mocking guidance.
 
 Run typechecking regularly, single test files regularly, and the full test suite once at the end.
