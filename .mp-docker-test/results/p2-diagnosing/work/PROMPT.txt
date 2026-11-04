@@ -1,1 +1,0 @@
-Load the mattpocock:diagnosing-bugs skill using the Skill tool and follow it. There is a bug in /work/fixture-app: `npm test` fails — applyDiscount produces wrong results for some inputs. Find and fix the real root cause, and prove the fix with a failing-then-passing test. Headless session: never ask the user; state reasonable assumptions inline and proceed.
