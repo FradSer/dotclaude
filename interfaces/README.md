@@ -32,7 +32,7 @@ skills/better-interface/
 
 ## Skills
 
-- `/better-interface` — slash command (registered under `commands`). The domain references are not standalone skills; they are loaded only through the orchestrator.
+- `/better-interface` — slash command (auto-discovered from `skills/`, `user-invocable: true`). The domain references are not standalone skills; they are loaded only through the orchestrator.
 
 ## Origin
 

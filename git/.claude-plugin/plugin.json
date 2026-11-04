@@ -13,15 +13,5 @@
     "workflow",
     "version-control",
     "gitflow"
-  ],
-  "commands": [
-    "./skills/start-feature/",
-    "./skills/finish-feature/",
-    "./skills/start-hotfix/",
-    "./skills/finish-hotfix/",
-    "./skills/start-release/",
-    "./skills/finish-release/",
-    "./skills/commit/",
-    "./skills/commit-and-push/"
   ]
 }

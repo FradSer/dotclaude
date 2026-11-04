@@ -1,0 +1,38 @@
+{
+  "firstStartTime": "2026-10-09T12:24:40.446Z",
+  "firstStartVersion": "2.1.295",
+  "machineID": "0f07a15104b7412f98c2315cacd28ec934c9826be974ec6cdad4725f02b2bcb5",
+  "opusProMigrationComplete": true,
+  "sonnet1m45MigrationComplete": true,
+  "seenNotifications": {},
+  "hasResetAutoModeOptInForDefaultOffer": true,
+  "migrationVersion": 14,
+  "userID": "df1b320aef003a6de245c86b5acf4bbe89f16e245f2db227f068fc32231870d6",
+  "pluginUsage": {
+    "mattpocock@inline": {
+      "usageCount": 2,
+      "lastUsedAt": 1791549014958,
+      "lastUsedNumStartups": 0
+    },
+    "cc-plugin-agents-md@builtin": {
+      "usageCount": 0,
+      "lastUsedAt": 1791548680636,
+      "lastUsedNumStartups": 0
+    },
+    "cc-plugin-plugin-authoring@builtin": {
+      "usageCount": 0,
+      "lastUsedAt": 1791548680636,
+      "lastUsedNumStartups": 0
+    }
+  },
+  "skillUsage": {
+    "mattpocock:diagnosing-bugs": {
+      "usageCount": 1,
+      "lastUsedAt": 1791548683817
+    },
+    "mattpocock:code-review": {
+      "usageCount": 1,
+      "lastUsedAt": 1791549014957
+    }
+  }
+}

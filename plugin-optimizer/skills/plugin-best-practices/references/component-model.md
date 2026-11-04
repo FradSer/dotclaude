@@ -6,9 +6,9 @@ Detailed overview of Claude Code plugin component types. Per the upstream plugin
 
 Skills are markdown prompts that run in the main conversation context and extend knowledge or provide workflows.
 
-Two skill types are supported:
-- **Instruction-type** (`user-invocable: true` → `commands`): imperative voice, phase-based workflows (with optional "Initialization" and "Background Knowledge" pre-phase sections), user-invoked. Name with a `use-<action>` prefix (e.g., `use-kicad-cli`).
-- **Knowledge-type** (`user-invocable: false` → `skills`): declarative voice, topic-based references, auto-loaded. Name with a `using-<topic>` prefix (e.g., `using-git-worktrees`).
+Two skill types are supported. Both live in `skills/<name>/SKILL.md` and are auto-discovered; the type is set by frontmatter, not by a manifest key:
+- **Instruction-type** (default or `user-invocable: true`): imperative voice, phase-based workflows (with optional "Initialization" and "Background Knowledge" pre-phase sections), user-invoked. Name with a `use-<action>` prefix (e.g., `use-kicad-cli`).
+- **Knowledge-type** (`user-invocable: false`): declarative voice, topic-based references, auto-loaded. Name with a `using-<topic>` prefix (e.g., `using-git-worktrees`).
 
 ### Progressive Disclosure
 
@@ -65,10 +65,12 @@ Markdown files that adjust Claude's response shape (terseness, structure, verbos
 - **Themes** ship branded color presets
 - **Output styles** modulate response formatting independent of domain logic
 
-## plugin.json Declaration
+## SKILL.md frontmatter
 
-| Config | User invocable | Claude invocable | Declare in |
-|--------|----------------|------------------|------------|
-| `user-invocable: false` | No | Yes | `skills` (knowledge-type) |
-| (default) or `user-invocable: true` | Yes | Yes | `commands` (instruction-type) |
-| `disable-model-invocation: true` | Yes | No | `commands` (instruction-type, no auto-invoke) |
+| Config | User invocable | Claude invocable | Manifest declaration |
+|--------|----------------|------------------|----------------------|
+| `user-invocable: false` | No | Yes | None — `skills/` is auto-scanned |
+| (default) or `user-invocable: true` | Yes | Yes | None — `skills/` is auto-scanned |
+| `disable-model-invocation: true` | Yes | No | None — `skills/` is auto-scanned |
+
+Use `plugin.json` `skills` only to add extra skill directories. Never list `skills/<name>/` under `commands`; that registers each SKILL.md twice.

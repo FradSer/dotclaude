@@ -17,13 +17,6 @@
     "knowledge-curation",
     "retrieval"
   ],
-  "commands": [
-    "./skills/generate/",
-    "./skills/research/",
-    "./skills/outline/",
-    "./skills/write/",
-    "./skills/polish/"
-  ],
   "skills": [
     "./skills/engine/"
   ],

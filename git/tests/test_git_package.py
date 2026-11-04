@@ -30,7 +30,11 @@ class TestGitPackageDecoupling(unittest.TestCase):
         with open(plugin_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         self.assertEqual(data["name"], "git")
-        self.assertIn("commands", data)
+        self.assertNotIn(
+            "commands",
+            data,
+            "skills/ is auto-discovered; declaring skills under commands registers them twice",
+        )
 
     def test_skills_frontmatter_validity(self):
         """Verify all SKILL.md frontmatters in git package parse cleanly."""

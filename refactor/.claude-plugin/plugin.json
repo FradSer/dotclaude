@@ -20,9 +20,5 @@
   ],
   "skills": [
     "./skills/best-practices/"
-  ],
-  "commands": [
-    "./skills/refactor/",
-    "./skills/refactor-project/"
   ]
 }

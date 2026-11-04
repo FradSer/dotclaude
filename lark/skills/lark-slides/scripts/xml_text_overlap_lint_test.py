@@ -49,7 +49,7 @@ class XmlTextOverlapLintTest(unittest.TestCase):
         self.assertEqual(completed.stdout, "")
         self.assertEqual(
             completed.stderr,
-            f"xml-text-overlap-lint error: unexpected argument: {input_path}，need --input\n",
+            f"xml-text-overlap-lint error: unexpected argument: {input_path}, need --input\n",
         )
 
     def test_xml_text_overlap_lint_accepts_inline_fixture_xml_samples(self) -> None:

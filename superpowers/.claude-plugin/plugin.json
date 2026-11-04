@@ -18,13 +18,6 @@
   "agents": [
     "./agents/superpowers-evaluator.md"
   ],
-  "commands": [
-    "./skills/brainstorming/",
-    "./skills/writing-plans/",
-    "./skills/executing-plans/",
-    "./skills/retrospective/",
-    "./skills/systematic-debugging/"
-  ],
   "skills": [
     "./skills/behavior-driven-development/",
     "./skills/verification-before-completion/",

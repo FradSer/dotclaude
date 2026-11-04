@@ -15,9 +15,5 @@
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
   },
-  "license": "MIT",
-  "commands": [
-    "./skills/delegate/",
-    "./skills/research/"
-  ]
+  "license": "MIT"
 }

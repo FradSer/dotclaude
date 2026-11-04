@@ -25,8 +25,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin.py <plugin-path> --check=m
 
 | Component | When to Use | Key Requirements |
 |-----------|-------------|------------------|
-| **Instruction-type Skills** | User-invoked workflows, linear process | Imperative voice, phase-based, declared in `commands`; name with `use-<action>` prefix (e.g., `use-kicad-cli`) |
-| **Knowledge-type Skills** | Reference knowledge for agents | Declarative voice, topic-based, declared in `skills`; name with `using-<topic>` prefix (e.g., `using-git-worktrees`) |
+| **Instruction-type Skills** | User-invoked workflows, linear process | Imperative voice, phase-based, `user-invocable: true`; name with `use-<action>` prefix (e.g., `use-kicad-cli`) |
+| **Knowledge-type Skills** | Reference knowledge for agents | Declarative voice, topic-based, `user-invocable: false`; name with `using-<topic>` prefix (e.g., `using-git-worktrees`) |
 | **Agents** | Isolated, specialized decision-making | Restricted tools, 2-4 `<example>` blocks, isolated context |
 | **MCP Servers** | External tool/data integration | stdio/http/sse transport, ${CLAUDE_PLUGIN_ROOT} paths |
 | **LSP Servers** | IDE features (go to definition) | Language server binary, extension mapping |

@@ -21,10 +21,5 @@
   "skills": [
     "./skills/remotion/",
     "./skills/tropes/"
-  ],
-  "commands": [
-    "./skills/patent-architect/",
-    "./skills/create-prd/",
-    "./skills/generate-video/"
   ]
 }

@@ -46,19 +46,16 @@ enterprise-plugin/
 └── CHANGELOG.md              # Version history
 ```
 
-**Example plugin.json with explicit skill declarations**:
+**Example plugin.json**: `skills/` is auto-discovered, so no declaration is needed. Set `user-invocable` in each `SKILL.md` frontmatter to expose a slash command.
 ```json
 {
   "name": "enterprise-plugin",
   "version": "1.0.0",
-  "description": "Enterprise automation tools",
-  "commands": [
-    "./skills/commit/",
-    "./skills/code-reviewer/",
-    "./skills/pdf-processor/"
-  ]
+  "description": "Enterprise automation tools"
 }
 ```
+
+Never list `./skills/<name>/` under `"commands"`: Claude Code already registers that `SKILL.md`, and declaring it again doubles the component inventory and the always-on token cost. `"commands"` is for flat `.md` command files in `commands/`.
 
 > **Warning**: The `.claude-plugin/` directory contains the `plugin.json` file. All other directories (commands/, agents/, skills/, output-styles/, themes/, monitors/, hooks/, bin/) MUST be at the plugin root, not inside `.claude-plugin/`.
 

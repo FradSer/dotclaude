@@ -96,10 +96,12 @@ Skills support string substitution for dynamic values:
 
 ## Declaring in plugin.json
 
-Declare by frontmatter (see `user-invocable` and `disable-model-invocation` fields above):
-- **Knowledge-type** (`user-invocable: false`) → `plugin.json` **`skills`** field; name with a `using-<topic>` prefix (e.g., `using-git-worktrees`)
-- **Instruction-type** (default or `user-invocable: true`) → **`commands`** field; name with a `use-<action>` prefix (e.g., `use-kicad-cli`)
-- **`disable-model-invocation: true`** → **`commands`** (still instruction-type; prevents Claude auto-invoke)
+Skills in `skills/<name>/SKILL.md` are auto-discovered; no manifest declaration is needed. Set the type in frontmatter (see `user-invocable` and `disable-model-invocation` fields above):
+- **Knowledge-type** (`user-invocable: false`); name with a `using-<topic>` prefix (e.g., `using-git-worktrees`)
+- **Instruction-type** (default or `user-invocable: true`); name with a `use-<action>` prefix (e.g., `use-kicad-cli`)
+- **`disable-model-invocation: true`** (still instruction-type; prevents Claude auto-invoke)
+
+Use `plugin.json` `skills` only to add extra skill directories. Never list `skills/<name>/` under `commands`; that registers each SKILL.md twice.
 
 ## Best Practices
 

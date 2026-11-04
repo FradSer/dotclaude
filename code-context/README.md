@@ -166,13 +166,13 @@ Internal knowledge skill loaded by the context-researcher agent. Provides method
 ```
 code-context/
 ├── .claude-plugin/
-│   └── plugin.json              # Manifest (skills: [./skills/code-context], commands: [./skills/get-context])
+│   └── plugin.json              # Manifest (skills: [./skills/code-context])
 ├── agents/
 │   └── context-researcher.md    # Isolated research agent
 ├── skills/
 │   ├── code-context/            # Knowledge skill (internal)
 │   │   └── SKILL.md            # Method selection guide
-│   └── get-context/             # User-invocable command
+│   └── get-context/             # User-invocable skill (auto-discovered)
 │       └── SKILL.md            # Command workflow
 ├── .mcp.json                    # MCP server configuration
 └── README.md

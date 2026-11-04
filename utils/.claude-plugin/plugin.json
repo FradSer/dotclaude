@@ -14,9 +14,5 @@
     "readme",
     "changelog",
     "productivity"
-  ],
-  "commands": [
-    "./skills/update-readme/",
-    "./skills/update-changelog/"
   ]
 }

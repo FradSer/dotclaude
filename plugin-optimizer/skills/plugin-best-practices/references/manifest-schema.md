@@ -66,8 +66,8 @@ The name is used for namespacing — agent `agent-creator` in plugin `plugin-dev
 
 | Field          | Type                  | Description                                                                                                                            | Example                                |
 | :------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------- |
-| `skills`       | string\|array         | Custom skill directories containing `<name>/SKILL.md` (replaces default `skills/`)                                                     | `"./custom/skills/"`                   |
-| `commands`     | string\|array         | Flat `.md` skill files or skill directories (replaces default `commands/`)                                                             | `["./skills/commit/"]`                 |
+| `skills`       | string\|array         | Extra skill directories containing `<name>/SKILL.md` (adds to the default `skills/` scan)                                              | `"./custom/skills/"`                   |
+| `commands`     | string\|array\|object | Flat `.md` command files, directories of them, or an inline object map (replaces default `commands/`)                                 | `["./commands/status.md"]`             |
 | `agents`       | string\|array         | Custom agent files or directories (replaces default `agents/`)                                                                         | `"./custom-agents/"`                   |
 | `hooks`        | string\|array\|object | Hook config path or inline configuration (additive — combines with default `hooks/hooks.json`)                                         | `"./extra-hooks.json"`                 |
 | `mcpServers`   | string\|array\|object | MCP config path or inline configuration (additive — combines with default `.mcp.json`)                                                 | `"./mcp-config.json"`                  |
@@ -88,10 +88,10 @@ The name is used for namespacing — agent `agent-creator` in plugin `plugin-dev
 
 ## Path behavior rules
 
-For `skills`, `commands`, `agents`, `outputStyles`, `themes`, and `monitors`, a custom path **replaces** the default directory. To keep the default and add more, include the default path explicitly:
+`skills` **adds to** the default `skills/` scan. `commands`, `agents`, `outputStyles`, `themes`, and `monitors` **replace** their default directory; to keep the default and add more, include the default path explicitly.
 
 ```json
-{ "skills": ["./skills/", "./extras/"] }
+{ "skills": ["./extras/"] }
 ```
 
 `hooks`, `mcpServers`, and `lspServers` use additive semantics — values declared in the manifest layer combine with files at the standard locations.
@@ -99,14 +99,14 @@ For `skills`, `commands`, `agents`, `outputStyles`, `themes`, and `monitors`, a 
 * All paths MUST be relative to the plugin root and start with `./`
 * Components from custom paths use the same naming and namespacing rules
 * When a skill path points to a directory containing `SKILL.md` directly (e.g. `"./"`), the frontmatter `name` field determines the invocation name; otherwise the directory basename is used.
+* **Never point `commands` into `skills/`.** Claude Code auto-discovers `skills/<name>/SKILL.md`; declaring the same directory under `commands` registers it twice, doubling the component inventory and always-on token cost. Set slash-command visibility with `user-invocable` in the SKILL.md frontmatter instead.
 
 **Path examples**:
 
 ```json
 {
   "commands": [
-    "./skills/commit/",
-    "./skills/config-git/"
+    "./commands/status.md"
   ],
   "agents": [
     "./custom-agents/reviewer.md",

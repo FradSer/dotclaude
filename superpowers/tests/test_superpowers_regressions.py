@@ -132,15 +132,14 @@ class SuperpowersRegressionTests(unittest.TestCase):
         )
 
     def test_manifest_keeps_five_user_commands_and_three_internal_skills(self) -> None:
-        """Removal must not have dropped the 5 user-invocable commands or the
-        3 internal helper skills loaded within user-invoked flows."""
+        """The 5 user-invocable skills and 3 internal helper skills are in
+        skills/ and auto-discovered; the manifest must not re-declare them
+        under "commands" (that registers each SKILL.md twice)."""
         manifest = json.loads(
             (SUPERPOWERS / ".claude-plugin/plugin.json").read_text()
         )
-        commands = manifest.get("commands", [])
+        self.assertNotIn("commands", manifest)
         skills = manifest.get("skills", [])
-        self.assertEqual(len(commands), 5,
-                         f"expected 5 user commands, got {len(commands)}: {commands}")
         self.assertEqual(len(skills), 3,
                          f"expected 3 internal skills, got {len(skills)}: {skills}")
         for name in (
@@ -152,6 +151,16 @@ class SuperpowersRegressionTests(unittest.TestCase):
                 any(name in s for s in skills),
                 f"internal skill {name} missing from manifest",
             )
+        for name in (
+            "brainstorming",
+            "writing-plans",
+            "executing-plans",
+            "retrospective",
+            "systematic-debugging",
+        ):
+            frontmatter = (SUPERPOWERS / "skills" / name / "SKILL.md").read_text()
+            self.assertIn("user-invocable: true", frontmatter,
+                          f"user skill {name} lost its slash-command visibility")
 
 
 if __name__ == "__main__":

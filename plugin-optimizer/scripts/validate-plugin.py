@@ -527,6 +527,19 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     # Validate commands field
     if "commands" in manifest:
         commands = manifest["commands"]
+        if isinstance(commands, str):
+            command_paths = [commands]
+        elif isinstance(commands, list):
+            command_paths = [c for c in commands if isinstance(c, str)]
+        elif isinstance(commands, dict):
+            command_paths = [
+                entry["source"]
+                for entry in commands.values()
+                if isinstance(entry, dict) and isinstance(entry.get("source"), str)
+            ]
+        else:
+            command_paths = []
+
         if not commands:
             result.must(
                 "'commands' array is empty",
@@ -534,62 +547,41 @@ def check_manifest(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
                 suggestion="Add command paths or remove empty array"
             )
         else:
-            for cmd_path in commands:
-                if not re.match(r'^\./.*/$', cmd_path):
+            for cmd_path in command_paths:
+                if re.match(r'^\./skills(/|$)', cmd_path):
+                    result.must(
+                        "Duplicate skill registration",
+                        file=".claude-plugin/plugin.json",
+                        source=f'"commands": [..., "{cmd_path}", ...]',
+                        suggestion=f'Remove "{cmd_path}" from "commands". Skills in skills/ are auto-discovered; listing them here registers each SKILL.md twice. Set visibility with user-invocable in SKILL.md frontmatter.'
+                    )
+                    continue
+
+                if not cmd_path.startswith("./"):
                     result.must(
                         f"Invalid path format: {cmd_path}",
                         file=".claude-plugin/plugin.json",
                         source=f'"commands": [..., "{cmd_path}", ...]',
-                        suggestion="Use './path/' format with trailing slash"
+                        suggestion="Use a path starting with './'"
                     )
                     continue
 
-                clean_path = cmd_path.rstrip("/")
-                full_path = plugin_dir / clean_path
-                if not full_path.is_dir():
+                full_path = plugin_dir / cmd_path.rstrip("/")
+                if not full_path.exists():
                     result.must(
-                        f"Command path not found",
+                        "Command path not found",
                         file=".claude-plugin/plugin.json",
                         source=f'"{cmd_path}"',
-                        suggestion=f"Create directory {cmd_path}"
+                        suggestion=f"Create {cmd_path}"
                     )
-                elif not (full_path / "SKILL.md").exists():
+                elif full_path.is_dir() and not (full_path / "SKILL.md").exists():
                     result.must(
-                        f"Missing SKILL.md in command",
+                        "Missing SKILL.md in command",
                         file=cmd_path,
                         suggestion="Create SKILL.md with frontmatter"
                     )
                 elif verbose:
                     result.ok(f"Verified: {cmd_path}", file=".claude-plugin/plugin.json")
-
-            # Check for undeclared user-invocable skills
-            skills_dir = plugin_dir / "skills"
-            if skills_dir.exists():
-                declared = set(commands)
-
-                def _check_user_invocable(skill_dir: Path, rel_root: str) -> None:
-                    skill_path = f"./skills/{rel_root}{skill_dir.name}/"
-                    if skill_path not in declared:
-                        content = (skill_dir / "SKILL.md").read_text()
-                        fm, _, _ = parse_frontmatter(content)
-                        if fm.get("user-invocable", "").lower() == "true":
-                            result.must(
-                                "Undeclared user-invocable skill",
-                                file=f"skills/{rel_root}{skill_dir.name}/SKILL.md",
-                                source="user-invocable: true",
-                                suggestion=f'Add "{skill_path}" to "commands" array in plugin.json',
-                            )
-
-                for skill_dir in skills_dir.iterdir():
-                    if not skill_dir.is_dir():
-                        continue
-                    if (skill_dir / "SKILL.md").exists():
-                        _check_user_invocable(skill_dir, "")
-                    else:
-                        # Bucket layout: skills/<bucket>/<skill>/SKILL.md
-                        for nested in skill_dir.iterdir():
-                            if nested.is_dir() and (nested / "SKILL.md").exists():
-                                _check_user_invocable(nested, f"{skill_dir.name}/")
 
     # Validate hooks field
     if "hooks" in manifest:

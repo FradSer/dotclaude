@@ -81,7 +81,7 @@ commands/deploy.md:
 
 User-initiated plugin optimization workflow accepting plugin path as argument.
 
-**Technical implementation**: User-invocable skill (`user-invocable: true`) stored in `skills/optimize-plugin/` and registered in `plugin.json` `commands` array following the modern pattern where skills serve as commands.
+**Technical implementation**: User-invocable skill (`user-invocable: true`) stored in `skills/optimize-plugin/`. Claude Code auto-discovers `skills/`; `user-invocable` in the frontmatter is what exposes `/plugin-optimizer:optimize-plugin`. Do not declare skill directories under `plugin.json` `commands` — that registers each skill twice.
 
 **What it does**: Executes a multi-phase validation and optimization workflow that launches the plugin-optimizer agent to analyze plugin structure, fix issues, and generate comprehensive reports.
 
@@ -138,13 +138,13 @@ See `skills/plugin-best-practices/SKILL.md` for detailed validation rules.
 ```
 plugin-optimizer/
 ├── .claude-plugin/
-│   └── plugin.json              # Manifest (skills: [./skills/plugin-best-practices/], commands: [./skills/optimize-plugin/])
+│   └── plugin.json              # Manifest (skills: [./skills/plugin-best-practices/])
 ├── agents/
 │   └── plugin-optimizer.md      # Autonomous analysis agent
 ├── scripts/                     # Validation utilities
 │   └── validate-plugin.py       # Unified validator (structure, manifest, frontmatter, tools, tokens)
 ├── skills/
-│   ├── optimize-plugin/         # User-invocable skill (registered as command)
+│   ├── optimize-plugin/         # User-invocable skill (auto-discovered, user-invocable: true)
 │   │   └── SKILL.md            # Multi-phase optimization workflow
 │   └── plugin-best-practices/   # Knowledge-type skill (agent-only)
 │       ├── SKILL.md            # Core validation rules

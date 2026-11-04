@@ -20,8 +20,5 @@
     "writing",
     "interface",
     "review"
-  ],
-  "commands": [
-    "./skills/better-interface/"
   ]
 }

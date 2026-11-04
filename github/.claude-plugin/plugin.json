@@ -16,12 +16,6 @@
     "tdd",
     "worktrees"
   ],
-  "commands": [
-    "./skills/create-issues/",
-    "./skills/create-pr/",
-    "./skills/resolve-issues/",
-    "./skills/review-pr/"
-  ],
   "hooks": {
     "Stop": [
       {

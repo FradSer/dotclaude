@@ -15,10 +15,5 @@
   ],
   "agents": [
     "./agents/pi-agent.md"
-  ],
-  "commands": [
-    "./skills/delegate/",
-    "./skills/review/",
-    "./skills/setup/"
   ]
 }

@@ -16,7 +16,7 @@ superpowers 插件当前架构（与 mattpocock 并存于 marketplace.json）：
 
 **Skills（8 个）：** 5 个用户命令（brainstorming、writing-plans、executing-plans、retrospective、systematic-debugging）+ 3 个内部 helper（behavior-driven-development、verification-before-completion、receiving-code-review）
 
-**SessionStart hook + using-superpowers dispatcher 已删除。** superpowers 改为「用户手动调用、模型无法调用」。5 个用户命令为 `"commands"`，3 个内部 helper 注册在 `"skills"` 只在用户发起流程内加载。
+**SessionStart hook + using-superpowers dispatcher 已删除。** superpowers 改为「用户手动调用、模型无法调用」。5 个用户命令与 3 个内部 helper 都在 `skills/` 下自动发现，可见性由 SKILL.md frontmatter（`user-invocable` / `disable-model-invocation`）控制；不要把 skill 目录写进 `plugin.json` 的 `commands`（会重复注册）。
 
 **关键设计约束：**
 - 整个插件只允许 1 个 hook（用户硬约束），且必须兼容各种情况

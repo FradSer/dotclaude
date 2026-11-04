@@ -23,9 +23,11 @@ plugin-name/
 └── examples/                   # Example configurations
 ```
 
-**Skill registration determines visibility.** A skill registered under `"commands"` in plugin.json becomes a user-invocable slash command (e.g., `/git:commit`). A skill registered under `"skills"` is internal-only, loaded automatically when Codex needs domain knowledge but never shown in `/help`. Example from `refactor/`:
-- `"commands": ["./skills/refactor/"]` -- user runs `/refactor:refactor`
-- `"skills": ["./skills/best-practices/"]` -- loaded automatically during refactoring
+**Skills in `skills/` are auto-discovered; never list them under `"commands"`.** Claude Code scans `skills/<name>/SKILL.md` on its own. Listing that same directory in `"commands"` registers the SKILL.md twice, doubling the component inventory and the always-on token cost. `"skills"` adds extra directories; `"commands"` is for flat `.md` command files in `commands/`.
+
+**Visibility comes from SKILL.md frontmatter**, not the manifest key: `user-invocable: true` exposes `/plugin:skill` in `/help`, `false` keeps it internal. Both work with no `"commands"` key. Example from `refactor/`:
+- `skills/refactor/SKILL.md` with `user-invocable: true` -- user runs `/refactor:refactor`
+- `skills/best-practices/SKILL.md` with `user-invocable: false` -- loaded as domain knowledge only
 
 **Hooks** can be inline in `plugin.json`. See `git/.Codex-plugin/plugin.json` for the `PreToolUse` hook pattern (runs a shell script to validate Bash tool calls before execution).
 

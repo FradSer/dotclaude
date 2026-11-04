@@ -15,8 +15,5 @@
     "code-review",
     "best-practices"
   ],
-  "license": "MIT",
-  "commands": [
-    "./skills/swiftui-review/"
-  ]
+  "license": "MIT"
 }

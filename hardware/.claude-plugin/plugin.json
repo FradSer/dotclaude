@@ -19,9 +19,5 @@
     "cli",
     "electronics"
   ],
-  "license": "MIT",
-  "commands": [
-    "./skills/use-kicad-cli/",
-    "./skills/use-openscad/"
-  ]
+  "license": "MIT"
 }

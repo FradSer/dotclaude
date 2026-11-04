@@ -17,8 +17,5 @@
   ],
   "skills": [
     "./skills/plugin-best-practices/"
-  ],
-  "commands": [
-    "./skills/optimize-plugin/"
   ]
 }

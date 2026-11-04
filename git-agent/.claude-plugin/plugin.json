@@ -15,12 +15,6 @@
     "git"
   ],
   "license": "MIT",
-  "commands": [
-    "./skills/commit/",
-    "./skills/commit-and-push/",
-    "./skills/related/",
-    "./skills/init/"
-  ],
   "hooks": {
     "PreToolUse": [
       {

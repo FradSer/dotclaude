@@ -15,8 +15,5 @@
   "author": {
     "name": "Frad LEE",
     "email": "fradser@gmail.com"
-  },
-  "commands": [
-    "./skills/generate-image/"
-  ]
+  }
 }

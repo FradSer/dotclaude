@@ -12,8 +12,5 @@
     "memory",
     "consolidation",
     "claude-code"
-  ],
-  "commands": [
-    "./skills/consolidate/"
   ]
 }
