@@ -46,7 +46,7 @@ Autoresearch already enforces its own bound (experiments / wall-clock / completi
 
 ### /autoresearch:start <goal> [overrides]
 
-Give it a plain-language goal — `/autoresearch:start make X faster` — and it inspects the repo to infer the full contract, asking only when the artifact or evaluator is genuinely ambiguous. Pass any flag below to pin it as an override.
+Give it a plain-language goal — `/autoresearch:start make X faster` — and it inspects the repo to infer a **recommended** contract, then grills each decision with you one at a time (goal measurability, artifact, evaluator, bounds), each with a recommended answer, before launching. Pass any flag below to pin a field as an override (an override is used verbatim and is not re-inferred or re-grilled).
 
 **Inferred (or overridden) contract:**
 - `--edit <glob|path>` — the ONLY artifact the agent may modify
