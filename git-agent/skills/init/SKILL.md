@@ -1,6 +1,6 @@
 ---
 name: init
-description: Initializes or optimizes git-agent configuration, regenerates commit scopes from git history, and re-derives .gitignore rules.
+description: Initializes or optimizes git-agent configuration, regenerates commit scopes from git history, and re-derives .gitignore rules. Use when setting up git-agent in a repo, when commit scopes drift from the current directories, or when asked to "init git-agent", "regenerate scopes", or "update gitignore".
 user-invocable: true
 argument-hint: "[--scope | --gitignore]"
 allowed-tools: ["Bash(git-agent:*)"]

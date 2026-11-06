@@ -1238,13 +1238,35 @@ def _validate_single_frontmatter(file_path: Path, comp_type: str, result: Valida
                     )
                     break
 
-            # Check for trigger phrases (official requirement: describe when to use it)
+            # Check for trigger phrases (official requirement: describe when to use it).
+            # Match the *intent* — a stated scenario — not a fixed English word list.
+            # Real descriptions use Chinese ("当…时使用", "适用于", "遇到…时使用"),
+            # imperative variants ("Use before …", "Use this skill whenever …",
+            # "Use ONLY on …", "Mandatory entry point … for any request"), and
+            # exclusion/scope clauses. Flagging those as "missing triggers" is a
+            # false positive that hides genuinely thin descriptions.
             trigger_phrases = [
                 r'\bUse when\b',
                 r'\bUse for\b',
+                r'\bUse (this skill )?(whenever|before|after|only|to|if|on)\b',
+                r'\bUse this skill\b',
                 r'\bwhen the user\b',
+                r'\bwhenever the user\b',
                 r'\btriggers?\b',
                 r'\bactivat(e|ion)\b',
+                r'\bfor any (request|task|ask)\b',
+                r'\bmandatory entry point\b',
+                # Chinese trigger phrasing (Lark and other upstream mirrors are
+                # authored in Chinese). Descriptions can be 500+ chars and put
+                # the scenario clause far from the opening, so allow a wide gap:
+                # "当用户…时使用", "用户需要…时使用", "遇到…时使用", "适用于…",
+                # "…时使用", "不要因为…" (scope/exclusion = a stated scenario).
+                r'当.{0,400}?时(使用|调用|应|才|，|。|；)',
+                r'(用户|你).{0,200}?(需要|要|想|提到|询问|给出|明确).{0,200}?时使用',
+                r'适用于',
+                r'遇到.{0,200}?时使用',
+                r'时使用(此|本)?\s*skill',
+                r'不要因为',
             ]
             has_trigger = any(re.search(pattern, desc, re.IGNORECASE) for pattern in trigger_phrases)
 
@@ -1447,17 +1469,32 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
         result.may("No skills/ directory")
         return result
 
+    # Each entry is (skill_dir, entry_file). Denested router plugins
+    # (marketing, office/lark, hyperframes) rename SKILL.md to
+    # <dirname>/<dirname>.md to suppress auto-discovery; find_components()
+    # already treats that as the entry file, so the token check must too —
+    # otherwise every denested body silently escapes the budget analysis.
     skills = []
     for skill_dir in skills_dir.iterdir():
         if not skill_dir.is_dir():
             continue
         if (skill_dir / "SKILL.md").exists():
-            skills.append(skill_dir)
+            skills.append((skill_dir, skill_dir / "SKILL.md"))
+        elif (skill_dir / f"{skill_dir.name}.md").exists():
+            # Denested entry layout: skills/<name>/<name>.md
+            skills.append((skill_dir, skill_dir / f"{skill_dir.name}.md"))
         else:
             # Bucket layout: descend so nested skills get token-budget checks.
             for nested in skill_dir.iterdir():
                 if nested.is_dir() and (nested / "SKILL.md").exists():
-                    skills.append(nested)
+                    skills.append((nested, nested / "SKILL.md"))
+                elif nested.is_dir() and (nested / f"{nested.name}.md").exists():
+                    skills.append((nested, nested / f"{nested.name}.md"))
+
+    # Root-level router (skills/SKILL.md, e.g. hyperframes) is itself a skill.
+    root_router = skills_dir / "SKILL.md"
+    if root_router.exists():
+        skills.append((skills_dir, root_router))
 
     if not skills:
         result.may("No skills found")
@@ -1468,9 +1505,9 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     # upstream-controlled and MUST caps are reported but not enforced.
     plugin_mirror = _is_plugin_level_mirror(plugin_dir)
 
-    for skill_dir in sorted(skills):
-        skill_result = _analyze_skill_tokens(skill_dir)
-        rel_path = get_relative_path(skill_dir / "SKILL.md", plugin_dir)
+    for skill_dir, entry_file in sorted(skills, key=lambda pair: str(pair[1])):
+        skill_result = _analyze_skill_tokens(skill_dir, entry_file)
+        rel_path = get_relative_path(entry_file, plugin_dir)
 
         meta = skill_result["metadata_tokens"]
         body = skill_result["skill_tokens"]
@@ -1603,9 +1640,14 @@ def check_tokens(plugin_dir: Path, verbose: bool = False) -> ValidationResult:
     return result
 
 
-def _analyze_skill_tokens(skill_dir: Path) -> dict:
-    """Analyze token usage for a single skill."""
-    skill_md = skill_dir / "SKILL.md"
+def _analyze_skill_tokens(skill_dir: Path, entry_file: Path | None = None) -> dict:
+    """Analyze token usage for a single skill.
+
+    entry_file is the skill's SKILL.md (default) or its denested equivalent
+    (<dirname>.md) for router plugins that rename SKILL.md to suppress
+    auto-discovery. The file label in the report always reflects the real file.
+    """
+    skill_md = entry_file if entry_file is not None else skill_dir / "SKILL.md"
     content = skill_md.read_text()
     fm, body, _ = parse_frontmatter(content)
 
@@ -1621,8 +1663,8 @@ def _analyze_skill_tokens(skill_dir: Path) -> dict:
     body_lines = len([l for l in body.split("\n") if l.strip()])
 
     reference_tokens = 0
-    files = [{"file": "SKILL.md", "tokens": skill_tokens, "type": "skill"}]
-    seen_files = set()
+    files = [{"file": skill_md.name, "tokens": skill_tokens, "type": "skill"}]
+    seen_files = {skill_md.resolve()}
 
     ref_dir = skill_dir / "references"
     if ref_dir.exists():
@@ -1639,13 +1681,12 @@ def _analyze_skill_tokens(skill_dir: Path) -> dict:
                 })
 
     for f in skill_dir.glob("*.md"):
-        if f.name != "SKILL.md":
-            abs_path = f.resolve()
-            if abs_path not in seen_files:
-                seen_files.add(abs_path)
-                tokens = count_tokens(f.read_text())
-                reference_tokens += tokens
-                files.append({"file": f.name, "tokens": tokens, "type": "reference"})
+        abs_path = f.resolve()
+        if abs_path not in seen_files:
+            seen_files.add(abs_path)
+            tokens = count_tokens(f.read_text())
+            reference_tokens += tokens
+            files.append({"file": f.name, "tokens": tokens, "type": "reference"})
 
     script_tokens = 0
     scripts_dir = skill_dir / "scripts"

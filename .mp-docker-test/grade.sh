@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # grade.sh <case> — prints grader facts from a finished run
 set -uo pipefail
-BASE=/Users/FradSer/Developer/FradSer/dotclaude/.mp-docker-test
+BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+unset CDPATH
 CASE="$1"; W="$BASE/results/$CASE/work"
 T="$W/trace.jsonl"
 [[ -f "$T" ]] || { echo "$CASE: NO TRACE"; exit 1; }

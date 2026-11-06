@@ -1,6 +1,6 @@
 # Utils Plugin
 
-**Version**: 0.2.1
+**Version**: 0.2.3
 
 General-purpose utility skills for documentation, writing, and project maintenance.
 

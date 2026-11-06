@@ -2,6 +2,14 @@
 
 # Validation script using official skills-ref library
 # https://github.com/agentskills/agentskills/tree/main/skills-ref
+#
+# LOCAL (denested) layout note: this marketplace mirror renames every
+# <name>/SKILL.md to <name>/<name>.md to suppress auto-discovery. skills-ref
+# expects a SKILL.md entry, so running it against this layout is not
+# meaningful. This script is kept as upstream reference tooling only: it exits
+# cleanly when skills-ref is not installed instead of cloning a repo into /tmp
+# on every invocation. Use the marketplace validator for real checks:
+#   python3 plugin-optimizer/scripts/validate-plugin.py marketing
 
 SKILLS_DIR="skills"
 SKILLS_REF_DIR="/tmp/agentskills/skills-ref"
@@ -10,6 +18,12 @@ echo "🔍 Validating Skills Using Official skills-ref Library"
 echo "========================================================"
 echo "Reference: https://github.com/agentskills/agentskills"
 echo ""
+
+if ! command -v skills-ref >/dev/null 2>&1; then
+    echo "skills-ref is not installed — skipping (this mirror's skills are denested;"
+    echo "use plugin-optimizer/scripts/validate-plugin.py marketing for validation)."
+    exit 0
+fi
 
 # Check if skills-ref is already installed
 if [ ! -d "$SKILLS_REF_DIR/.venv" ]; then

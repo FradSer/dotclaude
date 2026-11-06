@@ -2,7 +2,7 @@
 
 Agent skills for building great product interfaces, from typography and color to accessibility and UX writing.
 
-**Version**: 1.0.0
+**Version**: 1.0.1
 
 ## Installation
 

@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 21 plugins across development and productivity categories. Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
+This is a **Claude Code plugin marketplace** (`frad-dotclaude`) containing 23 plugins across development and productivity categories (the authoritative inventory is `.claude-plugin/marketplace.json`). Each plugin follows auto-discovery conventions—place components in `commands/`, `agents/`, `skills/` directories and Claude discovers them automatically.
 
-**Active plugins:** git, github, refactor, swiftui, office, lark, hyperframes, plugin-optimizer, mattpocock, superpowers, antigravity, pi, interfaces, storm, hardware, autoresearch, memory
+**Development plugins (13):** git, git-agent, swiftui, refactor, plugin-optimizer, acpx, code-context, autoresearch, antigravity, hardware, memory, pi, interfaces
 
-**Non-active plugins:** acpx, code-context, utils, meeseeks-vetted
+**Productivity plugins (10):** github, office, generate-image, lark, marketing, hyperframes, mattpocock, superpowers, utils, storm
+
+**Upstream mirrors (`strict: false` in marketplace.json):** office, lark, marketing, hyperframes. Their skill content is synced from upstream and gets overwritten on resync—do not hand-edit mirror SKILL.md / entry files; fix upstream or the local sync tooling instead. mattpocock, superpowers, interfaces, and acpx also ship sync tooling, so treat their content as upstream-controlled too.
 
 ## Plugin Structure
 
@@ -29,7 +31,7 @@ plugin-name/
 - `skills/refactor/SKILL.md` with `user-invocable: true` -- user runs `/refactor:refactor`
 - `skills/best-practices/SKILL.md` with `user-invocable: false` -- loaded as domain knowledge only
 
-**Hooks** can be inline in `plugin.json`. See `git/.claude-plugin/plugin.json` for the `PreToolUse` hook pattern (runs a shell script to validate Bash tool calls before execution).
+**Hooks** can be inline in `plugin.json`. See `git-agent/.claude-plugin/plugin.json` for the `PreToolUse` hook pattern (its `hooks/validate-commit-pretool.sh` intercepts Bash `git add`/`git commit`).
 
 ## Development Workflow
 
@@ -49,11 +51,11 @@ python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> --json
 python3 plugin-optimizer/scripts/validate-plugin.py <plugin-path> -v
 ```
 
-Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
+Exit codes: 0 = passed, 1 = a MUST violation in any check (validation blocked), 2 = token budget critical (MUST refactor).
 
 **Branch Strategy:** develop -> main (merge commits)
 
-**Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions. `README.md` / `README.zh-CN.md` are a third sync target — their plugin listings drift silently (currently still mention removed `next-devtools`/`shadcn`), so run `/utils:update-readme` whenever you add, remove, or rename a plugin.
+**Version sync:** Plugin versions in individual `plugin.json` files are authoritative. Keep `.claude-plugin/marketplace.json` entries in sync when bumping versions. `README.md` / `README.zh-CN.md` are a third sync target — their plugin listings drift silently, so run `/utils:update-readme` whenever you add, remove, or rename a plugin. Verify the intro plugin count and the badge stay at the real total.
 
 **`strict` field in marketplace.json:** Default is `true`. Set `"strict": false` on a plugin entry (see `office`) to relax marketplace validation for plugins that intentionally bundle non-standard content.
 
@@ -66,7 +68,7 @@ Exit codes: 0 = passed, 1 = MUST violations, 2 = token budget critical.
 
 ## Git Commit Conventions
 
-**Scopes:** acpx, ag, as, cctx, fe, git, github, hw, hyperframes, lark, marketing, mem, office, pi, po, refactor, sd, sp, storm, swiftui, utils
+**Scopes:** the authoritative list lives in `.git-agent/config.yml` (run `git-agent init --scope` to regenerate). That file currently defines acpx, ag, as, cctx, git, gh, hw, hf, lark, mkt, mem, po, ref, sd; the shorter aliases there supersede the older full-name scope list.
 
 **Types:** feat, fix, docs, refactor, test, chore, perf
 

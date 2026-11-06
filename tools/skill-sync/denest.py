@@ -149,6 +149,63 @@ class Denester:
                 changed += 1
         return changed
 
+    # Markdown link `[label](target)`. Only file-relative markdown links are
+    # considered; external URLs, absolute paths, anchors and ``${...}`` are
+    # left alone.
+    LOCAL_LINK_RE = re.compile(r"(\[[^\]]*\]\()([^)\s]+?)(\))")
+
+    def fix_local_links(self) -> int:
+        """Repair intra-skill reference links that assume the skill root as cwd.
+
+        Some upstream reference files address a sibling doc as
+        ``references/X.md`` (double-nesting the references/ dir) or omit the
+        ``../`` needed to reach a sibling sub-directory (``palettes/X.md``).
+        From inside ``<skill>/references/`` both forms are broken. Two
+        conservative rules, applied only when the target does NOT already
+        resolve and the corrected target DOES exist:
+
+          * first segment equals the file's own directory name -> drop it
+            (``references/X.md`` -> ``X.md``);
+          * the target exists one directory up -> prepend ``../``
+            (``palettes/X.md`` -> ``../palettes/X.md``).
+
+        This lives in the shared denest transform (not as local edits) so it is
+        re-applied to both the upstream temp copy and the live tree on every
+        sync -- a local hand-edit here would be overwritten by the next resync.
+        Idempotent: a second pass changes nothing.
+        """
+        changed = 0
+        for path in sorted(self.tree.rglob("*.md")):
+            if ".backup" in path.parts:
+                continue
+            original = path.read_text(encoding="utf-8")
+            parent_name = path.parent.name
+
+            def repl(m: re.Match[str]) -> str:
+                target = m.group(2)
+                if target.startswith(("http://", "https://", "mailto:", "#", "/", "${")):
+                    return m.group(0)
+                base, sep, anchor = target.partition("#")
+                if not base.endswith(".md"):
+                    return m.group(0)
+                parts = Path(base).parts
+                if len(parts) < 2 or (path.parent / base).exists():
+                    return m.group(0)  # already resolves
+                new_base = None
+                if parts[0] == parent_name and (path.parent / Path(*parts[1:])).exists():
+                    new_base = str(Path(*parts[1:]))
+                elif (path.parent.parent / base).exists():
+                    new_base = "../" + base
+                if new_base is None:
+                    return m.group(0)
+                return f"{m.group(1)}{new_base}{sep}{anchor}{m.group(3)}"
+
+            updated = self.LOCAL_LINK_RE.sub(repl, original)
+            if updated != original:
+                path.write_text(updated, encoding="utf-8")
+                changed += 1
+        return changed
+
     def nested_skill_mds(self) -> list[Path]:
         """Nested SKILL.md files that would be renamed."""
         found: list[Path] = []
@@ -370,7 +427,11 @@ def main() -> int:
 
     renamed = d.rename_nested()
     links = d.rewrite_links()
-    print(f"denest: renamed={len(renamed)} link_files={links}", file=sys.stderr)
+    local_links = d.fix_local_links()
+    print(
+        f"denest: renamed={len(renamed)} link_files={links} local_link_files={local_links}",
+        file=sys.stderr,
+    )
     return 0
 
 

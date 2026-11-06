@@ -74,7 +74,7 @@ Read-only code review via pi CLI. By default reviews uncommitted working-tree ch
 Guides you through setting up pi's provider, model, and base URL. Human-only — never auto-invoked.
 
 ```
-/pi:setup [--provider PROVIDER] [--model MODEL] [--api-key KEY] | --edit-config | --list-models | --test
+/pi:setup [--endpoint NAME] [--provider PROVIDER] [--model MODEL] [--base-url URL] [--api-key KEY] | --edit-config [--local|--shared|--global] | --list-models | --test
 ```
 
 **Examples:**

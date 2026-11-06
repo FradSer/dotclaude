@@ -11,11 +11,16 @@ Mirrors all functional content from upstream `main` to keep this plugin
 
 - **`skills/`** and **`tools/`** — mirrored as whole subtrees (rebuilt on each
   sync so upstream deletions take effect).
-- **Root functional files** — `CLAUDE.md`, `AGENTS.md`, `VERSIONS.md`,
-  `validate-skills.sh`, `validate-skills-official.sh` — copied individually.
-  `CLAUDE.md`/`AGENTS.md` carry the agent guidance for using the skills and
-  tools; `VERSIONS.md` is the per-skill version registry; the validate scripts
-  audit skills against the Agent Skills spec.
+- **Root functional files** — `CLAUDE.md`, `AGENTS.md`, `VERSIONS.md` — copied
+  individually. `CLAUDE.md`/`AGENTS.md` carry the agent guidance for using the
+  skills and tools; `VERSIONS.md` is the per-skill version registry.
+- **Locally maintained, NOT overwritten** — `validate-skills.sh` and
+  `validate-skills-official.sh` are denest-adapted derivatives of the upstream
+  spec-audit scripts. Upstream assumes every skill has `skills/<name>/SKILL.md`,
+  but this mirror denests to `skills/<name>/<name>.md`, so verbatim copying those
+  scripts makes them report false failures. They are kept in the repo and skipped
+  by the sync (see `scripts/sync-marketing.sh` `UPSTREAM_FILES`). For real
+  validation use `python3 plugin-optimizer/scripts/validate-plugin.py marketing`.
 
 Upstream is itself a Claude Code plugin using `"skills": "./skills"`
 auto-discovery and ships every skill as `<name>/SKILL.md`. Claude Code / Cursor
@@ -40,15 +45,14 @@ Cross-skill references use backtick-quoted skill names (e.g. "see onboarding")
 resolved by name, so they work unchanged after mirroring. The `tools/` tree
 holds CLI wrappers some skills invoke.
 
-### Co-habitation with the hyperframes sub-tree
+### Former co-habitation with the hyperframes sub-tree
 
-`skills/hyperframes/` is a **separately-synced** sub-tree mirrored from
-`heygen-com/hyperframes` (a different upstream than the marketing skills). The
-marketing sync rebuilds `skills/` on each run, so it **backs up and restores**
-`hyperframes/` around its own sync — run `sync-hyperframes.sh` to update the
-hyperframes side independently. The two sync scripts do not disturb each
-other's mirrors. HyperFrames applies the same denest locally (its own router
-`SKILL.md` stays; sub-skills become `<name>/<name>.md`).
+Earlier revisions carried a `skills/hyperframes/` sub-tree (mirrored from
+`heygen-com/hyperframes`) that the marketing sync backed up and restored around
+its own run. HyperFrames is now a **standalone plugin** (`hyperframes/`, its own
+marketplace entry and `scripts/sync-hyperframes.sh`); there is no
+`skills/hyperframes/` here and the two syncs are independent. This note records
+why older SYNC.md revisions mention that backup/restore step.
 
 ### Excluded (upstream repo metadata, replaced by local marketplace metadata)
 

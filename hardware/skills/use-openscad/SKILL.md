@@ -93,7 +93,7 @@ openscad_run --export-format binstl -o out.stl model.scad
 openscad_run -o preview.png --preview --imgsize=1280,960 model.scad
 ```
 
-**Docker image:** Build with `docker build -t openscad-cli hardware/scripts/docker/openscad/` from the repo root. Override the image name with `OPENSCAD_DOCKER_IMAGE=my-registry/openscad:latest`.
+**Docker image:** Build with `docker build -t openscad-cli "${CLAUDE_PLUGIN_ROOT}/scripts/docker/openscad/"` from any directory. Override the image name with `OPENSCAD_DOCKER_IMAGE=my-registry/openscad:latest`.
 
 ## References
 

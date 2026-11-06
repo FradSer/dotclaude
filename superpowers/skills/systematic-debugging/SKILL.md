@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: Diagnoses a reported bug, error, test failure, or unexpected behavior through a 4-phase root-cause analysis before any code changes.
+description: Diagnoses a reported bug, error, test failure, or unexpected behavior through a 4-phase root-cause analysis before any code changes. Use when the user reports a bug or test failure with an unknown root cause, or invokes /superpowers:systematic-debugging "<symptom>". Not for bugs with a named root cause (edit directly).
 argument-hint: "<bug description or symptom>"
 user-invocable: true
 disable-model-invocation: true

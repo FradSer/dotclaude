@@ -1,6 +1,7 @@
 ---
 name: storm-engine
 description: Provides the shared STORM methodology, artifact layout, stage-gating contract, citation hygiene, and retrieval fallback. Use when executing any /storm:* skill (generate, research, outline, write, polish). Internal knowledge; never user-invocable.
+user-invocable: false
 ---
 
 # STORM Engine
@@ -64,10 +65,10 @@ Derive `<slug>` from the topic by lowercasing, replacing non-alphanumeric runs w
 
 CRITICAL: prefer connected MCP search tools, fall back to built-in web search only when no MCP search tool is available.
 
-1. Probe for MCP search tools via ToolSearch: `exa-mcp-server__code-search`, `exa-mcp-server__research-paper-search`, `exa-mcp-server__company-search`, `exa-mcp-server__personal-site-search`, `exa-mcp-server__financial-report-search`, `exa-mcp-server__x-search`.
-2. If at least one MCP search tool is available, use it for the research phase (select the most relevant type per query — e.g. `research-paper-search` for academic topics, `company-search` for organizations).
-3. Only if NO MCP search tool is connected, fall back to the built-in `WebSearch` + `WebFetch`.
-4. For grounding on user-provided documents (VectorRM-style), accept a `--docs <dir>` argument; if given, ingest those files as an additional source pool alongside web results (or instead of, if `--docs-only`).
+1. Discover available web/academic/company search tools via ToolSearch by describing the intent (do not hardcode exact MCP tool names — they vary per installation). Record the selected tools in `run-config.json` as `retriever`.
+2. If at least one search tool is available, use it for the research phase, selecting the most relevant type per query (e.g. an academic-paper search for scholarly topics, a company search for organizations).
+3. Only if NO such search tool is connected, fall back to the built-in `WebSearch` + `WebFetch`.
+4. For grounding on user-provided documents (VectorRM-style), `--docs <dir>` ingests the directory's `.md`/`.txt` files as an additional source pool (see research Phase 1 step 5); `--docs-only` uses only those documents and skips web/MCP retrieval. `--retriever local` is an alias for the same local pool.
 
 **Source shape** (mirrors upstream `Information`): every source must be normalized to
 ```json

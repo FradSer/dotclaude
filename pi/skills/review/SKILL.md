@@ -274,69 +274,9 @@ Show the error message from the pi-agent's report. Common causes:
 
 ## Usage Examples
 
-### Review uncommitted working tree changes (default)
-
-```
-/pi:review
-```
-
-Reviews `git diff HEAD` — all staged and unstaged changes vs the last commit. If the working tree is clean, reports so and stops.
-
-### Review with a specific endpoint
-
-```
-/pi:review --endpoint openrouter
-```
-
-### Review with a specific model
-
-```
-/pi:review --model gemini-3.6-pro
-```
-
-### Review a specific branch
-
-```
-/pi:review --branch feat/new-widget --endpoint local-proxy --model gemini-3.6-flash-high
-```
-
-### Review recent changes
-
-```
-/pi:review --diff HEAD~5..HEAD
-```
-
-### Review a pull request
-
-```
-/pi:review 42
-```
-
-### Review a specific file
-
-```
-/pi:review @src/core/agent.ts
-```
-
-### Let pi freely explore the codebase (default review, expanded tools)
-
-```
-/pi:review --explore
-```
-
-Overrides the default `read`-only restriction to `read,grep,find,ls` for the working-tree review. pi still cannot edit files or run bash.
-
-### List configured endpoints
-
-```
-/pi:review --list-models
-```
-
-### Edit project settings
-
-```
-/pi:review --edit-config
-```
+For concrete invocations (working tree, branch, diff range, PR, file, `--explore`,
+`--list-models`, `--edit-config`, endpoint/model overrides), read
+`references/examples.md`.
 
 ## Important Notes
 
@@ -351,5 +291,5 @@ Overrides the default `read`-only restriction to `read,grep,find,ls` for the wor
 - Git context and diffs go into `--append-system-prompt` as structured context.
 - PR review requires `gh` CLI to be installed and authenticated.
 - For large codebases, consider targeting a specific branch, diff range, or file to keep the review focused.
-- Settings are shared with `/pi:delegate` via the same file chain (`.claude/pi.local.json`, `~/.claude/pi.local.json`). Both skills read the same files, but each uses its own format — you can keep both in the same file.
+- Settings are shared with `/pi:delegate` via the same three-tier file chain (`.claude/pi.local.json` > `.claude/pi.json` > `~/.claude/pi.local.json`). Both skills use the same named-endpoint format (endpoint-first, with a legacy flat-field fallback), so a single config file serves both.
 - To configure pi (provider, model, base URL), run `/pi:setup` instead of passing flags manually.

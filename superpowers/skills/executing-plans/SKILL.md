@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: Executes a written implementation plan via per-batch sub-agent coordinators with verification and commits between batches.
+description: Executes a written implementation plan via per-batch sub-agent coordinators with verification and commits between batches. Use when a plan exists and the user wants it executed, or invokes /superpowers:executing-plans <plan-path>.
 argument-hint: [plan-folder-path]
 user-invocable: true
 disable-model-invocation: true

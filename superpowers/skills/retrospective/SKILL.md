@@ -1,6 +1,6 @@
 ---
 name: retrospective
-description: Analyzes evaluation patterns across completed plans and evolves the superpowers checklists accordingly.
+description: Analyzes evaluation patterns across completed plans and evolves the superpowers checklists accordingly. Use after executing-plans completes, or when the user asks to review completed plans and update the checklists via /superpowers:retrospective.
 argument-hint: <plan-path-1> [plan-path-2] [--across-all]
 user-invocable: true
 disable-model-invocation: true

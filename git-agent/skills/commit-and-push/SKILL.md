@@ -1,6 +1,6 @@
 ---
 name: commit-and-push
-description: Creates atomic conventional git commits using git-agent and pushes changes to the remote repository.
+description: Creates atomic conventional git commits using git-agent and pushes changes to the remote repository. Use when the user asks to "commit and push", "commit with git-agent", or wants an atomic AI-generated commit followed by a push.
 user-invocable: true
 argument-hint: "[intent or --co-author]"
 allowed-tools: ["Bash(git-agent:*)", "Bash(git:*)"]
@@ -34,5 +34,6 @@ CRITICAL:
    (If upstream is not set, use `git push -u origin <branch>`).
 
 CLI Reference: `../../references/cli.md`
+Attribution & retry-ladder reference: `../../references/coauthor-attribution.md` (covers `--no-attribution` and the `--free` retry)
 
 > **Deterministic messages:** When an exact commit message is required (e.g. version bump `chore: bump version to 0.11.0`), pass the full conventional message as the `--intent` value. The intent is used as the commit subject verbatim.

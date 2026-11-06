@@ -1,6 +1,7 @@
 ---
 name: tropes
 description: Detects and eliminates AI writing tropes that make text sound artificial or formulaic. Use when generating text content, writing documentation, creating code comments, or reviewing writing style. Supports four-tier JSON preferences (global/project x shared/local office.json) read via load-preferences.sh.
+user-invocable: false
 ---
 
 # AI Writing Tropes Detection
@@ -50,7 +51,7 @@ Apply the merged preferences as overrides/supplements to the default detection b
 - `rhetorical_bans` — ban rhetorical patterns by stable ID (`self_qa`, `self_eval_summary`, `parallel_antithesis_subheading`, `process_meta_narration`)
 - `principles` — judgmental free-text rules applied as additional checks
 
-If both files are absent, after the detection run, offer to create the global file with default values.
+If no preference file exists (all four files are absent), after the detection run, offer to create the global file with default values.
 
 See `references/preferences-schema.md` for the full field reference and merge rules.
 
@@ -133,4 +134,4 @@ The complete trope catalog is organized into seven categories. Load specific ref
 Plus one supporting schema (not a trope category):
 
 - **User Preferences** - `references/preferences-schema.md`
-  Two-tier JSON config: global `~/.claude/office.local.json` + project `.claude/office.local.json`, read and merged by `load-preferences.sh`. Custom banned words/phrases, dead metaphors, pattern caps, sensitivity, tone, skip categories.
+  Four-tier JSON config: `.claude/office.local.json` (project personal) > `.claude/office.json` (project shared) > `~/.claude/office.local.json` (global personal) > `~/.claude/office.json` (global shared), read and merged by `load-preferences.sh`. Custom banned words/phrases, dead metaphors, pattern caps, sensitivity, tone, skip categories.

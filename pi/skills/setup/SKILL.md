@@ -3,7 +3,7 @@ name: setup
 description: Guides the user through configuring pi — provider, model, base URL, and API key. Use when the user asks to "setup pi", "configure pi", "pi setup", "set up pi provider", "pi config", "change pi model", or invokes /pi:setup. Only run this skill when the user explicitly requests pi setup — never auto-invoke.
 user-invocable: true
 disable-model-invocation: true
-argument-hint: "[--endpoint NAME] [--provider PROVIDER] [--model MODEL] [--base-url URL] [--api-key KEY] | --edit-config | --list-models | --test | --doctor"
+argument-hint: "[--endpoint NAME] [--provider PROVIDER] [--model MODEL] [--base-url URL] [--api-key KEY] | --edit-config [--local|--shared|--global] | --list-models | --test"
 allowed-tools: ["Bash(pi:*)", "Bash(jq:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(mv:*)", "Bash(echo:*)", "Bash(command -v:*)", "Bash(ls:*)", "Bash(vi:*)", "Read", "Write"]
 ---
 
@@ -12,6 +12,8 @@ allowed-tools: ["Bash(pi:*)", "Bash(jq:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bas
 This skill is for **human-only** setup. Never invoke it automatically. Only run when the user explicitly calls `/pi:setup`. Configure pi's provider, model, and endpoint so `/pi:delegate` and `/pi:review` can use them without repeating flags.
 
 ## Before Execution: Check Installation
+
+Settings-only flags (`--list-models`, `--edit-config`) do NOT require pi to be installed — handle them by their dedicated sections below and skip this gate. For all other invocations, check the install first:
 
 ```bash
 command -v pi >/dev/null 2>&1
@@ -93,6 +95,47 @@ echo "Or use interactive mode: /pi:setup --edit-config"
 ```
 
 Then stop — do not proceed to setup.
+
+### `--edit-config` flag
+
+When `$ARGUMENTS` is exactly `--edit-config` (with an optional scope flag), open the settings file for editing. Three scopes matching the three priority tiers:
+
+| Scope | Flag | Path | Git |
+|-------|------|------|-----|
+| Project personal | `--edit-config` (default) or `--edit-config --local` | `.claude/pi.local.json` | gitignored |
+| Project shared | `--edit-config --shared` | `.claude/pi.json` | tracked |
+| Global personal | `--edit-config --global` or `--edit-config -g` | `~/.claude/pi.local.json` | user home |
+
+**Shared scope (`--shared`) is committed to git** — never put a literal `apiKey` in it; use a `$ENV_VAR` reference instead. Literal keys belong in the personal scopes.
+
+```bash
+# Detect scope
+if [[ "$ARGUMENTS" == *"--global"* || "$ARGUMENTS" == *"-g"* ]]; then
+  CONFIG_PATH="$HOME/.claude/pi.local.json"
+elif [[ "$ARGUMENTS" == *"--shared"* ]]; then
+  CONFIG_PATH=".claude/pi.json"
+else
+  CONFIG_PATH=".claude/pi.local.json"
+fi
+
+# Create if not exists (seed matches the endpoint-based format)
+mkdir -p "${CONFIG_PATH%/*}"
+if [ ! -f "$CONFIG_PATH" ]; then
+  cat > "$CONFIG_PATH" << 'EOF'
+{
+  "endpoints": {},
+  "defaultEndpoint": "",
+  "defaultModel": "",
+  "thinking": ""
+}
+EOF
+fi
+
+# Open in editor
+${EDITOR:-vi} "$CONFIG_PATH"
+```
+
+Report: "Settings file created/opened at `<path>`. Changes take effect on the next `/pi:delegate` invocation." Then stop — do not proceed to setup.
 
 ### `--test` flag
 

@@ -5,7 +5,7 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-A curated collection of 22 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
+A curated collection of 23 plugins for Claude Code, providing specialized agents, skills, and automation tools for development and productivity workflows.
 
 ## Available Plugins
 
@@ -88,7 +88,7 @@ claude plugin install swiftui@frad-dotclaude
 
 ### [office](office/)
 
-Patent application generation, Product Requirements Documents, video generation, agent-based browser automation, Remotion programmatic video authoring, and AI writing trope detection.
+Patent application generation, Product Requirements Documents, video generation, Remotion programmatic video authoring, and AI writing trope detection.
 
 **Installation:**
 ```bash

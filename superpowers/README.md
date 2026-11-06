@@ -2,7 +2,7 @@
 
 Advanced development workflow orchestration with BDD support and self-improving skills.
 
-**Version**: 3.8.0
+**Version**: 3.8.2
 **Requires**: Claude Code v2.1.139+ (for native `/goal` continuation)
 **Runtime** (state-sync hook): `git` and `jq` on `PATH` — without them the single Stop hook exits silently and neither `docs/retros/plans-completed.jsonl` nor the evolution-log backfill is written
 
@@ -177,7 +177,7 @@ Added in v3.5.0. Constrains how evaluator REWORK verdicts are handled: verify ea
 
 - **Test-First:** Every implementation starts with a failing test
 - **Explicit over Implicit:** Tasks are detailed and context-independent
-- **Collaborative:** Built on structured dialogue and user approval
+- **Autonomous:** Runs to completion without mid-pipeline approval; the user reviews the committed output post-hoc (e.g. via `git show`)
 - **Incremental:** Validate each phase before proceeding
 - **Verification-Driven:** Every task includes verification steps
 - **BDD-Centric:** All specifications use Given-When-Then format

@@ -5,7 +5,7 @@
 
 [English](README.md) | **简体中文**
 
-精心打造的 22 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
+精心打造的 23 个 Claude Code 插件集合，提供专业的 Agent、Skills 和自动化工具，服务于开发和生产力工作流。
 
 ## 可用插件
 
@@ -88,7 +88,7 @@ claude plugin install swiftui@frad-dotclaude
 
 ### [office](office/)
 
-专利申请书生成、产品需求文档、视频生成、智能体浏览器自动化、Remotion 编程式视频创作以及 AI 写作俗套检测。
+专利申请书生成、产品需求文档、视频生成、Remotion 编程式视频创作以及 AI 写作俗套检测。
 
 **安装：**
 ```bash

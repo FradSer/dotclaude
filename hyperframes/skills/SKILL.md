@@ -20,8 +20,10 @@ metadata:
 This skill is a local router for the **HyperFrames** HTML-based video framework,
 mirrored from [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes).
 The mirrored domain skills live as sub-directories of this folder and are loaded
-on demand by name. Based on user intent, read the corresponding sub-skill
-`SKILL.md` before executing.
+on demand by name. Based on user intent, read the corresponding sub-skill entry
+file `<name>/<name>.md` (the Sub-skill Index row's Directory) before executing —
+the sync denests every sub-skill `SKILL.md` into `<name>.md`, so there is no
+sub-skill `SKILL.md` to read.
 
 The upstream's authoritative agent guides are mirrored alongside this router
 as `UPSTREAM-CLAUDE.md` (full skill catalog, install, maintenance) and
@@ -84,4 +86,4 @@ bash hyperframes/scripts/sync-hyperframes.sh --check   # dry-run
 bash hyperframes/scripts/sync-hyperframes.sh            # sync with backup
 ```
 
-See `SYNC.md` for the upstream source, last-synced commit, and sync strategy.
+See `../SYNC.md` for the upstream source, last-synced commit, and sync strategy.

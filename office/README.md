@@ -44,7 +44,7 @@ The skill will:
 
 ## Skills
 
-### `/office:patent-architect` (Command)
+### `/office:patent-architect` (Slash-Invocable Skill)
 
 Generate Chinese patent application forms (专利申请表) from technical ideas.
 
@@ -65,7 +65,7 @@ Generate Chinese patent application forms (专利申请表) from technical ideas
 - Patent terminology compliance
 - Multiple embodiment generation (3+)
 
-### `/office:create-prd` (Command)
+### `/office:create-prd` (Slash-Invocable Skill)
 
 Generate comprehensive Chinese Product Requirements Documents (PRD) following 2026 best practices.
 
@@ -84,7 +84,7 @@ Generate comprehensive Chinese Product Requirements Documents (PRD) following 20
 **Prerequisites:**
 - None (interactive workflow)
 
-### `/office:generate-video` (Command)
+### `/office:generate-video` (Slash-Invocable Skill)
 
 Generate short videos from text or stills using ByteDance Seedance on Volcengine Ark (火山方舟).
 
@@ -103,9 +103,32 @@ Generate short videos from text or stills using ByteDance Seedance on Volcengine
 
 **Prerequisites:** `uv`, and `ARK_API_KEY` ([console.volcengine.com/ark](https://console.volcengine.com/ark)).
 
+### `/office:remotion` (Slash-Invocable Skill)
+
+Programmatic video creation in React with Remotion. This skill is a router: it reads the matching sub-skill entry file `<name>/<name>.md` based on user intent before executing (there is no sub-skill `SKILL.md` — the sync denests them). The sub-skills are upstream content kept verbatim (re-sync from upstream rather than editing them).
+
+**Usage:**
+```bash
+/office:remotion
+```
+
+**Sub-skills** (loaded through the router, not standalone slash commands):
+
+| Sub-skill | Use When |
+|-----------|----------|
+| `remotion-create` | Scaffold a new Remotion project (`npx create-video`), design a video, start the Studio preview |
+| `remotion-markup` | Writing Remotion React markup — animations, media, sequences, timing, fonts, effects, maps, Lottie, DOM measurement, transitions, trimming |
+| `remotion-render` | Rendering videos and stills (`npx remotion render/still`), transparent videos |
+| `remotion-captions` | Transcribing, importing SRT, and displaying captions/subtitles |
+| `remotion-interactivity` | Making animations editable in Remotion Studio Visual Mode |
+| `remotion-saas` | Building video apps — `<Player>`, rendering on Lambda/Vercel/Cloudflare/Node, client-side rendering, choosing a framework |
+| `mediabunny` | Multimedia handling in the browser — get audio/video duration, get video dimensions |
+
+**Prerequisites:** Node.js and `npx` (Remotion tooling).
+
 ### `tropes` (Internal Skill)
 
-AI writing trope detection — scans generated text for common AI patterns that make content sound artificial or formulaic.
+Automatically-applied domain knowledge (`user-invocable: false`) — not a slash command. AI writing trope detection scans generated text for common AI patterns that make content sound artificial or formulaic.
 
 **Source**: [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is)
 
@@ -152,18 +175,27 @@ office/
 ├── scripts/
 │   └── search-patents.sh      # Patent search helper
 └── skills/
-    ├── patent-architect/      # Patent application generation (command)
+    ├── patent-architect/      # Patent application generation (slash-invocable skill)
     │   ├── SKILL.md
     │   ├── template.md
     │   ├── reference.md
     │   └── examples.md
-    ├── create-prd/            # PRD generation (command)
+    ├── create-prd/            # PRD generation (slash-invocable skill)
     │   └── SKILL.md
-    ├── generate-video/        # Video generation (command, Seedance / Ark)
+    ├── generate-video/        # Video generation (slash-invocable skill, Seedance / Ark)
     │   ├── SKILL.md
     │   ├── scripts/generate_video.py
     │   └── references/prompting.md
-    └── tropes/                # AI writing trope detection (internal)
+    ├── remotion/              # Programmatic video: router + 7 sub-skills (slash-invocable skill)
+    │   ├── SKILL.md           # Router / sub-skill index
+    │   ├── remotion-create/   # New Project
+    │   ├── remotion-markup/   # React Markup
+    │   ├── remotion-render/   # Rendering
+    │   ├── remotion-captions/ # Captions
+    │   ├── remotion-interactivity/ # Interactivity
+    │   ├── remotion-saas/     # SaaS / Apps
+    │   └── mediabunny/        # Mediabunny
+    └── tropes/                # AI writing trope detection (internal, auto-applied)
         ├── SKILL.md
         └── references/
             ├── professional-balance.md

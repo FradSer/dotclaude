@@ -6,8 +6,9 @@
 # 上游本身是一个 Claude Code 插件（"skills": "./skills" 自动发现，无路由 skill）。
 # 为与上游功能完全一致，本脚本镜像：
 #   - 两棵子树：skills/ tools/（整棵重建，删除生效）
-#   - 根层功能文件：CLAUDE.md AGENTS.md VERSIONS.md validate-skills.sh
-#     validate-skills-official.sh（单文件覆盖）
+#   - 根层功能文件：CLAUDE.md AGENTS.md VERSIONS.md（单文件覆盖）
+#     validate-skills.sh / validate-skills-official.sh 为本地维护的 denest 适配
+#     版本，不参与覆盖（见 SYNC.md）
 # 排除上游仓库元数据（README.md CONTRIBUTING.md .github/ .gitignore FUNDING.yml
 # LICENSE），这些由本地市场元数据取代。
 # 本地保留：scripts/ .backup/ skills/SKILL.md（路由器）；SYNC.md（同步文档）位于插件根。
@@ -28,8 +29,11 @@ UPSTREAM_REPO="https://github.com/coreyhaines31/marketingskills.git"
 UPSTREAM_BRANCH="main"
 # 镜像的子树（上游根下，整棵重建）
 UPSTREAM_PATHS=("skills" "tools")
-# 镜像的根层功能文件（单文件覆盖，逐个拷贝）
-UPSTREAM_FILES=("CLAUDE.md" "AGENTS.md" "VERSIONS.md" "validate-skills.sh" "validate-skills-official.sh")
+# 镜像的根层功能文件（单文件覆盖，逐个拷贝）。
+# 注意：validate-skills.sh / validate-skills-official.sh 不再逐字覆盖——它们是
+# 为本地 denest 布局适配的派生文件（SKILL.md 已重命名为 <name>.md），逐字覆盖
+# 会还原成对 flat SKILL.md 的假设而失效。这两个文件由本地维护，见 SYNC.md。
+UPSTREAM_FILES=("CLAUDE.md" "AGENTS.md" "VERSIONS.md")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 TARGET_DIR="$SCRIPT_DIR/.."
 BACKUP_DIR="$TARGET_DIR/.backup"

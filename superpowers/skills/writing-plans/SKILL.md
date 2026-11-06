@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Creates executable implementation plans that break down a brainstorming design into detailed, unambiguous per-batch tasks for execution.
+description: Creates executable implementation plans that break down a brainstorming design into detailed, unambiguous per-batch tasks for execution. Use when a design exists and the user wants an implementation plan, or invokes /superpowers:writing-plans <design-path>.
 argument-hint: [design-folder-path]
 user-invocable: true
 disable-model-invocation: true

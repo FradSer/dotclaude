@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **plugin-optimizer / tools/skill-sync** — Regression scenarios and tests for trigger-phrase detection, denested token analysis, and intra-skill local-link repair.
 - **antigravity** — Vertex AI credential path alongside the existing API-key path. `ANTIGRAVITY_AUTH` selects `vertex` (Application Default Credentials plus project and location) or `api-key`, and `auto` prefers Vertex whenever it is fully configured so an ambient key cannot silently redirect billing. Vertex forces `background=true` because the API rejects synchronous agent interactions there.
 - **antigravity** — Cost, model and steering options on `delegate`: `--max-tokens` (`agent_config.max_total_tokens`, the only real cap on an autonomous loop), `--model`, `--system` (with an anti-fabrication default), `--tier` (`service_tier`, including the cheap `flex` tier), `--label`, `--image` (inline base64 multimodal input) and `--json` (`response_format`). Research gains `--collaborative-planning`, `--visualization`, `--thinking-summaries` and `--bigquery`.
 - **antigravity** — `status --progress` prints the tail of a new `progress.log`, which the worker fills from the interaction's server-sent event stream (best-effort; polling still decides run state).
@@ -16,10 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Marketplace-wide** — Reconciled `CLAUDE.md` / `AGENTS.md` with the real 23-plugin inventory, synced the `antigravity` version and 13 stale plugin README version lines, and corrected both top-level READMEs' plugin count (22 -> 23).
 - **antigravity** — `google-genai` floor raised to `>=2.25.0` (the version whose interactions module routes Vertex requests), and the resolved credential path is now printed on start and recorded in `meta.json` as `auth` / `auth_label`.
 - **antigravity** — Delegate now sends a default `system_instruction` forbidding claims about content no tool actually retrieved, after live runs showed the agent answering from memory and describing an empty fetch as a successful read. `--system ""` disables it.
 
 ### Fixed
+
+- **plugin-optimizer** — The frontmatter trigger-phrase check now recognizes Chinese and imperative "when to use" phrasing instead of flagging valid descriptions, and the token-budget check now analyzes denested mirror entry files (`<name>.md`) instead of skipping them.
+- **tools/skill-sync** — The shared denest transform now repairs intra-skill reference links that assume the skill root as cwd, so 19 broken links across `lark` / `hyperframes` survive every resync instead of being local hand-edits that sync overwrites.
+- **git** — `commit` / `commit-and-push` now declare `Bash(git:*)` instead of an unrecognized lowercase `bash` tool grant.
+- **code-context** — The `context-researcher` agent now references the fully-scoped plugin MCP tool names and the real `ask_wiki_question` tool.
+- **storm** / **office** — Internal knowledge skills (`storm-engine`, `tropes`) are no longer exposed as slash commands; the engine also drops hardcoded MCP tool names and implements the advertised `--docs` ingestion.
+- **Various plugins** — Corrected broken relative paths (superpowers, hardware, github, hyperframes router), documentation that contradicted the shipped behavior (github merge-ask order, autoresearch contract grilling, hardware `--render`, pi config format, office/remotion), and several unimplemented or stale command-line flags (pi, antigravity, storm).
+- **marketing** — The bundled validators are now denest-aware (or skip cleanly) and are preserved as local adaptations instead of being overwritten by sync.
 
 - **antigravity** — Deep research was broken: the plugin sent its default `system_instruction` on every run, and the deep-research agent rejects that parameter outright (`400 ... not supported for the deep-research-preview-04-2026 agent`). Research never sends one now, and an explicit `--system` is refused with a pointer to `--query` instead of silently rewriting the question.
 - **antigravity** — Report citations were dropped. Text content carries `url_citation` annotations (the live research run had 43, deduping to 9 sources) that the report's inline `[cite: N]` markers refer to; `output.md` now renders them under `## Sources`, `output.json` carries them as `citations`, and the header records the count.

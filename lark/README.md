@@ -2,7 +2,7 @@
 
 Feishu/Lark CLI skills, mirrored from [larksuite/cli](https://github.com/larksuite/cli).
 
-**Version**: 0.1.0
+**Version**: 0.1.2
 **Display Name**: Lark
 
 ## What This Plugin Does

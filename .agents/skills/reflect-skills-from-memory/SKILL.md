@@ -6,7 +6,7 @@ version: 0.1.0
 
 # Reflect Skills From Memory
 
-Turn accumulated memory feedback about a Codex plugin marketplace's skills into
+Turn accumulated memory feedback about a Claude Code plugin marketplace's skills into
 concrete, verified fixes. Memory records hard-won lessons ("L3 rules get skipped",
 "git plugin still has no commit hook") but
 memory is a point-in-time snapshot — it drifts from the code. This skill closes the loop:
@@ -25,11 +25,11 @@ remembered feedback, or to apply outstanding memory feedback to skill files.
 
 ### Phase 1: Locate and load memory
 
-Resolve the per-project memory directory. Codex encodes it by replacing every `/`
+Resolve the per-project memory directory. Claude Code encodes it by replacing every `/`
 in the project path with `-`:
 
 ```bash
-MEM="$HOME/.Codex/projects/$(pwd | sed 's/\//-/g')/memory"
+MEM="$HOME/.claude/projects/$(pwd | sed 's/\//-/g')/memory"
 ls "$MEM"/MEMORY.md "$MEM"/*.md
 ```
 
@@ -64,9 +64,9 @@ auditor's own just-written bugs (`feedback_self_audit_caught_my_bugs`,
 - Classify each candidate as: **STILL-BROKEN** (fix the skill), **ALREADY-FIXED** or
   **WRONG** (fix the memory instead), or **NOT-APPLICABLE** (note and move on).
 
-When the change touches Codex's own API surface (hook schemas, frontmatter fields,
-tool names), confirm current behavior with the `Codex-guide` agent before editing
-(`use-Codex-guide-agent`) — do not edit from remembered API shape.
+When the change touches Claude Code's own API surface (hook schemas, frontmatter fields,
+tool names), confirm current behavior with the `claude-code-guide` agent before editing
+(`use-claude-code-guide-agent`) — do not edit from remembered API shape.
 
 ### Phase 4: Fix the skill (STILL-BROKEN)
 
@@ -78,7 +78,7 @@ Apply the minimal change that resolves the verified problem, matching surroundin
   plus a detailed Phase 0), note in both that they must change together.
 
 After editing a plugin's skill, bump its version in the plugin's `plugin.json` and sync the
-matching entry in `.Codex-plugin/marketplace.json` — these must stay equal (verify every
+matching entry in `.claude-plugin/marketplace.json` — these must stay equal (verify every
 `plugin.json` version against `marketplace.json` before reporting). For README plugin-list
 drift after add/remove/rename, defer to the project's `/utils:update-readme`.
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
-BASE=/Users/FradSer/Developer/FradSer/dotclaude/.mp-docker-test
+BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+unset CDPATH
 FIX=$BASE/fixtures
 P=$BASE/prompts
 run() { echo "### CASE $1 $(date +%T)"; bash "$BASE/run-case.sh" "$1" "$2" "$3" "${4:-}" "${5:-50}"; }

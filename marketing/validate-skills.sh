@@ -28,14 +28,19 @@ echo ""
 
 for skill_dir in "$SKILLS_DIR"/*/; do
     skill_name=$(basename "$skill_dir")
+    # Local plugin layout denests each sub-skill (SKILL.md -> <name>.md) to
+    # avoid auto-discovery; accept both entry names.
     skill_file="$skill_dir/SKILL.md"
+    if [[ ! -f "$skill_file" ]]; then
+        skill_file="$skill_dir/$skill_name.md"
+    fi
     skill_errors=()
     skill_warnings=()
 
-    # Check if SKILL.md exists
+    # Check if the entry file exists
     if [[ ! -f "$skill_file" ]]; then
         echo -e "${RED}❌ $skill_name${NC}"
-        echo "   Missing SKILL.md"
+        echo "   Missing SKILL.md (or denested $skill_name.md)"
         ((ISSUES++))
         continue
     fi

@@ -1,6 +1,6 @@
 # Git Plugin
 
-GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup.
+Conventional commit automation and GitFlow workflow automation for feature, hotfix, and release branches with post-finish cleanup.
 
 ## Features
 
@@ -12,6 +12,8 @@ GitFlow workflow automation for feature, hotfix, and release branches with post-
 
 | Skill | Intent / Trigger | Description |
 |-------|------------------|-------------|
+| `/commit` | Create a conventional commit | Creates clean, atomic conventional commits from staged or unstaged changes using standard `git` |
+| `/commit-and-push` | Commit and push changes | Creates clean conventional commits using standard `git` and pushes them to the remote |
 | `/start-feature` | Start a new feature | Creates `feature/<name>` from `develop` |
 | `/finish-feature` | Complete a feature | Tests, updates changelog, merges into `develop`, and cleans up |
 | `/start-hotfix` | Start a production fix | Auto-bumps patch version, creates `hotfix/<version>` from `main` |

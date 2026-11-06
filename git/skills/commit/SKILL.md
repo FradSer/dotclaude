@@ -3,7 +3,7 @@ name: commit
 description: Creates clean, conventional git commits using standard git. Use when the user asks to "commit", "git commit", "create commit", or wants to commit staged or unstaged changes.
 user-invocable: true
 argument-hint: "[optional commit message or instructions]"
-allowed-tools: ["bash"]
+allowed-tools: ["Bash(git:*)"]
 ---
 
 # Commit Skill (Standard Git)

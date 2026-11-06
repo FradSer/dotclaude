@@ -2,7 +2,7 @@
 
 GitHub project operations with quality gates, TDD workflows, and comprehensive issue management.
 
-**Version**: 0.7.4
+**Version**: 0.7.5
 
 ## Installation
 
@@ -12,6 +12,7 @@ claude plugin install github@frad-dotclaude
 
 **Requirements:**
 - GitHub CLI (`gh`) must be installed and authenticated
+- `jq` must be installed (used by the closeout hook and review-loop scripts)
 - Repository must have a GitHub remote
 - Project must have lint, test, and build commands configured
 - Git must support worktrees (Git 2.5+)
@@ -27,7 +28,8 @@ create PR → baseline review → triage each comment skeptically
           → apply only verified fixes → commit + push
           → wait for the next review round
           ↺ until CI is green and every comment is triaged
-          → summary + body rewrite → ask the user whether to merge
+          → FIRST ask the user whether to merge (AskUserQuestion)
+          → on a merge choice: summary comment + PR body rewrite
           → post-merge: prune stale head + sync main/develop
 ```
 
@@ -84,7 +86,7 @@ Creates comprehensive GitHub pull requests with quality validation and gates, th
 | Field | Value |
 |-------|-------|
 | Allowed Tools | `Task`, `Bash(gh:*)`, `Bash(git:*)`, `Skill` |
-| Argument Hint | `[optional description or issue reference] [--no-monitor]` |
+| Argument Hint | `[optional description or issue reference] [--no-monitor] [--auto-merge]` |
 
 **What it does:**
 1. Validates repository status and GitHub authentication
@@ -297,7 +299,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 4. Applies only the `fix` verdicts, replies to rejections, notifies on escalations
 5. Commits + pushes each round, which triggers fresh CI that the same Monitor re-emits — the loop continues
 6. Hides resolved comments and resolves their threads
-7. Once CI is green and every comment is triaged: posts a summary comment, rewrites the PR body to link it, and asks whether to merge
+7. Once CI is green and every comment is triaged: FIRST asks the user whether to merge via AskUserQuestion; the summary comment and PR body rewrite run only on a merge choice ("Don't merge" skips the ceremony)
 8. After merge: removes the linked worktree, cleans up the head branch when safe, switches to `main`, syncs `main`/`develop`, prunes stale locals
 
 **Usage:**
@@ -310,7 +312,7 @@ Reviews a PR, then keeps a persistent watch over CI results and incoming reviewe
 - **Skeptical triage**: Comments are suggestions to consider, not orders — rejecting noise is the expected outcome
 - **Independent context**: The triage agent never sees the authoring context, so it can't rationalize the diff
 - **Persistent watch**: Survives across turns; a quiet comment queue is not a stop signal
-- **Never auto-merges**: Merging always requires an explicit user choice
+- **Merge is user-authorized**: By default merging requires an explicit AskUserQuestion choice; the explicit `--auto-merge` opt-in pre-authorizes a merge commit on green (escalated comments suspend it and fall back to the question)
 - **Post-merge hygiene**: Worktree removal + head cleanup + switch to `main` + sync `main`/`develop`
 
 ## Best Practices
@@ -378,6 +380,7 @@ Steps 2 and 4 both funnel through `/github:create-pr` → `/github:review-pr`, s
 
 - GitHub CLI (`gh`) must be installed
 - GitHub CLI must be authenticated: `gh auth login`
+- `jq` must be installed (used by the closeout hook and review-loop scripts)
 - Repository must have a GitHub remote named `origin`
 - Project must have configured lint, test, and build commands
 - Git version 2.5+ for worktree support

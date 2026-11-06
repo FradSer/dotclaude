@@ -1,7 +1,7 @@
 # Plugin Optimizer
 
 **displayName:** Plugin Optimizer
-**Version:** 0.13.0
+**Version:** 0.13.3
 
 Validates and optimizes Claude Code plugins against official best practices and file patterns.
 
@@ -29,8 +29,7 @@ The Plugin Optimizer validates Claude Code plugins against official best practic
 
 - **Comprehensive Validation**: Checks against official Claude Code plugin best practices and file pattern standards
 - **Multi-level Issue Detection**: Reports critical errors, warnings, and informational suggestions
-- **Best Practices Compliance**: Generates checklist showing which standards are met/violated
-- **Auto-fix Suggestions**: Provides exact Edit tool parameters for quick fixes (not auto-applied)
+- **Actionable Suggestions**: Each issue carries a `help:` line with a concrete fix (the validator is read-only — it never applies changes)
 - **Unified Validator**: Single Python script covering plugin.json, frontmatter, file patterns, tool invocations, and token budgets
 
 ## Usage
@@ -46,34 +45,21 @@ The optimizer will validate your plugin against official best practices and gene
 ### Example Output
 
 ```
-Plugin Optimization Report: my-plugin
-======================================
+$ python3 plugin-optimizer/scripts/validate-plugin.py lark --check=frontmatter
+lark  (commands=0, agents=0, skills=27)
 
-✅ BEST PRACTICES COMPLIANCE
-Validates 6 core aspects: structure, commands, agents, skills, tool patterns, and file formats
-- [✓] Plugin Structure & Organization
-- [✗] Command Development (2 issues)
-- [✓] Agent Design
-- [✗] Tool Invocation Patterns (3 issues)
+  skills/lark-attendance/lark-attendance.md:4  should  Description missing trigger phrases (when to use this skill)
+                                                       │ description: 飞书考勤打卡：查询自己的考勤打卡记录...
+                                                       help: Include both what the skill does AND when to use it. Example: 'Validates plugins. Use when validating plugin structure...'
 
-⚠️  ISSUES FOUND
-
-CRITICAL (1):
-- commands/deploy.md:5 - Missing required 'description' field in frontmatter
-
-WARNING (2):
-- commands/test.md:12 - Explicit tool call "Use Read tool" should be descriptive
-- skills/api/SKILL.md:23 - Using second person "You should" instead of imperative
-
-INFO (1):
-- .claude-plugin/plugin.json - Missing optional 'keywords' field for discoverability
-
-🔧 AUTO-FIX SUGGESTIONS
-
-commands/deploy.md:
-  old_string: "---\nargument-hint: <service>"
-  new_string: "---\ndescription: \"Deploy application to specified service\"\nargument-hint: <service>"
+PASSED  1 should
 ```
+
+Each diagnostic is `path:line  severity  message`, optionally followed by the
+offending source (`│`) and a `help:` suggestion. Severity is `must`, `should`, or
+`may`. `-v` adds a list of passing checks; `--json` emits the same data as JSON
+for scripting. Exit codes: `0` passed, `1` a MUST violation, `2` token budget
+critical. The validator reports issues only — it does not modify files.
 
 ## Components
 
@@ -89,7 +75,7 @@ User-initiated plugin optimization workflow accepting plugin path as argument.
 
 Background knowledge base (non-user-invocable) loaded by the plugin-optimizer agent. Provides comprehensive validation standards including plugin structure, component patterns, tool invocation best practices, file format rules, and progressive disclosure guidelines.
 
-**Technical implementation**: Knowledge-type skill (`user-invocable: false`) stored in `skills/plugin-best-practices/` with extensive `references/` subdirectory, registered in `plugin.json` `skills` array.
+**Technical implementation**: Knowledge-type skill (`user-invocable: false`) stored in `skills/plugin-best-practices/` with extensive `references/` subdirectory. Claude Code auto-discovers `skills/`; the `skills` key in `plugin.json` is not required for it (that key only adds extra, non-default skill directories).
 
 ### Agent: plugin-optimizer
 
@@ -138,7 +124,7 @@ See `skills/plugin-best-practices/SKILL.md` for detailed validation rules.
 ```
 plugin-optimizer/
 ├── .claude-plugin/
-│   └── plugin.json              # Manifest (skills: [./skills/plugin-best-practices/])
+│   └── plugin.json              # Manifest
 ├── agents/
 │   └── plugin-optimizer.md      # Autonomous analysis agent
 ├── scripts/                     # Validation utilities

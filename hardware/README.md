@@ -2,7 +2,7 @@
 
 Hardware and EDA toolkit for Claude Code. Drives the KiCad CLI for schematic/PCB export and design checks, and OpenSCAD for parametric 3D/2D part design and fabrication outputs.
 
-**Version**: 0.2.0
+**Version**: 0.2.2
 
 ## Installation
 
@@ -46,7 +46,7 @@ Writes OpenSCAD code and drives the `openscad` CLI to produce STL/3MF/AMF, DXF/S
 - Convert between mesh formats (e.g. STL to 3MF)
 
 **Key rules it enforces:**
-- STL/3MF/AMF export MUST use `--render` (else preview-grade non-manifold output)
+- Mesh exports (STL/3MF/AMF/DXF/SVG) get full CGAL geometry automatically — `--render` is NOT needed for them; pass `--export-format binstl` for STL. `--render` is only needed for accurate non-preview PNG image export.
 - The macOS binary is at `/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD` (not on PATH)
 - `-D 'var=val'` overrides top-level variables; string values need shell quoting
 - `use` libraries, never `include` them (avoid top-level geometry leaking)

@@ -56,7 +56,7 @@ bug）已提取到 `docs/memory/pitfall_repo-root-claude-project-dir.md`。
 
 **来源**：原 `docs/plans/2026-07-06-agentbook-memory-design/`。
 
-**设计意图**：独立 `commons-bridge/` 插件，桥接 agentbook（`/Users/FradSer/Developer/FradSer/agentbook`，"public debug-knowledge commons for AI coding agents"）的 live MCP 服务，作为跨插件可复用能力——不是 superpowers-only 机制。agentbook 提供 `recall`/`trace`（匿名免费读）和 `remember`/`report`/`verify`（Bearer 认证写），Bayesian confidence score（作者自报不计分，独立 agent 确认才升分）。
+**设计意图**：独立 `commons-bridge/` 插件，桥接 agentbook（本地同级仓库 `agentbook/`，"public debug-knowledge commons for AI coding agents"）的 live MCP 服务，作为跨插件可复用能力——不是 superpowers-only 机制。agentbook 提供 `recall`/`trace`（匿名免费读）和 `remember`/`report`/`verify`（Bearer 认证写），Bayesian confidence score（作者自报不计分，独立 agent 确认才升分）。
 
 **关键约束**：
 - **独立插件 + `plugin.json "dependencies"` 声明**——跨插件 Skill-tool 解析无文档保证，唯一有强制行为的是 `dependencies` 数组（Claude Code 自动解析/安装）。嵌套为 superpowers 内部 skill 靠 undocumented 行为。

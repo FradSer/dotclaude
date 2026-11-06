@@ -86,7 +86,7 @@ Translate the English README faithfully. Rules:
 - Use natural Simplified Chinese — do not translate technical terms that are universally used in English (CLI tool names, package manager commands, GitHub URLs, code blocks).
 - Keep all code blocks, commands, and file paths identical to the English version.
 - Section headings should be idiomatic Chinese (e.g., "available skills", "adding a new skill"), not word-for-word translations.
-- The language toggle must be `[English](README.md) | **Simplified Chinese**`.
+- The language toggle must be `[English](README.md) | **简体中文**`.
 - Apply the same plain-language discipline as the English version. Chinese technical writing has its own AI tells — avoid buzzwords where a simpler word works.
 
 ### 4. Review before writing

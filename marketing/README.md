@@ -2,7 +2,7 @@
 
 Marketing skills for AI agents (mirrored from [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) — CRO, copywriting, SEO, paid ads, ad creative, analytics, growth).
 
-**Version**: 0.2.0
+**Version**: 0.2.2
 **Display Name**: Marketing
 
 ## What This Plugin Does
@@ -14,7 +14,8 @@ Marketing skills for AI agents (mirrored from [coreyhaines31/marketingskills](ht
 - **`skills/SKILL.md` (marketing router)** — local router that indexes all 49 mirrored marketing sub-skills; the table is regenerated from sub-skill frontmatter by the shared `tools/skill-sync/gen-index.py`.
 - **`skills/` (marketing)** — 49 marketing sub-skills, each stored as `<name>/<name>.md` (denested: `SKILL.md` renamed after sync so only the router is auto-discovered). Synced from `coreyhaines31/marketingskills`.
 - **`tools/`** — `REGISTRY.md`, `clis/` (zero-dependency Node CLI wrappers), `integrations/` (per-tool API guides), `composio/` (MCP integration layer). Synced with the marketing upstream.
-- **Root functional files** — `CLAUDE.md`/`AGENTS.md` (agent guidance), `VERSIONS.md` (per-skill version registry), `validate-skills.sh` / `validate-skills-official.sh` (spec audit scripts). Synced with the marketing upstream.
+- **Root functional files** — `CLAUDE.md`/`AGENTS.md` (agent guidance), `VERSIONS.md` (per-skill version registry). Synced with the marketing upstream.
+- **Locally maintained** — `validate-skills.sh` / `validate-skills-official.sh` are denest-adapted derivatives (they accept `<name>/<name>.md`), so they are not overwritten by sync. Validation is provided by `plugin-optimizer/scripts/validate-plugin.py`.
 
 Excluded (marketing upstream repo metadata, superseded by this marketplace's entries): `README.md`, `CONTRIBUTING.md`, `.github/`, `.gitignore`, `FUNDING.yml`, `LICENSE`.
 

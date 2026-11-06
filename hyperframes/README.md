@@ -2,7 +2,7 @@
 
 HyperFrames HTML-based video authoring skills, mirrored from [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes).
 
-**Version**: 0.1.0
+**Version**: 0.1.2
 **Display Name**: Hyperframes
 
 ## What This Plugin Does

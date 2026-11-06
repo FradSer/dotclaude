@@ -2,7 +2,7 @@
 
 SwiftUI code review with modern API best practices.
 
-**Version**: 0.2.1
+**Version**: 0.2.3
 
 **Original Source**: [SwiftUI Agent Skill](https://github.com/twostraws/SwiftUI-Agent-Skill) by Paul Hudson
 
