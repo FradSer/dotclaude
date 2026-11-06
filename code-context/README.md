@@ -1,6 +1,6 @@
 # Code Context Plugin
 
-**Version:** 0.3.0
+**Version:** 0.3.2
 
 Retrieve code context for any repo, library, or natural-language query via 5 methods: DeepWiki, Context7, Exa, git clone, and web search+fetch.
 
@@ -20,11 +20,11 @@ Code Context accepts **arbitrary input** — a natural-language question, a repo
 
 Best for: Public GitHub repositories requiring architecture overview, component explanations, or high-level understanding.
 
-**MCP Tools:** `read_wiki_structure`, `read_wiki_contents`, `ask_question`
+**MCP Tools:** `read_wiki_structure`, `read_wiki_contents`, `ask_wiki_question`
 
 **Process:**
 1. Call `read_wiki_structure` with owner/repo (e.g., `"facebook/react"`)
-2. Call `read_wiki_contents` for relevant topics, or `ask_question` for targeted queries
+2. Call `read_wiki_contents` for relevant topics, or `ask_wiki_question` for targeted queries
 
 **Strengths:** Zero setup, instant AI-summarized documentation.
 

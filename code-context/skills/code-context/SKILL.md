@@ -12,7 +12,7 @@ This skill provides 5 methods for retrieving code context. Select methods based 
 
 Never run any external lookup in the main context. Always spawn Task agents:
 
-- **DeepWiki**: Agent calls `read_wiki_structure` / `read_wiki_contents` / `ask_question`, extracts architecture summary and key relationships, returns concise overview.
+- **DeepWiki**: Agent calls `read_wiki_structure` / `read_wiki_contents` / `ask_wiki_question`, extracts architecture summary and key relationships, returns concise overview.
 - **Context7**: Agent calls `resolve-library-id` then `query-docs`, extracts the minimum viable API surface and usage examples, returns copyable snippets with version notes.
 - **Exa**: Agent calls `get_code_context_exa`, extracts minimum viable snippets, deduplicates near-identical results (mirrors, forks, repeated StackOverflow answers), returns copyable snippets + brief explanation.
 - **Git clone**: Agent clones to `/tmp/`, reads entry points and core modules, runs `rm -rf` cleanup, returns file structure summary and key patterns.
@@ -24,11 +24,11 @@ Main context stays clean regardless of search volume. Only final summaries retur
 
 Best for: Well-known public GitHub repositories where you need architecture overview, component explanations, or high-level understanding fast.
 
-**Tools**: `read_wiki_structure`, `read_wiki_contents`, `ask_question`
+**Tools**: `read_wiki_structure`, `read_wiki_contents`, `ask_wiki_question`
 
 **Process**:
 1. Call `read_wiki_structure` with the owner/repo (e.g., `"facebook/react"`) to get topic list
-2. Call `read_wiki_contents` for relevant topics, or `ask_question` for targeted queries
+2. Call `read_wiki_contents` for relevant topics, or `ask_wiki_question` for targeted queries
 3. Use when you need: architecture diagrams, component relationships, design decisions
 
 **Strengths**: Zero setup, instant AI-summarized documentation, good for onboarding to unfamiliar repos.
