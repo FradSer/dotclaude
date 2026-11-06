@@ -101,7 +101,8 @@ with the server status in the error.
 - `url_context` — fetch and read URLs (also unaffected by `--network none`).
 
 Not available in preview: function calling, MCP servers, file search, computer use,
-Google Maps, structured output / `response_format`.
+Google Maps. Structured output IS available: `--json` sets `response_format` with
+`application/json` (see the flags table below).
 
 ## Environment & network
 
@@ -233,7 +234,7 @@ antigravity.py delegate --prompt "..." [--tools ...] [--network default|none] [-
                               [--label k=v] [--image PATH] [--json]
 antigravity.py research --query "..." [--max] [--collaborative-planning]
                               [--visualization off|auto] [--thinking-summaries auto|none]
-                              [--bigquery] [--system TEXT] [--tier T] [--label k=v]
+                              [--bigquery] [--tier T] [--label k=v]
 antigravity.py wait    --run <id> [--interval 5] [--timeout 900]
 antigravity.py status  --run <id> [--full] [--progress]
 antigravity.py cleanup [--older-than-days 7] [--remote] [--dry-run]

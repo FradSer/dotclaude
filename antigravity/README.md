@@ -67,7 +67,7 @@ on start and recorded in `meta.json` as `auth` / `auth_label`.
 ## Research flags
 
 `--max` (higher-effort agent), `--collaborative-planning`, `--visualization {off,auto}`,
-`--thinking-summaries {auto,none}`, `--bigquery`, plus `--system`, `--tier` and `--label`.
+`--thinking-summaries {auto,none}`, `--bigquery`, plus `--tier` and `--label`. Note: `--system` is delegate-only — the deep-research agent rejects it, so `research` refuses `--system`.
 
 **Deep research cannot be capped.** `DeepResearchAgentConfig` accepts only the research
 options above — there is no `max_total_tokens` or model field — so `--max-tokens` and

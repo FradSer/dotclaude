@@ -1,7 +1,7 @@
 ---
 name: research
 description: Runs a deep-research query on Google Gemini's deep-research managed agent and returns a cited report. This skill should be used when the user asks to "deep research with Gemini", "run Gemini deep research", "have Antigravity research X", or wants a thorough, multi-source web research report produced by a remote Gemini agent. Invoked via "/antigravity:research". Supports a higher-effort max mode via "--max".
-argument-hint: "<research question> [--max] [--collaborative-planning] [--visualization off|auto] [--thinking-summaries auto|none] [--bigquery] [--system TEXT] [--tier flex|standard|priority|deferred] [--label k=v]"
+argument-hint: "<research question> [--max] [--collaborative-planning] [--visualization off|auto] [--thinking-summaries auto|none] [--bigquery] [--tier flex|standard|priority|deferred] [--label k=v]"
 allowed-tools: ["Bash(uv:*)", "Monitor", "Read"]
 user-invocable: true
 ---
